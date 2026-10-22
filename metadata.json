@@ -1,0 +1,6 @@
+{
+  "name": "Voxel Realms RPG: Open World MMORPG & Castle Warfare",
+  "description": "Advanced 3D HDR open world voxel RPG with castle expansion (Lv 0-100), T1-T20 troops (Shieldbearer, Shooter, Bomber), 1000T troop capacity, 1T rallies, Lv 1-1000 monsters, clan warfare, character creation centre, and power rankings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
