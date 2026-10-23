@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](https://img.shields.io/badge/Regression_Tests-55_Passing_(6_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white)](#testing-coverage--anti-spaghetti-architecture)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-55_Passing_(6_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-architecture)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE)
@@ -16,11 +16,13 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 ## 🎮 Key Features
 
 ### 1. 🌍 3D Procedural Voxel World & Studio PBR + HDR Engine
+
 - **Studio PBR Materials & Procedural Maps**: `MeshPhysicalMaterial` with clearcoat, IOR refraction, metallic reflections, and runtime-synthesized 2D canvas Albedo & Bump/Roughness maps for grass, masonry stone, timber bark, and crystalline water ripples.
 - **Real-Time HDR Post-Processing**: Multi-pass `EffectComposer` with `RenderPass`, `UnrealBloomPass`, and `OutputPass` (ACES Filmic Tone Mapping + 2048×2048 PCFSoftShadowMap cascades), plus an interactive in-HUD **Graphics Quality Toggle (`ULTRA HDR` / `HIGH` / `BALANCED`)**.
 - **Cross-Platform Input**: Full keyboard/mouse controls for PC/Mac, and responsive virtual on-screen D-pad and action buttons for Android and touchscreen devices.
 
 ### 2. 🏰 Castle Progression & 10 Eras (Lv. 0 – 100)
+
 - **Multiplicative Scaling**: Expands from a primitive wooden outpost to an omnipotent cosmic citadel.
   - **10 Distinct Eras**: Wooden Outpost, Stone Palisade, Fortified Keep, Iron Citadel, Obsidian Fortress, Dragon Bastion, Void Stronghold, Celestial Spire, Primordial Sanctum, and Omnipotent Citadel.
   - **Massive Troop Capacities**: Scales up to **1,000 Trillion (1,000T)** garrisoned troops.
@@ -28,6 +30,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Kingdom Economy**: Strategic resource gathering and management for Gold, Wood, Stone, Iron, Crystals, Diamonds, Spirit Stones, and Scripture Fragments.
 
 ### 3. ⚔️ Troop Barracks & T1–T20 Tri-Branch Combat
+
 - **Tri-Type Strategic Counter Matrix**:
   - 🛡️ **Shieldbearers** (Defensive frontline tanks; counter Shooters, vulnerable to Bombers)
   - 🏹 **Shooters** (Long-range precision DPS; counter Bombers, vulnerable to Shieldbearers)
@@ -35,6 +38,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **20 Tiers of Power**: Progression ranging from T1 Militia recruits up to T20 Primordial Cosmic Dreadnoughts.
 
 ### 4. 🧘 Four-Path Immortal Cultivation & Han Jue Progression
+
 - **Four Distinct Paths**:
   - **Qi Path**: Spiritual energy, spell potency, and elemental affinity.
   - **Body Path**: Physical constitution, HP scaling, and blunt damage negation.
@@ -49,12 +53,13 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Master & Disciple Hierarchy**:
   - Proximity cultivation speed buffs for disciples.
   - Resource funneling (master receives a percentage of disciple earnings).
-  - Skill Transmission: Masters can transcribe rare mystical powers (e.g. *Heaven Earth Sleeve*) into tradeable Skill Scrolls.
+  - Skill Transmission: Masters can transcribe rare mystical powers (e.g. _Heaven Earth Sleeve_) into tradeable Skill Scrolls.
 - **Visualizing Power (Aura System)**:
   - Dynamic visual cues: Faint white glow (Foundation), rotating Golden Core, floating infant avatar (Nascent Soul), and divine halo rings scaling with mastered Great Daos (Dao Creator).
 - **Secluded Cultivation**: Fast-forward secluded meditation inside personal cave abodes.
 
 ### 5. 🧠 Advanced World AI (Monsters Lv. 1–1000 & Role-Based NPCs)
+
 - **Monster Complexity Scaling**:
   - **Tier 1 (Lv. 1–50)**: Basic instincts, direct aggro, and territorial roaming.
   - **Tier 2 (Lv. 51–200)**: Pack coordination, flanking maneuvers, and tactical retreats.
@@ -71,15 +76,18 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **C++20 SIMD Engine**: Architecture blueprint for high-throughput mobile multithreading and low-latency ECS.
 
 ### 6. 🌦️ Dynamic Weather System
+
 - Dynamic atmospheric cycle: **Clear**, **Rain**, **Snow**, and **Storm**.
 - Weather modifiers impact resource gathering (e.g. rain increases timber and grain harvests, snow boosts diamond yields, storms accelerate oil extraction) and battle unit performance.
 
 ### 7. 🎁 Daily Login Rewards & Veteran Scrolls
+
 - **7-Day Consecutive Decree Cycle**: Daily scaling rewards of diamonds, spirit stones, resources, and scripture fragments.
 - **Realm & Castle Scaling**: Yields dynamically scale with both Citadel Level and Cultivation Realm.
 - **Veteran Scroll Sanctum**: Imbue sacred scrolls across all cultivation paths for permanent lineage mastery buffs.
 
 ### 8. 🛡️ Clan Alliances & Global Leaderboards
+
 - Create and customize clan emblems, manage membership hierarchies, coordinate world boss rallies, and compete on the global multi-trillion power rankings.
 
 ---
@@ -87,11 +95,14 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **Node.js**: Version 20+ (Node.js 22 recommended)
 - **Package Manager**: `npm`
 
 ### Installation
+
 Clone the repository and install dependencies:
+
 ```bash
 git clone <repository-url>
 cd <repository-folder>
@@ -99,30 +110,41 @@ npm install
 ```
 
 ### Development Server
+
 Run the local Vite development server:
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Running Unit Tests
+
 Execute the unit test suite covering cultivation math, castle scaling, clan mechanics, weather modifiers, and world AI:
+
 ```bash
 npm test
 ```
 
 ### Type Checking & Linting
+
 Validate TypeScript code without emitting output:
+
 ```bash
 npm run lint
 ```
 
 ### Production Build
+
 Build the optimized production bundle:
+
 ```bash
 npm run build
 ```
+
 Preview the production build locally:
+
 ```bash
 npm run preview
 ```
@@ -184,30 +206,43 @@ npm run preview
 │   └── main.tsx                    # Application entry point
 ├── .env.example                    # Environment variable template (safe placeholders)
 ├── .gitignore                      # Git ignore rules (node_modules, dist, .env, keystores)
+├── .prettierignore                 # Excluded paths for Prettier formatting checks
+├── .prettierrc                     # Prettier code style configuration
 ├── CHANGELOG.md                    # Chronological release history
 ├── CODE_OF_CONDUCT.md              # Contributor Covenant Code of Conduct
-├── CONTRIBUTING.md                 # Developer setup, testing & PR guidelines
+├── CONTRIBUTING.md                 # Developer setup, Guardrails, testing & PR guidelines
 ├── LICENSE                         # Apache License 2.0
 ├── PRIVACY.md                      # User Privacy Policy (GDPR/CCPA, localStorage, payments, ads)
 ├── SECURITY.md                     # Private vulnerability disclosure policy
 ├── TERMS.md                        # Terms and Conditions of use
 ├── metadata.json                   # Applet configuration & metadata
 ├── package.json                    # Project dependencies, metadata & npm scripts
-├── tsconfig.json                   # TypeScript configuration
+├── tsconfig.json                   # Strict TypeScript configuration (noUnusedLocals/Parameters)
 └── vite.config.ts                  # Vite build configuration
 ```
 
 ---
 
-## 🧪 Testing Coverage & Anti-Spaghetti Architecture
+## 🧪 Testing Coverage & Anti-Spaghetti Guardrails
 
-To eliminate the **"Spaghetti Code" risk** (duplicated logic, tightly coupled UI state, silent regressions when adding new features, or deprecated library usage), Voxel Realms RPG enforces a strict **3-Layer Decoupled Architecture**:
+To solve the **"Spaghetti Code" risk** (duplicated logic, unused variables, deprecated packages, inconsistent formatting, or silent regressions), Voxel Realms RPG combines **Automated Technical Guardrails** with a disciplined **AI Supervision Process**:
 
-1. **Zero-Dependency Pure Domain Layer (`src/game/*.ts`)**: All combat math, `BigInt` castle scaling, 4-path cultivation suppression (`10^ΔRealm`), karma judgment, A* obstacle pathfinding, weather cycles, and daily streak algorithms are isolated in pure TypeScript modules with zero React/DOM coupling.
-2. **Deterministic 3D Scene-Graph Builders (`src/game/proceduralWorld.ts`)**: All Three.js voxel geometry, PBR materials, and cultivator aura hierarchies are constructed via pure factory functions that gracefully operate in both browser WebGL2 contexts and headless Node.js test environments.
-3. **Automated CI/CD Regression Gate (`.github/workflows/build.yml`)**: Every push and Pull Request automatically runs strict TypeScript typechecking (`npm run lint`), executes all **55 unit and regression tests across 6 suites** (`npm test`), and verifies the production Vite bundle (`npm run build`).
+### Part 1: The Technical Fix (4 Automated CI Guardrails in `.github/workflows/build.yml`)
+
+Every push and Pull Request automatically runs four strict quality gates:
+
+1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—screaming immediately if an unused variable, dead import, or type error is introduced.
+2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
+3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
+4. **The Regression Test Suite (`npm test`)**: Runs all **55 unit and regression tests across 6 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+
+### Part 2: The Process Fix (AI Supervision & Prompting Strategy)
+
+- **The "Architect First" Rule**: Never prompt to _"just write the code"_. Always require an architectural plan first that audits `src/game/` for existing reusable functions before modifying files.
+- **The Refactor Session (Every 3–4 Features)**: Pause feature development every 3–4 features to audit modified modules for duplicate logic, unused state, or deprecated APIs, refactoring cleanly while keeping all 55 unit tests green.
 
 ### Automated Test Suites (`55/55 Passing`)
+
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, 100x Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, 1,000T troop capacities, 1T rallies, and T1–T20 troop balance.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster tier scaling, A* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
@@ -215,9 +250,13 @@ To eliminate the **"Spaghetti Code" risk** (duplicated logic, tightly coupled UI
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs (Foundation Glow, Golden Core, Nascent Soul Baby, Divine Halos, Red-Name Ring), and C++20 engine telemetry.
 
-Run all tests locally:
+Run all Guardrail checks locally:
+
 ```bash
-npm test
+npm run lint                  # 1. Check for messy code & unused variables
+npm audit --audit-level=high  # 2. Check for vulnerabilities & deprecated packages
+npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
+npm test                      # 4. Run all 55 unit & regression tests
 ```
 
 ---
@@ -229,21 +268,23 @@ npm test
 If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamworks)**, **Google Play**, or **itch.io**, platform holders require transparent disclosure regarding how AI tools and procedural generation are used in the project.
 
 ### 1. Asset & Code Provenance Summary
-| Category | Implementation Method | Runtime External AI Calls? |
-| :--- | :--- | :--- |
-| **3D Models & Voxel World** | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`) | **No** (Zero external model assets) |
-| **Textures & Materials** | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps) | **No** |
-| **Audio & Sound Effects** | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`) | **No** |
+
+| Category                     | Implementation Method                                                                                                   | Runtime External AI Calls?                   |
+| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
+| **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`) | **No** (Zero external model assets)          |
+| **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                           | **No**                                       |
+| **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)         | **No**                                       |
 | **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 55 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
+
 When completing the **Steamworks Content Survey -> AI Disclosure Section** during game submission, select the following options:
 
 - **Pre-Generated Content: YES**
-  - *Disclosure Text for Steam Review*:
+  - _Disclosure Text for Steam Review_:
     > "AI-assisted software engineering tools were used during development to assist with drafting TypeScript/C++20 game systems, UI layouts, and unit test suites. All 3D voxel models, PBR surface textures, and sound effects are generated deterministically via mathematical procedural algorithms (Three.js geometry primitives, HTML5 Canvas 2D patterns, and Web Audio API oscillators). All code and game content have been human-reviewed, tested, and verified for originality and licensing compliance."
 - **Live-Generated Content: NO**
-  - *Explanation*: The game executes 100% locally in the client runtime using deterministic math, A* pathfinding, and procedural WebGL/WebAudio synthesis. It does not connect to any generative AI servers or generate unmoderated AI text/images/audio during live gameplay.
+  - _Explanation_: The game executes 100% locally in the client runtime using deterministic math, A* pathfinding, and procedural WebGL/WebAudio synthesis. It does not connect to any generative AI servers or generate unmoderated AI text/images/audio during live gameplay.
 
 ---
 
@@ -252,11 +293,13 @@ When completing the **Steamworks Content Survey -> AI Disclosure Section** durin
 Before tagging or publishing a release, confirm all release gates pass:
 
 - [x] `npm install` completes cleanly with consistent `package-lock.json`
-- [x] `npm run lint` (`tsc --noEmit`) passes with zero TypeScript errors
+- [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
+- [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
+- [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
 - [x] `npm test` passes all 55 unit & regression tests across 6 test suites
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
-- [x] GitHub Actions CI workflow (`.github/workflows/build.yml`) is green
+- [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) is green
 - [x] Steam & Platform AI Disclosure documentation (`README.md`) is up to date
 - [x] No `.env` secrets, API keys, or Android signing keystores (`*.jks`, `*.keystore`) are exposed
 

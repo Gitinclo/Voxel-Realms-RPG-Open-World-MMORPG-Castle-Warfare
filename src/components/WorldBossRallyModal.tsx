@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Flame, Shield, Swords, Users, Trophy, AlertTriangle, Sparkles, CloudRain, Brain } from 'lucide-react';
+import { X, Flame, Shield, Swords, Users, Trophy, Sparkles, Brain } from 'lucide-react';
 import { MonsterTarget, PlayerTroopRoster, Hero, ResourceType } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { simulateBattle, formatBigInt, calculateRallyCapacity, BattleResult } from '../game/math';
@@ -33,7 +33,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
   onClose,
 }) => {
   const [selectedHeroId, setSelectedHeroId] = useState<string>(heroes[0]?.id || '');
-  const [isRallyMode, setIsRallyMode] = useState<boolean>(monster.isWorldBoss || monster.level > 200);
+  const [isRallyMode, setIsRallyMode] = useState<boolean>(
+    monster.isWorldBoss || monster.level > 200
+  );
   const [battleReport, setBattleReport] = useState<BattleResult | null>(null);
   const [isBattling, setIsBattling] = useState<boolean>(false);
   const weatherConfig = WEATHER_CONFIGS[weather] || WEATHER_CONFIGS.clear;
@@ -58,9 +60,15 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
     .filter(([k]) => k.startsWith('bomber'))
     .reduce((s, [, c]) => s + c, 0n);
 
-  const [shieldCommit, setShieldCommit] = useState<bigint>(totalShields > 5000n ? 5000n : totalShields);
-  const [shooterCommit, setShooterCommit] = useState<bigint>(totalShooters > 5000n ? 5000n : totalShooters);
-  const [bomberCommit, setBomberCommit] = useState<bigint>(totalBombers > 5000n ? 5000n : totalBombers);
+  const [shieldCommit, setShieldCommit] = useState<bigint>(
+    totalShields > 5000n ? 5000n : totalShields
+  );
+  const [shooterCommit, setShooterCommit] = useState<bigint>(
+    totalShooters > 5000n ? 5000n : totalShooters
+  );
+  const [bomberCommit, setBomberCommit] = useState<bigint>(
+    totalBombers > 5000n ? 5000n : totalBombers
+  );
 
   const totalArmyCount = shieldCommit + shooterCommit + bomberCommit;
 
@@ -187,7 +195,8 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
               <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
                 <div className="text-rose-300 font-bold">
-                  ⚡ Signature Telegraph: {activeAttackPattern.name} ({activeAttackPattern.windupSeconds}s Windup)
+                  ⚡ Signature Telegraph: {activeAttackPattern.name} (
+                  {activeAttackPattern.windupSeconds}s Windup)
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   {activeAttackPattern.description} · {activeAttackPattern.statusEffect}
@@ -195,7 +204,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
               </div>
               <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
                 <div className="text-cyan-300 font-bold">
-                  🌍 Environmental AI: {monster.activeEnvInteraction || aiProfile.environmentalInteractions[0]?.actionName}
+                  🌍 Environmental AI:{' '}
+                  {monster.activeEnvInteraction ||
+                    aiProfile.environmentalInteractions[0]?.actionName}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">
                   Pathfinding: {aiProfile.pathfindingAlgorithm} (IQ {aiProfile.tacticalIQ}/100)
@@ -265,7 +276,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
               {/* Loot drops */}
               {battleReport.victory && Object.keys(battleReport.lootAwarded).length > 0 && (
                 <div>
-                  <div className="text-xs font-semibold text-slate-300 mb-2">Spoils of War Acquired:</div>
+                  <div className="text-xs font-semibold text-slate-300 mb-2">
+                    Spoils of War Acquired:
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(battleReport.lootAwarded).map(([res, amount]) => (
                       <span
@@ -324,7 +337,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
             {/* Lead Hero Selector */}
             <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">Appointed Vanguard General</span>
+                <span className="text-xs font-semibold text-slate-400">
+                  Appointed Vanguard General
+                </span>
                 <span className="text-xs text-amber-400 font-mono">Hero Command</span>
               </div>
               <select
@@ -364,7 +379,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
                   <span className="font-bold text-blue-300 flex items-center gap-1.5">
                     <Shield className="w-4 h-4 text-blue-400" /> Shieldbearers
                   </span>
-                  <span className="font-mono text-slate-400">{formatBigInt(totalShields)} Avail</span>
+                  <span className="font-mono text-slate-400">
+                    {formatBigInt(totalShields)} Avail
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -385,7 +402,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
                   <span className="font-bold text-emerald-300 flex items-center gap-1.5">
                     <Swords className="w-4 h-4 text-emerald-400" /> Shooters
                   </span>
-                  <span className="font-mono text-slate-400">{formatBigInt(totalShooters)} Avail</span>
+                  <span className="font-mono text-slate-400">
+                    {formatBigInt(totalShooters)} Avail
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -406,7 +425,9 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
                   <span className="font-bold text-orange-300 flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-orange-400" /> Bombers
                   </span>
-                  <span className="font-mono text-slate-400">{formatBigInt(totalBombers)} Avail</span>
+                  <span className="font-mono text-slate-400">
+                    {formatBigInt(totalBombers)} Avail
+                  </span>
                 </div>
                 <input
                   type="range"

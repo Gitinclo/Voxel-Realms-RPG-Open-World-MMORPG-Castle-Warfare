@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { X, User, Sparkles, Check, RefreshCw } from 'lucide-react';
+import { X, User, Check, RefreshCw } from 'lucide-react';
 import { CharacterAppearance } from '../types/game';
 import { createPlayerMesh } from '../game/proceduralWorld';
 import { sound } from '../game/audio';
@@ -121,11 +121,23 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
   };
 
   const handleRandomize = () => {
-    const titles = ['Grand Warlord', 'Celestial Aegis', 'Storm Archer', 'Sovereign of Iron', 'Titan Slayer', 'Void Demolisher'];
+    const titles = [
+      'Grand Warlord',
+      'Celestial Aegis',
+      'Storm Archer',
+      'Sovereign of Iron',
+      'Titan Slayer',
+      'Void Demolisher',
+    ];
     const skins = ['#f1c27d', '#ffdbac', '#e0ac69', '#8d5524', '#c68642'];
     const hairs = ['#1a1a1a', '#e65100', '#ffd700', '#b71c1c', '#00e5ff', '#9e9e9e'];
     const armors = ['#1e88e5', '#d32f2f', '#2e7d32', '#f59e0b', '#7c3aed', '#0f172a'];
-    const weapons: CharacterAppearance['weaponType'][] = ['broadsword', 'crossbow', 'siege_mortar', 'arcane_halberd'];
+    const weapons: CharacterAppearance['weaponType'][] = [
+      'broadsword',
+      'crossbow',
+      'siege_mortar',
+      'arcane_halberd',
+    ];
 
     setAppearance((prev) => ({
       ...prev,
@@ -182,7 +194,10 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 text-slate-200">
           {/* 3D Preview Column */}
           <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-950/80 rounded-2xl border border-slate-800">
-            <div className="relative w-full h-[320px] rounded-xl overflow-hidden" ref={previewMountRef} />
+            <div
+              className="relative w-full h-[320px] rounded-xl overflow-hidden"
+              ref={previewMountRef}
+            />
             <div className="text-center mt-3">
               <div className="text-base font-bold font-cinzel text-white">
                 [{appearance.clanTag}] {appearance.name}
@@ -208,7 +223,9 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Title / Epithet</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">
+                  Title / Epithet
+                </label>
                 <input
                   type="text"
                   value={appearance.title}
@@ -233,7 +250,12 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 ].map((w) => (
                   <button
                     key={w.id}
-                    onClick={() => setAppearance({ ...appearance, weaponType: w.id as CharacterAppearance['weaponType'] })}
+                    onClick={() =>
+                      setAppearance({
+                        ...appearance,
+                        weaponType: w.id as CharacterAppearance['weaponType'],
+                      })
+                    }
                     className={`p-2.5 rounded-lg border text-left transition-all ${
                       appearance.weaponType === w.id
                         ? 'bg-cyan-950/80 border-cyan-400 text-cyan-200'
@@ -251,7 +273,8 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="text-xs font-semibold text-slate-400">
-                  Armor Tier: <span className="text-amber-400 font-mono">Rank T{appearance.armorTier}</span>
+                  Armor Tier:{' '}
+                  <span className="text-amber-400 font-mono">Rank T{appearance.armorTier}</span>
                 </label>
                 <span className="text-[11px] text-slate-500">Tier 18-20 emits celestial runes</span>
               </div>
@@ -260,7 +283,9 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 min="1"
                 max="20"
                 value={appearance.armorTier}
-                onChange={(e) => setAppearance({ ...appearance, armorTier: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setAppearance({ ...appearance, armorTier: parseInt(e.target.value) })
+                }
                 className="w-full accent-cyan-400 cursor-pointer"
               />
             </div>
@@ -269,25 +294,33 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {/* Hair Color */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Hair Color</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Hair Color
+                </label>
                 <div className="flex gap-1.5 flex-wrap">
-                  {['#e65100', '#ffd700', '#1a1a1a', '#00e5ff', '#b71c1c', '#e2e8f0'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setAppearance({ ...appearance, hairColor: color })}
-                      style={{ backgroundColor: color }}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${
-                        appearance.hairColor === color ? 'border-white scale-110' : 'border-transparent'
-                      }`}
-                      aria-label={`Hair color ${color}`}
-                    />
-                  ))}
+                  {['#e65100', '#ffd700', '#1a1a1a', '#00e5ff', '#b71c1c', '#e2e8f0'].map(
+                    (color) => (
+                      <button
+                        key={color}
+                        onClick={() => setAppearance({ ...appearance, hairColor: color })}
+                        style={{ backgroundColor: color }}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                          appearance.hairColor === color
+                            ? 'border-white scale-110'
+                            : 'border-transparent'
+                        }`}
+                        aria-label={`Hair color ${color}`}
+                      />
+                    )
+                  )}
                 </div>
               </div>
 
               {/* Skin Tone */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Skin Tone</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Skin Tone
+                </label>
                 <div className="flex gap-1.5 flex-wrap">
                   {['#f1c27d', '#ffdbac', '#e0ac69', '#8d5524', '#c68642'].map((color) => (
                     <button
@@ -295,7 +328,9 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                       onClick={() => setAppearance({ ...appearance, skinColor: color })}
                       style={{ backgroundColor: color }}
                       className={`w-6 h-6 rounded-full border-2 transition-all ${
-                        appearance.skinColor === color ? 'border-white scale-110' : 'border-transparent'
+                        appearance.skinColor === color
+                          ? 'border-white scale-110'
+                          : 'border-transparent'
                       }`}
                       aria-label={`Skin tone ${color}`}
                     />
@@ -305,19 +340,25 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
 
               {/* Armor Color */}
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">Armor Finish</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                  Armor Finish
+                </label>
                 <div className="flex gap-1.5 flex-wrap">
-                  {['#1e88e5', '#d32f2f', '#2e7d32', '#f59e0b', '#7c3aed', '#111827'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setAppearance({ ...appearance, armorColor: color })}
-                      style={{ backgroundColor: color }}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${
-                        appearance.armorColor === color ? 'border-white scale-110' : 'border-transparent'
-                      }`}
-                      aria-label={`Armor color ${color}`}
-                    />
-                  ))}
+                  {['#1e88e5', '#d32f2f', '#2e7d32', '#f59e0b', '#7c3aed', '#111827'].map(
+                    (color) => (
+                      <button
+                        key={color}
+                        onClick={() => setAppearance({ ...appearance, armorColor: color })}
+                        style={{ backgroundColor: color }}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                          appearance.armorColor === color
+                            ? 'border-white scale-110'
+                            : 'border-transparent'
+                        }`}
+                        aria-label={`Armor color ${color}`}
+                      />
+                    )
+                  )}
                 </div>
               </div>
             </div>
@@ -332,7 +373,10 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                   onChange={(e) => setAppearance({ ...appearance, hasCape: e.target.checked })}
                   className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
                 />
-                <label htmlFor="hasCapeCheck" className="text-xs font-bold text-slate-300 cursor-pointer">
+                <label
+                  htmlFor="hasCapeCheck"
+                  className="text-xs font-bold text-slate-300 cursor-pointer"
+                >
                   Equip Royal Cape
                 </label>
               </div>
@@ -342,7 +386,9 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 <input
                   type="text"
                   value={appearance.clanTag}
-                  onChange={(e) => setAppearance({ ...appearance, clanTag: e.target.value.toUpperCase() })}
+                  onChange={(e) =>
+                    setAppearance({ ...appearance, clanTag: e.target.value.toUpperCase() })
+                  }
                   className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm font-mono font-bold uppercase focus:outline-hidden focus:border-cyan-400"
                   maxLength={6}
                 />

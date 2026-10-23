@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ClanEmblem, ClanMember, ClanRole, ClanPermissions, ClanBuff } from '../types/game';
+import { ClanMember, ClanRole, ClanPermissions } from '../types/game';
 
 export const ROLE_HIERARCHY: Record<ClanRole, number> = {
   Leader: 5,
@@ -129,10 +129,15 @@ export function calculateOutpostAssault(
   if (strikeForceAttack <= 0n) {
     return { conquered: false, damageDealt: 0n, pointsEarned: 0 };
   }
-  const damage = strikeForceAttack > outpostDefense / 2n ? strikeForceAttack - outpostDefense / 3n : strikeForceAttack / 2n;
+  const damage =
+    strikeForceAttack > outpostDefense / 2n
+      ? strikeForceAttack - outpostDefense / 3n
+      : strikeForceAttack / 2n;
   const effectiveDamage = damage > 1n ? damage : 1n;
   const conquered = effectiveDamage >= outpostDefense;
-  const points = conquered ? 250 : Math.max(10, Math.floor(Number((effectiveDamage * 100n) / (outpostDefense || 1n))));
+  const points = conquered
+    ? 250
+    : Math.max(10, Math.floor(Number((effectiveDamage * 100n) / (outpostDefense || 1n))));
 
   return {
     conquered,
@@ -147,7 +152,8 @@ export function calculateCoopBossStrike(
   activeBuffBonusPct: number = 0
 ): bigint {
   const buffMult = 1 + activeBuffBonusPct / 100;
-  const baseDmg = strikeForceAttack > bossDefense ? strikeForceAttack - bossDefense / 2n : strikeForceAttack / 3n;
+  const baseDmg =
+    strikeForceAttack > bossDefense ? strikeForceAttack - bossDefense / 2n : strikeForceAttack / 3n;
   const finalDmg = Number(baseDmg > 1n ? baseDmg : 1n) * buffMult;
   return BigInt(Math.max(1, Math.floor(finalDmg)));
 }

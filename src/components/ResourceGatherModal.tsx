@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { X, Pickaxe, MapPin, Sparkles, Check, ArrowRight, CloudRain } from 'lucide-react';
+import { X, Pickaxe, MapPin, Sparkles, ArrowRight } from 'lucide-react';
 import { ResourceNode, ResourceType } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
@@ -106,7 +106,12 @@ export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
             {nodes.map((node) => {
               const isGathering = node.assignedTroops > 0n;
               const harvestAvailable = isGathering
-                ? BigInt(Math.min(Number(node.totalCapacity - node.remainingCapacity + 25000n), Number(node.totalCapacity)))
+                ? BigInt(
+                    Math.min(
+                      Number(node.totalCapacity - node.remainingCapacity + 25000n),
+                      Number(node.totalCapacity)
+                    )
+                  )
                 : 0n;
               const nodeYieldMult = weatherConfig.gatherYieldMultipliers[node.type] ?? 1.0;
 

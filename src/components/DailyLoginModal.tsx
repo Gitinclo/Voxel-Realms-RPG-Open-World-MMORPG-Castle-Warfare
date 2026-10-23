@@ -13,9 +13,7 @@ import {
   FastForward,
   Gift,
   Flame,
-  Shield,
   ArrowUpRight,
-  Compass,
 } from 'lucide-react';
 import {
   ScaledDailyLoginReward,
@@ -104,7 +102,8 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
               </div>
               <p className="text-[11px] text-slate-300">
                 Scaling Citadel Resources, Imperial Diamonds &amp; Sacred{' '}
-                <span className="text-amber-300 font-semibold">Veteran Scrolls</span> for Four-Path Cultivation
+                <span className="text-amber-300 font-semibold">Veteran Scrolls</span> for Four-Path
+                Cultivation
               </p>
             </div>
           </div>
@@ -118,7 +117,9 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
                 {evaluation.currentStreak}d
               </span>
               <span className="text-slate-600">|</span>
-              <span className="text-cyan-300 font-bold">{todayReward.scalingMultiplier}x Scale</span>
+              <span className="text-cyan-300 font-bold">
+                {todayReward.scalingMultiplier}x Scale
+              </span>
             </div>
 
             {/* Simulate Next Day Button for Testing / Multi-Day Progression */}
@@ -164,7 +165,8 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
               </span>
             </div>
             <div className="text-slate-400">
-              Date Key: <span className="text-slate-200 font-bold">{evaluation.effectiveDateKey}</span>
+              Date Key:{' '}
+              <span className="text-slate-200 font-bold">{evaluation.effectiveDateKey}</span>
             </div>
           </div>
 
@@ -199,8 +201,8 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
                       isToday && evaluation.canClaimToday
                         ? 'bg-gradient-to-b from-amber-950/80 via-slate-900 to-amber-950/50 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]'
                         : isClaimed
-                        ? 'bg-slate-950/75 border-emerald-500/40 opacity-90'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-600'
+                          ? 'bg-slate-950/75 border-emerald-500/40 opacity-90'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-600'
                     } ${isSelected ? 'ring-2 ring-amber-300' : ''}`}
                   >
                     {/* Top Day Header */}
@@ -210,8 +212,8 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
                           isToday
                             ? 'bg-amber-400 text-slate-950'
                             : isClaimed
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : 'bg-slate-800 text-slate-300'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-slate-800 text-slate-300'
                         }`}
                       >
                         DAY {tier.day}
@@ -306,12 +308,15 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
                         Special Cultivation Artifact: Veteran Scroll (Ancient Lineage)
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mono font-black text-[10px] tabular-nums">
-                        +{activeReward.veteranScrolls} SCROLL{activeReward.veteranScrolls > 1 ? 'S' : ''}
+                        +{activeReward.veteranScrolls} SCROLL
+                        {activeReward.veteranScrolls > 1 ? 'S' : ''}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 mt-0.5 leading-snug">
-                      Infuses <span className="text-amber-300 font-semibold">+80% Realm Layer Energy</span> (or +35%
-                      across all 4 Paths), <span className="text-cyan-300 font-semibold">+30 Scripture Fragments</span>,
+                      Infuses{' '}
+                      <span className="text-amber-300 font-semibold">+80% Realm Layer Energy</span>{' '}
+                      (or +35% across all 4 Paths),{' '}
+                      <span className="text-cyan-300 font-semibold">+30 Scripture Fragments</span>,
                       and permanently boosts{' '}
                       <span className="text-emerald-300 font-semibold">
                         All-Path Cultivation Speed (+18%) &amp; Breakthrough Chance (+3%)
@@ -337,7 +342,9 @@ export const DailyLoginModal: React.FC<DailyLoginModalProps> = ({
                   </div>
                   <div className="px-2 py-1.5 rounded-lg bg-slate-900 border border-amber-500/40 flex items-center justify-between">
                     <span className="text-slate-300">📖 Frags</span>
-                    <span className="font-bold text-amber-300">+{activeReward.scriptureFragments}</span>
+                    <span className="font-bold text-amber-300">
+                      +{activeReward.scriptureFragments}
+                    </span>
                   </div>
                   <div className="px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
                     <span className="text-slate-300">🌲 Wood</span>

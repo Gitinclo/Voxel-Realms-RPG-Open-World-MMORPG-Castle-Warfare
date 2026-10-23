@@ -81,8 +81,28 @@ test('clan creation validation correctly checks names, tags and castle limits', 
 
 test('calculateClanTotalPower aggregates member power with tech multipliers and war victories', () => {
   const members: ClanMember[] = [
-    { id: '1', name: 'Leader', role: 'Leader', power: 100_000_000n, donations: 0n, online: true, avatar: '👑', castleLevel: 25, joinedDaysAgo: 10 },
-    { id: '2', name: 'Elder', role: 'Elder', power: 50_000_000n, donations: 0n, online: true, avatar: '⚔️', castleLevel: 20, joinedDaysAgo: 8 },
+    {
+      id: '1',
+      name: 'Leader',
+      role: 'Leader',
+      power: 100_000_000n,
+      donations: 0n,
+      online: true,
+      avatar: '👑',
+      castleLevel: 25,
+      joinedDaysAgo: 10,
+    },
+    {
+      id: '2',
+      name: 'Elder',
+      role: 'Elder',
+      power: 50_000_000n,
+      donations: 0n,
+      online: true,
+      avatar: '⚔️',
+      castleLevel: 20,
+      joinedDaysAgo: 8,
+    },
   ];
 
   const total = calculateClanTotalPower(members, 1.2, 3);

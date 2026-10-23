@@ -14,7 +14,12 @@ interface TroopBarracksModalProps {
   resources: GameResources;
   castleLevel: number;
   maxCapacity: bigint;
-  onTrainTroops: (type: TroopType, tier: number, amount: bigint, cost: Partial<GameResources>) => void;
+  onTrainTroops: (
+    type: TroopType,
+    tier: number,
+    amount: bigint,
+    cost: Partial<GameResources>
+  ) => void;
   onClose: () => void;
 }
 
@@ -186,8 +191,8 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
                       selectedTier === t
                         ? 'bg-amber-500 text-slate-950 border-amber-300 shadow-md shadow-amber-500/20'
                         : unlocked
-                        ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-                        : 'bg-slate-900/60 text-slate-600 border-slate-800/80 cursor-not-allowed'
+                          ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                          : 'bg-slate-900/60 text-slate-600 border-slate-800/80 cursor-not-allowed'
                     }`}
                   >
                     T{t}

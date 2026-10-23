@@ -14,7 +14,6 @@ import {
   NPCAIBehaviorState,
   NPCDirective,
   NPCRole,
-  NPCTradeOffer,
   Quest,
   ResourceNode,
   ResourceType,
@@ -83,14 +82,16 @@ export const MONSTER_COMPLEXITY_BRACKETS: MonsterComplexityProfile[] = [
       {
         trigger: 'weather_storm',
         actionName: 'Cower in Forest Canopy',
-        effectDescription: 'Retreats toward Wood nodes during thunderstorms (-15% Aggro Range, +20% Evasion).',
+        effectDescription:
+          'Retreats toward Wood nodes during thunderstorms (-15% Aggro Range, +20% Evasion).',
         buffStat: 'defense',
         magnitudePct: 20,
       },
       {
         trigger: 'near_resource_node',
         actionName: 'Forage Timber & Grain',
-        effectDescription: 'Pilfers small amounts of unguarded Grain/Wood to restore 4% HP per tick.',
+        effectDescription:
+          'Pilfers small amounts of unguarded Grain/Wood to restore 4% HP per tick.',
         buffStat: 'regen',
         magnitudePct: 4,
       },
@@ -149,14 +150,16 @@ export const MONSTER_COMPLEXITY_BRACKETS: MonsterComplexityProfile[] = [
       {
         trigger: 'near_resource_node',
         actionName: 'Absorb Mineral Vein',
-        effectDescription: 'Draws metallic ore from Steel/Copper nodes to harden carapace (+30% Defense).',
+        effectDescription:
+          'Draws metallic ore from Steel/Copper nodes to harden carapace (+30% Defense).',
         buffStat: 'defense',
         magnitudePct: 30,
       },
       {
         trigger: 'weather_rain',
         actionName: 'Hydro-Stone Tempering',
-        effectDescription: 'Rain cools molten cracks, regenerating 6% Max HP and negating burn effects.',
+        effectDescription:
+          'Rain cools molten cracks, regenerating 6% Max HP and negating burn effects.',
         buffStat: 'regen',
         magnitudePct: 6,
       },
@@ -281,7 +284,8 @@ export const MONSTER_COMPLEXITY_BRACKETS: MonsterComplexityProfile[] = [
       {
         trigger: 'nightfall',
         actionName: 'Umbral Nocturne Empowerment',
-        effectDescription: 'Between 18:00 and 06:00, draws dark starlight for +40% Attack & +20% Crit.',
+        effectDescription:
+          'Between 18:00 and 06:00, draws dark starlight for +40% Attack & +20% Crit.',
         buffStat: 'attack',
         magnitudePct: 40,
       },
@@ -340,28 +344,32 @@ export const MONSTER_COMPLEXITY_BRACKETS: MonsterComplexityProfile[] = [
         aoeRadius: 14.0,
         statusEffect: 'Multiverse Collapse + Adaptive Shield (+50% DEF)',
         counterTroop: 'bomber',
-        description: 'Arena-wide cataclysm triggered below 35% HP; requires full Clan Rally or Guard intervention.',
+        description:
+          'Arena-wide cataclysm triggered below 35% HP; requires full Clan Rally or Guard intervention.',
       },
     ],
     environmentalInteractions: [
       {
         trigger: 'weather_storm',
         actionName: 'Sovereign Tempest Dominion',
-        effectDescription: 'Commands lightning storms to strike nearby armies (+55% Attack & AoE Radius).',
+        effectDescription:
+          'Commands lightning storms to strike nearby armies (+55% Attack & AoE Radius).',
         buffStat: 'attack',
         magnitudePct: 55,
       },
       {
         trigger: 'near_resource_node',
         actionName: 'Devour World Vein Essence',
-        effectDescription: 'Drains all high-level resource veins within 18m to fuel orbital crystal shields.',
+        effectDescription:
+          'Drains all high-level resource veins within 18m to fuel orbital crystal shields.',
         buffStat: 'node_siphon',
         magnitudePct: 60,
       },
       {
         trigger: 'low_hp',
         actionName: 'Adaptive Counter-Matrix Protocol',
-        effectDescription: 'Analyzes incoming army composition and raises resistance by +50% against dominant troop type.',
+        effectDescription:
+          'Analyzes incoming army composition and raises resistance by +50% against dominant troop type.',
         buffStat: 'defense',
         magnitudePct: 50,
       },
@@ -397,10 +405,10 @@ export function createScaledMonsterByLevel(
     profile.tier === 'world_titan'
       ? 180n
       : profile.tier === 'boss'
-      ? 45n
-      : profile.tier === 'elite'
-      ? 12n
-      : 3n;
+        ? 45n
+        : profile.tier === 'elite'
+          ? 12n
+          : 3n;
 
   const baseHp = (1200n + levelFactor * levelFactor * 240n) * tierMult;
   const baseAttack = (45n + levelFactor * levelFactor * 5n) * tierMult;
@@ -443,12 +451,12 @@ export function createScaledMonsterByLevel(
       clampedLevel >= 851
         ? 'Cosmic God-Slayer Cache'
         : clampedLevel >= 501
-        ? 'Abyssal Relic Casket'
-        : clampedLevel >= 201
-        ? 'Infernal Dragonplate Coffer'
-        : clampedLevel >= 51
-        ? 'Gilded Titan Chest'
-        : undefined,
+          ? 'Abyssal Relic Casket'
+          : clampedLevel >= 201
+            ? 'Infernal Dragonplate Coffer'
+            : clampedLevel >= 51
+              ? 'Gilded Titan Chest'
+              : undefined,
     isWorldBoss: profile.tier === 'world_titan',
     aiState: 'patrolling',
     movementPolicy: profile.movementPolicy,
@@ -484,7 +492,8 @@ export function computeAIPath(
   maxWaypoints: number = 6
 ): WaypointCoord[] {
   const stepSize = 4;
-  const clampCoord = (v: number) => Math.max(-34, Math.min(34, Math.round(v / stepSize) * stepSize));
+  const clampCoord = (v: number) =>
+    Math.max(-34, Math.min(34, Math.round(v / stepSize) * stepSize));
 
   const sx = clampCoord(start.x);
   const sz = clampCoord(start.z);
@@ -623,7 +632,8 @@ export const NPC_ROLE_PROFILES: Record<NPCRole, NPCRoleBehaviorProfile> = {
     role: 'elder',
     roleLabel: 'Grand Quest-Giver & Lorekeeper',
     icon: '📜',
-    primaryDuty: 'Generates dynamic realm quests, wards the Citadel, and guides cultivation breakthroughs.',
+    primaryDuty:
+      'Generates dynamic realm quests, wards the Citadel, and guides cultivation breakthroughs.',
     aiCapabilities: [
       'Scans world threat level to issue radiant Monster Hunt & Resource Quests',
       'Projects Arcane Leyline Ward (+DEF% to Citadel during Storms)',
@@ -635,7 +645,8 @@ export const NPC_ROLE_PROFILES: Record<NPCRole, NPCRoleBehaviorProfile> = {
     role: 'guard',
     roleLabel: 'Citadel Vanguard Guard',
     icon: '🛡️',
-    primaryDuty: 'Patrols outer perimeter roads, intercepts encroaching monsters, and defends resource nodes.',
+    primaryDuty:
+      'Patrols outer perimeter roads, intercepts encroaching monsters, and defends resource nodes.',
     aiCapabilities: [
       'Autonomous A* perimeter patrol & monster aggro interception',
       'Engages nearby monsters in real-time skirmishes, chipping enemy HP',
@@ -647,7 +658,8 @@ export const NPC_ROLE_PROFILES: Record<NPCRole, NPCRoleBehaviorProfile> = {
     role: 'marshal',
     roleLabel: 'Supreme War Marshal',
     icon: '⚔️',
-    primaryDuty: 'Commands garrison defense, coordinates boss rallies, and hunts elite/boss threats.',
+    primaryDuty:
+      'Commands garrison defense, coordinates boss rallies, and hunts elite/boss threats.',
     aiCapabilities: [
       'Prioritizes Elite & Boss monsters threatening resource harvesters',
       'Issues tactical counter-formation buffs (+ATK% to player legions)',
@@ -689,7 +701,8 @@ export const NPC_ROLE_PROFILES: Record<NPCRole, NPCRoleBehaviorProfile> = {
       'Dispels Abyssal/Titan corruption on resource veins',
       'Channels celestial weather harmony to boost realm gathering speed',
     ],
-    levelScalingFormula: 'Autonomous Harvest Rate = Level × 150 Resources + Diamond Crystallization',
+    levelScalingFormula:
+      'Autonomous Harvest Rate = Level × 150 Resources + Diamond Crystallization',
   },
 };
 
@@ -858,7 +871,7 @@ export function evaluateMonsterAIDecision(params: {
   // Default patrol around home territory
   const homeX = monster.homeX ?? monster.x;
   const homeZ = monster.homeZ ?? monster.z;
-  const patrolAngle = ((Date.now() / 4000 + monster.level) % (Math.PI * 2));
+  const patrolAngle = (Date.now() / 4000 + monster.level) % (Math.PI * 2);
   const patrolX = Math.max(-33, Math.min(33, Math.round(homeX + Math.cos(patrolAngle) * 6)));
   const patrolZ = Math.max(-33, Math.min(33, Math.round(homeZ + Math.sin(patrolAngle) * 6)));
 
@@ -925,8 +938,9 @@ export function evaluateNPCAIDecision(params: {
     const preferredNode =
       npc.role === 'blacksmith'
         ? resourceNodes.find((n) => n.type === 'steel' || n.type === 'copper') || resourceNodes[0]
-        : resourceNodes.find((n) => n.type === 'diamond' || n.type === 'wood' || n.type === 'grain') ||
-          resourceNodes[0];
+        : resourceNodes.find(
+            (n) => n.type === 'diamond' || n.type === 'wood' || n.type === 'grain'
+          ) || resourceNodes[0];
 
     const yieldAmt = BigInt(npc.level * 160);
     return {
@@ -944,7 +958,8 @@ export function evaluateNPCAIDecision(params: {
       { x: -12, z: -12 },
       { x: 12, z: -12 },
     ];
-    const wp = patrolWaypoints[Math.floor((Date.now() / 5000 + npc.level) % patrolWaypoints.length)];
+    const wp =
+      patrolWaypoints[Math.floor((Date.now() / 5000 + npc.level) % patrolWaypoints.length)];
     return {
       nextState: 'patrolling_citadel',
       targetCoord: wp,
@@ -978,7 +993,8 @@ export function evaluateNPCAIDecision(params: {
         { x: 14, z: 10 },
         { x: -14, z: 10 },
       ];
-      const target = guardCircuit[Math.floor((Date.now() / 6000 + npc.level) % guardCircuit.length)];
+      const target =
+        guardCircuit[Math.floor((Date.now() / 6000 + npc.level) % guardCircuit.length)];
       return {
         nextState: 'patrolling_citadel',
         targetCoord: target,
@@ -1044,8 +1060,9 @@ export function evaluateNPCAIDecision(params: {
 
     case 'mystic': {
       const spiritNode =
-        resourceNodes.find((n) => n.type === 'diamond' || n.type === 'wood' || n.type === 'grain') ||
-        resourceNodes[0];
+        resourceNodes.find(
+          (n) => n.type === 'diamond' || n.type === 'wood' || n.type === 'grain'
+        ) || resourceNodes[0];
       const woodYield = BigInt(npc.level * 175);
       const grainYield = BigInt(npc.level * 195);
       const diamondYield = BigInt(Math.max(5, Math.floor(npc.level / 40)));
@@ -1251,13 +1268,15 @@ export function tickWorldAI(params: {
         actorType: 'npc',
         actorLevel: npc.level,
         category:
-          decision.nextState === 'combating_monster' || decision.nextState === 'intercepting_monster'
+          decision.nextState === 'combating_monster' ||
+          decision.nextState === 'intercepting_monster'
             ? 'combat'
-            : decision.nextState === 'gathering_resource' || decision.nextState === 'forging_armaments'
-            ? 'gathering'
-            : decision.nextState === 'caravan_trading'
-            ? 'trade'
-            : 'pathfinding',
+            : decision.nextState === 'gathering_resource' ||
+                decision.nextState === 'forging_armaments'
+              ? 'gathering'
+              : decision.nextState === 'caravan_trading'
+                ? 'trade'
+                : 'pathfinding',
         message: `[${NPC_ROLE_PROFILES[npc.role].roleLabel}] ${decision.statusActionText}`,
       });
     }
@@ -1282,7 +1301,8 @@ export function tickWorldAI(params: {
     if (guardHit && guardHit.totalDmg > 0n) {
       // Keep at least 10% HP from autonomous guard chip so player can still finish or rally, or respawn if defeated
       const minFloor = monster.maxHp / 10n;
-      nextHp = monster.hp > guardHit.totalDmg + minFloor ? monster.hp - guardHit.totalDmg : minFloor;
+      nextHp =
+        monster.hp > guardHit.totalDmg + minFloor ? monster.hp - guardHit.totalDmg : minFloor;
     }
 
     const decision = evaluateMonsterAIDecision({
@@ -1295,7 +1315,10 @@ export function tickWorldAI(params: {
     });
 
     // Regeneration from environmental interactions
-    if (decision.activeEnvInteraction.includes('Regen') || decision.nextState === 'siphoning_node') {
+    if (
+      decision.activeEnvInteraction.includes('Regen') ||
+      decision.nextState === 'siphoning_node'
+    ) {
       const regenAmt = monster.maxHp / 50n; // +2% HP
       nextHp = nextHp + regenAmt > monster.maxHp ? monster.maxHp : nextHp + regenAmt;
     }
@@ -1309,8 +1332,8 @@ export function tickWorldAI(params: {
       decision.nextState === 'enraged_berserk'
         ? 2.6
         : decision.nextState === 'flanking_march'
-        ? 2.2
-        : 1.5;
+          ? 2.2
+          : 1.5;
     const stepped = stepActorAlongPath({ x: monster.x, z: monster.z }, path, speed);
 
     const nextTelegraph =
@@ -1331,10 +1354,10 @@ export function tickWorldAI(params: {
           decision.nextState === 'siphoning_node'
             ? 'environment'
             : decision.nextState === 'attack_windup' ||
-              decision.nextState === 'enraged_berserk' ||
-              decision.nextState === 'clashing_guard'
-            ? 'combat'
-            : 'pathfinding',
+                decision.nextState === 'enraged_berserk' ||
+                decision.nextState === 'clashing_guard'
+              ? 'combat'
+              : 'pathfinding',
         message: guardHit
           ? `Clashed with ${guardHit.attackerName} (-${guardHit.totalDmg.toLocaleString()} HP) · ${decision.tacticalNote}`
           : `${decision.tacticalNote} [${decision.activeEnvInteraction}]`,

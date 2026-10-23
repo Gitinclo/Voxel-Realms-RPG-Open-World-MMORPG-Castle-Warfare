@@ -126,8 +126,7 @@ function getWaterNormalBumpTexture(): THREE.CanvasTexture | null {
     ctx.fillRect(0, 0, s, s);
     for (let y = 0; y < s; y += 4) {
       for (let x = 0; x < s; x += 4) {
-        const wave =
-          Math.sin((x / s) * Math.PI * 4) * Math.cos((y / s) * Math.PI * 4) * 0.5 + 0.5;
+        const wave = Math.sin((x / s) * Math.PI * 4) * Math.cos((y / s) * Math.PI * 4) * 0.5 + 0.5;
         const val = Math.floor(80 + wave * 140);
         ctx.fillStyle = `rgb(${val},${val},${val})`;
         ctx.fillRect(x, y, 4, 4);
@@ -636,10 +635,7 @@ export function createVoxelCastle(level: number): THREE.Group {
   });
 
   // Grand Gatehouse Entrance + Iron Portcullis Grate + Twin Braziers
-  const gateFrame = new THREE.Mesh(
-    new THREE.BoxGeometry(5.2, 5.8, 2.4),
-    voxelMaterials.stone
-  );
+  const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(5.2, 5.8, 2.4), voxelMaterials.stone);
   gateFrame.position.set(0, 2.9, 8.0);
   gateFrame.castShadow = true;
   castle.add(gateFrame);
@@ -667,10 +663,7 @@ export function createVoxelCastle(level: number): THREE.Group {
     pedestal.position.set(bx, 0.7, 9.8);
     castle.add(pedestal);
 
-    const flame = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.42, 1),
-      voxelMaterials.lanternGlow
-    );
+    const flame = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), voxelMaterials.lanternGlow);
     flame.position.set(bx, 1.65, 9.8);
     castle.add(flame);
   });
@@ -744,11 +737,7 @@ export function createResourceNodeMesh(node: ResourceNode): THREE.Group {
 
   if (node.type === 'wood') {
     // Ancient Multi-tier Voxel Tree with roots, branches & fallen log
-    const trunkGeo = new THREE.BoxGeometry(
-      1.2 * scaleFactor,
-      4.6 * scaleFactor,
-      1.2 * scaleFactor
-    );
+    const trunkGeo = new THREE.BoxGeometry(1.2 * scaleFactor, 4.6 * scaleFactor, 1.2 * scaleFactor);
     const trunk = new THREE.Mesh(trunkGeo, voxelMaterials.woodTrunk);
     trunk.position.y = 2.3 * scaleFactor;
     trunk.castShadow = true;
@@ -791,8 +780,8 @@ export function createResourceNodeMesh(node: ResourceNode): THREE.Group {
       node.type === 'steel'
         ? voxelMaterials.steelOre
         : node.type === 'copper'
-        ? voxelMaterials.copperOre
-        : voxelMaterials.diamondOre;
+          ? voxelMaterials.copperOre
+          : voxelMaterials.diamondOre;
 
     const baseRockGeo = new THREE.DodecahedronGeometry(1.85 * scaleFactor, 0);
     const baseRock = new THREE.Mesh(baseRockGeo, rockMat);
@@ -904,28 +893,21 @@ export function createResourceNodeMesh(node: ResourceNode): THREE.Group {
   }
 
   // High-DPI Retina Floating Resource Badge
-  const badge = createCrispBillboardSprite(
-    256,
-    128,
-    3.1,
-    1.55,
-    5.3 * scaleFactor,
-    (ctx, w, h) => {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
-      ctx.roundRect(8, 8, w - 16, h - 16, 22);
-      ctx.fill();
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 5;
-      ctx.stroke();
-      ctx.font = 'bold 42px sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${node.type.toUpperCase()}`, w / 2, 56);
-      ctx.font = 'bold 38px monospace';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`Lv.${node.level}`, w / 2, 102);
-    }
-  );
+  const badge = createCrispBillboardSprite(256, 128, 3.1, 1.55, 5.3 * scaleFactor, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+    ctx.roundRect(8, 8, w - 16, h - 16, 22);
+    ctx.fill();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${node.type.toUpperCase()}`, w / 2, 56);
+    ctx.font = 'bold 38px monospace';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`Lv.${node.level}`, w / 2, 102);
+  });
   group.add(badge);
 
   return group;
@@ -950,12 +932,12 @@ export function createMonsterMesh(monster: MonsterTarget): THREE.Group {
     monster.level > 800
       ? 0x4a148c // Cosmic Void Purple
       : monster.level > 500
-      ? 0xb71c1c // Dragon Crimson
-      : monster.level > 200
-      ? 0x37474f // Iron Titan
-      : monster.level > 50
-      ? 0x558b2f // Forest Troll
-      : 0x2e7d32; // Goblin Green
+        ? 0xb71c1c // Dragon Crimson
+        : monster.level > 200
+          ? 0x37474f // Iron Titan
+          : monster.level > 50
+            ? 0x558b2f // Forest Troll
+            : 0x2e7d32; // Goblin Green
 
   const monsterMat = new THREE.MeshPhysicalMaterial({
     color: bodyColor,
@@ -1099,11 +1081,7 @@ export function createMonsterMesh(monster: MonsterTarget): THREE.Group {
     for (let c = 0; c < 3; c++) {
       const cr = new THREE.Mesh(crystalGeo, crystalMat);
       const ang = (c * Math.PI * 2) / 3;
-      cr.position.set(
-        Math.cos(ang) * 2.25 * scale,
-        3.2 * scale,
-        Math.sin(ang) * 2.25 * scale
-      );
+      cr.position.set(Math.cos(ang) * 2.25 * scale, 3.2 * scale, Math.sin(ang) * 2.25 * scale);
       cr.name = `OrbitalCrystal_${c}`;
       group.add(cr);
     }
@@ -1126,39 +1104,28 @@ export function createMonsterMesh(monster: MonsterTarget): THREE.Group {
   group.add(telegraphRing);
 
   // High-DPI Retina Overhead Nameplate
-  const sprite = createCrispBillboardSprite(
-    384,
-    152,
-    4.6,
-    1.85,
-    5.25 * scale,
-    (ctx, w, h) => {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
-      ctx.roundRect(8, 8, w - 16, h - 16, 20);
-      ctx.fill();
-      ctx.strokeStyle = isBoss ? '#f43f5e' : '#eab308';
-      ctx.lineWidth = 5;
-      ctx.stroke();
-      ctx.font = 'bold 34px sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${monster.name.slice(0, 18)}`, w / 2, 48);
-      ctx.font = 'bold 34px monospace';
-      ctx.fillStyle = isBoss ? '#fb7185' : '#fde047';
-      ctx.fillText(
-        `Lv.${monster.level} [${(monster.aiState || 'patrol').split('_')[0].toUpperCase()}]`,
-        w / 2,
-        96
-      );
-      ctx.font = 'bold 26px monospace';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(
-        `${(monster.movementPolicy || 'pack_swarmer').replace('_', ' ')}`,
-        w / 2,
-        130
-      );
-    }
-  );
+  const sprite = createCrispBillboardSprite(384, 152, 4.6, 1.85, 5.25 * scale, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+    ctx.roundRect(8, 8, w - 16, h - 16, 20);
+    ctx.fill();
+    ctx.strokeStyle = isBoss ? '#f43f5e' : '#eab308';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.font = 'bold 34px sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${monster.name.slice(0, 18)}`, w / 2, 48);
+    ctx.font = 'bold 34px monospace';
+    ctx.fillStyle = isBoss ? '#fb7185' : '#fde047';
+    ctx.fillText(
+      `Lv.${monster.level} [${(monster.aiState || 'patrol').split('_')[0].toUpperCase()}]`,
+      w / 2,
+      96
+    );
+    ctx.font = 'bold 26px monospace';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(`${(monster.movementPolicy || 'pack_swarmer').replace('_', ' ')}`, w / 2, 130);
+  });
   group.add(sprite);
 
   return group;
@@ -1216,10 +1183,7 @@ export function createNPCMesh(npc: NPC): THREE.Group {
   npcModel.add(torso);
 
   // Gold Waist Sash / Belt
-  const belt = new THREE.Mesh(
-    new THREE.BoxGeometry(1.0, 0.18, 0.7),
-    voxelMaterials.goldAccent
-  );
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.18, 0.7), voxelMaterials.goldAccent);
   belt.position.y = 0.95;
   npcModel.add(belt);
 
@@ -1299,10 +1263,7 @@ export function createNPCMesh(npc: NPC): THREE.Group {
     npcModel.add(hammerHead);
   } else if (npc.role === 'marshal' || npc.role === 'guard') {
     // Plumed Great-Helm, Pauldrons, Halberd & Shield
-    const helm = new THREE.Mesh(
-      new THREE.BoxGeometry(0.84, 0.38, 0.84),
-      voxelMaterials.steelOre
-    );
+    const helm = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.38, 0.84), voxelMaterials.steelOre);
     helm.position.set(0, 2.85, 0);
     npcModel.add(helm);
 
@@ -1330,10 +1291,7 @@ export function createNPCMesh(npc: NPC): THREE.Group {
     npcModel.add(halberdBlade);
   } else if (npc.role === 'merchant') {
     // Treasure Backpack & Golden Coin Lantern
-    const pack = new THREE.Mesh(
-      new THREE.BoxGeometry(0.88, 1.15, 0.65),
-      voxelMaterials.woodTrunk
-    );
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.88, 1.15, 0.65), voxelMaterials.woodTrunk);
     pack.position.set(0, 1.55, -0.58);
     pack.castShadow = true;
     npcModel.add(pack);
@@ -1460,10 +1418,7 @@ export function createPlayerMesh(
   hair.position.set(0, 2.5, 0);
   player.add(hair);
 
-  const diadem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.16, 0.12),
-    voxelMaterials.goldAccent
-  );
+  const diadem = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.12), voxelMaterials.goldAccent);
   diadem.position.set(0, 2.48, 0.44);
   player.add(diadem);
 
@@ -1474,10 +1429,7 @@ export function createPlayerMesh(
   torso.castShadow = true;
   player.add(torso);
 
-  const belt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.94, 0.16, 0.64),
-    voxelMaterials.goldAccent
-  );
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.16, 0.64), voxelMaterials.goldAccent);
   belt.position.y = 0.78;
   player.add(belt);
 

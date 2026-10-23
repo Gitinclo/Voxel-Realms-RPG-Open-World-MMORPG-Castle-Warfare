@@ -10,12 +10,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import {
-  CharacterAppearance,
-  MonsterTarget,
-  NPC,
-  ResourceNode,
-} from '../types/game';
+import { CharacterAppearance, MonsterTarget, NPC, ResourceNode } from '../types/game';
 import {
   GraphicsQualityPreset,
   createMonsterMesh,
@@ -285,11 +280,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
       const angle = (c / 14) * Math.PI * 2;
       const dist = 34 + (c % 4) * 16;
-      cluster.position.set(
-        Math.cos(angle) * dist,
-        32 + (c % 3) * 4,
-        Math.sin(angle) * dist
-      );
+      cluster.position.set(Math.cos(angle) * dist, 32 + (c % 3) * 4, Math.sin(angle) * dist);
       cloudGroup.add(cluster);
     }
     scene.add(cloudGroup);

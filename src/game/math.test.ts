@@ -14,7 +14,6 @@ import {
   getResourceNodeStats,
   getCastleEra,
   calculateMultiplicativePowerRating,
-  MAX_CASTLE_LEVEL,
   MAX_CASTLE_TROOP_CAPACITY,
   MAX_RALLY_CAPACITY,
 } from './math';
@@ -163,4 +162,3 @@ test('battle simulation reflects storm weather exp bonus and combat modifiers', 
   assert.equal(stormResult.expGained, 1_350n);
   assert.ok(stormResult.victory, 'Storm army with bombers defeats monster');
 });
-

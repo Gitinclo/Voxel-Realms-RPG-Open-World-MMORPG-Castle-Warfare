@@ -8,12 +8,12 @@ The **Voxel Realms RPG** team takes security issues seriously. We appreciate the
 
 We provide security updates and critical patches for the following versions of the project:
 
-| Version | Supported | Status |
-| :--- | :---: | :--- |
-| `1.4.x` | ✅ | Active support & security updates |
-| `1.3.x` | ✅ | Critical security patches only |
-| `1.2.x` | ❌ | End of Life (upgrade recommended) |
-| `< 1.2` | ❌ | End of Life |
+| Version | Supported | Status                            |
+| :------ | :-------: | :-------------------------------- |
+| `1.4.x` |    ✅     | Active support & security updates |
+| `1.3.x` |    ✅     | Critical security patches only    |
+| `1.2.x` |    ❌     | End of Life (upgrade recommended) |
+| `< 1.2` |    ❌     | End of Life                       |
 
 ---
 

@@ -146,11 +146,7 @@ export interface SkillScrollItem {
 }
 
 export type AuraVisualCueType =
-  | 'none'
-  | 'faint_white_glow'
-  | 'spinning_golden_core'
-  | 'floating_nascent_baby'
-  | 'divine_halos';
+  'none' | 'faint_white_glow' | 'spinning_golden_core' | 'floating_nascent_baby' | 'divine_halos';
 
 export interface CultivationAuraVisualSpec {
   cueType: AuraVisualCueType;
@@ -197,5 +193,3 @@ export interface PlayerCultivationState {
   veteranScrolls?: number; // Special 'Veteran Scroll' inventory for cultivation
   veteranScrollsComprehended?: number; // Total Veteran Scrolls activated for permanent cultivation bonuses
 }
-
-

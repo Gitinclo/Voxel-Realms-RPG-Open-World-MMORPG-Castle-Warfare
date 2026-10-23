@@ -9,12 +9,10 @@ import {
   Sparkles,
   Zap,
   Flame,
-  Shield,
   Layers,
   BookOpen,
   ShoppingBag,
   Compass,
-  Heart,
   Eye,
   Activity,
   ScrollText,
@@ -59,10 +57,7 @@ import { GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
-import {
-  applyVeteranScrollToCultivation,
-  calculateVeteranScrollBonuses,
-} from '../game/dailyLogin';
+import { applyVeteranScrollToCultivation, calculateVeteranScrollBonuses } from '../game/dailyLogin';
 import confetti from 'canvas-confetti';
 
 interface CultivationModalProps {
@@ -86,15 +81,12 @@ interface CultivationModalProps {
 }
 
 type TabType =
-  | 'dantian'
-  | 'breakthrough'
-  | 'manuals'
-  | 'lineage_karma'
-  | 'codex'
-  | 'alchemy'
-  | 'meridians';
+  'dantian' | 'breakthrough' | 'manuals' | 'lineage_karma' | 'codex' | 'alchemy' | 'meridians';
 
-const ERA_THEMES: Record<CultivationEra, { label: string; bg: string; border: string; text: string }> = {
+const ERA_THEMES: Record<
+  CultivationEra,
+  { label: string; bg: string; border: string; text: string }
+> = {
   mortal: {
     label: '1. Mortal Era (Jade Pure Sacred Sect)',
     bg: 'from-amber-950/70 via-slate-900 to-emerald-950/70',
@@ -182,7 +174,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
 }) => {
   const [selectedPath, setSelectedPath] = useState<CultivationPath>('qi');
   const [activeTab, setActiveTab] = useState<TabType>('dantian');
-  const [selectedPillForBreakthrough, setSelectedPillForBreakthrough] = useState<string | null>(null);
+  const [selectedPillForBreakthrough, setSelectedPillForBreakthrough] = useState<string | null>(
+    null
+  );
   const [breakthroughNotice, setBreakthroughNotice] = useState<string | null>(null);
   const [isTribulationModalOpen, setIsTribulationModalOpen] = useState<boolean>(false);
   const [tribulationStrikesDone, setTribulationStrikesDone] = useState<number>(0);
@@ -232,13 +226,20 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
     cultivation.veteranScrollsComprehended ?? 0
   );
 
-  const requiredEnergy = calculateQiRequired(pathProgress.realmIndex, pathProgress.layer, selectedPath);
+  const requiredEnergy = calculateQiRequired(
+    pathProgress.realmIndex,
+    pathProgress.layer,
+    selectedPath
+  );
   const pathMultiplier = calculateCultivationMultiplier(
     pathProgress.realmIndex,
     pathProgress.layer,
     selectedPath
   );
-  const energyPct = Math.min(100, Number((pathProgress.currentEnergy * 100n) / (requiredEnergy || 1n)));
+  const energyPct = Math.min(
+    100,
+    Number((pathProgress.currentEnergy * 100n) / (requiredEnergy || 1n))
+  );
   const passiveRate = calculatePassiveQiRate(
     pathProgress.realmIndex,
     weather,
@@ -312,7 +313,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
             </span>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[11px] px-2 py-0.5 rounded-md font-mono font-bold border ${pathStyle.badge}`}>
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-md font-mono font-bold border ${pathStyle.badge}`}
+                >
                   {pathMeta.name}
                 </span>
                 <h2 className="text-base sm:text-xl font-bold font-cinzel text-amber-100 flex items-center gap-2">
@@ -330,7 +333,10 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
               </div>
               <p className="text-xs text-amber-200/80 mt-0.5">
                 {eraTheme.label} ·{' '}
-                <span className="font-mono text-emerald-300">Secluded {cultivation.secludedYears} Years</span> ·{' '}
+                <span className="font-mono text-emerald-300">
+                  Secluded {cultivation.secludedYears} Years
+                </span>{' '}
+                ·{' '}
                 <span className="font-mono text-purple-300">
                   Dao Heart Speed {mindBonuses.cultivationSpeedMult}x
                 </span>
@@ -340,8 +346,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
 
           <div className="flex items-center gap-2.5">
             <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-700 text-xs font-mono text-emerald-300">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              +{formatBigInt(passiveRate)} {pathMeta.energyName}/s
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />+{formatBigInt(passiveRate)}{' '}
+              {pathMeta.energyName}/s
             </div>
             <button
               onClick={onClose}
@@ -389,7 +395,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border ${style.badge}`}>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border ${style.badge}`}
+                    >
                       L{prog.layer}/9
                     </span>
                   </div>
@@ -404,7 +412,11 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
           {[
             { id: 'dantian', label: `${pathMeta.vesselName} & 4-Path Resonance`, icon: Flame },
             { id: 'breakthrough', label: `Breakthrough (${pathProgress.layer}/9)`, icon: Zap },
-            { id: 'manuals', label: `Ancient Manuals (${Object.keys(cultivation.ownedManuals).length}/${CULTIVATION_MANUALS.length})`, icon: ScrollText },
+            {
+              id: 'manuals',
+              label: `Ancient Manuals (${Object.keys(cultivation.ownedManuals).length}/${CULTIVATION_MANUALS.length})`,
+              icon: ScrollText,
+            },
             { id: 'lineage_karma', label: 'Master/Disciple, Karma & Aura', icon: Eye },
             { id: 'codex', label: `23 ${pathMeta.name} Realms`, icon: BookOpen },
             { id: 'alchemy', label: 'Alchemy Cauldron', icon: ShoppingBag },
@@ -455,11 +467,16 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     </div>
                     <h3 className="text-xl font-bold font-cinzel text-white flex items-center justify-center gap-2 mt-0.5 flex-wrap">
                       <span>{currentRealm.name}</span>
-                      <span className="text-amber-400 font-mono">Layer {pathProgress.layer} / 9</span>
+                      <span className="text-amber-400 font-mono">
+                        Layer {pathProgress.layer} / 9
+                      </span>
                     </h3>
-                    <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto">{currentRealm.description}</p>
+                    <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto">
+                      {currentRealm.description}
+                    </p>
                     <p className="text-[11px] text-emerald-300 font-mono mt-1">
-                      Path Bonus: {pathMeta.combatBonusDesc} ({pathMultiplier.toLocaleString(undefined, { maximumFractionDigits: 1 })}x)
+                      Path Bonus: {pathMeta.combatBonusDesc} (
+                      {pathMultiplier.toLocaleString(undefined, { maximumFractionDigits: 1 })}x)
                     </p>
                   </div>
 
@@ -470,7 +487,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         {pathMeta.vesselName} {pathMeta.energyName} Accumulation
                       </span>
                       <span className="text-emerald-400">
-                        {formatBigInt(pathProgress.currentEnergy)} / {formatBigInt(requiredEnergy)} ({energyPct}%)
+                        {formatBigInt(pathProgress.currentEnergy)} / {formatBigInt(requiredEnergy)}{' '}
+                        ({energyPct}%)
                       </span>
                     </div>
                     <div className="w-full bg-slate-950 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-700">
@@ -488,7 +506,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       className={`px-5 py-2.5 rounded-xl text-xs font-bold font-mono shadow-md active:scale-95 transition-all flex items-center gap-2 ${pathStyle.button}`}
                     >
                       <Sparkles className="w-4 h-4" />
-                      {pathMeta.actionVerb} (+{formatBigInt(passiveRate * 12n + 150n)} {pathMeta.energyName})
+                      {pathMeta.actionVerb} (+{formatBigInt(passiveRate * 12n + 150n)}{' '}
+                      {pathMeta.energyName})
                     </button>
                     <button
                       onClick={() => setActiveTab('breakthrough')}
@@ -518,7 +537,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       title="Comprehend 1 Veteran Scroll (earned from Daily Login Rewards) for +80% Layer Energy, +30 Scripture Fragments, and Permanent +18% Cultivation Speed"
                     >
                       <ScrollText className="w-4 h-4 text-amber-400" />
-                      Veteran Scroll ({cultivation.veteranScrolls ?? 0} Owned · +{veteranScrollBonuses.passiveSpeedBonusPct}% Speed)
+                      Veteran Scroll ({cultivation.veteranScrolls ?? 0} Owned · +
+                      {veteranScrollBonuses.passiveSpeedBonusPct}% Speed)
                     </button>
                   </div>
                 </div>
@@ -533,7 +553,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       Four-Pillar Supreme Cultivation Resonance (Qi · Body · Soul · Mind)
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Cultivating Qi, Body, Soul, and Mind in harmony multiplies your Kingdom Might and eliminates all weaknesses.
+                      Cultivating Qi, Body, Soul, and Mind in harmony multiplies your Kingdom Might
+                      and eliminates all weaknesses.
                     </p>
                   </div>
                   <div className="text-right font-mono">
@@ -555,7 +576,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       <span className="font-mono">{fourPathSynergy.qiMult.toFixed(1)}x</span>
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      {getRealmDef('qi', cultivation.paths.qi.realmIndex).name} (L{cultivation.paths.qi.layer})
+                      {getRealmDef('qi', cultivation.paths.qi.realmIndex).name} (L
+                      {cultivation.paths.qi.layer})
                     </div>
                     <div className="text-[10px] font-mono text-amber-200/80">
                       Primary Spiritual Might & Spell Base
@@ -568,7 +590,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       <span className="font-mono">+{fourPathSynergy.troopHpDefenseBonusPct}%</span>
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      {getRealmDef('body', cultivation.paths.body.realmIndex).name} (L{cultivation.paths.body.layer})
+                      {getRealmDef('body', cultivation.paths.body.realmIndex).name} (L
+                      {cultivation.paths.body.layer})
                     </div>
                     <div className="text-[10px] font-mono text-rose-200/80">
                       Troop HP, Citadel Defense & Lightning Resist
@@ -581,7 +604,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       <span className="font-mono">+{fourPathSynergy.troopAttackCritBonusPct}%</span>
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      {getRealmDef('soul', cultivation.paths.soul.realmIndex).name} (L{cultivation.paths.soul.layer})
+                      {getRealmDef('soul', cultivation.paths.soul.realmIndex).name} (L
+                      {cultivation.paths.soul.layer})
                     </div>
                     <div className="text-[10px] font-mono text-cyan-200/80">
                       Divine Sense Crit, Troop Attack & Rally Cap
@@ -591,13 +615,17 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                   <div className="p-3 rounded-xl bg-slate-900/90 border border-purple-500/30 space-y-1">
                     <div className="text-xs font-bold text-purple-300 flex items-center justify-between">
                       <span>🪷 Mind Cultivation</span>
-                      <span className="font-mono">+{fourPathSynergy.breakthroughSuccessBonusPct}% Odds</span>
+                      <span className="font-mono">
+                        +{fourPathSynergy.breakthroughSuccessBonusPct}% Odds
+                      </span>
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      {getRealmDef('mind', cultivation.paths.mind.realmIndex).name} (L{cultivation.paths.mind.layer})
+                      {getRealmDef('mind', cultivation.paths.mind.realmIndex).name} (L
+                      {cultivation.paths.mind.layer})
                     </div>
                     <div className="text-[10px] font-mono text-purple-200/80">
-                      {fourPathSynergy.allPathSpeedMult}x All-Path Speed · {mindBonuses.innerDemonImmunityPct}% Demon Immunity
+                      {fourPathSynergy.allPathSpeedMult}x All-Path Speed ·{' '}
+                      {mindBonuses.innerDemonImmunityPct}% Demon Immunity
                     </div>
                   </div>
                 </div>
@@ -607,17 +635,19 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                    <span className="flex items-center gap-1 text-cyan-300">{weatherConf.icon} Weather Resonance</span>
+                    <span className="flex items-center gap-1 text-cyan-300">
+                      {weatherConf.icon} Weather Resonance
+                    </span>
                     <span className="font-mono text-white capitalize">{weather}</span>
                   </div>
                   <div className="text-xs text-slate-300">
                     {weather === 'storm'
                       ? '⚡ Lightning surges! Body Tempering (+65%) & Qi (+50%) accelerated.'
                       : weather === 'rain'
-                      ? '🌧️ Spiritual rain calms the Dao Heart! Mind (+40%) & Qi (+25%) boosted.'
-                      : weather === 'snow'
-                      ? '❄️ Cold Yin crystalizes Divine Sense! Soul (+40%) & Qi (+20%) boosted.'
-                      : '☀️ Solar Yang radiance streams down, steady +15% all-path absorption.'}
+                        ? '🌧️ Spiritual rain calms the Dao Heart! Mind (+40%) & Qi (+25%) boosted.'
+                        : weather === 'snow'
+                          ? '❄️ Cold Yin crystalizes Divine Sense! Soul (+40%) & Qi (+20%) boosted.'
+                          : '☀️ Solar Yang radiance streams down, steady +15% all-path absorption.'}
                   </div>
                 </div>
 
@@ -626,11 +656,16 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     <span className="flex items-center gap-1 text-amber-300">
                       <Compass className="w-3.5 h-3.5" /> Spiritual Root Affinity
                     </span>
-                    <span className="font-mono text-amber-300 capitalize">{cultivation.selectedRoot}</span>
+                    <span className="font-mono text-amber-300 capitalize">
+                      {cultivation.selectedRoot}
+                    </span>
                   </div>
                   <div className="text-xs text-slate-300">
-                    Purity: <span className="font-mono font-bold text-emerald-400">{cultivation.rootPurityPct}%</span>.
-                    Synergizes with troop elemental damage and spell resistance.
+                    Purity:{' '}
+                    <span className="font-mono font-bold text-emerald-400">
+                      {cultivation.rootPurityPct}%
+                    </span>
+                    . Synergizes with troop elemental damage and spell resistance.
                   </div>
                 </div>
 
@@ -690,7 +725,10 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     </span>
                   </h3>
                   <span className="text-xs font-mono text-slate-400">
-                    Target: {pathProgress.layer === 9 ? 'Major Realm Ascension' : `Layer ${pathProgress.layer + 1}`}
+                    Target:{' '}
+                    {pathProgress.layer === 9
+                      ? 'Major Realm Ascension'
+                      : `Layer ${pathProgress.layer + 1}`}
                   </span>
                 </div>
 
@@ -707,8 +745,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           isCurrent
                             ? 'bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/30'
                             : isPassed
-                            ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-500'
+                              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                              : 'bg-slate-900/60 border-slate-800 text-slate-500'
                         }`}
                       >
                         <div className="text-[10px] font-mono font-bold">L{layerNum}</div>
@@ -742,7 +780,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                   </div>
 
                   <div className="text-right">
-                    <div className="text-xs text-slate-400">Success Probability (incl. Mind & Manual)</div>
+                    <div className="text-xs text-slate-400">
+                      Success Probability (incl. Mind & Manual)
+                    </div>
                     <div className="text-lg font-bold font-mono text-emerald-400">
                       {Math.min(
                         100,
@@ -756,7 +796,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       )}
                       %
                       <span className="text-xs text-purple-300 ml-1">
-                        (+{mindBonuses.breakthroughBonusPct}% Mind · +{activeManualSummary.breakthroughBoostPct}% Manual)
+                        (+{mindBonuses.breakthroughBonusPct}% Mind · +
+                        {activeManualSummary.breakthroughBoostPct}% Manual)
                       </span>
                     </div>
                   </div>
@@ -765,7 +806,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                 {/* Pill Booster Selection */}
                 <div className="space-y-2">
                   <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                    <ShoppingBag className="w-3.5 h-3.5 text-amber-400" /> Apply Alchemy Breakthrough Pill:
+                    <ShoppingBag className="w-3.5 h-3.5 text-amber-400" /> Apply Alchemy
+                    Breakthrough Pill:
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {CULTIVATION_PILLS.map((pill) => {
@@ -798,13 +840,15 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
 
                           <button
                             disabled={count <= 0}
-                            onClick={() => setSelectedPillForBreakthrough(isSelected ? null : pill.id)}
+                            onClick={() =>
+                              setSelectedPillForBreakthrough(isSelected ? null : pill.id)
+                            }
                             className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all ${
                               isSelected
                                 ? 'bg-amber-500 text-slate-950 font-bold'
                                 : count > 0
-                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                                : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+                                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                                  : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                             }`}
                           >
                             {isSelected ? 'Equipped' : count > 0 ? 'Equip' : 'None'}
@@ -850,7 +894,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-300 max-w-2xl">
-                    Find, equip, and upgrade ancient techniques across Qi, Body, Soul, and Mind. Each path has 1 active slot that boosts passive gathering rates and breakthrough success chances.
+                    Find, equip, and upgrade ancient techniques across Qi, Body, Soul, and Mind.
+                    Each path has 1 active slot that boosts passive gathering rates and breakthrough
+                    success chances.
                   </p>
                 </div>
 
@@ -890,7 +936,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     Equipped Four-Pillar Technique Slots (1 Per Path)
                   </span>
                   <span className="text-emerald-400 font-bold">
-                    Total Active Boost: +{manualsSummary.totalPassiveBonusPct}% Passive Rate · +{manualsSummary.totalBreakthroughBonusPct}% Breakthrough
+                    Total Active Boost: +{manualsSummary.totalPassiveBonusPct}% Passive Rate · +
+                    {manualsSummary.totalBreakthroughBonusPct}% Breakthrough
                   </span>
                 </div>
 
@@ -909,7 +956,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${style.badge}`}>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${style.badge}`}
+                          >
                             {meta.icon} {meta.name} Slot
                           </span>
                           {eqManual && (
@@ -926,11 +975,14 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                               <span className="truncate">{eqManual.name}</span>
                             </div>
                             <div className="text-[11px] font-mono text-emerald-400 mt-1">
-                              +{slotInfo.passiveRateBoostPct}% {meta.energyName}/s · +{slotInfo.breakthroughBoostPct}% Breakthrough
+                              +{slotInfo.passiveRateBoostPct}% {meta.energyName}/s · +
+                              {slotInfo.breakthroughBoostPct}% Breakthrough
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-500 italic py-1">No manual equipped</div>
+                          <div className="text-xs text-slate-500 italic py-1">
+                            No manual equipped
+                          </div>
                         )}
                       </div>
                     );
@@ -942,7 +994,11 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
               <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
                 <div className="text-xs font-bold text-slate-300 flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-amber-400" />
-                  <span>Ancient Technique Manuals Inventory ({Object.keys(cultivation.ownedManuals).length}/{CULTIVATION_MANUALS.length} Discovered)</span>
+                  <span>
+                    Ancient Technique Manuals Inventory (
+                    {Object.keys(cultivation.ownedManuals).length}/{CULTIVATION_MANUALS.length}{' '}
+                    Discovered)
+                  </span>
                 </div>
                 <div className="flex gap-1.5 flex-wrap">
                   {(['all', 'qi', 'body', 'soul', 'mind'] as const).map((filterKey) => (
@@ -955,7 +1011,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                       }`}
                     >
-                      {filterKey === 'all' ? 'All Paths (12)' : `${CULTIVATION_PATH_META[filterKey].name}`}
+                      {filterKey === 'all'
+                        ? 'All Paths (12)'
+                        : `${CULTIVATION_PATH_META[filterKey].name}`}
                     </button>
                   ))}
                 </div>
@@ -992,8 +1050,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         isEquipped
                           ? 'bg-amber-950/35 border-amber-400/80 ring-1 ring-amber-400/30'
                           : isOwned
-                          ? 'bg-slate-800/75 border-slate-700'
-                          : 'bg-slate-900/50 border-slate-800/80 opacity-85'
+                            ? 'bg-slate-800/75 border-slate-700'
+                            : 'bg-slate-900/50 border-slate-800/80 opacity-85'
                       }`}
                     >
                       <div className="space-y-2">
@@ -1007,7 +1065,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                                 <span className="text-sm font-bold text-white">{manual.name}</span>
                               </div>
                               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${pStyle.badge}`}>
+                                <span
+                                  className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold border ${pStyle.badge}`}
+                                >
                                   {pMeta.icon} {pMeta.name}
                                 </span>
                                 <span className="text-[10px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 font-mono uppercase border border-slate-700">
@@ -1034,23 +1094,28 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] font-mono space-y-1">
                           <div className="flex items-center justify-between text-emerald-400 font-bold">
                             <span>
-                              {isOwned ? `Active Effects (Lv.${currentLevel}):` : 'Base Effects (Lv.1):'}
+                              {isOwned
+                                ? `Active Effects (Lv.${currentLevel}):`
+                                : 'Base Effects (Lv.1):'}
                             </span>
                             <span>
-                              +{effects.passiveRateBoostPct}% {pMeta.energyName}/s · +{effects.breakthroughBoostPct}% Breakthrough
+                              +{effects.passiveRateBoostPct}% {pMeta.energyName}/s · +
+                              {effects.breakthroughBoostPct}% Breakthrough
                             </span>
                           </div>
                           {isOwned && nextEffects && (
                             <div className="flex items-center justify-between text-amber-300/90">
                               <span>Next Level (Lv.{currentLevel + 1}):</span>
                               <span>
-                                +{nextEffects.passiveRateBoostPct}% {pMeta.energyName}/s · +{nextEffects.breakthroughBoostPct}% Breakthrough
+                                +{nextEffects.passiveRateBoostPct}% {pMeta.energyName}/s · +
+                                {nextEffects.breakthroughBoostPct}% Breakthrough
                               </span>
                             </div>
                           )}
                           {isOwned && !upgradeCost.isMaxLevel && (
                             <div className="text-slate-400">
-                              Upgrade Cost: {upgradeCost.fragments} 📜 Fragments · {formatBigInt(upgradeCost.diamonds)} 💎
+                              Upgrade Cost: {upgradeCost.fragments} 📜 Fragments ·{' '}
+                              {formatBigInt(upgradeCost.diamonds)} 💎
                             </div>
                           )}
                         </div>
@@ -1065,7 +1130,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                               sound.playSwing();
                             }}
                             disabled={isEquipped}
-                            aria-label={isEquipped ? `Equipped ${manual.name}` : `Equip ${manual.name}`}
+                            aria-label={
+                              isEquipped ? `Equipped ${manual.name}` : `Equip ${manual.name}`
+                            }
                             className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold font-mono transition-all ${
                               isEquipped
                                 ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50 cursor-default'
@@ -1088,8 +1155,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                               upgradeCost.isMaxLevel
                                 ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-500/30 cursor-default'
                                 : canAffordUpgrade
-                                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95'
-                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                  ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95'
+                                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                             }`}
                           >
                             <ArrowUpCircle className="w-3.5 h-3.5" />
@@ -1135,12 +1202,15 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     <BookOpen className="w-5 h-5 text-amber-400" /> All 23 {pathMeta.name} Realms
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Every realm across Mortal, Immortal & Sage, Great Dao Chaos, and Ultimate Origin is divided into 9 layers.
+                    Every realm across Mortal, Immortal & Sage, Great Dao Chaos, and Ultimate Origin
+                    is divided into 9 layers.
                   </p>
                 </div>
 
                 <div className="flex gap-1.5 flex-wrap">
-                  {(['all', 'mortal', 'immortal_sage', 'chaos_dao', 'ultimate_origin'] as const).map((era) => (
+                  {(
+                    ['all', 'mortal', 'immortal_sage', 'chaos_dao', 'ultimate_origin'] as const
+                  ).map((era) => (
                     <button
                       key={era}
                       onClick={() => setCodexEraFilter(era)}
@@ -1171,8 +1241,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           isCurrent
                             ? 'bg-amber-950/40 border-amber-400/80 ring-2 ring-amber-400/30'
                             : isUnlocked
-                            ? 'bg-slate-800/80 border-slate-700'
-                            : 'bg-slate-900/40 border-slate-800/60 opacity-60'
+                              ? 'bg-slate-800/80 border-slate-700'
+                              : 'bg-slate-900/40 border-slate-800/60 opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-3.5">
@@ -1181,7 +1251,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           </span>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-mono text-xs text-amber-400">#{r.index + 1}</span>
+                              <span className="font-mono text-xs text-amber-400">
+                                #{r.index + 1}
+                              </span>
                               <span className="text-sm font-bold text-white">{r.name}</span>
                               <span className="text-[10px] px-2 py-0.2 rounded-full bg-slate-700 text-slate-300 font-mono">
                                 9 Layers
@@ -1216,10 +1288,12 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5 text-amber-400" /> Immortal Four-Path Alchemy Cauldron
+                    <ShoppingBag className="w-5 h-5 text-amber-400" /> Immortal Four-Path Alchemy
+                    Cauldron
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Refine sacred herbs, dragon blood, and bodhi seeds into pills that grant instant energy to your active path ({pathMeta.name}) and boost breakthrough odds.
+                    Refine sacred herbs, dragon blood, and bodhi seeds into pills that grant instant
+                    energy to your active path ({pathMeta.name}) and boost breakthrough odds.
                   </p>
                 </div>
               </div>
@@ -1264,11 +1338,13 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
 
                       <div className="p-2 rounded-lg bg-slate-900/60 text-[11px] font-mono text-slate-300 space-y-0.5">
                         <div className="text-emerald-400 font-bold">
-                          +{pill.successRateBoostPct}% Breakthrough Odds · +{formatBigInt(pill.qiBonus)} Instant Energy
+                          +{pill.successRateBoostPct}% Breakthrough Odds · +
+                          {formatBigInt(pill.qiBonus)} Instant Energy
                         </div>
                         <div className="text-slate-400">
                           Cost: {formatBigInt(pill.costHerbWood)} Wood (Herbs) ·{' '}
-                          {formatBigInt(pill.costHerbGrain)} Grain · {formatBigInt(pill.costDiamonds)} 💎
+                          {formatBigInt(pill.costHerbGrain)} Grain ·{' '}
+                          {formatBigInt(pill.costDiamonds)} 💎
                         </div>
                       </div>
 
@@ -1288,7 +1364,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                         }`}
                       >
-                        {canAfford ? `Refine Pill (+Energy to ${targetLabel})` : 'Need More Materials'}
+                        {canAfford
+                          ? `Refine Pill (+Energy to ${targetLabel})`
+                          : 'Need More Materials'}
                       </button>
                     </div>
                   );
@@ -1302,10 +1380,12 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-amber-400" /> Five Elements & Primordial Spiritual Roots
+                  <Compass className="w-5 h-5 text-amber-400" /> Five Elements & Primordial
+                  Spiritual Roots
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Your innate spiritual root shapes how cosmic energy flows through your Qi, Body, Soul, and Mind vessels.
+                  Your innate spiritual root shapes how cosmic energy flows through your Qi, Body,
+                  Soul, and Mind vessels.
                 </p>
               </div>
 
@@ -1422,16 +1502,20 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       </span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      Each major realm above an opponent multiplies damage dealt by 10x (2 realms = 100x, 3 realms = 1,000x) and crushes incoming attacks.
+                      Each major realm above an opponent multiplies damage dealt by 10x (2 realms =
+                      100x, 3 realms = 1,000x) and crushes incoming attacks.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                   <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <div className="text-[11px] text-slate-400 font-mono">Your Qi Cultivation Realm</div>
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      Your Qi Cultivation Realm
+                    </div>
                     <div className="text-sm font-bold text-amber-300 mt-0.5">
-                      [{cultivation.paths.qi.realmIndex}] { getRealmDef('qi', cultivation.paths.qi.realmIndex).name }
+                      [{cultivation.paths.qi.realmIndex}]{' '}
+                      {getRealmDef('qi', cultivation.paths.qi.realmIndex).name}
                     </div>
                     <div className="text-[11px] text-slate-400 font-mono mt-0.5">
                       Layer {cultivation.paths.qi.layer} / 9
@@ -1486,22 +1570,22 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           karmaState.alignment === 'red_fiend'
                             ? 'bg-rose-600/30 border-rose-400 text-rose-200 animate-pulse'
                             : karmaState.alignment === 'gold_justice'
-                            ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                            : 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-200'
+                              : 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
                         }`}
                       >
                         {karmaState.alignment === 'red_fiend'
                           ? '🩸 RED NAME FIEND'
                           : karmaState.alignment === 'gold_justice'
-                          ? '⚖️ GOLD NAME · JUSTICE'
-                          : '🟢 GREEN NAME · INNOCENT'}
+                            ? '⚖️ GOLD NAME · JUSTICE'
+                            : '🟢 GREEN NAME · INNOCENT'}
                       </span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
                       Killing a Green-Name lower-realm player turns your Karma negative (Red Name):
-                      (1) Stationary Red-Name players are struck by Instant-Kill Tribulation Lightning,
-                      (2) Location is revealed on the map with a Bounty to Justice players, and
-                      (3) Dying as a Red-Name drops equipped manuals/items!
+                      (1) Stationary Red-Name players are struck by Instant-Kill Tribulation
+                      Lightning, (2) Location is revealed on the map with a Bounty to Justice
+                      players, and (3) Dying as a Red-Name drops equipped manuals/items!
                     </p>
                   </div>
                 </div>
@@ -1515,10 +1599,13 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         karmaState.karmaValue < 0 ? 'text-rose-400' : 'text-emerald-400'
                       }`}
                     >
-                      {karmaState.karmaValue > 0 ? `+${karmaState.karmaValue}` : karmaState.karmaValue}
+                      {karmaState.karmaValue > 0
+                        ? `+${karmaState.karmaValue}`
+                        : karmaState.karmaValue}
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      Unlawful PKs: {karmaState.unlawfulKills} · Justice Kills: {karmaState.righteousKills}
+                      Unlawful PKs: {karmaState.unlawfulKills} · Justice Kills:{' '}
+                      {karmaState.righteousKills}
                     </div>
                   </div>
 
@@ -1560,8 +1647,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       {karmaState.droppedLootHistory.length > 0
                         ? `Last Dropped: ${karmaState.droppedLootHistory[0]}`
                         : karmaState.karmaValue < 0
-                        ? '⚠️ Equipped Manuals At Risk!'
-                        : 'Protected (Green Name)'}
+                          ? '⚠️ Equipped Manuals At Risk!'
+                          : 'Protected (Green Name)'}
                     </div>
                     <div className="text-[10px] text-slate-400">
                       Drops equipped items on Red-Name death
@@ -1665,7 +1752,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                             ...res.updatedKarma,
                             stationarySeconds: 0,
                           },
-                          spiritStones: (prev.spiritStones ?? 48_000n) + res.bountyEarnedSpiritStones,
+                          spiritStones:
+                            (prev.spiritStones ?? 48_000n) + res.bountyEarnedSpiritStones,
                         }));
                       }
                     }}
@@ -1681,18 +1769,24 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <h3 className="text-sm sm:text-base font-bold font-cinzel text-cyan-200 flex items-center gap-2">
-                      <span>🏯 5. Social Structure: Master & Disciple Hierarchy (师徒体系 · 资源反哺与神通传功)</span>
+                      <span>
+                        🏯 5. Social Structure: Master & Disciple Hierarchy (师徒体系 ·
+                        资源反哺与神通传功)
+                      </span>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono font-bold">
                         Spirit Stones: {formatBigInt(spiritStones)} 💎
                       </span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      Replaces standard parties with a Master-Disciple lineage: Disciples within 50m gain a{' '}
+                      Replaces standard parties with a Master-Disciple lineage: Disciples within 50m
+                      gain a{' '}
                       <span className="text-emerald-300 font-mono font-bold">
                         +{masterDiscipleEconomy.proximitySpeedBuffPct}%
                       </span>{' '}
                       cultivation speed aura, while the Master collects a{' '}
-                      <span className="text-amber-300 font-mono font-bold">{masterTaxRatePct}%</span>{' '}
+                      <span className="text-amber-300 font-mono font-bold">
+                        {masterTaxRatePct}%
+                      </span>{' '}
                       Spirit Stone & Qi tax and passes down rare Skill Scrolls!
                     </p>
                   </div>
@@ -1745,7 +1839,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       }}
                       className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold cursor-pointer"
                     >
-                      💰 Harvest Disciple Tax (+{formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec * 30n)})
+                      💰 Harvest Disciple Tax (+
+                      {formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec * 30n)})
                     </button>
                   </div>
                 </div>
@@ -1757,11 +1852,13 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       htmlFor="master-tax-slider"
                       className="text-xs font-bold text-amber-300 font-mono"
                     >
-                      Master Resource Funnel Tax Rate: {masterTaxRatePct}% of Disciple Loot & Spirit Stones
+                      Master Resource Funnel Tax Rate: {masterTaxRatePct}% of Disciple Loot & Spirit
+                      Stones
                     </label>
                     <div className="text-[11px] text-slate-400">
-                      Master Passive Tax Income: +{formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec)}{' '}
-                      Spirit Stones/s & +{formatBigInt(masterDiscipleEconomy.totalMasterTaxQiPerSec)} Qi/s
+                      Master Passive Tax Income: +
+                      {formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec)} Spirit
+                      Stones/s & +{formatBigInt(masterDiscipleEconomy.totalMasterTaxQiPerSec)} Qi/s
                     </div>
                   </div>
                   <input
@@ -1835,7 +1932,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           </span>
                           <span>
                             Transmitted Skills:{' '}
-                            <strong className="text-purple-300">{disc.equippedSkills.length}</strong>
+                            <strong className="text-purple-300">
+                              {disc.equippedSkills.length}
+                            </strong>
                           </span>
                         </div>
                       </div>
@@ -1851,7 +1950,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         📜 Skill Transmission (神通传功玉简 — Economy Skill Scrolls)
                       </h4>
                       <p className="text-[11px] text-slate-300">
-                        Transcribe learned Mystical Powers (like <em>Heaven Earth Sleeve</em>) into transferable Skill Scrolls to bestow upon loyal disciples or trade for Spirit Stones.
+                        Transcribe learned Mystical Powers (like <em>Heaven Earth Sleeve</em>) into
+                        transferable Skill Scrolls to bestow upon loyal disciples or trade for
+                        Spirit Stones.
                       </p>
                     </div>
                     <span className="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-500/40">
@@ -1879,8 +1980,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                             </div>
                             <p className="text-[11px] text-slate-400 mt-1">{skill.description}</p>
                             <div className="text-[10px] font-mono text-cyan-300 mt-1">
-                              Market Value: {formatBigInt(skill.marketValueSpiritStones)} Spirit Stones ·
-                              Transcribe Cost: {formatBigInt(skill.transcriptionCostQi)} Qi
+                              Market Value: {formatBigInt(skill.marketValueSpiritStones)} Spirit
+                              Stones · Transcribe Cost: {formatBigInt(skill.transcriptionCostQi)} Qi
                             </div>
                           </div>
 
@@ -1893,7 +1994,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                                     onUpdateCultivation((prev) => ({
                                       ...prev,
                                       learnedMysticalSkills: [
-                                        ...(prev.learnedMysticalSkills || ['skill_heaven_earth_sleeve']),
+                                        ...(prev.learnedMysticalSkills || [
+                                          'skill_heaven_earth_sleeve',
+                                        ]),
                                         skill.id,
                                       ],
                                     }));
@@ -1977,13 +2080,16 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <h3 className="text-sm sm:text-base font-bold font-cinzel text-purple-200 flex items-center gap-2">
-                      <span>✨ 6. Visualizing Power: The "Aura" (无等级头衔 · 境界异象显化 & HDR10+)</span>
+                      <span>
+                        ✨ 6. Visualizing Power: The "Aura" (无等级头衔 · 境界异象显化 & HDR10+)
+                      </span>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 font-mono font-bold">
                         {activeAuraSpec.hdrPeakLuminanceNits} Nits HDR10+
                       </span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      Immortal cultivators never display crude level numbers above their heads. Instead, power is recognized by unmistakable 3D & HDR10+ visual cues!
+                      Immortal cultivators never display crude level numbers above their heads.
+                      Instead, power is recognized by unmistakable 3D & HDR10+ visual cues!
                     </p>
                   </div>
                 </div>
@@ -1994,7 +2100,12 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     { idx: 1, title: 'Foundation', cue: 'Faint White Glow', icon: '🌫️' },
                     { idx: 2, title: 'Golden Core', cue: 'Spinning Golden Core', icon: '🔮' },
                     { idx: 3, title: 'Nascent Soul', cue: 'Floating Baby Avatar', icon: '👶' },
-                    { idx: 21, title: 'Dao Creator', cue: `${masteredGreatDaos} Divine Halos`, icon: '☀️' },
+                    {
+                      idx: 21,
+                      title: 'Dao Creator',
+                      cue: `${masteredGreatDaos} Divine Halos`,
+                      icon: '☀️',
+                    },
                   ].map((item) => {
                     const isSelected = activeAuraRealmIndex === item.idx;
                     return (
@@ -2020,7 +2131,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       >
                         <div className="text-xl">{item.icon}</div>
                         <div className="text-xs font-bold font-cinzel mt-1">{item.title}</div>
-                        <div className="text-[10px] font-mono text-amber-300 mt-0.5">{item.cue}</div>
+                        <div className="text-[10px] font-mono text-amber-300 mt-0.5">
+                          {item.cue}
+                        </div>
                       </button>
                     );
                   })}
@@ -2029,13 +2142,15 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                 <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-amber-300 font-mono">
-                      Active 3D & Vulkan HDR10+ Aura: {activeAuraSpec.label} ({activeAuraSpec.chineseLabel})
+                      Active 3D & Vulkan HDR10+ Aura: {activeAuraSpec.label} (
+                      {activeAuraSpec.chineseLabel})
                     </div>
                     <p className="text-xs text-slate-300">{activeAuraSpec.description}</p>
                     <div className="text-[11px] font-mono text-cyan-300">
-                      Translucent Chest Core: {activeAuraSpec.hasTranslucentChestCore ? 'YES' : 'NO'} ·
-                      Floating Nascent Baby: {activeAuraSpec.hasFloatingBabyAvatar ? 'YES' : 'NO'} ·
-                      Divine Halos: {activeAuraSpec.haloCount}
+                      Translucent Chest Core:{' '}
+                      {activeAuraSpec.hasTranslucentChestCore ? 'YES' : 'NO'} · Floating Nascent
+                      Baby: {activeAuraSpec.hasFloatingBabyAvatar ? 'YES' : 'NO'} · Divine Halos:{' '}
+                      {activeAuraSpec.haloCount}
                     </div>
                   </div>
 
@@ -2083,7 +2198,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                   {pathMeta.name} Heavenly Tribulation (九天神雷劫)
                 </h3>
                 <p className="text-xs text-slate-300 mt-1">
-                  The Heavenly Dao tests your {pathMeta.vesselName} before allowing ascension to the next sovereign realm!
+                  The Heavenly Dao tests your {pathMeta.vesselName} before allowing ascension to the
+                  next sovereign realm!
                 </p>
               </div>
 
@@ -2113,7 +2229,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                 }}
                 className="w-full py-3 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-sm shadow-lg shadow-rose-600/30 transition-all active:scale-95"
               >
-                Disperse Heavenly Strike ({tribulationStrikesDone + 1} / {currentRealm.tribulationRounds}) 🛡️
+                Disperse Heavenly Strike ({tribulationStrikesDone + 1} /{' '}
+                {currentRealm.tribulationRounds}) 🛡️
               </button>
             </div>
           </div>

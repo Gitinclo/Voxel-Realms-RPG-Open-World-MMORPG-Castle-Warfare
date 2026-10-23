@@ -594,4 +594,3 @@ export function getSimulatedEngineStats(): CppEngineStats {
     peakLuminanceNits: 4000,
   };
 }
-

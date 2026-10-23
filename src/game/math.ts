@@ -30,16 +30,106 @@ export interface CastleEra {
 }
 
 export const CASTLE_ERAS: CastleEra[] = [
-  { eraIndex: 1, name: 'Era I: Timber Encampment', minLevel: 0, maxLevel: 9, unlockedTroopTier: 2, buildingTheme: 'Timber & Earth', castleMultiplier: 1, perkDescription: 'Base gathering speed +10%' },
-  { eraIndex: 2, name: 'Era II: Stone Bastion', minLevel: 10, maxLevel: 19, unlockedTroopTier: 4, buildingTheme: 'Granite Walls', castleMultiplier: 5, perkDescription: 'Troop defense +25%' },
-  { eraIndex: 3, name: 'Era III: Iron Keep', minLevel: 20, maxLevel: 29, unlockedTroopTier: 6, buildingTheme: 'Reinforced Iron', castleMultiplier: 12, perkDescription: 'Shieldbearer block rating +30%' },
-  { eraIndex: 4, name: 'Era IV: Steel Fortress', minLevel: 30, maxLevel: 39, unlockedTroopTier: 8, buildingTheme: 'High Carbon Steel', castleMultiplier: 20, perkDescription: 'Shooter range +40%' },
-  { eraIndex: 5, name: 'Era V: Mythril Citadel', minLevel: 40, maxLevel: 49, unlockedTroopTier: 10, buildingTheme: 'Enchanted Mythril', castleMultiplier: 32, perkDescription: 'Bomber blast radius +50%' },
-  { eraIndex: 6, name: 'Era VI: Obsidian Spire', minLevel: 50, maxLevel: 59, unlockedTroopTier: 12, buildingTheme: 'Volcanic Obsidian', castleMultiplier: 45, perkDescription: 'All troop attack +60%' },
-  { eraIndex: 7, name: 'Era VII: Dragonscale Palace', minLevel: 60, maxLevel: 69, unlockedTroopTier: 14, buildingTheme: 'Draconic Runes', castleMultiplier: 60, perkDescription: 'Rally march speed +75%' },
-  { eraIndex: 8, name: 'Era VIII: Void Sanctum', minLevel: 70, maxLevel: 79, unlockedTroopTier: 16, buildingTheme: 'Dark Matter Flux', castleMultiplier: 75, perkDescription: 'Titan damage resistance +45%' },
-  { eraIndex: 9, name: 'Era IX: Astral Dominion', minLevel: 80, maxLevel: 89, unlockedTroopTier: 18, buildingTheme: 'Starlight Crystal', castleMultiplier: 90, perkDescription: 'Rally capacity boost +100%' },
-  { eraIndex: 10, name: 'Era X: Celestial Imperium', minLevel: 90, maxLevel: 100, unlockedTroopTier: 20, buildingTheme: 'Divine Singularity', castleMultiplier: 100, perkDescription: 'Unlocks T20 Celestial Aegis & 1000 Trillion Capacity' },
+  {
+    eraIndex: 1,
+    name: 'Era I: Timber Encampment',
+    minLevel: 0,
+    maxLevel: 9,
+    unlockedTroopTier: 2,
+    buildingTheme: 'Timber & Earth',
+    castleMultiplier: 1,
+    perkDescription: 'Base gathering speed +10%',
+  },
+  {
+    eraIndex: 2,
+    name: 'Era II: Stone Bastion',
+    minLevel: 10,
+    maxLevel: 19,
+    unlockedTroopTier: 4,
+    buildingTheme: 'Granite Walls',
+    castleMultiplier: 5,
+    perkDescription: 'Troop defense +25%',
+  },
+  {
+    eraIndex: 3,
+    name: 'Era III: Iron Keep',
+    minLevel: 20,
+    maxLevel: 29,
+    unlockedTroopTier: 6,
+    buildingTheme: 'Reinforced Iron',
+    castleMultiplier: 12,
+    perkDescription: 'Shieldbearer block rating +30%',
+  },
+  {
+    eraIndex: 4,
+    name: 'Era IV: Steel Fortress',
+    minLevel: 30,
+    maxLevel: 39,
+    unlockedTroopTier: 8,
+    buildingTheme: 'High Carbon Steel',
+    castleMultiplier: 20,
+    perkDescription: 'Shooter range +40%',
+  },
+  {
+    eraIndex: 5,
+    name: 'Era V: Mythril Citadel',
+    minLevel: 40,
+    maxLevel: 49,
+    unlockedTroopTier: 10,
+    buildingTheme: 'Enchanted Mythril',
+    castleMultiplier: 32,
+    perkDescription: 'Bomber blast radius +50%',
+  },
+  {
+    eraIndex: 6,
+    name: 'Era VI: Obsidian Spire',
+    minLevel: 50,
+    maxLevel: 59,
+    unlockedTroopTier: 12,
+    buildingTheme: 'Volcanic Obsidian',
+    castleMultiplier: 45,
+    perkDescription: 'All troop attack +60%',
+  },
+  {
+    eraIndex: 7,
+    name: 'Era VII: Dragonscale Palace',
+    minLevel: 60,
+    maxLevel: 69,
+    unlockedTroopTier: 14,
+    buildingTheme: 'Draconic Runes',
+    castleMultiplier: 60,
+    perkDescription: 'Rally march speed +75%',
+  },
+  {
+    eraIndex: 8,
+    name: 'Era VIII: Void Sanctum',
+    minLevel: 70,
+    maxLevel: 79,
+    unlockedTroopTier: 16,
+    buildingTheme: 'Dark Matter Flux',
+    castleMultiplier: 75,
+    perkDescription: 'Titan damage resistance +45%',
+  },
+  {
+    eraIndex: 9,
+    name: 'Era IX: Astral Dominion',
+    minLevel: 80,
+    maxLevel: 89,
+    unlockedTroopTier: 18,
+    buildingTheme: 'Starlight Crystal',
+    castleMultiplier: 90,
+    perkDescription: 'Rally capacity boost +100%',
+  },
+  {
+    eraIndex: 10,
+    name: 'Era X: Celestial Imperium',
+    minLevel: 90,
+    maxLevel: 100,
+    unlockedTroopTier: 20,
+    buildingTheme: 'Divine Singularity',
+    castleMultiplier: 100,
+    perkDescription: 'Unlocks T20 Celestial Aegis & 1000 Trillion Capacity',
+  },
 ];
 
 export function getCastleEra(level: number): CastleEra {
@@ -121,7 +211,7 @@ export function calculateRallyCapacity(castleLevel: number): bigint {
 export function formatBigInt(num: bigint | number): string {
   const b = typeof num === 'bigint' ? num : BigInt(Math.floor(num));
   if (b < 0n) return `-${formatBigInt(-b)}`;
-  
+
   if (b >= 1_000_000_000_000_000n) {
     const quadrillions = Number(b / 10_000_000_000_000n) / 100;
     return `${quadrillions.toFixed(2)}Q`;
@@ -149,24 +239,72 @@ export function formatBigInt(num: bigint | number): string {
  * Troop names for T1 - T20
  */
 const SHIELDBEARER_NAMES = [
-  'Wooden Buckler', 'Bronze Guardian', 'Iron Shieldbearer', 'Steel Vanguard', 'Adamant Sentinel',
-  'Runed Bulwark', 'Mythril Phalanx', 'Dragonscale Bastion', 'Obsidian Colossus', 'Titan Aegis',
-  'Solar Fortress', 'Starlight Ward', 'Void Barrier', 'Chrono Juggernaut', 'Singularity Wall',
-  'Primordial Aegis', 'Nebula Custodian', 'Cosmic Protector', 'Transcendent Shield', 'Celestial Aegis'
+  'Wooden Buckler',
+  'Bronze Guardian',
+  'Iron Shieldbearer',
+  'Steel Vanguard',
+  'Adamant Sentinel',
+  'Runed Bulwark',
+  'Mythril Phalanx',
+  'Dragonscale Bastion',
+  'Obsidian Colossus',
+  'Titan Aegis',
+  'Solar Fortress',
+  'Starlight Ward',
+  'Void Barrier',
+  'Chrono Juggernaut',
+  'Singularity Wall',
+  'Primordial Aegis',
+  'Nebula Custodian',
+  'Cosmic Protector',
+  'Transcendent Shield',
+  'Celestial Aegis',
 ];
 
 const SHOOTER_NAMES = [
-  'Shortbow Scout', 'Recurve Archer', 'Crossbow Hunter', 'Longbow Marksman', 'Arbalest Sniper',
-  'Eagle-Eye Ranger', 'Windrunner Bow', 'Dragon-Bone Balister', 'Arcane Deadeye', 'Plasma Ballista',
-  'Thunderbolt Sniper', 'Starlight Railgun', 'Void Bowmaster', 'Quasar Striker', 'Supernova Marksman',
-  'Chronos Arrow', 'Astral Sharpshooter', 'Dimensional Piercer', 'Infinity Archer', 'Celestial Deadeye'
+  'Shortbow Scout',
+  'Recurve Archer',
+  'Crossbow Hunter',
+  'Longbow Marksman',
+  'Arbalest Sniper',
+  'Eagle-Eye Ranger',
+  'Windrunner Bow',
+  'Dragon-Bone Balister',
+  'Arcane Deadeye',
+  'Plasma Ballista',
+  'Thunderbolt Sniper',
+  'Starlight Railgun',
+  'Void Bowmaster',
+  'Quasar Striker',
+  'Supernova Marksman',
+  'Chronos Arrow',
+  'Astral Sharpshooter',
+  'Dimensional Piercer',
+  'Infinity Archer',
+  'Celestial Deadeye',
 ];
 
 const BOMBER_NAMES = [
-  'Pitch Slinger', 'Powder Lobber', 'Iron Mortar', 'Catapult Engineer', 'Trebuchet Demolisher',
-  'Flamethrower Crew', 'Siege Cannonier', 'Dragonfire Mortar', 'Alchemy Bombardier', 'Magma Howitzer',
-  'Storm Blaster', 'Antimatter Siege', 'Void Cataclysm', 'Orbital Bombard', 'Pulsar Demolisher',
-  'Supercluster Bomber', 'Dark Matter Mortar', 'Cosmic Annihilator', 'Omega Siege Titan', 'Celestial Annihilator'
+  'Pitch Slinger',
+  'Powder Lobber',
+  'Iron Mortar',
+  'Catapult Engineer',
+  'Trebuchet Demolisher',
+  'Flamethrower Crew',
+  'Siege Cannonier',
+  'Dragonfire Mortar',
+  'Alchemy Bombardier',
+  'Magma Howitzer',
+  'Storm Blaster',
+  'Antimatter Siege',
+  'Void Cataclysm',
+  'Orbital Bombard',
+  'Pulsar Demolisher',
+  'Supercluster Bomber',
+  'Dark Matter Mortar',
+  'Cosmic Annihilator',
+  'Omega Siege Titan',
+  'Celestial Annihilator',
 ];
 
 /**
@@ -184,26 +322,26 @@ export function getTroopTierInfo(type: TroopType, tier: number): TroopTierInfo {
 
   if (type === 'shieldbearer') {
     name = SHIELDBEARER_NAMES[tierIndex];
-    baseAtk = 8n * (2n ** (t - 1n));
-    baseDef = 28n * (2n ** (t - 1n));
-    baseHp = 120n * (2n ** (t - 1n));
+    baseAtk = 8n * 2n ** (t - 1n);
+    baseDef = 28n * 2n ** (t - 1n);
+    baseHp = 120n * 2n ** (t - 1n);
   } else if (type === 'shooter') {
     name = SHOOTER_NAMES[tierIndex];
-    baseAtk = 32n * (2n ** (t - 1n));
-    baseDef = 12n * (2n ** (t - 1n));
-    baseHp = 55n * (2n ** (t - 1n));
+    baseAtk = 32n * 2n ** (t - 1n);
+    baseDef = 12n * 2n ** (t - 1n);
+    baseHp = 55n * 2n ** (t - 1n);
   } else {
     name = BOMBER_NAMES[tierIndex];
-    baseAtk = 45n * (2n ** (t - 1n));
-    baseDef = 16n * (2n ** (t - 1n));
-    baseHp = 70n * (2n ** (t - 1n));
+    baseAtk = 45n * 2n ** (t - 1n);
+    baseDef = 16n * 2n ** (t - 1n);
+    baseHp = 70n * 2n ** (t - 1n);
   }
 
   // Power scale
   const powerPerUnit = (baseAtk * 3n + baseDef * 3n + baseHp) / 2n;
 
   // Resource costs scale with tier
-  const costMultiplier = 5n * (2n ** (t - 1n));
+  const costMultiplier = 5n * 2n ** (t - 1n);
 
   return {
     tier: clampedTier,
@@ -224,8 +362,8 @@ export function getTroopTierInfo(type: TroopType, tier: number): TroopTierInfo {
       type === 'shieldbearer'
         ? `Heavy vanguard tank. Counter to Shooters with +50% block rating.`
         : type === 'shooter'
-        ? `Long-range armor piercer. Devastates Bombers with rapid volleys.`
-        : `Devastating siege demolitionist. Shatters Shieldbearer fortifications with explosive AOE.`
+          ? `Long-range armor piercer. Devastates Bombers with rapid volleys.`
+          : `Devastating siege demolitionist. Shatters Shieldbearer fortifications with explosive AOE.`,
   };
 }
 
@@ -242,7 +380,7 @@ export function getCastleUpgradeCost(currentLevel: number): Record<ResourceType,
     copper: factor * 1200n,
     grain: factor * 2000n,
     oil: factor * 900n,
-    diamond: nextLvl * 50n
+    diamond: nextLvl * 50n,
   };
 }
 
@@ -339,7 +477,7 @@ export function simulateBattle(
       remainingEnemyHp: monster.hp,
       playerCasualties: { shieldbearers: 0n, shooters: 0n, bombers: 0n },
       expGained: 0n,
-      lootAwarded: {}
+      lootAwarded: {},
     };
   }
 
@@ -352,14 +490,16 @@ export function simulateBattle(
     rounds++;
 
     // Player attacks monster
-    const rawPlayerDmg = totalAtk > monster.defense ? totalAtk - monster.defense / 2n : totalAtk / 2n;
+    const rawPlayerDmg =
+      totalAtk > monster.defense ? totalAtk - monster.defense / 2n : totalAtk / 2n;
     const playerDmg = rawPlayerDmg > 1n ? rawPlayerDmg : 1n;
     enemyHp = enemyHp > playerDmg ? enemyHp - playerDmg : 0n;
 
     if (enemyHp === 0n) break;
 
     // Monster attacks player (shieldbearers absorb brunt)
-    const rawMonsterDmg = monster.attack > totalDef ? monster.attack - totalDef / 3n : monster.attack / 3n;
+    const rawMonsterDmg =
+      monster.attack > totalDef ? monster.attack - totalDef / 3n : monster.attack / 3n;
     const monsterDmg = rawMonsterDmg > 1n ? rawMonsterDmg : 1n;
     playerHp = playerHp > monsterDmg ? playerHp - monsterDmg : 0n;
   }
@@ -384,19 +524,20 @@ export function simulateBattle(
     damageTaken: hpLost,
     remainingEnemyHp: enemyHp,
     playerCasualties: {
-      shieldbearers: sbCasualties > army.shieldbearers.count ? army.shieldbearers.count : sbCasualties,
+      shieldbearers:
+        sbCasualties > army.shieldbearers.count ? army.shieldbearers.count : sbCasualties,
       shooters: shCasualties > army.shooters.count ? army.shooters.count : shCasualties,
-      bombers: bmCasualties > army.bombers.count ? army.bombers.count : bmCasualties
+      bombers: bmCasualties > army.bombers.count ? army.bombers.count : bmCasualties,
     },
     expGained: victory ? finalExp : finalExp / 5n,
-    lootAwarded: victory ? monster.dropResources : {}
+    lootAwarded: victory ? monster.dropResources : {},
   };
 }
 
 /**
  * Resource point generation yield calculation for Node Level 1 to 10
  */
-export function getResourceNodeStats(type: ResourceType, level: number) {
+export function getResourceNodeStats(_type: ResourceType, level: number) {
   const clampedLvl = Math.max(1, Math.min(10, level));
   const baseYield = BigInt(clampedLvl * 50_000);
   const gatherSpeed = BigInt(clampedLvl * 150); // units per second
@@ -404,6 +545,6 @@ export function getResourceNodeStats(type: ResourceType, level: number) {
   return {
     level: clampedLvl,
     capacity: baseYield,
-    gatherRate: gatherSpeed
+    gatherRate: gatherSpeed,
   };
 }

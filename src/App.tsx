@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   CharacterAppearance,
@@ -50,10 +50,7 @@ import {
   getTroopTierInfo,
   MAX_CASTLE_LEVEL,
 } from './game/math';
-import {
-  calculateOutpostAssault,
-  calculateClanTotalPower,
-} from './game/clanMath';
+import { calculateOutpostAssault } from './game/clanMath';
 import { sound } from './game/audio';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
@@ -145,11 +142,12 @@ export default function App() {
   const [clanMembers, setClanMembers] = useState<ClanMember[]>(INITIAL_CLAN_MEMBERS);
   const [clanCoins, setClanCoins] = useState<bigint>(3_400n);
   const [clanChat, setClanChat] = useState<ClanChatMessage[]>(INITIAL_CLAN_CHAT);
-  const [clanLeaderboard, setClanLeaderboard] = useState<ClanLeaderboardEntry[]>(INITIAL_CLAN_LEADERBOARD);
+  const [clanLeaderboard, setClanLeaderboard] =
+    useState<ClanLeaderboardEntry[]>(INITIAL_CLAN_LEADERBOARD);
   const [monsters, setMonsters] = useState<MonsterTarget[]>(INITIAL_MONSTERS);
   const [resourceNodes, setResourceNodes] = useState<ResourceNode[]>(INITIAL_RESOURCE_NODES);
   const [npcs, setNpcs] = useState<NPC[]>(INITIAL_NPCS);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(INITIAL_LEADERBOARD);
+  const [leaderboard] = useState<LeaderboardEntry[]>(INITIAL_LEADERBOARD);
   const [selectedNpcId, setSelectedNpcId] = useState<string>(INITIAL_NPCS[0].id);
   const playerWorldPosRef = useRef<{ x: number; z: number }>({ x: 0, z: 18 });
   const [aiLogs, setAiLogs] = useState<WorldAIEventLog[]>([
@@ -160,7 +158,8 @@ export default function App() {
       actorType: 'npc',
       actorLevel: 220,
       category: 'combat',
-      message: '[Citadel Vanguard Guard] Intercepting Forest Goblin Clan (Lv.12) along eastern road.',
+      message:
+        '[Citadel Vanguard Guard] Intercepting Forest Goblin Clan (Lv.12) along eastern road.',
     },
     {
       id: 'ai_init_2',
@@ -169,7 +168,8 @@ export default function App() {
       actorType: 'npc',
       actorLevel: 320,
       category: 'gathering',
-      message: '[Master Runic Blacksmith] Prospected Lv.6 Steel Outcrop (+60,800 Steel Ingots added to stash).',
+      message:
+        '[Master Runic Blacksmith] Prospected Lv.6 Steel Outcrop (+60,800 Steel Ingots added to stash).',
     },
     {
       id: 'ai_init_3',
@@ -178,7 +178,8 @@ export default function App() {
       actorType: 'monster',
       actorLevel: 1000,
       category: 'environment',
-      message: 'Tier V Apex World Titan channeling Nine-Heavens Starfall Barrage [Sovereign Tempest Active].',
+      message:
+        'Tier V Apex World Titan channeling Nine-Heavens Starfall Barrage [Sovereign Tempest Active].',
     },
   ]);
 
@@ -273,7 +274,6 @@ export default function App() {
 
   // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance & Veteran Scroll Mastery
   const maxTroopCapacity = calculateCastleTroopCapacity(castleLevel);
-  const totalTroopsCount = Object.values(troops).reduce((sum, c) => sum + c, 0n);
   const fourPathSynergy = calculateFourPathSynergy(cultivation.paths);
   const veteranScrollBonuses = calculateVeteranScrollBonuses(
     cultivation.veteranScrollsComprehended ?? 0
@@ -373,7 +373,10 @@ export default function App() {
       setCultivation((prev) => {
         const mindRealm = prev.paths.mind.realmIndex;
         const mindLayer = prev.paths.mind.layer;
-        const manualSummary = calculateEquippedManualsSummary(prev.equippedManuals, prev.ownedManuals);
+        const manualSummary = calculateEquippedManualsSummary(
+          prev.equippedManuals,
+          prev.ownedManuals
+        );
         const scrollBonuses = calculateVeteranScrollBonuses(prev.veteranScrollsComprehended ?? 0);
         const qiRate = calculatePassiveQiRate(
           prev.paths.qi.realmIndex,
@@ -436,7 +439,11 @@ export default function App() {
         const updated = prev.map((node) => {
           if (node.assignedTroops > 0n && node.remainingCapacity > 0n) {
             hasMined = true;
-            const effectiveRate = calculateWeatherGatherRate(node.gatherRatePerSec, node.type, weather);
+            const effectiveRate = calculateWeatherGatherRate(
+              node.gatherRatePerSec,
+              node.type,
+              weather
+            );
             const mined = effectiveRate * 2n;
             const actualMined = mined > node.remainingCapacity ? node.remainingCapacity : mined;
             setResources((res) => ({
@@ -530,7 +537,9 @@ export default function App() {
       id: `chat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       senderId: isSystem ? 'sys' : 'cm_player',
       senderName: isSystem ? 'Clan Overseer' : 'Aiden Skyrender',
-      senderRole: isSystem ? 'Elder' : (clanMembers.find((m) => m.id === 'cm_player')?.role || 'Leader'),
+      senderRole: isSystem
+        ? 'Elder'
+        : clanMembers.find((m) => m.id === 'cm_player')?.role || 'Leader',
       senderAvatar: isSystem ? '🏛️' : '👑',
       message,
       timestamp: Date.now(),
@@ -565,11 +574,13 @@ export default function App() {
       true,
       'VAULT DEPOSIT'
     );
-    setToastMessage(`🎁 Donated supplies to Alliance Vault! Received +${formatBigInt(coins)} Honor.`);
+    setToastMessage(
+      `🎁 Donated supplies to Alliance Vault! Received +${formatBigInt(coins)} Honor.`
+    );
   };
 
   // Clan Store Purchase
-  const handleBuyClanStore = (itemId: string, cost: bigint) => {
+  const handleBuyClanStore = (_itemId: string, cost: bigint) => {
     setClanCoins((prev) => prev - cost);
     setToastMessage(`🛒 Purchased item from Clan Store! Applied immediately.`);
   };
@@ -686,7 +697,11 @@ export default function App() {
     setClanLeaderboard((prev) =>
       prev.map((c) => (c.tag === clan.tag || c.id === clan.id ? { ...c, emblem: newEmblem } : c))
     );
-    handleSendClanChat(`Leader Aiden Skyrender updated the Clan Heraldic Banner!`, true, 'BANNER RITUAL');
+    handleSendClanChat(
+      `Leader Aiden Skyrender updated the Clan Heraldic Banner!`,
+      true,
+      'BANNER RITUAL'
+    );
     setToastMessage('🛡️ Clan Heraldic Emblem updated successfully!');
   };
 
@@ -819,7 +834,9 @@ export default function App() {
         },
       };
     });
-    setToastMessage(`${meta.icon} ${meta.actionVerb}! Absorbed +${formatBigInt(burst)} ${meta.energyName}.`);
+    setToastMessage(
+      `${meta.icon} ${meta.actionVerb}! Absorbed +${formatBigInt(burst)} ${meta.energyName}.`
+    );
   };
 
   const handleCultivationBreakthrough = (
@@ -946,7 +963,8 @@ export default function App() {
     if (!owned) return;
     const cost = calculateManualUpgradeCost(manual, owned.level);
     if (cost.isMaxLevel) return;
-    if (cultivation.scriptureFragments < cost.fragments || resources.diamond < cost.diamonds) return;
+    if (cultivation.scriptureFragments < cost.fragments || resources.diamond < cost.diamonds)
+      return;
 
     setResources((prev) => ({
       ...prev,
@@ -1106,15 +1124,16 @@ export default function App() {
       const next = { ...prev };
       if (cas.shieldbearers > 0n && next['shieldbearer_t1']) {
         next['shieldbearer_t1'] =
-          next['shieldbearer_t1'] > cas.shieldbearers ? next['shieldbearer_t1'] - cas.shieldbearers : 0n;
+          next['shieldbearer_t1'] > cas.shieldbearers
+            ? next['shieldbearer_t1'] - cas.shieldbearers
+            : 0n;
       }
       if (cas.shooters > 0n && next['shooter_t1']) {
         next['shooter_t1'] =
           next['shooter_t1'] > cas.shooters ? next['shooter_t1'] - cas.shooters : 0n;
       }
       if (cas.bombers > 0n && next['bomber_t1']) {
-        next['bomber_t1'] =
-          next['bomber_t1'] > cas.bombers ? next['bomber_t1'] - cas.bombers : 0n;
+        next['bomber_t1'] = next['bomber_t1'] > cas.bombers ? next['bomber_t1'] - cas.bombers : 0n;
       }
       return next;
     });
@@ -1133,7 +1152,12 @@ export default function App() {
     const node = resourceNodes.find((n) => n.id === nodeId);
     if (!node) return;
 
-    const baseAmount = BigInt(Math.min(Number(node.totalCapacity - node.remainingCapacity + 25000n), Number(node.totalCapacity)));
+    const baseAmount = BigInt(
+      Math.min(
+        Number(node.totalCapacity - node.remainingCapacity + 25000n),
+        Number(node.totalCapacity)
+      )
+    );
     const weatherMult = WEATHER_CONFIGS[weather].gatherYieldMultipliers[node.type] ?? 1.0;
     const gatheredAmount = BigInt(Math.max(1, Math.floor(Number(baseAmount) * weatherMult)));
 
@@ -1146,7 +1170,9 @@ export default function App() {
       prev.map((n) => (n.id === nodeId ? { ...n, assignedTroops: 0n } : n))
     );
 
-    setToastMessage(`🌾 Harvested +${formatBigInt(gatheredAmount)} ${node.type.toUpperCase()} (${Math.round(weatherMult * 100)}% ${WEATHER_CONFIGS[weather].name} yield)!`);
+    setToastMessage(
+      `🌾 Harvested +${formatBigInt(gatheredAmount)} ${node.type.toUpperCase()} (${Math.round(weatherMult * 100)}% ${WEATHER_CONFIGS[weather].name} yield)!`
+    );
   };
 
   // Focus Node
@@ -1198,9 +1224,7 @@ export default function App() {
 
   const handleSetNPCDirective = (npcId: string, directive: NPCDirective) => {
     const targetNpc = npcs.find((n) => n.id === npcId);
-    setNpcs((prev) =>
-      prev.map((n) => (n.id === npcId ? { ...n, directive } : n))
-    );
+    setNpcs((prev) => prev.map((n) => (n.id === npcId ? { ...n, directive } : n)));
     if (targetNpc) {
       setToastMessage(
         `🧠 Assigned AI Directive [${directive.replace('_', ' ').toUpperCase()}] to ${targetNpc.name}!`
@@ -1223,10 +1247,10 @@ export default function App() {
       return next;
     });
 
-    setNpcs((prev) =>
-      prev.map((n) => (n.id === npcId ? { ...n, gatheredStash: {} } : n))
+    setNpcs((prev) => prev.map((n) => (n.id === npcId ? { ...n, gatheredStash: {} } : n)));
+    setToastMessage(
+      `⛏️ Collected ${targetNpc.name}'s autonomous gathered stash into your Treasury!`
     );
-    setToastMessage(`⛏️ Collected ${targetNpc.name}'s autonomous gathered stash into your Treasury!`);
   };
 
   const handleClaimNPCQuest = (npcId: string, quest: Quest) => {
@@ -1242,9 +1266,7 @@ export default function App() {
     // Generate next radiant quest for this NPC
     setNpcs((prev) =>
       prev.map((n) =>
-        n.id === npcId
-          ? { ...n, activeQuest: generateRadiantQuestForNPC(n, castleLevel) }
-          : n
+        n.id === npcId ? { ...n, activeQuest: generateRadiantQuestForNPC(n, castleLevel) } : n
       )
     );
     confetti({ particleCount: 55, spread: 70 });
@@ -1292,9 +1314,7 @@ export default function App() {
       },
       ...prev,
     ]);
-    setToastMessage(
-      `🐉 Spawned Level ${newMonster.level} ${newMonster.name} into the Open World!`
-    );
+    setToastMessage(`🐉 Spawned Level ${newMonster.level} ${newMonster.name} into the Open World!`);
   };
 
   // Action Click from HUD
@@ -1356,7 +1376,10 @@ export default function App() {
     setToastMessage('🌅 Advanced calendar by +1 Day! Next Daily Login Decree is now ready.');
   };
 
-  const handleComprehendVeteranScroll = (targetPath: CultivationPath | 'all', count: number = 1) => {
+  const handleComprehendVeteranScroll = (
+    targetPath: CultivationPath | 'all',
+    count: number = 1
+  ) => {
     const result = applyVeteranScrollToCultivation(cultivation, targetPath, count);
     if (!result.success) {
       setToastMessage(result.message);
@@ -1390,7 +1413,7 @@ export default function App() {
           setSelectedMonster(m);
           setActiveModal('world_boss');
         }}
-        onSelectResourceNode={(n) => {
+        onSelectResourceNode={() => {
           setActiveModal('resources');
         }}
         onSelectCastle={() => {
@@ -1483,7 +1506,8 @@ export default function App() {
             const next = presets[(presets.indexOf(graphicsQuality) + 1) % presets.length];
             setGraphicsQuality(next);
             const labels = {
-              ultra: '✨ Graphics: ULTRA HDR (UnrealBloom Post-Processing + 2048px Shadows + PBR Clearcoat)',
+              ultra:
+                '✨ Graphics: ULTRA HDR (UnrealBloom Post-Processing + 2048px Shadows + PBR Clearcoat)',
               high: '🎨 Graphics: HIGH (PBR Physical Materials + 2048px Soft Shadows)',
               balanced: '⚡ Graphics: BALANCED (60 FPS Direct Render Mode)',
             };
@@ -1643,7 +1667,9 @@ export default function App() {
           isTimeFrozen={isTimeFrozen}
           onToggleTimeFreeze={() => setIsTimeFrozen(!isTimeFrozen)}
           onTriggerRivalRaid={() => {
-            setToastMessage('⚠️ [Territory Defense] Rival Lord Chronos vanguard repelled by your fortified citadel!');
+            setToastMessage(
+              '⚠️ [Territory Defense] Rival Lord Chronos vanguard repelled by your fortified citadel!'
+            );
           }}
           currentWeather={weather}
           onSetWeather={(w) => {

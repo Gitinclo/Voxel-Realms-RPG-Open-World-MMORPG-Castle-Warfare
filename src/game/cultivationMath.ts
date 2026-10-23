@@ -9,7 +9,6 @@ import {
   CultivationPath,
   CultivationPathMeta,
   CultivationPathProgress,
-  CultivationEra,
   CultivationManual,
   OwnedManualState,
   KarmaAlignment,
@@ -32,7 +31,8 @@ export const CULTIVATION_PATH_META: Record<CultivationPath, CultivationPathMeta>
     vesselName: 'Dantian Sea',
     actionVerb: 'Circulate Qi Breath',
     icon: '🧘',
-    specialtySummary: 'Channels heaven and earth spiritual energy into the Dantian to wield supreme elemental laws.',
+    specialtySummary:
+      'Channels heaven and earth spiritual energy into the Dantian to wield supreme elemental laws.',
     combatBonusDesc: 'Amplifies overall Kingdom Spiritual Might & Elemental Spell Damage',
     accentColor: 'amber',
   },
@@ -44,8 +44,10 @@ export const CULTIVATION_PATH_META: Record<CultivationPath, CultivationPathMeta>
     vesselName: 'Marrow & Physique',
     actionVerb: 'Temper Flesh & Marrow',
     icon: '🛡️',
-    specialtySummary: 'Forges skin, bones, viscera, and chaotic bloodlines into an indestructible universe-shattering vessel.',
-    combatBonusDesc: 'Multiplies Troop HP, Citadel Siege Defense & Tribulation Lightning Resistance',
+    specialtySummary:
+      'Forges skin, bones, viscera, and chaotic bloodlines into an indestructible universe-shattering vessel.',
+    combatBonusDesc:
+      'Multiplies Troop HP, Citadel Siege Defense & Tribulation Lightning Resistance',
     accentColor: 'rose',
   },
   soul: {
@@ -56,7 +58,8 @@ export const CULTIVATION_PATH_META: Record<CultivationPath, CultivationPathMeta>
     vesselName: 'Sea of Consciousness',
     actionVerb: 'Refine Divine Sense',
     icon: '👁️',
-    specialtySummary: 'Condenses Yin and Yang spirits into an immortal Primordial Spirit (Yuan Shen) spanning galaxies.',
+    specialtySummary:
+      'Condenses Yin and Yang spirits into an immortal Primordial Spirit (Yuan Shen) spanning galaxies.',
     combatBonusDesc: 'Multiplies Army Attack Precision, Critical Strike Damage & Rally Capacity',
     accentColor: 'cyan',
   },
@@ -68,8 +71,10 @@ export const CULTIVATION_PATH_META: Record<CultivationPath, CultivationPathMeta>
     vesselName: 'Dao Heart',
     actionVerb: 'Contemplate Dao Heart',
     icon: '🪷',
-    specialtySummary: 'Tempers an unshakeable Dao Heart immune to inner demons, karma backlash, and cosmic despair.',
-    combatBonusDesc: 'Boosts All-Path Cultivation Speed, Breakthrough Success Rate (+%) & Inner Demon Immunity',
+    specialtySummary:
+      'Tempers an unshakeable Dao Heart immune to inner demons, karma backlash, and cosmic despair.',
+    combatBonusDesc:
+      'Boosts All-Path Cultivation Speed, Breakthrough Success Rate (+%) & Inner Demon Immunity',
     accentColor: 'purple',
   },
 };
@@ -144,7 +149,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'mortal',
     index: 4,
     totalLayers: 9,
-    description: 'Transforming the nascent soul into an astral divine spirit merged with natural laws.',
+    description:
+      'Transforming the nascent soul into an astral divine spirit merged with natural laws.',
     lore: 'Can project divine consciousness across entire continental empires.',
     basePowerMultiplier: 50.0,
     baseQiPerLayer: 250_000_000n,
@@ -174,7 +180,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'mortal',
     index: 6,
     totalLayers: 9,
-    description: 'Fusing the physical indestructible body and transcendent soul into one unified vessel.',
+    description:
+      'Fusing the physical indestructible body and transcendent soul into one unified vessel.',
     lore: 'The physical form becomes a walking miniature realm, commanding domain pressure.',
     basePowerMultiplier: 650.0,
     baseQiPerLayer: 50_000_000_000n,
@@ -204,7 +211,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'mortal',
     index: 8,
     totalLayers: 9,
-    description: 'The absolute peak of the mortal world, waiting for the celestial ascension light.',
+    description:
+      'The absolute peak of the mortal world, waiting for the celestial ascension light.',
     lore: 'Sovereign of all mortal cultivators. One step away from setting foot in the Immortal World.',
     basePowerMultiplier: 10_000.0,
     baseQiPerLayer: 10_000_000_000_000n,
@@ -221,7 +229,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'immortal_sage',
     index: 9,
     totalLayers: 9,
-    description: 'Basic immortal stage; shedding mortal flesh to channel pure celestial immortal Qi.',
+    description:
+      'Basic immortal stage; shedding mortal flesh to channel pure celestial immortal Qi.',
     lore: 'Ascended beyond worldly limitations, capable of manipulating regional natural laws.',
     basePowerMultiplier: 50_000.0,
     baseQiPerLayer: 150_000_000_000_000n,
@@ -281,7 +290,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'immortal_sage',
     index: 13,
     totalLayers: 9,
-    description: 'Gaining true, unconditional immortality, unaging life, and permanent spirit light.',
+    description:
+      'Gaining true, unconditional immortality, unaging life, and permanent spirit light.',
     lore: 'Free from the five elements and natural rebirth cycles. My life is mine, not decided by heaven.',
     basePowerMultiplier: 35_000_000.0,
     baseQiPerLayer: 6_000_000_000_000_000_000n,
@@ -311,7 +321,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'immortal_sage',
     index: 15,
     totalLayers: 9,
-    description: 'Stepping out of the river of time; completely immune to standard cause and effect.',
+    description:
+      'Stepping out of the river of time; completely immune to standard cause and effect.',
     lore: 'Existing simultaneously across past, present, and future in the mortal timeline.',
     basePowerMultiplier: 1_200_000_000.0,
     baseQiPerLayer: 1_200_000_000_000_000_000_000n,
@@ -341,7 +352,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'immortal_sage',
     index: 17,
     totalLayers: 9,
-    description: 'Bound to the Heavenly Dao. Completely immortal within their universe with reality manipulation.',
+    description:
+      'Bound to the Heavenly Dao. Completely immortal within their universe with reality manipulation.',
     lore: 'As long as the Heavenly Dao endures, the Sage never perishes. Reality bends to their word.',
     basePowerMultiplier: 60_000_000_000.0,
     baseQiPerLayer: 250_000_000_000_000_000_000_000n,
@@ -356,7 +368,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'immortal_sage',
     index: 18,
     totalLayers: 9,
-    description: 'Breaking free from the restrictions of a single universe’s Dao. Han Huang was born here.',
+    description:
+      'Breaking free from the restrictions of a single universe’s Dao. Han Huang was born here.',
     lore: 'Transcending universal boundaries. Untouchable by universal collapse or Heavenly Dao reboots.',
     basePowerMultiplier: 500_000_000_000.0,
     baseQiPerLayer: 3_500_000_000_000_000_000_000_000n,
@@ -373,7 +386,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'chaos_dao',
     index: 19,
     totalLayers: 9,
-    description: 'Cultivators who possess and control an independent, self-contained Great Dao law.',
+    description:
+      'Cultivators who possess and control an independent, self-contained Great Dao law.',
     lore: 'Wielding primordial cosmic authority beyond billions of mortal and immortal realms.',
     basePowerMultiplier: 4_500_000_000_000.0,
     baseQiPerLayer: 50_000_000_000_000_000_000_000_000n,
@@ -403,7 +417,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'chaos_dao',
     index: 21,
     totalLayers: 9,
-    description: 'The supreme authority figures of reality. They create their own unique Great Dao Worlds.',
+    description:
+      'The supreme authority figures of reality. They create their own unique Great Dao Worlds.',
     lore: 'Functionally omnipotent to all lower beings. Entities like The Ninth Chaos and Han Huang stop here.',
     basePowerMultiplier: 500_000_000_000_000.0,
     baseQiPerLayer: 10_000_000_000_000_000_000_000_000_000n,
@@ -420,7 +435,8 @@ export const CULTIVATION_REALMS: CultivationRealmDef[] = [
     era: 'ultimate_origin',
     index: 22,
     totalLayers: 9,
-    description: 'The absolute final realm achieved exclusively by Han Jue. Sits infinitely above Dao Creators.',
+    description:
+      'The absolute final realm achieved exclusively by Han Jue. Sits infinitely above Dao Creators.',
     lore: 'Completely omniscient, omnipotent, and able to create, destroy, or rewrite entire infinite multiverses with a single thought.',
     basePowerMultiplier: 10_000_000_000_000_000.0,
     baseQiPerLayer: 200_000_000_000_000_000_000_000_000_000n,
@@ -469,7 +485,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_skin_flesh',
     name: 'Skin & Flesh Tempering',
     chineseName: '淬皮炼肉境',
-    description: 'Hardening epidermis and muscle fibers with spirit beast blood until impervious to mortal blades.',
+    description:
+      'Hardening epidermis and muscle fibers with spirit beast blood until impervious to mortal blades.',
     lore: 'Every pore breathes vital blood energy; ordinary arrows shatter against the skin.',
     icon: '🥊',
   },
@@ -485,7 +502,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_viscera_renewal',
     name: 'Five Viscera Renewal',
     chineseName: '洗髓炼脏境',
-    description: 'Purifying the internal organs and bone marrow into a self-sustaining furnace of vitality.',
+    description:
+      'Purifying the internal organs and bone marrow into a self-sustaining furnace of vitality.',
     lore: 'Heartbeats echo like war drums; poison and mortal diseases are incinerated instantly.',
     icon: '🫀',
   },
@@ -493,7 +511,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_golden_marrow',
     name: 'Golden Marrow Realm',
     chineseName: '金髓玉骨境',
-    description: 'Transforming bone marrow into liquid gold that continuously regenerates severed limbs.',
+    description:
+      'Transforming bone marrow into liquid gold that continuously regenerates severed limbs.',
     lore: 'Blood becomes heavy as mercury, glowing with a faint golden radiance.',
     icon: '🔱',
   },
@@ -501,7 +520,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_sacred_physique',
     name: 'Sacred Martial Physique',
     chineseName: '圣体初成境',
-    description: 'Awakening ancient martial totems within the bloodline to crush mountains barehanded.',
+    description:
+      'Awakening ancient martial totems within the bloodline to crush mountains barehanded.',
     lore: 'Physical shockwaves tear apart spatial rifts without using a single drop of spell Qi.',
     icon: '🛡️',
   },
@@ -517,7 +537,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_nirvana_vessel',
     name: 'Bloodline Nirvana Realm',
     chineseName: '涅槃金身境',
-    description: 'Undergoing nine cycles of physical rebirth; a single drop of blood can regrow the entire body.',
+    description:
+      'Undergoing nine cycles of physical rebirth; a single drop of blood can regrow the entire body.',
     lore: 'Like an undying phoenix forged in primordial magma, every injury makes the vessel stronger.',
     icon: '🔥',
   },
@@ -525,7 +546,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_tribulation_lightning',
     name: 'Tribulation Lightning Body',
     chineseName: '雷劫战体境',
-    description: 'Devouring heavenly tribulation lightning directly into the muscles to engrave thunder runes.',
+    description:
+      'Devouring heavenly tribulation lightning directly into the muscles to engrave thunder runes.',
     lore: 'Instead of fearing heavenly punishment, the body cultivator bathes in celestial thunder.',
     icon: '⚡',
   },
@@ -533,7 +555,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_mahayana_vessel',
     name: 'Mahayana Diamond Vessel',
     chineseName: '大乘金刚体',
-    description: 'The pinnacle of mortal physical cultivation; flesh and blood radiate immortal golden light.',
+    description:
+      'The pinnacle of mortal physical cultivation; flesh and blood radiate immortal golden light.',
     lore: 'A single stomp cracks continental plates, ready to shatter the gates of the Immortal World.',
     icon: '🗿',
   },
@@ -558,7 +581,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_heaven_immortal',
     name: 'Heaven Immortal Astral Body',
     chineseName: '天仙星辰体',
-    description: 'Drawing starlight from the Nine Heavens to temper acupoints into miniature stars.',
+    description:
+      'Drawing starlight from the Nine Heavens to temper acupoints into miniature stars.',
     lore: '365 acupoints blaze like a constellation inside the flesh.',
     icon: '🌟',
   },
@@ -574,7 +598,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_golden_immortal',
     name: 'Golden Immortal Indestructible Body',
     chineseName: '万劫不灭金身',
-    description: 'Forging an eternal golden body that remains unblemished across ten thousand kalpas.',
+    description:
+      'Forging an eternal golden body that remains unblemished across ten thousand kalpas.',
     lore: 'Even if stars explode at point-blank range, not a single hair is singed.',
     icon: '👑',
   },
@@ -582,7 +607,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_taiyi_sacred',
     name: 'Taiyi Origin Physique',
     chineseName: '太乙先天道体',
-    description: 'Reverting the body to an innate congenital lifeform born before heaven and earth.',
+    description:
+      'Reverting the body to an innate congenital lifeform born before heaven and earth.',
     lore: 'Immune to curses and karmic hexes targeting the physical bloodline.',
     icon: '🐉',
   },
@@ -590,7 +616,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_zenith_heaven',
     name: 'Zenith Heaven Immortal Body',
     chineseName: '大罗混元战体',
-    description: 'Anchoring the physical form across all timelines; physical death becomes an impossibility.',
+    description:
+      'Anchoring the physical form across all timelines; physical death becomes an impossibility.',
     lore: 'Every drop of blood contains a projection of an ancient martial world.',
     icon: '⏳',
   },
@@ -598,7 +625,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_pseudo_sage',
     name: 'Pseudo-Sage Ancestral Body',
     chineseName: '准圣祖巫战躯',
-    description: 'Condensing ancestral titan bloodlines that rival the Heavenly Dao in sheer physical might.',
+    description:
+      'Condensing ancestral titan bloodlines that rival the Heavenly Dao in sheer physical might.',
     lore: 'Tearing apart celestial arrays and divine artifacts with bare hands.',
     icon: '🪓',
   },
@@ -606,7 +634,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_heavenly_sage',
     name: 'Heavenly Dao Indestructible Body',
     chineseName: '天道不朽圣躯',
-    description: 'Sanctifying the flesh with Heavenly Dao laws; the body itself is an unbreakable universe.',
+    description:
+      'Sanctifying the flesh with Heavenly Dao laws; the body itself is an unbreakable universe.',
     lore: 'As long as the universe exists, the Sage’s physical stamina is infinite.',
     icon: '☀️',
   },
@@ -614,7 +643,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_freedom_sage',
     name: 'Freedom Chaotic Physique',
     chineseName: '混元无极战体',
-    description: 'Breaking free from universal matter limits to walk bare-chested through raw primordial chaos.',
+    description:
+      'Breaking free from universal matter limits to walk bare-chested through raw primordial chaos.',
     lore: 'Chaotic winds that shred normal sages merely polish this peerless physique.',
     icon: '🦁',
   },
@@ -623,7 +653,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_great_dao_fiend',
     name: 'Great Dao Fiendcelestial Body',
     chineseName: '大道魔神真身',
-    description: 'Transforming into a three-thousand-zhang Chaos Fiendcelestial whose bones are Great Dao chains.',
+    description:
+      'Transforming into a three-thousand-zhang Chaos Fiendcelestial whose bones are Great Dao chains.',
     lore: 'Han Jue’s primordial fiendcelestial body can swallow entire星域 (star domains) in a single breath.',
     icon: '👹',
   },
@@ -631,7 +662,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_great_dao_supreme',
     name: 'Great Dao Supreme Vessel',
     chineseName: '大道至尊宝体',
-    description: 'Every cell evolves into an independent cosmos teeming with trillions of living beings.',
+    description:
+      'Every cell evolves into an independent cosmos teeming with trillions of living beings.',
     lore: 'A single fist strike shatters supreme universes within the boundless Chaos.',
     icon: '🌌',
   },
@@ -639,7 +671,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_dao_creator',
     name: 'Chaos Creator Physique',
     chineseName: '创世造化神躯',
-    description: 'The ultimate physical origin; flesh and blood give birth to brand-new Great Dao Worlds.',
+    description:
+      'The ultimate physical origin; flesh and blood give birth to brand-new Great Dao Worlds.',
     lore: 'Standing taller than the Chaos itself, impervious to all lower reality erasure.',
     icon: '🏛️',
   },
@@ -648,7 +681,8 @@ export const BODY_REALMS: CultivationRealmDef[] = buildPathRealms('body', [
     id: 'body_ultimate_origin',
     name: 'Ultimate Origin Eternal Body',
     chineseName: '终元永恒不灭躯',
-    description: 'Han Jue’s exclusive physical peak. Transcends concept, matter, and non-existence altogether.',
+    description:
+      'Han Jue’s exclusive physical peak. Transcends concept, matter, and non-existence altogether.',
     lore: 'An eternal, omnipotent vessel that encompasses infinite multiverses within a single palm.',
     icon: '🛡️👑',
   },
@@ -660,7 +694,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_awakening',
     name: 'Mortal Soul Awakening',
     chineseName: '开窍启灵境',
-    description: 'Opening the spiritual eye between the brows and awakening the dormant Sea of Consciousness.',
+    description:
+      'Opening the spiritual eye between the brows and awakening the dormant Sea of Consciousness.',
     lore: 'Perceiving the flow of Qi and sensing incoming ambushes before they strike.',
     icon: '🕯️',
   },
@@ -668,7 +703,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_sense_condense',
     name: 'Spirit Sense Condensation',
     chineseName: '凝识成丝境',
-    description: 'Weaving scattered mental thoughts into invisible threads of telekinetic Divine Sense.',
+    description:
+      'Weaving scattered mental thoughts into invisible threads of telekinetic Divine Sense.',
     lore: 'Controlling flying swords and scouting enemy fortifications from ten miles away.',
     icon: '🕸️',
   },
@@ -676,7 +712,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_yin_spirit',
     name: 'Yin Spirit Manifestation',
     chineseName: '阴神出窍境',
-    description: 'Condensing the soul into a tangible phantom that can leave the body under moonlight.',
+    description:
+      'Condensing the soul into a tangible phantom that can leave the body under moonlight.',
     lore: 'Capable of spectral travel and silent assassination through solid fortress walls.',
     icon: '🌙',
   },
@@ -684,7 +721,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_yang_spirit',
     name: 'Yang Spirit Projection',
     chineseName: '阳神显化境',
-    description: 'Purging all Yin weakness from the soul so it blazes like a miniature sun, immune to solar winds.',
+    description:
+      'Purging all Yin weakness from the soul so it blazes like a miniature sun, immune to solar winds.',
     lore: 'The soul can now wield magical treasures independently across thousands of leagues.',
     icon: '☀️',
   },
@@ -692,7 +730,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_astral_formation',
     name: 'Astral Soul Formation',
     chineseName: '星魂化神境',
-    description: 'Expanding the Sea of Consciousness into a vast starry lake reflecting natural laws.',
+    description:
+      'Expanding the Sea of Consciousness into a vast starry lake reflecting natural laws.',
     lore: 'A single mental spike can shatter the minds of an entire enemy battalion.',
     icon: '🌠',
   },
@@ -700,7 +739,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_void_sense',
     name: 'Void Divine Sense',
     chineseName: '洞虚神念境',
-    description: 'Merging soul consciousness with spatial frequencies to scan across dimensional folds.',
+    description:
+      'Merging soul consciousness with spatial frequencies to scan across dimensional folds.',
     lore: 'Han Jue’s divine sense monitors the entire mortal world without leaving his cave.',
     icon: '👁️',
   },
@@ -708,7 +748,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_yuan_shen',
     name: 'Primordial Spirit (Yuan Shen)',
     chineseName: '元神真仙境',
-    description: 'Fusing essence, Qi, and spirit into an indestructible, self-aware Primordial Spirit.',
+    description:
+      'Fusing essence, Qi, and spirit into an indestructible, self-aware Primordial Spirit.',
     lore: 'Even if the body is reduced to ash, the Yuan Shen can seize rebirth or reconstruct a vessel.',
     icon: '🧘‍♂️',
   },
@@ -716,7 +757,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_thunder_baptized',
     name: 'Thunder-Baptized Soul',
     chineseName: '雷炼元神境',
-    description: 'Cleansing the Primordial Spirit in heavenly tribulation fire to burn away all karmic tethers.',
+    description:
+      'Cleansing the Primordial Spirit in heavenly tribulation fire to burn away all karmic tethers.',
     lore: 'The soul gleams like violet thunder-crystal, radiating terrifying spiritual coercion.',
     icon: '⚡',
   },
@@ -724,7 +766,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_mahayana_divine',
     name: 'Mahayana Divine Spirit',
     chineseName: '大乘神魂境',
-    description: 'The mortal soul limit; divine sense blankets the entire planet and peers into the Immortal World.',
+    description:
+      'The mortal soul limit; divine sense blankets the entire planet and peers into the Immortal World.',
     lore: 'Every thought calculates ten thousand battlefield formations instantaneously.',
     icon: '🔮',
   },
@@ -741,7 +784,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_earth_immortal',
     name: 'Earth Immortal Spirit',
     chineseName: '地仙神识',
-    description: 'Linking the Sea of Consciousness with continental spirit veins to perceive all subterranean secrets.',
+    description:
+      'Linking the Sea of Consciousness with continental spirit veins to perceive all subterranean secrets.',
     lore: 'No hidden assassin or underground ambush can escape detection.',
     icon: '⛰️',
   },
@@ -757,7 +801,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_grand_xuan',
     name: 'Grand Xuan Astral Soul',
     chineseName: '玄仙通幽魂',
-    description: 'Splitting the Primordial Spirit into thousands of independent clones for simultaneous cultivation.',
+    description:
+      'Splitting the Primordial Spirit into thousands of independent clones for simultaneous cultivation.',
     lore: 'Each thought-clone possesses independent combat intelligence.',
     icon: '💠',
   },
@@ -765,7 +810,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_golden_immortal',
     name: 'Golden Immortal True Spirit',
     chineseName: '金仙不朽真灵',
-    description: 'Forging an immortal True Spirit (Zhen Ling) that transcends the River of Reincarnation.',
+    description:
+      'Forging an immortal True Spirit (Zhen Ling) that transcends the River of Reincarnation.',
     lore: 'Soul attacks from lower beings dissolve like snow in a furnace.',
     icon: '👑',
   },
@@ -781,7 +827,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_zenith_timeless',
     name: 'Zenith Heaven Timeless Soul',
     chineseName: '大罗超脱神魂',
-    description: 'A True Spirit anchored outside the River of Time; memories and consciousness are eternal.',
+    description:
+      'A True Spirit anchored outside the River of Time; memories and consciousness are eternal.',
     lore: 'Anyone who speaks the cultivator’s true name is immediately sensed across time.',
     icon: '⏳',
   },
@@ -814,7 +861,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_great_dao',
     name: 'Great Dao Sacred Soul',
     chineseName: '大道圣魂',
-    description: 'The Primordial Spirit embodies a complete Great Dao Law, projecting soul realms across Chaos.',
+    description:
+      'The Primordial Spirit embodies a complete Great Dao Law, projecting soul realms across Chaos.',
     lore: 'Soul illusions become indistinguishable from true cosmic reality.',
     icon: '🪐',
   },
@@ -822,7 +870,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_great_dao_supreme',
     name: 'Great Dao Supreme Spirit',
     chineseName: '大道至尊神魂',
-    description: 'Consciousness spans trillions of chaos light-years, suppressing ancient chaos overlords.',
+    description:
+      'Consciousness spans trillions of chaos light-years, suppressing ancient chaos overlords.',
     lore: 'A single mental decree rewrites the laws of soul and reincarnation across universes.',
     icon: '🌌',
   },
@@ -830,7 +879,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_dao_creator',
     name: 'Dao Creator Omniscient Soul',
     chineseName: '创世全知神魂',
-    description: 'The supreme soul origin capable of birthing trillions of sentient souls with a single thought.',
+    description:
+      'The supreme soul origin capable of birthing trillions of sentient souls with a single thought.',
     lore: 'All beings within the Great Dao World exist as reflections within the Creator’s mind.',
     icon: '👁️‍🗨️',
   },
@@ -839,7 +889,8 @@ export const SOUL_REALMS: CultivationRealmDef[] = buildPathRealms('soul', [
     id: 'soul_ultimate_origin',
     name: 'Ultimate Origin Eternal Soul',
     chineseName: '终元至高永生魂',
-    description: 'Han Jue’s exclusive soul pinnacle. Absolute omniscience across all past, present, and future multiverses.',
+    description:
+      'Han Jue’s exclusive soul pinnacle. Absolute omniscience across all past, present, and future multiverses.',
     lore: 'One thought creates infinite realms; one thought erases Dao Creators from existence.',
     icon: '👁️👑',
   },
@@ -859,7 +910,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_clear_mirror',
     name: 'Clear Mirror Mind',
     chineseName: '明镜台心境',
-    description: 'Polishing the mind like a flawless mirror that reflects illusions without attachment.',
+    description:
+      'Polishing the mind like a flawless mirror that reflects illusions without attachment.',
     lore: 'Charm spells and mortal Phantasm arrays shatter upon touching the Clear Mirror.',
     icon: '🪞',
   },
@@ -867,7 +919,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_unwavering_will',
     name: 'Unwavering Rock Will',
     chineseName: '磐石道志境',
-    description: 'Forging mental resolve as steadfast as an ancient mountain through centuries of solitude.',
+    description:
+      'Forging mental resolve as steadfast as an ancient mountain through centuries of solitude.',
     lore: 'Lonely seclusion that drives ordinary geniuses mad only sweetens Han Jue’s tea.',
     icon: '🪨',
   },
@@ -891,7 +944,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_void_tranquility',
     name: 'Void Tranquility Mind',
     chineseName: '太虚寂静心',
-    description: 'Embracing the silent, boundless emptiness of the void while maintaining razor-sharp awareness.',
+    description:
+      'Embracing the silent, boundless emptiness of the void while maintaining razor-sharp awareness.',
     lore: 'A millennium passes in the blink of an eye; the Dao Heart remains eternally tranquil.',
     icon: '🌌',
   },
@@ -899,7 +953,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_heaven_defying',
     name: 'Heaven-Defying Will',
     chineseName: '逆天唯我意',
-    description: 'Cultivating an indomitable willpower that refuses to bow even before celestial pressure.',
+    description:
+      'Cultivating an indomitable willpower that refuses to bow even before celestial pressure.',
     lore: 'Cautious in action, yet invincible and unyielding in Dao conviction.',
     icon: '🔥',
   },
@@ -924,7 +979,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_loose_immortal',
     name: 'Loose Immortal Detachment',
     chineseName: '散仙超凡心',
-    description: 'Shedding mortal emotional shackles to view the rise and fall of dynasties with calm detachment.',
+    description:
+      'Shedding mortal emotional shackles to view the rise and fall of dynasties with calm detachment.',
     lore: 'Ten thousand years of seclusion feel like a brief morning nap.',
     icon: '🍃',
   },
@@ -948,7 +1004,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_grand_xuan',
     name: 'Grand Xuan Profound Mind',
     chineseName: '玄仙妙悟心',
-    description: 'Entering a state of perpetual epiphany where every breath deepens Dao comprehension.',
+    description:
+      'Entering a state of perpetual epiphany where every breath deepens Dao comprehension.',
     lore: 'All four cultivation paths harmonize effortlessly under the Profound Mind.',
     icon: '💠',
   },
@@ -956,7 +1013,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_golden_immortal',
     name: 'Golden Immortal Eternal Heart',
     chineseName: '金仙不朽道心',
-    description: 'An unaging, unchanging Dao Heart that never erodes even across millions of years of solitude.',
+    description:
+      'An unaging, unchanging Dao Heart that never erodes even across millions of years of solitude.',
     lore: 'While ancient immortals go mad from boredom, Han Jue’s Dao Heart grows ever brighter.',
     icon: '👑',
   },
@@ -964,7 +1022,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_taiyi_causality',
     name: 'Taiyi Karma-Free Mind',
     chineseName: '太乙无因果心',
-    description: 'Walking through rivers of karma without leaving a trace or incurring karmic debt.',
+    description:
+      'Walking through rivers of karma without leaving a trace or incurring karmic debt.',
     lore: 'Severing all mental ties to calamity; misfortune cannot find an anchor.',
     icon: '📜',
   },
@@ -972,7 +1031,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_zenith_transcendent',
     name: 'Zenith Heaven Transcendent Will',
     chineseName: '大罗唯一道意',
-    description: 'Unifying the willpower of past, present, and future selves into one absolute truth.',
+    description:
+      'Unifying the willpower of past, present, and future selves into one absolute truth.',
     lore: 'Mental coercion from any temporal paradox is instantly nullified.',
     icon: '⏳',
   },
@@ -980,7 +1040,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_pseudo_sage',
     name: 'Pseudo-Sage Three-Corpse Severing Heart',
     chineseName: '准圣斩三尸道心',
-    description: 'Mastering Virtue, Evil, and Self desires completely to stand at the threshold of Sagehood.',
+    description:
+      'Mastering Virtue, Evil, and Self desires completely to stand at the threshold of Sagehood.',
     lore: 'No mental flaw remains in the entire Sea of Consciousness.',
     icon: '☯️',
   },
@@ -1005,7 +1066,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_great_dao',
     name: 'Great Dao Law Will',
     chineseName: '大道法则道心',
-    description: 'Willpower crystallizes into supreme Great Dao decrees that command the primal Chaos.',
+    description:
+      'Willpower crystallizes into supreme Great Dao decrees that command the primal Chaos.',
     lore: 'When the Dao Heart speaks, chaotic elements bow in submission.',
     icon: '🪐',
   },
@@ -1021,7 +1083,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_dao_creator',
     name: 'Dao Creator Omnipotent Will',
     chineseName: '创世无上道意',
-    description: 'Willpower becomes the source code of reality; whatever the mind conceives becomes cosmic law.',
+    description:
+      'Willpower becomes the source code of reality; whatever the mind conceives becomes cosmic law.',
     lore: 'Even the Ninth Chaos bows before a Dao Heart forged through endless epochs of seclusion.',
     icon: '👁️',
   },
@@ -1030,7 +1093,8 @@ export const MIND_REALMS: CultivationRealmDef[] = buildPathRealms('mind', [
     id: 'mind_ultimate_origin',
     name: 'Ultimate Origin Supreme Dao Heart',
     chineseName: '终元至高无上道心',
-    description: 'Han Jue’s eternal, supreme Dao Heart. Infinite detachment and infinite authority over all existence.',
+    description:
+      'Han Jue’s eternal, supreme Dao Heart. Infinite detachment and infinite authority over all existence.',
     lore: 'Through billions of years of quiet perseverance, the Dao Heart stands above eternity itself.',
     icon: '🪷👑',
   },
@@ -1055,7 +1119,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 50_000n,
     costHerbGrain: 60_000n,
     costDiamonds: 100n,
-    description: 'Refined from hundred-year spirit herbs to soothe Qi meridians and ensure flawless layer breakthrough.',
+    description:
+      'Refined from hundred-year spirit herbs to soothe Qi meridians and ensure flawless layer breakthrough.',
     icon: '🟢',
   },
   {
@@ -1069,7 +1134,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 150_000n,
     costHerbGrain: 180_000n,
     costDiamonds: 300n,
-    description: 'Liquefies spiritual energy inside the dantian pool, preventing violent backlash during foundation forging.',
+    description:
+      'Liquefies spiritual energy inside the dantian pool, preventing violent backlash during foundation forging.',
     icon: '🔵',
   },
   {
@@ -1083,7 +1149,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 220_000n,
     costHerbGrain: 260_000n,
     costDiamonds: 450n,
-    description: 'Boiled from ancient flood-dragon marrow and volcanic iron lotus to temper indestructible bones and flesh.',
+    description:
+      'Boiled from ancient flood-dragon marrow and volcanic iron lotus to temper indestructible bones and flesh.',
     icon: '🔴',
   },
   {
@@ -1097,7 +1164,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 400_000n,
     costHerbGrain: 500_000n,
     costDiamonds: 800n,
-    description: 'Imbues the condensing core with purple sun dragon flame, solidifying an unblemished golden core.',
+    description:
+      'Imbues the condensing core with purple sun dragon flame, solidifying an unblemished golden core.',
     icon: '🟡',
   },
   {
@@ -1111,7 +1179,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 1_200_000n,
     costHerbGrain: 1_500_000n,
     costDiamonds: 2_000n,
-    description: 'Nurtures the Sea of Consciousness and Primordial Spirit with astral vitality, expanding Divine Sense.',
+    description:
+      'Nurtures the Sea of Consciousness and Primordial Spirit with astral vitality, expanding Divine Sense.',
     icon: '🟣',
   },
   {
@@ -1125,7 +1194,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 1_400_000n,
     costHerbGrain: 1_600_000n,
     costDiamonds: 2_200n,
-    description: 'Distilled from sacred Bodhi leaves; banishes all inner demons and crystallizes an unshakeable Dao Heart.',
+    description:
+      'Distilled from sacred Bodhi leaves; banishes all inner demons and crystallizes an unshakeable Dao Heart.',
     icon: '🪷',
   },
   {
@@ -1139,7 +1209,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 5_000_000n,
     costHerbGrain: 6_000_000n,
     costDiamonds: 5_000n,
-    description: 'Brewed with celestial peach blossoms and immortal dew. Elevates Qi, Body, Soul, or Mind across Immortal realms.',
+    description:
+      'Brewed with celestial peach blossoms and immortal dew. Elevates Qi, Body, Soul, or Mind across Immortal realms.',
     icon: '💎',
   },
   {
@@ -1153,7 +1224,8 @@ export const CULTIVATION_PILLS: CultivationPill[] = [
     costHerbWood: 25_000_000n,
     costHerbGrain: 30_000_000n,
     costDiamonds: 20_000n,
-    description: 'Condensation of chaotic energy born before the creation of the heavens. Grants direct insight into all four Great Daos.',
+    description:
+      'Condensation of chaotic energy born before the creation of the heavens. Grants direct insight into all four Great Daos.',
     icon: '🌌',
   },
 ];
@@ -1215,7 +1287,10 @@ export function calculateMindCultivationBonuses(
   const clampedLayer = Math.max(1, Math.min(9, mindLayer));
   const totalMindSteps = clampedRealm * 9 + clampedLayer; // 1 to 207
 
-  const breakthroughBonusPct = Math.min(38, Math.floor(2 + clampedRealm * 1.5 + (clampedLayer - 1) * 0.25));
+  const breakthroughBonusPct = Math.min(
+    38,
+    Math.floor(2 + clampedRealm * 1.5 + (clampedLayer - 1) * 0.25)
+  );
   const cultivationSpeedMult = Number((1 + totalMindSteps * 0.08).toFixed(2));
   const innerDemonImmunityPct = Math.min(100, Math.floor(15 + totalMindSteps * 0.45));
 
@@ -1229,9 +1304,7 @@ export function calculateMindCultivationBonuses(
 /**
  * Calculates the Four-Path Resonance & Combined Cultivation Multiplier across Qi, Body, Soul, and Mind.
  */
-export function calculateFourPathSynergy(
-  paths: Record<CultivationPath, CultivationPathProgress>
-): {
+export function calculateFourPathSynergy(paths: Record<CultivationPath, CultivationPathProgress>): {
   qiMult: number;
   bodyMult: number;
   soulMult: number;
@@ -1296,7 +1369,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'qi',
     tier: 'mortal',
     icon: '📜',
-    description: 'Orthodox foundation scripture of the Jade Pure Sacred Sect. Harmonizes dantian meridians with nine-heavens thunder Qi.',
+    description:
+      'Orthodox foundation scripture of the Jade Pure Sacred Sect. Harmonizes dantian meridians with nine-heavens thunder Qi.',
     lore: 'Recorded on ancient jade slips inside the Hidden Sect Peak; steady, safe, and free of Qi deviation.',
     basePassiveRateBoostPct: 35,
     passiveBoostPerLevelPct: 18,
@@ -1313,7 +1387,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'qi',
     tier: 'immortal_sage',
     icon: '☯️',
-    description: 'Cycles spiritual Qi through six immortal reincarnation vortices, multiplying ambient absorption speed.',
+    description:
+      'Cycles spiritual Qi through six immortal reincarnation vortices, multiplying ambient absorption speed.',
     lore: 'Han Jue’s signature immortal art—each breath mirrors a complete cycle of cosmic rebirth.',
     basePassiveRateBoostPct: 95,
     passiveBoostPerLevelPct: 40,
@@ -1330,7 +1405,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'qi',
     tier: 'ultimate_origin',
     icon: '🌌',
-    description: 'Supreme scripture transcending the Three Thousand Great Daos. Converts chaotic void directly into origin Qi.',
+    description:
+      'Supreme scripture transcending the Three Thousand Great Daos. Converts chaotic void directly into origin Qi.',
     lore: 'Written by Han Jue upon comprehending his own independent Ultimate Origin World.',
     basePassiveRateBoostPct: 240,
     passiveBoostPerLevelPct: 85,
@@ -1349,7 +1425,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'body',
     tier: 'mortal',
     icon: '🛡️',
-    description: 'Tempers bone marrow and sinews like golden diamond, accelerating Blood Essence refinement.',
+    description:
+      'Tempers bone marrow and sinews like golden diamond, accelerating Blood Essence refinement.',
     lore: 'Forged by ancient martial monks who bathed in subterranean magma veins.',
     basePassiveRateBoostPct: 40,
     passiveBoostPerLevelPct: 20,
@@ -1366,7 +1443,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'body',
     tier: 'immortal_sage',
     icon: '🩸',
-    description: 'Ignites twelve ancient titan bloodline furnaces within the heart to devour celestial lightning.',
+    description:
+      'Ignites twelve ancient titan bloodline furnaces within the heart to devour celestial lightning.',
     lore: 'Every heartbeat shakes the firmament, turning physical breakthroughs into effortless instinct.',
     basePassiveRateBoostPct: 105,
     passiveBoostPerLevelPct: 45,
@@ -1383,7 +1461,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'body',
     tier: 'chaos_dao',
     icon: '👹',
-    description: 'Reconstructs every mortal cell into a miniature Chaos Fiendcelestial capable of swallowing stars.',
+    description:
+      'Reconstructs every mortal cell into a miniature Chaos Fiendcelestial capable of swallowing stars.',
     lore: 'Even Dao Creators dare not clash physically against a vessel forged by this forbidden codex.',
     basePassiveRateBoostPct: 210,
     passiveBoostPerLevelPct: 75,
@@ -1402,7 +1481,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'soul',
     tier: 'mortal',
     icon: '🌟',
-    description: 'Visualizes nine ancient stars inside the Sea of Consciousness to rapidly condense Soul Force.',
+    description:
+      'Visualizes nine ancient stars inside the Sea of Consciousness to rapidly condense Soul Force.',
     lore: 'Allows a cultivator’s divine sense to pierce illusions and lock onto enemies leagues away.',
     basePassiveRateBoostPct: 38,
     passiveBoostPerLevelPct: 19,
@@ -1436,7 +1516,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'soul',
     tier: 'chaos_dao',
     icon: '🔮',
-    description: 'Anchors the True Spirit above the River of Fate, absorbing soul force from all timelines.',
+    description:
+      'Anchors the True Spirit above the River of Fate, absorbing soul force from all timelines.',
     lore: 'Grants absolute soul invulnerability and effortless comprehension of soul realm barriers.',
     basePassiveRateBoostPct: 220,
     passiveBoostPerLevelPct: 78,
@@ -1455,7 +1536,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'mind',
     tier: 'mortal',
     icon: '🪷',
-    description: 'Calms all impatience and worldly attachments, turning centuries of cave seclusion into pure Dao Willpower.',
+    description:
+      'Calms all impatience and worldly attachments, turning centuries of cave seclusion into pure Dao Willpower.',
     lore: 'Han Jue’s personal motto encoded into scripture: outlive every enemy from inside your cave abode.',
     basePassiveRateBoostPct: 42,
     passiveBoostPerLevelPct: 22,
@@ -1472,7 +1554,8 @@ export const CULTIVATION_MANUALS: CultivationManual[] = [
     path: 'mind',
     tier: 'immortal_sage',
     icon: '⚔️',
-    description: 'Hones the Dao Heart through millions of mental combat simulations, erasing inner demons before breakthroughs.',
+    description:
+      'Hones the Dao Heart through millions of mental combat simulations, erasing inner demons before breakthroughs.',
     lore: 'When you have already defeated an enemy ten thousand times in your mind, no bottleneck can shake your heart.',
     basePassiveRateBoostPct: 115,
     passiveBoostPerLevelPct: 48,
@@ -1527,8 +1610,10 @@ export function calculateManualEffects(
   const clampedLevel = Math.max(1, Math.min(manual.maxLevel, level));
   const extraLevels = clampedLevel - 1;
   return {
-    passiveRateBoostPct: manual.basePassiveRateBoostPct + extraLevels * manual.passiveBoostPerLevelPct,
-    breakthroughBoostPct: manual.baseBreakthroughBoostPct + extraLevels * manual.breakthroughBoostPerLevelPct,
+    passiveRateBoostPct:
+      manual.basePassiveRateBoostPct + extraLevels * manual.passiveBoostPerLevelPct,
+    breakthroughBoostPct:
+      manual.baseBreakthroughBoostPct + extraLevels * manual.breakthroughBoostPerLevelPct,
   };
 }
 
@@ -1559,13 +1644,26 @@ export function calculateEquippedManualsSummary(
   equippedManuals: Record<CultivationPath, string | null>,
   ownedManuals: Record<string, OwnedManualState>
 ): {
-  byPath: Record<CultivationPath, { passiveRateBoostPct: number; breakthroughBoostPct: number; manual?: CultivationManual; level: number }>;
+  byPath: Record<
+    CultivationPath,
+    {
+      passiveRateBoostPct: number;
+      breakthroughBoostPct: number;
+      manual?: CultivationManual;
+      level: number;
+    }
+  >;
   totalPassiveBonusPct: number;
   totalBreakthroughBonusPct: number;
 } {
   const byPath = {} as Record<
     CultivationPath,
-    { passiveRateBoostPct: number; breakthroughBoostPct: number; manual?: CultivationManual; level: number }
+    {
+      passiveRateBoostPct: number;
+      breakthroughBoostPct: number;
+      manual?: CultivationManual;
+      level: number;
+    }
   >;
 
   let totalPassiveBonusPct = 0;
@@ -1576,7 +1674,10 @@ export function calculateEquippedManualsSummary(
     const owned = eqId ? ownedManuals[eqId] : undefined;
     const level = owned ? owned.level : 1;
     const manual = getManualById(eqId);
-    const effects = owned && manual ? calculateManualEffects(eqId, level) : { passiveRateBoostPct: 0, breakthroughBoostPct: 0 };
+    const effects =
+      owned && manual
+        ? calculateManualEffects(eqId, level)
+        : { passiveRateBoostPct: 0, breakthroughBoostPct: 0 };
     byPath[path] = {
       passiveRateBoostPct: effects.passiveRateBoostPct,
       breakthroughBoostPct: effects.breakthroughBoostPct,
@@ -1885,7 +1986,8 @@ export function evaluatePvPKillKarma(params: {
   bountyEarnedSpiritStones: bigint;
   message: string;
 } {
-  const { currentKarma, attackerRealmIndex, victimRealmIndex, victimKarmaValue, victimName } = params;
+  const { currentKarma, attackerRealmIndex, victimRealmIndex, victimKarmaValue, victimName } =
+    params;
   const realmGap = Math.max(1, attackerRealmIndex - victimRealmIndex);
 
   if (victimKarmaValue >= 0 && attackerRealmIndex > victimRealmIndex) {
@@ -2035,7 +2137,9 @@ export function resolveRedNameDeathLootDrop(params: {
     const eqId = nextEquipped[path];
     if (eqId) {
       const manual = getManualById(eqId);
-      droppedItemName = manual ? `Equipped Manual: ${manual.name} (${manual.chineseName})` : `Equipped Manual (${eqId})`;
+      droppedItemName = manual
+        ? `Equipped Manual: ${manual.name} (${manual.chineseName})`
+        : `Equipped Manual (${eqId})`;
       nextEquipped[path] = null;
       break;
     }
@@ -2422,4 +2526,3 @@ export function getCultivationAuraVisualSpec(
     suppressOverheadLevelTag: true,
   };
 }
-

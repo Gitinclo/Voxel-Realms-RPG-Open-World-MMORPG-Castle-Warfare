@@ -4,18 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  X,
-  Cpu,
-  Terminal,
-  Copy,
-  Check,
-  Zap,
-  Layers,
-  Sparkles,
-  Swords,
-  Eye,
-} from 'lucide-react';
+import { X, Cpu, Terminal, Copy, Check, Zap, Layers, Sparkles, Swords, Eye } from 'lucide-react';
 import {
   CPP_ENGINE_SPEC,
   CPP_CODE_MODULES,
@@ -34,8 +23,9 @@ interface CppArchitectureModalProps {
 }
 
 export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({ onClose }) => {
-  const [selectedModuleId, setSelectedModuleId] =
-    useState<CppCodeModule['id']>('cultivation_karma_master');
+  const [selectedModuleId, setSelectedModuleId] = useState<CppCodeModule['id']>(
+    'cultivation_karma_master'
+  );
   const [copied, setCopied] = useState(false);
 
   // Interactive C++20 Realm Suppression & HDR10+ Aura Simulator state
@@ -76,7 +66,8 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({ onCl
                 </span>
               </div>
               <p className="text-xs text-emerald-200/75 truncate mt-0.5">
-                Lv. 1–1000 Pathfinding & Troop AI · 100x Realm Suppression · Red-Name Tribulation Lightning · Master/Disciple · Vulkan Aura Cues
+                Lv. 1–1000 Pathfinding & Troop AI · 100x Realm Suppression · Red-Name Tribulation
+                Lightning · Master/Disciple · Vulkan Aura Cues
               </p>
             </div>
           </div>
@@ -312,4 +303,3 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({ onCl
     </div>
   );
 };
-

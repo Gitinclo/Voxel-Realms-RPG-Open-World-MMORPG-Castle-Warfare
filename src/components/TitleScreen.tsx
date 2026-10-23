@@ -127,4 +127,3 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
     </div>
   );
 };
-

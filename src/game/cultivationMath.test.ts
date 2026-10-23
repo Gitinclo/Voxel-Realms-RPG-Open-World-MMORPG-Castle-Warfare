@@ -24,7 +24,6 @@ import {
   calculateManualUpgradeCost,
   calculateEquippedManualsSummary,
   rollManualDiscovery,
-  evaluateBreakthroughAttempt,
   calculateTribulationStrikeDefense,
   calculateRealmSuppression,
   INITIAL_KARMA_STATE,
@@ -180,7 +179,10 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
     const mindBoostedRate = calculatePassiveQiRate(0, 'storm', false, 'qi', 5, 9);
 
     assert.ok(stormRate > clearRate, 'Storm weather must boost thunder Qi absorption');
-    assert.ok(mindBoostedRate > stormRate, 'Mind Cultivation must amplify passive cultivation speed');
+    assert.ok(
+      mindBoostedRate > stormRate,
+      'Mind Cultivation must amplify passive cultivation speed'
+    );
   });
 
   it('tribulation strike defense checks withstand celestial lightning', () => {
@@ -302,7 +304,11 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
 
     assert.ok(killRes.updatedKarma.karmaValue < 0, 'Karma must turn negative');
     assert.equal(killRes.updatedKarma.alignment, 'red_fiend');
-    assert.equal(killRes.updatedKarma.isLocationRevealed, true, 'Map location revealed for Justice bounty');
+    assert.equal(
+      killRes.updatedKarma.isLocationRevealed,
+      true,
+      'Map location revealed for Justice bounty'
+    );
     assert.ok(killRes.updatedKarma.bountySpiritStones > 0n);
 
     // Moving resets stationary timer
@@ -319,7 +325,11 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
       isMoving: true,
       deltaSec: 2,
     });
-    assert.equal(movedStep.updatedKarma.stationarySeconds, 0, 'Moving must reset lightning lock-on');
+    assert.equal(
+      movedStep.updatedKarma.stationarySeconds,
+      0,
+      'Moving must reset lightning lock-on'
+    );
 
     // Staying in one spot >= 8s triggers Instant-Kill Tribulation Lightning
     const strikeStep = tickRedNameStationaryLightning({
@@ -340,7 +350,11 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
       },
       inventoryPills: { pill_qi_condensation: 2 },
     });
-    assert.equal(dropRes.updatedEquippedManuals.qi, null, 'Equipped Qi manual must drop on Red-Name death');
+    assert.equal(
+      dropRes.updatedEquippedManuals.qi,
+      null,
+      'Equipped Qi manual must drop on Red-Name death'
+    );
     assert.ok(dropRes.droppedItemName.includes('Jade Pure'));
   });
 
@@ -393,4 +407,3 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
     assert.equal(daoCreator9.hdrPeakLuminanceNits, 4000);
   });
 });
-

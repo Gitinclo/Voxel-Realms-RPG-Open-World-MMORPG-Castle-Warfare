@@ -5,7 +5,11 @@
 
 import { GameResources } from '../types/game';
 import { CultivationPath, PlayerCultivationState } from '../types/cultivation';
-import { CULTIVATION_PATH_LIST, CULTIVATION_PATH_META, calculateQiRequired } from './cultivationMath';
+import {
+  CULTIVATION_PATH_LIST,
+  CULTIVATION_PATH_META,
+  calculateQiRequired,
+} from './cultivationMath';
 
 export const DAILY_LOGIN_STORAGE_KEY = 'voxel_realms_daily_login_v1';
 
@@ -341,7 +345,9 @@ export function calculateDailyLoginReward(params: {
     BigInt(Math.max(1, Math.round(Number(val) * mult)));
 
   // Diamonds scale slightly more conservatively so economy stays balanced yet rewarding
-  const diamondMultiplier = Number((1 + castleBonus * 0.35 + realmBonus * 0.4 + veteranCycleBonus).toFixed(2));
+  const diamondMultiplier = Number(
+    (1 + castleBonus * 0.35 + realmBonus * 0.4 + veteranCycleBonus).toFixed(2)
+  );
 
   // Veteran Scrolls also gain +1 bonus scroll per 2 completed 7-day cycles on milestone days
   const extraVeteranScrolls = tier.isMilestone ? Math.floor(completedWeeks / 2) : 0;
@@ -477,12 +483,18 @@ export function applyVeteranScrollToCultivation(
       energyGainedByPath: emptyGains,
       fragmentsGained: 0,
       yearsGained: 0,
-      message: 'No Veteran Scrolls available in your Cave Abode inventory. Claim Daily Login Rewards to obtain more!',
+      message:
+        'No Veteran Scrolls available in your Cave Abode inventory. Claim Daily Login Rewards to obtain more!',
     };
   }
 
   const nextPaths = { ...cultivation.paths };
-  const energyGainedByPath: Record<CultivationPath, bigint> = { qi: 0n, body: 0n, soul: 0n, mind: 0n };
+  const energyGainedByPath: Record<CultivationPath, bigint> = {
+    qi: 0n,
+    body: 0n,
+    soul: 0n,
+    mind: 0n,
+  };
 
   if (targetPath === 'all') {
     for (const p of CULTIVATION_PATH_LIST) {

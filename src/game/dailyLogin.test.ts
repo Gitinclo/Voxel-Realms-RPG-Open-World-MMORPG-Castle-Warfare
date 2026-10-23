@@ -10,7 +10,6 @@ import {
   getCalendarDateKey,
   getCalendarDaysDiff,
   evaluateDailyLoginState,
-  calculateDailyLoginReward,
   getSevenDayRewardSchedule,
   claimDailyLoginReward,
   calculateVeteranScrollBonuses,
@@ -165,8 +164,13 @@ test('Veteran Scroll comprehension boosts cultivation energy, scripture fragment
   assert.equal(resQi.success, true);
   assert.equal(resQi.updatedCultivation.veteranScrolls, 2);
   assert.equal(resQi.updatedCultivation.veteranScrollsComprehended, 1);
-  assert.ok(resQi.updatedCultivation.paths.qi.currentEnergy > initialCultivation.paths.qi.currentEnergy);
-  assert.equal(resQi.updatedCultivation.scriptureFragments, initialCultivation.scriptureFragments + 30);
+  assert.ok(
+    resQi.updatedCultivation.paths.qi.currentEnergy > initialCultivation.paths.qi.currentEnergy
+  );
+  assert.equal(
+    resQi.updatedCultivation.scriptureFragments,
+    initialCultivation.scriptureFragments + 30
+  );
   assert.equal(resQi.updatedCultivation.secludedYears, initialCultivation.secludedYears + 120);
 
   // Comprehend 2 Veteran Scrolls across ALL 4 paths
@@ -174,11 +178,19 @@ test('Veteran Scroll comprehension boosts cultivation energy, scripture fragment
   assert.equal(resAll.success, true);
   assert.equal(resAll.updatedCultivation.veteranScrolls, 0);
   assert.equal(resAll.updatedCultivation.veteranScrollsComprehended, 3);
-  assert.ok(resAll.updatedCultivation.paths.body.currentEnergy > initialCultivation.paths.body.currentEnergy);
-  assert.ok(resAll.updatedCultivation.paths.soul.currentEnergy > initialCultivation.paths.soul.currentEnergy);
-  assert.ok(resAll.updatedCultivation.paths.mind.currentEnergy > initialCultivation.paths.mind.currentEnergy);
+  assert.ok(
+    resAll.updatedCultivation.paths.body.currentEnergy > initialCultivation.paths.body.currentEnergy
+  );
+  assert.ok(
+    resAll.updatedCultivation.paths.soul.currentEnergy > initialCultivation.paths.soul.currentEnergy
+  );
+  assert.ok(
+    resAll.updatedCultivation.paths.mind.currentEnergy > initialCultivation.paths.mind.currentEnergy
+  );
 
-  const bonuses = calculateVeteranScrollBonuses(resAll.updatedCultivation.veteranScrollsComprehended);
+  const bonuses = calculateVeteranScrollBonuses(
+    resAll.updatedCultivation.veteranScrollsComprehended
+  );
   assert.equal(bonuses.comprehendedCount, 3);
   assert.equal(bonuses.passiveSpeedBonusPct, 54);
   assert.equal(bonuses.breakthroughSuccessBonusPct, 9);

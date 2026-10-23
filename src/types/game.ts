@@ -103,7 +103,8 @@ export type MonsterComplexityBracketId =
 export interface MonsterAttackPattern {
   id: string;
   name: string;
-  type: 'melee_cleave' | 'ranged_barrage' | 'aoe_slam' | 'cone_breath' | 'void_rift' | 'omni_cataclysm';
+  type:
+    'melee_cleave' | 'ranged_barrage' | 'aoe_slam' | 'cone_breath' | 'void_rift' | 'omni_cataclysm';
   windupSeconds: number;
   damageMultiplier: number;
   aoeRadius: number;
@@ -113,7 +114,13 @@ export interface MonsterAttackPattern {
 }
 
 export interface MonsterEnvInteraction {
-  trigger: 'weather_storm' | 'weather_rain' | 'weather_snow' | 'nightfall' | 'near_resource_node' | 'low_hp';
+  trigger:
+    | 'weather_storm'
+    | 'weather_rain'
+    | 'weather_snow'
+    | 'nightfall'
+    | 'near_resource_node'
+    | 'low_hp';
   actionName: string;
   effectDescription: string;
   buffStat: 'attack' | 'defense' | 'regen' | 'speed' | 'node_siphon';
@@ -168,7 +175,8 @@ export type NPCAIBehaviorState =
   | 'channeling_blessing'
   | 'offering_quest';
 
-export type NPCDirective = 'autonomous' | 'patrol_citadel' | 'gather_resources' | 'hunt_monsters' | 'escort_caravan';
+export type NPCDirective =
+  'autonomous' | 'patrol_citadel' | 'gather_resources' | 'hunt_monsters' | 'escort_caravan';
 
 export interface NPCTradeOffer {
   id: string;
@@ -235,7 +243,17 @@ export interface ClanEmblem {
   shape: 'shield' | 'diamond' | 'crest' | 'roundel' | 'banner' | 'octagon';
   primaryColor: string;
   secondaryColor: string;
-  sigil: 'dragon' | 'crown' | 'swords' | 'phoenix' | 'wolf' | 'lion' | 'skull' | 'lightning' | 'citadel' | 'gryphon';
+  sigil:
+    | 'dragon'
+    | 'crown'
+    | 'swords'
+    | 'phoenix'
+    | 'wolf'
+    | 'lion'
+    | 'skull'
+    | 'lightning'
+    | 'citadel'
+    | 'gryphon';
   borderColor: string;
   borderStyle: 'gold_filigree' | 'runed_iron' | 'star_silver' | 'spiked_bronze';
 }

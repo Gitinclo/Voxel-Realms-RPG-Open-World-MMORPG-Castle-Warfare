@@ -4,8 +4,24 @@
  */
 
 import React from 'react';
-import { X, Shield, Castle as CastleIcon, ArrowUpCircle, Users, Swords, Sparkles, CheckCircle2 } from 'lucide-react';
-import { calculateCastleTroopCapacity, calculateRallyCapacity, formatBigInt, getCastleUpgradeCost, getCastleEra, MAX_CASTLE_LEVEL } from '../game/math';
+import {
+  X,
+  Shield,
+  Castle as CastleIcon,
+  ArrowUpCircle,
+  Users,
+  Swords,
+  Sparkles,
+  CheckCircle2,
+} from 'lucide-react';
+import {
+  calculateCastleTroopCapacity,
+  calculateRallyCapacity,
+  formatBigInt,
+  getCastleUpgradeCost,
+  getCastleEra,
+  MAX_CASTLE_LEVEL,
+} from '../game/math';
 import { GameResources } from '../types/game';
 import { sound } from '../game/audio';
 
@@ -88,7 +104,10 @@ export const CastleModal: React.FC<CastleModalProps> = ({
                 </div>
                 <div className="text-xs text-slate-400">
                   Unlocks maximum capacity of{' '}
-                  <span className="font-bold text-amber-300">1,000 Trillion (1.00Q) Total Troops</span> and{' '}
+                  <span className="font-bold text-amber-300">
+                    1,000 Trillion (1.00Q) Total Troops
+                  </span>{' '}
+                  and{' '}
                   <span className="font-bold text-cyan-300">1 Trillion (1.00T) Rally Limit</span>!
                 </div>
               </div>
@@ -109,12 +128,16 @@ export const CastleModal: React.FC<CastleModalProps> = ({
                 <span className="text-sm font-bold text-white font-cinzel">{currentEra.name}</span>
               </div>
               <p className="text-xs text-slate-300">
-                Architecture: <span className="text-amber-200">{currentEra.buildingTheme}</span> · Perk: <span className="text-emerald-300 font-semibold">{currentEra.perkDescription}</span>
+                Architecture: <span className="text-amber-200">{currentEra.buildingTheme}</span> ·
+                Perk:{' '}
+                <span className="text-emerald-300 font-semibold">{currentEra.perkDescription}</span>
               </p>
             </div>
             <div className="sm:text-right shrink-0">
               <div className="text-[11px] text-slate-400">Era Power Multiplier</div>
-              <div className="text-base font-mono font-bold text-amber-400">{currentEra.castleMultiplier}x Multiplier</div>
+              <div className="text-base font-mono font-bold text-amber-400">
+                {currentEra.castleMultiplier}x Multiplier
+              </div>
             </div>
           </div>
 
@@ -277,7 +300,8 @@ export const CastleModal: React.FC<CastleModalProps> = ({
               <CheckCircle2 className="w-12 h-12 text-amber-400 mx-auto" />
               <div className="text-lg font-bold text-amber-200">Supreme Citadel Achieved!</div>
               <p className="text-xs text-slate-400">
-                You have reached the maximum Castle Level of 100 with 1,000 Trillion troop capacity and 1 Trillion rally strength.
+                You have reached the maximum Castle Level of 100 with 1,000 Trillion troop capacity
+                and 1 Trillion rally strength.
               </p>
             </div>
           )}
@@ -286,7 +310,11 @@ export const CastleModal: React.FC<CastleModalProps> = ({
         {/* Footer Actions */}
         <div className="p-5 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between">
           <div className="text-xs text-slate-400">
-            {canAfford && !isMaxLevel ? 'Ready to fortify.' : isMaxLevel ? 'Maximum tier.' : 'Gather needed materials from Lv 1-10 resource points.'}
+            {canAfford && !isMaxLevel
+              ? 'Ready to fortify.'
+              : isMaxLevel
+                ? 'Maximum tier.'
+                : 'Gather needed materials from Lv 1-10 resource points.'}
           </div>
           <button
             onClick={handleUpgrade}

@@ -7,7 +7,6 @@ import React, { useState, useRef } from 'react';
 import {
   Castle,
   Swords,
-  User,
   Award,
   Shield,
   Flame,
@@ -20,7 +19,6 @@ import {
   Moon,
   ChevronDown,
   ChevronUp,
-  Compass,
   CloudRain,
   Sparkles,
   Brain,
@@ -75,7 +73,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   playerAppearance,
   castleLevel,
   playerPower,
-  playerExp,
+  playerExp: _playerExp,
   resources,
   timeOfDayHours,
   timeSpeedMultiplier,
@@ -115,7 +113,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   // Touch joystick tracking
   const joystickBaseRef = useRef<HTMLDivElement>(null);
   const [joystickPos, setJoystickPos] = useState({ x: 0, y: 0 });
-  const [isDraggingJoystick, setIsDraggingJoystick] = useState(false);
+  const [, setIsDraggingJoystick] = useState(false);
 
   const formattedHours = Math.floor(timeOfDayHours);
   const formattedMinutes = Math.floor((timeOfDayHours % 1) * 60);
@@ -203,9 +201,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </button>
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
-              <span className="text-emerald-400 font-bold">
-                {formatBigInt(playerPower)} Might
-              </span>
+              <span className="text-emerald-400 font-bold">{formatBigInt(playerPower)} Might</span>
               <span>·</span>
               <span className="text-cyan-400 font-bold">Castle Lv.{castleLevel}</span>
             </div>
@@ -275,7 +271,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             title="Diamond gems"
           >
             <span className="text-sm">💎</span>
-            <span className="text-xs font-mono font-bold text-cyan-300" data-testid="hud-diamond-count">
+            <span
+              className="text-xs font-mono font-bold text-cyan-300"
+              data-testid="hud-diamond-count"
+            >
               {formatBigInt(resources.diamond)}
             </span>
           </button>
@@ -346,7 +345,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             className="p-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:bg-slate-800 text-slate-300"
             aria-label={isMuted ? 'Unmute game audio' : 'Mute game audio'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+            {isMuted ? (
+              <VolumeX className="w-4 h-4 text-red-400" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-emerald-400" />
+            )}
           </button>
 
           {/* Graphics Quality Preset Selector (Ultra HDR / High / Balanced) */}
@@ -361,7 +364,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               title="Cycle 3D Graphics Quality (Ultra HDR Bloom + 2K Shadows / High PBR / Balanced)"
             >
               <Sparkles className="w-3 h-3 text-purple-400" />
-              <span>{graphicsQuality === 'ultra' ? 'ULTRA HDR' : graphicsQuality.toUpperCase()}</span>
+              <span>
+                {graphicsQuality === 'ultra' ? 'ULTRA HDR' : graphicsQuality.toUpperCase()}
+              </span>
             </button>
           )}
 
@@ -459,7 +464,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         {/* Main Dock Container */}
         <div
           className={`px-3 py-2 rounded-2xl bg-slate-950/90 border border-slate-800 shadow-2xl flex items-center gap-1.5 sm:gap-2 transition-all duration-300 overflow-x-auto max-w-[96vw] ${
-            isDockCollapsed ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+            isDockCollapsed
+              ? 'translate-y-24 opacity-0 pointer-events-none'
+              : 'translate-y-0 opacity-100'
           }`}
         >
           {onOpenDailyLogin && (
@@ -492,7 +499,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           >
             <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
             <span className="text-xs font-bold font-cinzel">Cultivate</span>
-            <span className="text-[10px] font-mono text-amber-300 hidden sm:inline">4 Paths · 23R</span>
+            <span className="text-[10px] font-mono text-amber-300 hidden sm:inline">
+              4 Paths · 23R
+            </span>
           </button>
 
           <button
@@ -504,7 +513,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           >
             <Brain className="w-5 h-5 text-cyan-300" />
             <span className="text-xs font-bold font-cinzel">World AI</span>
-            <span className="text-[10px] font-mono text-cyan-300 hidden sm:inline">NPC & Lv1000</span>
+            <span className="text-[10px] font-mono text-cyan-300 hidden sm:inline">
+              NPC & Lv1000
+            </span>
           </button>
 
           <button
@@ -588,7 +599,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           >
             <CloudRain className="w-5 h-5 text-cyan-400" />
             <span className="text-xs font-bold font-cinzel">Weather</span>
-            <span className="text-[10px] font-mono text-cyan-200 hidden sm:inline">{weatherConfig.name.split(' ')[0]}</span>
+            <span className="text-[10px] font-mono text-cyan-200 hidden sm:inline">
+              {weatherConfig.name.split(' ')[0]}
+            </span>
           </button>
 
           <button

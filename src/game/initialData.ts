@@ -77,7 +77,8 @@ export const INITIAL_HEROES: Hero[] = [
       rallyBonusPct: 75,
     },
     skillName: 'Fortress of the Gods',
-    skillDesc: 'Reduces all incoming siege and ranged damage by 45% and grants 100% counter-strike block.',
+    skillDesc:
+      'Reduces all incoming siege and ranged damage by 45% and grants 100% counter-strike block.',
   },
   {
     id: 'hero_lyra',
@@ -96,7 +97,8 @@ export const INITIAL_HEROES: Hero[] = [
       rallyBonusPct: 50,
     },
     skillName: 'Arrowstorm Cataclysm',
-    skillDesc: 'Shooter volleys gain armor-piercing critical strikes, dealing 300% AOE burst damage.',
+    skillDesc:
+      'Shooter volleys gain armor-piercing critical strikes, dealing 300% AOE burst damage.',
   },
   {
     id: 'hero_ignis',
@@ -400,7 +402,8 @@ export const INITIAL_NPCS: NPC[] = [
     activeQuest: {
       id: 'quest_eldrin_1',
       title: 'Cull the Forest & Stone Threats',
-      description: 'Coordinate with Citadel Guards or dispatch a march to suppress encroaching monsters.',
+      description:
+        'Coordinate with Citadel Guards or dispatch a march to suppress encroaching monsters.',
       requiredLevel: 5,
       targetType: 'defeat_monster',
       targetAmount: 1n,
@@ -464,7 +467,8 @@ export const INITIAL_NPCS: NPC[] = [
     activeQuest: {
       id: 'quest_gorim_forge',
       title: 'Runic Arsenal Quota',
-      description: 'Collect Gorim’s prospected ore reserves to temper frontline Shieldbearer armor.',
+      description:
+        'Collect Gorim’s prospected ore reserves to temper frontline Shieldbearer armor.',
       requiredLevel: 10,
       targetType: 'gather_resource',
       targetAmount: 100_000n,
@@ -558,7 +562,8 @@ export const INITIAL_NPCS: NPC[] = [
     activeQuest: {
       id: 'quest_valerius_titan',
       title: 'Supreme Reconnaissance: Apex Monster Purge',
-      description: 'Inspect or engage high-tier Boss & Titan monsters using counter-troop formations.',
+      description:
+        'Inspect or engage high-tier Boss & Titan monsters using counter-troop formations.',
       requiredLevel: 20,
       targetType: 'defeat_monster',
       targetAmount: 1n,
@@ -724,7 +729,8 @@ export const INITIAL_CLAN_CHAT: ClanChatMessage[] = [
     senderName: 'Clan Overseer',
     senderRole: 'Elder',
     senderAvatar: '🏛️',
-    message: 'Weekly Clan War has commenced against [TITAN] Chronos Imperium! Secure the Dragon Spire Outpost!',
+    message:
+      'Weekly Clan War has commenced against [TITAN] Chronos Imperium! Secure the Dragon Spire Outpost!',
     timestamp: Date.now() - 3600000,
     isSystemNotice: true,
     tag: 'WAR NOTICE',

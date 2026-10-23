@@ -121,8 +121,10 @@ export const WEATHER_CONFIGS: Record<WeatherType, WeatherStatusEffect> = {
     },
     marchSpeedMultiplier: 0.8, // -20% snowdrifts
     monsterExpBonusPct: 15,
-    combatFlavorText: 'Diamond armor cracks open; Shooters gain +10% pierce; Bombers suffer delayed fuses (-15%).',
-    gatherFlavorText: 'Diamond gems (+45%) and Copper (+20%) thrive; Grain production freezes (-25%).',
+    combatFlavorText:
+      'Diamond armor cracks open; Shooters gain +10% pierce; Bombers suffer delayed fuses (-15%).',
+    gatherFlavorText:
+      'Diamond gems (+45%) and Copper (+20%) thrive; Grain production freezes (-25%).',
   },
   storm: {
     type: 'storm',
@@ -153,8 +155,10 @@ export const WEATHER_CONFIGS: Record<WeatherType, WeatherStatusEffect> = {
     },
     marchSpeedMultiplier: 0.85,
     monsterExpBonusPct: 35, // Overcharged lightning beasts grant +35% EXP
-    combatFlavorText: 'Bombers unleash catastrophic +40% siege devastation; Shooters lose 20% accuracy.',
-    gatherFlavorText: 'Oil extraction surges (+50%) and Steel (+35%); Timber and Grain gathering hindered (-20%).',
+    combatFlavorText:
+      'Bombers unleash catastrophic +40% siege devastation; Shooters lose 20% accuracy.',
+    gatherFlavorText:
+      'Oil extraction surges (+50%) and Steel (+35%); Timber and Grain gathering hindered (-20%).',
   },
 };
 

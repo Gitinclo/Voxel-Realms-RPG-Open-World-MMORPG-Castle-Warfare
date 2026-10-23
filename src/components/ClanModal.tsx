@@ -16,16 +16,13 @@ import {
   MessageSquare,
   Crown,
   Flame,
-  Award,
   Send,
   Plus,
   Edit3,
   Clock,
-  CheckCircle2,
   AlertCircle,
   TrendingUp,
   Skull,
-  ShieldAlert,
   ArrowUp,
   ArrowDown,
   UserX,
@@ -37,20 +34,17 @@ import {
   ClanRole,
   ClanEmblem,
   ClanBuff,
-  ClanWarOutpost,
   ClanChatMessage,
   GameResources,
   ResourceType,
 } from '../types/game';
 import { formatBigInt } from '../game/math';
 import {
-  ROLE_HIERARCHY,
   getRolePermissions,
   canPromoteMember,
   canDemoteMember,
   canKickMember,
   validateClanCreation,
-  calculateOutpostAssault,
   calculateCoopBossStrike,
 } from '../game/clanMath';
 import { INITIAL_CLAN_BUFFS } from '../game/initialData';
@@ -72,7 +66,13 @@ interface ClanModalProps {
   onAttackCoopBoss: (damage: bigint) => void;
   onClaimCoopChest: (milestonePct: number, diamonds: bigint, honor: bigint) => void;
   onUpdateEmblem: (newEmblem: ClanEmblem) => void;
-  onCreateNewClan: (newClan: { name: string; tag: string; motto: string; emblem: ClanEmblem; minCastleLevel: number }) => void;
+  onCreateNewClan: (newClan: {
+    name: string;
+    tag: string;
+    motto: string;
+    emblem: ClanEmblem;
+    minCastleLevel: number;
+  }) => void;
   onPromoteMember: (memberId: string) => void;
   onDemoteMember: (memberId: string) => void;
   onKickMember: (memberId: string) => void;
@@ -95,9 +95,32 @@ const COLOR_PALETTE = [
   '#f59e0b', // Radiant Gold
 ];
 
-const SHAPES: ClanEmblem['shape'][] = ['shield', 'crest', 'diamond', 'roundel', 'banner', 'octagon'];
-const SIGILS: ClanEmblem['sigil'][] = ['dragon', 'crown', 'swords', 'phoenix', 'wolf', 'lion', 'skull', 'lightning', 'citadel', 'gryphon'];
-const BORDER_STYLES: ClanEmblem['borderStyle'][] = ['gold_filigree', 'runed_iron', 'star_silver', 'spiked_bronze'];
+const SHAPES: ClanEmblem['shape'][] = [
+  'shield',
+  'crest',
+  'diamond',
+  'roundel',
+  'banner',
+  'octagon',
+];
+const SIGILS: ClanEmblem['sigil'][] = [
+  'dragon',
+  'crown',
+  'swords',
+  'phoenix',
+  'wolf',
+  'lion',
+  'skull',
+  'lightning',
+  'citadel',
+  'gryphon',
+];
+const BORDER_STYLES: ClanEmblem['borderStyle'][] = [
+  'gold_filigree',
+  'runed_iron',
+  'star_silver',
+  'spiked_bronze',
+];
 
 export const ClanModal: React.FC<ClanModalProps> = ({
   clan,
@@ -196,10 +219,22 @@ export const ClanModal: React.FC<ClanModalProps> = ({
   ];
 
   const QUICK_PINGS = [
-    { label: '⚔️ Rally Outpost', text: 'All legionnaires: rally on Dragon Spire Outpost immediately!' },
-    { label: '🛡️ Fortify Citadel', text: 'Iron Citadel needs garrison reinforcements! Send Shieldbearers!' },
-    { label: '🐉 Void Rift Strike', text: 'Void Leviathan rift is vulnerable! Launch coordinated strike!' },
-    { label: '🎁 Vault Supplies', text: 'Alliance Vault needs resource contributions for upcoming war buffs!' },
+    {
+      label: '⚔️ Rally Outpost',
+      text: 'All legionnaires: rally on Dragon Spire Outpost immediately!',
+    },
+    {
+      label: '🛡️ Fortify Citadel',
+      text: 'Iron Citadel needs garrison reinforcements! Send Shieldbearers!',
+    },
+    {
+      label: '🐉 Void Rift Strike',
+      text: 'Void Leviathan rift is vulnerable! Launch coordinated strike!',
+    },
+    {
+      label: '🎁 Vault Supplies',
+      text: 'Alliance Vault needs resource contributions for upcoming war buffs!',
+    },
   ];
 
   const handleSendMessage = (e?: React.FormEvent) => {
@@ -264,7 +299,7 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
   // Clan War data
   const war = clan.activeWar;
-  const totalWarScore = war ? (war.playerClanScore + war.opponentClanScore || 1) : 1;
+  const totalWarScore = war ? war.playerClanScore + war.opponentClanScore || 1 : 1;
   const playerClanScorePct = war ? Math.round((war.playerClanScore / totalWarScore) * 100) : 50;
 
   return (
@@ -371,19 +406,44 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-bold font-cinzel text-white">[{clan.tag}] {clan.name}</h3>
+                      <h3 className="text-xl font-bold font-cinzel text-white">
+                        [{clan.tag}] {clan.name}
+                      </h3>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 font-mono font-bold">
                         Tier 8 Sovereign
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 mt-1 italic">"{clan.motto}"</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-xs text-slate-400 font-mono">
-                      <div>Leader: <span className="text-amber-300 font-bold">{clan.leader}</span></div>
-                      <div>Members: <span className="text-blue-300 font-bold">{members.length} / {clan.maxMembers}</span></div>
-                      <div>Min Castle: <span className="text-emerald-300 font-bold">Lv.{clan.minCastleLevel}</span></div>
-                      <div>Policy: <span className="text-slate-200 capitalize font-bold">{clan.joinPolicy}</span></div>
-                      <div>Total Might: <span className="text-amber-400 font-bold">{formatBigInt(clan.totalPower)}</span></div>
-                      <div>War Record: <span className="text-rose-400 font-bold">{clan.warsWon} Victories</span></div>
+                      <div>
+                        Leader: <span className="text-amber-300 font-bold">{clan.leader}</span>
+                      </div>
+                      <div>
+                        Members:{' '}
+                        <span className="text-blue-300 font-bold">
+                          {members.length} / {clan.maxMembers}
+                        </span>
+                      </div>
+                      <div>
+                        Min Castle:{' '}
+                        <span className="text-emerald-300 font-bold">Lv.{clan.minCastleLevel}</span>
+                      </div>
+                      <div>
+                        Policy:{' '}
+                        <span className="text-slate-200 capitalize font-bold">
+                          {clan.joinPolicy}
+                        </span>
+                      </div>
+                      <div>
+                        Total Might:{' '}
+                        <span className="text-amber-400 font-bold">
+                          {formatBigInt(clan.totalPower)}
+                        </span>
+                      </div>
+                      <div>
+                        War Record:{' '}
+                        <span className="text-rose-400 font-bold">{clan.warsWon} Victories</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -412,7 +472,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                    <span className="flex items-center gap-1.5 text-amber-300"><Gift className="w-4 h-4" /> Alliance Vault</span>
+                    <span className="flex items-center gap-1.5 text-amber-300">
+                      <Gift className="w-4 h-4" /> Alliance Vault
+                    </span>
                     <span className="font-mono">{formatBigInt(clan.vault.clanHonor)} Honor</span>
                   </div>
                   <div className="text-lg font-bold font-mono text-white">
@@ -431,7 +493,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                    <span className="flex items-center gap-1.5 text-rose-300"><Swords className="w-4 h-4" /> Active War</span>
+                    <span className="flex items-center gap-1.5 text-rose-300">
+                      <Swords className="w-4 h-4" /> Active War
+                    </span>
                     <span className="font-mono text-emerald-400 font-bold">Leading</span>
                   </div>
                   <div className="text-lg font-bold font-mono text-white flex items-center gap-2">
@@ -440,7 +504,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                     <span className="text-rose-400">{war?.opponentClanScore || 0}</span>
                   </div>
                   <div className="text-[11px] text-slate-400">
-                    Target: [{war?.opponentClan.tag || 'TITAN'}] {war?.opponentClan.name || 'Chronos Imperium'}
+                    Target: [{war?.opponentClan.tag || 'TITAN'}]{' '}
+                    {war?.opponentClan.name || 'Chronos Imperium'}
                   </div>
                   <button
                     onClick={() => setActiveTab('war')}
@@ -452,11 +517,16 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                    <span className="flex items-center gap-1.5 text-indigo-300"><Skull className="w-4 h-4" /> Void Leviathan</span>
+                    <span className="flex items-center gap-1.5 text-indigo-300">
+                      <Skull className="w-4 h-4" /> Void Leviathan
+                    </span>
                     <span className="font-mono text-amber-400 font-bold">{bossHpPct}% HP</span>
                   </div>
                   <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                    <div className="bg-indigo-500 h-full rounded-full transition-all" style={{ width: `${bossHpPct}%` }} />
+                    <div
+                      className="bg-indigo-500 h-full rounded-full transition-all"
+                      style={{ width: `${bossHpPct}%` }}
+                    />
                   </div>
                   <div className="text-[11px] text-slate-400">
                     {formatBigInt(boss.hp)} / {formatBigInt(boss.maxHp)} Health
@@ -474,7 +544,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/80 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-400" /> Active Alliance Blessings & Rations
+                    <Sparkles className="w-4 h-4 text-amber-400" /> Active Alliance Blessings &
+                    Rations
                   </h4>
                   <span className="text-xs text-slate-400 font-mono">
                     {clan.activeBuffs.length} Active Buff{clan.activeBuffs.length === 1 ? '' : 's'}
@@ -482,7 +553,10 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 </div>
                 {clan.activeBuffs.length === 0 ? (
                   <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
-                    <span>No territory blessings currently active. Elder or Leader can activate blessings in Treasury.</span>
+                    <span>
+                      No territory blessings currently active. Elder or Leader can activate
+                      blessings in Treasury.
+                    </span>
                     <button
                       onClick={() => setActiveTab('vault')}
                       className="px-3 py-1 rounded-md bg-blue-600/30 hover:bg-blue-600 text-blue-200 text-xs font-bold transition-colors"
@@ -524,7 +598,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                     <Users className="w-5 h-5 text-blue-400" /> Clan Roster & Hierarchy
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Your Authority: <span className="text-amber-300 font-bold">{playerRole}</span>. Manage promotions, demotions, and memberships according to Clan Law.
+                    Your Authority: <span className="text-amber-300 font-bold">{playerRole}</span>.
+                    Manage promotions, demotions, and memberships according to Clan Law.
                   </p>
                 </div>
                 <button
@@ -649,7 +724,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-bold text-white">{m.name}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold ${roleBadgeColor}`}>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold ${roleBadgeColor}`}
+                            >
                               {m.role}
                             </span>
                             {isSelf && (
@@ -659,15 +736,24 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                             )}
                           </div>
                           <div className="text-xs text-slate-400 font-mono mt-0.5">
-                            Power: <span className="text-amber-300 font-bold">{formatBigInt(m.power)}</span> · Castle Lv.{m.castleLevel} · Donated {formatBigInt(m.donations)} · Joined {m.joinedDaysAgo}d ago
+                            Power:{' '}
+                            <span className="text-amber-300 font-bold">
+                              {formatBigInt(m.power)}
+                            </span>{' '}
+                            · Castle Lv.{m.castleLevel} · Donated {formatBigInt(m.donations)} ·
+                            Joined {m.joinedDaysAgo}d ago
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-center">
                         <div className="flex items-center gap-1.5 mr-2">
-                          <span className={`w-2 h-2 rounded-full ${m.online ? 'bg-emerald-400 shadow-xs shadow-emerald-400' : 'bg-slate-600'}`} />
-                          <span className="text-[11px] text-slate-400 font-mono">{m.online ? 'Online' : 'Offline'}</span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${m.online ? 'bg-emerald-400 shadow-xs shadow-emerald-400' : 'bg-slate-600'}`}
+                          />
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {m.online ? 'Online' : 'Offline'}
+                          </span>
                         </div>
 
                         {/* Interactive Role Buttons */}
@@ -750,13 +836,31 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                   {[
                     { label: 'Wood', val: clan.vault.wood, icon: '🌲', color: 'text-amber-300' },
                     { label: 'Steel', val: clan.vault.steel, icon: '⚔️', color: 'text-slate-300' },
-                    { label: 'Copper', val: clan.vault.copper, icon: '🪙', color: 'text-amber-400' },
+                    {
+                      label: 'Copper',
+                      val: clan.vault.copper,
+                      icon: '🪙',
+                      color: 'text-amber-400',
+                    },
                     { label: 'Grain', val: clan.vault.grain, icon: '🌾', color: 'text-yellow-300' },
                     { label: 'Oil', val: clan.vault.oil, icon: '🛢️', color: 'text-emerald-400' },
-                    { label: 'Diamonds', val: clan.vault.diamond, icon: '💎', color: 'text-cyan-300' },
-                    { label: 'Clan Honor', val: clan.vault.clanHonor, icon: '🎖️', color: 'text-purple-300' },
+                    {
+                      label: 'Diamonds',
+                      val: clan.vault.diamond,
+                      icon: '💎',
+                      color: 'text-cyan-300',
+                    },
+                    {
+                      label: 'Clan Honor',
+                      val: clan.vault.clanHonor,
+                      icon: '🎖️',
+                      color: 'text-purple-300',
+                    },
                   ].map((res) => (
-                    <div key={res.label} className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-center">
+                    <div
+                      key={res.label}
+                      className="p-2.5 rounded-lg bg-slate-950/70 border border-slate-800 text-center"
+                    >
                       <div className="text-lg">{res.icon}</div>
                       <div className="text-[10px] text-slate-400">{res.label}</div>
                       <div className={`text-xs font-bold font-mono mt-0.5 ${res.color}`}>
@@ -775,7 +879,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                       <Sparkles className="w-4 h-4 text-amber-400" /> Sovereign Territory Blessings
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Elders and Leaders can spend Clan Honor to empower all members across the realm.
+                      Elders and Leaders can spend Clan Honor to empower all members across the
+                      realm.
                     </p>
                   </div>
                   <div className="text-xs font-mono text-amber-400 font-bold">
@@ -837,18 +942,18 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                             isActive
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 cursor-default'
                               : canActivate
-                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 active:scale-95'
-                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 active:scale-95'
+                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                           }`}
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           {isActive
                             ? 'Blessing Active'
                             : !playerPermissions.canTriggerBuffs
-                            ? 'Requires Elder / Leader'
-                            : !canAfford
-                            ? 'Need More Vault Honor'
-                            : 'Activate Territory Blessing'}
+                              ? 'Requires Elder / Leader'
+                              : !canAfford
+                                ? 'Need More Vault Honor'
+                                : 'Activate Territory Blessing'}
                         </button>
                       </div>
                     );
@@ -859,7 +964,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
               {/* Resource Donations to Vault */}
               <div className="space-y-3">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-blue-400" /> Lord Resource Supplies (Earn Personal Honor)
+                  <Coins className="w-4 h-4 text-blue-400" /> Lord Resource Supplies (Earn Personal
+                  Honor)
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {DONATION_OPTIONS.map((opt) => {
@@ -967,8 +1073,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                             isPlayer
                               ? 'bg-blue-950/40 border-blue-500/50'
                               : isEnemy
-                              ? 'bg-rose-950/40 border-rose-500/50'
-                              : 'bg-slate-800/60 border-slate-700'
+                                ? 'bg-rose-950/40 border-rose-500/50'
+                                : 'bg-slate-800/60 border-slate-700'
                           }`}
                         >
                           <div>
@@ -981,17 +1087,36 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                                   isPlayer
                                     ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40'
                                     : isEnemy
-                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                                    : 'bg-slate-700 text-slate-300'
+                                      ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                                      : 'bg-slate-700 text-slate-300'
                                 }`}
                               >
-                                {isPlayer ? 'Held by Clan' : isEnemy ? 'Enemy Garrison' : 'Contested Neutral'}
+                                {isPlayer
+                                  ? 'Held by Clan'
+                                  : isEnemy
+                                    ? 'Enemy Garrison'
+                                    : 'Contested Neutral'}
                               </span>
                             </div>
                             <div className="text-[11px] text-slate-400 font-mono mt-2 space-y-0.5">
-                              <div>Defense: <span className="text-amber-300">{formatBigInt(outpost.defenseRating)}</span></div>
-                              <div>Garrison: <span className="text-slate-200">{formatBigInt(outpost.garrisonTroops)} Troops</span></div>
-                              <div>Output: <span className="text-emerald-400">+{outpost.pointsPerMinute} pts/min</span></div>
+                              <div>
+                                Defense:{' '}
+                                <span className="text-amber-300">
+                                  {formatBigInt(outpost.defenseRating)}
+                                </span>
+                              </div>
+                              <div>
+                                Garrison:{' '}
+                                <span className="text-slate-200">
+                                  {formatBigInt(outpost.garrisonTroops)} Troops
+                                </span>
+                              </div>
+                              <div>
+                                Output:{' '}
+                                <span className="text-emerald-400">
+                                  +{outpost.pointsPerMinute} pts/min
+                                </span>
+                              </div>
                             </div>
                           </div>
 
@@ -1024,7 +1149,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">{boss.name}</h3>
+                        <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
+                          {boss.name}
+                        </h3>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold border border-purple-400/40">
                           Lv.{boss.level} Raid Rift
                         </span>
@@ -1050,7 +1177,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs font-mono font-bold">
                     <span className="text-purple-300">Void Energy Shield</span>
-                    <span className="text-amber-400">{formatBigInt(boss.hp)} / {formatBigInt(boss.maxHp)} ({bossHpPct}%)</span>
+                    <span className="text-amber-400">
+                      {formatBigInt(boss.hp)} / {formatBigInt(boss.maxHp)} ({bossHpPct}%)
+                    </span>
                   </div>
                   <div className="w-full bg-slate-800 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-700">
                     <div
@@ -1073,8 +1202,8 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                             chest.claimed
                               ? 'bg-slate-900/60 border-slate-800 text-slate-500'
                               : unlocked
-                              ? 'bg-amber-950/40 border-amber-500/60 text-amber-200'
-                              : 'bg-slate-800/40 border-slate-700/60 text-slate-400'
+                                ? 'bg-amber-950/40 border-amber-500/60 text-amber-200'
+                                : 'bg-slate-800/40 border-slate-700/60 text-slate-400'
                           }`}
                         >
                           <div>
@@ -1113,9 +1242,16 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
                     {boss.totalClanContributions.map((c, i) => (
-                      <div key={c.memberName} className="flex items-center justify-between p-1.5 rounded bg-slate-900 border border-slate-800">
-                        <span className="text-slate-300">#{i + 1} {c.memberName}</span>
-                        <span className="text-amber-400 font-bold">{formatBigInt(c.damage)} DMG</span>
+                      <div
+                        key={c.memberName}
+                        className="flex items-center justify-between p-1.5 rounded bg-slate-900 border border-slate-800"
+                      >
+                        <span className="text-slate-300">
+                          #{i + 1} {c.memberName}
+                        </span>
+                        <span className="text-amber-400 font-bold">
+                          {formatBigInt(c.damage)} DMG
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1188,7 +1324,10 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                             [{msg.senderRole}]
                           </span>
                           <span className="text-[10px] text-slate-500 font-mono ml-auto">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.timestamp).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </span>
                         </div>
                         <p className="text-xs text-slate-200 mt-1 break-words">{msg.message}</p>
@@ -1231,10 +1370,13 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">Troop Attack Research</span>
-                    <span className="text-xs font-mono text-amber-400">Lv.{clan.techLevel.troopAttack}</span>
+                    <span className="text-xs font-mono text-amber-400">
+                      Lv.{clan.techLevel.troopAttack}
+                    </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Increases ATK rating for all clan Shieldbearers, Shooters, and Bombers by +{clan.techLevel.troopAttack * 2.5}%.
+                    Increases ATK rating for all clan Shieldbearers, Shooters, and Bombers by +
+                    {clan.techLevel.troopAttack * 2.5}%.
                   </p>
                   <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                     <div
@@ -1247,10 +1389,13 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">Troop Defense Bulwark</span>
-                    <span className="text-xs font-mono text-amber-400">Lv.{clan.techLevel.troopDefense}</span>
+                    <span className="text-xs font-mono text-amber-400">
+                      Lv.{clan.techLevel.troopDefense}
+                    </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Increases DEF & HP rating by +{clan.techLevel.troopDefense * 2.5}% across all tiers.
+                    Increases DEF & HP rating by +{clan.techLevel.troopDefense * 2.5}% across all
+                    tiers.
                   </p>
                   <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                     <div
@@ -1262,11 +1407,16 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-white">Resource Harvest Extraction</span>
-                    <span className="text-xs font-mono text-amber-400">Lv.{clan.techLevel.gatherSpeed}</span>
+                    <span className="text-sm font-bold text-white">
+                      Resource Harvest Extraction
+                    </span>
+                    <span className="text-xs font-mono text-amber-400">
+                      Lv.{clan.techLevel.gatherSpeed}
+                    </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Accelerates gathering from open world Wood, Steel, Copper, Diamond, Grain, and Oil nodes by +{clan.techLevel.gatherSpeed * 4}%.
+                    Accelerates gathering from open world Wood, Steel, Copper, Diamond, Grain, and
+                    Oil nodes by +{clan.techLevel.gatherSpeed * 4}%.
                   </p>
                   <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                     <div
@@ -1279,10 +1429,13 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">Grand Rally Expansion</span>
-                    <span className="text-xs font-mono text-amber-400">Lv.{clan.techLevel.rallyCapacity}</span>
+                    <span className="text-xs font-mono text-amber-400">
+                      Lv.{clan.techLevel.rallyCapacity}
+                    </span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Scales maximum World Titan rally member capacity towards 1 Trillion troops limit.
+                    Scales maximum World Titan rally member capacity towards 1 Trillion troops
+                    limit.
                   </p>
                   <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
                     <div
@@ -1340,7 +1493,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <Crown className="w-5 h-5 text-amber-400" />
-                <h3 className="text-lg font-bold font-cinzel text-white">Heraldic Emblem Workshop</h3>
+                <h3 className="text-lg font-bold font-cinzel text-white">
+                  Heraldic Emblem Workshop
+                </h3>
               </div>
               <button
                 onClick={() => setShowEmblemEditor(false)}
@@ -1355,9 +1510,12 @@ export const ClanModal: React.FC<ClanModalProps> = ({
               <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-900 border border-slate-800">
                 <ClanEmblemView emblem={draftEmblem} size="xl" showGlow />
                 <div className="text-center mt-4">
-                  <div className="text-base font-bold text-white font-cinzel">[{clan.tag}] {clan.name}</div>
+                  <div className="text-base font-bold text-white font-cinzel">
+                    [{clan.tag}] {clan.name}
+                  </div>
                   <div className="text-xs text-slate-400 capitalize mt-1 font-mono">
-                    {draftEmblem.shape} · {draftEmblem.sigil} · {draftEmblem.borderStyle.replace('_', ' ')}
+                    {draftEmblem.shape} · {draftEmblem.sigil} ·{' '}
+                    {draftEmblem.borderStyle.replace('_', ' ')}
                   </div>
                 </div>
               </div>
@@ -1421,10 +1579,14 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                         <button
                           key={color}
                           type="button"
-                          onClick={() => setDraftEmblem((prev) => ({ ...prev, primaryColor: color }))}
+                          onClick={() =>
+                            setDraftEmblem((prev) => ({ ...prev, primaryColor: color }))
+                          }
                           style={{ backgroundColor: color }}
                           className={`w-7 h-7 rounded-lg border transition-all ${
-                            draftEmblem.primaryColor === color ? 'ring-2 ring-white scale-110' : 'border-slate-700'
+                            draftEmblem.primaryColor === color
+                              ? 'ring-2 ring-white scale-110'
+                              : 'border-slate-700'
                           }`}
                         />
                       ))}
@@ -1440,10 +1602,14 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                         <button
                           key={color}
                           type="button"
-                          onClick={() => setDraftEmblem((prev) => ({ ...prev, secondaryColor: color }))}
+                          onClick={() =>
+                            setDraftEmblem((prev) => ({ ...prev, secondaryColor: color }))
+                          }
                           style={{ backgroundColor: color }}
                           className={`w-7 h-7 rounded-lg border transition-all ${
-                            draftEmblem.secondaryColor === color ? 'ring-2 ring-white scale-110' : 'border-slate-700'
+                            draftEmblem.secondaryColor === color
+                              ? 'ring-2 ring-white scale-110'
+                              : 'border-slate-700'
                           }`}
                         />
                       ))}
@@ -1583,7 +1749,9 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                   <ClanEmblemView emblem={draftEmblem} size="md" showGlow />
                   <div>
                     <div className="text-xs font-bold text-white">Default Clan Heraldry</div>
-                    <div className="text-[11px] text-slate-400">Can be refined further anytime in the Workshop</div>
+                    <div className="text-[11px] text-slate-400">
+                      Can be refined further anytime in the Workshop
+                    </div>
                   </div>
                 </div>
                 <button

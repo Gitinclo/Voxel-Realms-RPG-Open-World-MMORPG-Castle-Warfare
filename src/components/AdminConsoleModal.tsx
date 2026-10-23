@@ -10,16 +10,13 @@ import {
   Zap,
   Terminal,
   Clock,
-  Sparkles,
   Flame,
-  Award,
   Crown,
   Pause,
   Play,
-  RotateCcw,
   CloudRain,
 } from 'lucide-react';
-import { GameResources, ResourceType, TroopType } from '../types/game';
+import { GameResources, TroopType } from '../types/game';
 import { WeatherType } from '../game/weather';
 import { sound } from '../game/audio';
 
@@ -89,7 +86,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   const handleSpawnT20Troops = (type: TroopType, amount: bigint) => {
     onSpawnTroops(type, 20, amount);
     sound.playSwing();
-    addLog(`CMD: Spawned +${amount.toLocaleString()} T20 ${type.toUpperCase()} cohort into garrison.`);
+    addLog(
+      `CMD: Spawned +${amount.toLocaleString()} T20 ${type.toUpperCase()} cohort into garrison.`
+    );
   };
 
   return (
@@ -225,7 +224,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-bold text-slate-300">Castle Level Set:</span>
-                  <span className="font-mono text-amber-400 font-bold">Level {castleLevel} / 100</span>
+                  <span className="font-mono text-amber-400 font-bold">
+                    Level {castleLevel} / 100
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -246,9 +247,12 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           {activeTab === 'troops' && (
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-3">
-                <h3 className="text-sm font-bold text-white">T20 Celestial Vanguard Army Spawner</h3>
+                <h3 className="text-sm font-bold text-white">
+                  T20 Celestial Vanguard Army Spawner
+                </h3>
                 <p className="text-xs text-slate-400">
-                  Instantly summon massive cohorts of Rank T20 troops to test billion and trillion power scaling.
+                  Instantly summon massive cohorts of Rank T20 troops to test billion and trillion
+                  power scaling.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
@@ -291,7 +295,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                   </div>
 
                   <div className="p-3 rounded-xl bg-slate-900 border border-orange-500/40 space-y-2">
-                    <div className="text-xs font-bold text-orange-300">T20 Celestial Annihilator</div>
+                    <div className="text-xs font-bold text-orange-300">
+                      T20 Celestial Annihilator
+                    </div>
                     <div className="text-[11px] text-slate-400">Omega Siege Mortars</div>
                     <div className="flex gap-1.5">
                       <button
@@ -337,7 +343,11 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       isTimeFrozen ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'
                     }`}
                   >
-                    {isTimeFrozen ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                    {isTimeFrozen ? (
+                      <Play className="w-3.5 h-3.5" />
+                    ) : (
+                      <Pause className="w-3.5 h-3.5" />
+                    )}
                     {isTimeFrozen ? 'RESUME TIME' : 'FREEZE TIME'}
                   </button>
                 </div>
@@ -395,7 +405,13 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                           : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                       }`}
                     >
-                      {w === 'clear' ? '☀️ Clear' : w === 'rain' ? '🌧️ Rain' : w === 'snow' ? '❄️ Snow' : '⚡ Storm'}
+                      {w === 'clear'
+                        ? '☀️ Clear'
+                        : w === 'rain'
+                          ? '🌧️ Rain'
+                          : w === 'snow'
+                            ? '❄️ Snow'
+                            : '⚡ Storm'}
                     </button>
                   ))}
                 </div>
@@ -409,14 +425,17 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                     Simulate Rival Kingdom Territory Raid
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Triggers simulated rival lord invasion from the leaderboard to test defense garrison.
+                    Triggers simulated rival lord invasion from the leaderboard to test defense
+                    garrison.
                   </p>
                 </div>
                 <button
                   onClick={() => {
                     onTriggerRivalRaid();
                     sound.playExplosion();
-                    addLog('CMD: Dispatched AI Rival Kingdom [TITAN] Lord Chronos territory raid simulation.');
+                    addLog(
+                      'CMD: Dispatched AI Rival Kingdom [TITAN] Lord Chronos territory raid simulation.'
+                    );
                   }}
                   className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-mono font-bold shadow-md shadow-rose-600/30 active:scale-95"
                 >

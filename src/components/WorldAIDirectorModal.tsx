@@ -9,7 +9,6 @@ import {
   Brain,
   Shield,
   Swords,
-  Compass,
   Sparkles,
   Pickaxe,
   ScrollText,
@@ -29,11 +28,9 @@ import {
   NPCTradeOffer,
   Quest,
   ResourceNode,
-  ResourceType,
   WorldAIEventLog,
 } from '../types/game';
 import {
-  MONSTER_COMPLEXITY_BRACKETS,
   NPC_ROLE_PROFILES,
   getMonsterComplexityByLevel,
   createScaledMonsterByLevel,
@@ -311,14 +308,17 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           </span>
                         </div>
                         <p className="text-xs text-emerald-300 font-mono mt-0.5">
-                          {selectedNpc.specialtyBuffDesc || NPC_ROLE_PROFILES[selectedNpc.role].levelScalingFormula}
+                          {selectedNpc.specialtyBuffDesc ||
+                            NPC_ROLE_PROFILES[selectedNpc.role].levelScalingFormula}
                         </p>
                       </div>
                     </div>
 
                     {/* Tactical AI Directive Selector */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-mono text-slate-400 mr-1">AI Directive:</span>
+                      <span className="text-[11px] font-mono text-slate-400 mr-1">
+                        AI Directive:
+                      </span>
                       {(
                         [
                           { id: 'autonomous', label: 'Autonomous Role' },
@@ -350,7 +350,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
                       <div className="flex items-center justify-between text-xs font-mono">
                         <span className="text-slate-400 flex items-center gap-1.5">
-                          <Navigation className="w-3.5 h-3.5 text-cyan-400" /> Active AI Action & A* Path
+                          <Navigation className="w-3.5 h-3.5 text-cyan-400" /> Active AI Action & A*
+                          Path
                         </span>
                         <span className="text-cyan-300 font-bold">
                           [{Math.round(selectedNpc.x)}, {Math.round(selectedNpc.z)}]
@@ -387,7 +388,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 mt-1">
-                          {selectedNpc.name} continuously gathers or prospects resources during autonomous world ticks.
+                          {selectedNpc.name} continuously gathers or prospects resources during
+                          autonomous world ticks.
                         </p>
                         <div className="flex flex-wrap gap-2 mt-2.5">
                           {Object.entries(selectedNpc.gatheredStash || {}).map(([res, amt]) =>
@@ -419,9 +421,7 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           (v) => !v || v === 0n
                         )}
                         className={`w-full py-2 px-4 rounded-xl text-xs font-bold font-mono transition-all ${
-                          Object.values(selectedNpc.gatheredStash || {}).some(
-                            (v) => v && v > 0n
-                          )
+                          Object.values(selectedNpc.gatheredStash || {}).some((v) => v && v > 0n)
                             ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95'
                             : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                         }`}
@@ -454,13 +454,12 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           <span className="text-cyan-300 font-bold">
                             +{formatBigInt(selectedNpc.activeQuest.rewardDiamonds)} 💎
                           </span>
-                          {Object.entries(selectedNpc.activeQuest.rewardResources).map(
-                            ([r, a]) =>
-                              a ? (
-                                <span key={r} className="text-amber-300">
-                                  +{formatBigInt(a)} {r.toUpperCase()}
-                                </span>
-                              ) : null
+                          {Object.entries(selectedNpc.activeQuest.rewardResources).map(([r, a]) =>
+                            a ? (
+                              <span key={r} className="text-amber-300">
+                                +{formatBigInt(a)} {r.toUpperCase()}
+                              </span>
+                            ) : null
                           )}
                         </div>
                       </div>
@@ -484,7 +483,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     <div className="p-4 rounded-xl bg-slate-900/90 border border-amber-500/40 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold font-cinzel text-amber-300 flex items-center gap-1.5">
-                          <ArrowRightLeft className="w-4 h-4" /> Caravan Master Barter Exchange (Lv.{selectedNpc.level})
+                          <ArrowRightLeft className="w-4 h-4" /> Caravan Master Barter Exchange (Lv.
+                          {selectedNpc.level})
                         </span>
                         <span className="text-[11px] font-mono text-slate-400">
                           Live Route Rates · Weather: {weatherCfg.name}
@@ -544,7 +544,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                       Monster AI Complexity Scaling Simulator & World Spawner (Lv. 1 – 1000)
                     </h3>
                     <p className="text-xs text-slate-300">
-                      Slide from Level 1 to 1000 to inspect how attack patterns, A* pathfinding depth, tactical IQ, and environmental interactions scale.
+                      Slide from Level 1 to 1000 to inspect how attack patterns, A* pathfinding
+                      depth, tactical IQ, and environmental interactions scale.
                     </p>
                   </div>
                   <div className="flex gap-1.5 flex-wrap shrink-0">
@@ -626,10 +627,13 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     <div className="text-[11px] font-mono text-cyan-300 space-y-0.5 pt-1 border-t border-slate-800">
                       <div>Movement Policy: {simProfile.movementPolicyLabel}</div>
                       <div>
-                        Pathfinding: {simProfile.pathfindingAlgorithm} ({simProfile.pathfindingMaxNodes} waypoints, {simProfile.aggroRadius}m aggro)
+                        Pathfinding: {simProfile.pathfindingAlgorithm} (
+                        {simProfile.pathfindingMaxNodes} waypoints, {simProfile.aggroRadius}m aggro)
                       </div>
                       <div className="text-slate-300">
-                        Scaled Stats: {formatBigInt(previewMonster.hp)} HP · {formatBigInt(previewMonster.attack)} ATK · {formatBigInt(previewMonster.defense)} DEF
+                        Scaled Stats: {formatBigInt(previewMonster.hp)} HP ·{' '}
+                        {formatBigInt(previewMonster.attack)} ATK ·{' '}
+                        {formatBigInt(previewMonster.defense)} DEF
                       </div>
                     </div>
                   </div>
@@ -653,7 +657,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                             </span>
                           </div>
                           <div className="text-slate-400 mt-1">
-                            {pat.description} · <span className="text-amber-300">{pat.statusEffect}</span>
+                            {pat.description} ·{' '}
+                            <span className="text-amber-300">{pat.statusEffect}</span>
                           </div>
                         </div>
                       ))}
@@ -708,7 +713,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                                 </span>
                               </div>
                               <div className="text-[11px] text-cyan-300 font-mono mt-0.5">
-                                {prof.movementPolicyLabel} · Pos [{Math.round(mon.x)}, {Math.round(mon.z)}]
+                                {prof.movementPolicyLabel} · Pos [{Math.round(mon.x)},{' '}
+                                {Math.round(mon.z)}]
                               </div>
                             </div>
 
@@ -746,7 +752,9 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                               <span>Counter: {activePattern.counterTroop.toUpperCase()}</span>
                             </div>
                             <div className="text-emerald-300">
-                              Env AI: {mon.activeEnvInteraction || prof.environmentalInteractions[0]?.actionName}
+                              Env AI:{' '}
+                              {mon.activeEnvInteraction ||
+                                prof.environmentalInteractions[0]?.actionName}
                             </div>
                             <div className="text-slate-400">
                               A* Path:{' '}
@@ -784,7 +792,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     Real-Time Autonomous Decision & Pathfinding Stream
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Logs every autonomous NPC state transition, Guard-vs-Monster skirmish, resource node harvest, and Monster telegraph phase.
+                    Logs every autonomous NPC state transition, Guard-vs-Monster skirmish, resource
+                    node harvest, and Monster telegraph phase.
                   </p>
                 </div>
                 <button

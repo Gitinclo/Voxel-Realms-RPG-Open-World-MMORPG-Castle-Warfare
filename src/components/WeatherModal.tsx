@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { X, CloudRain, Sun, Snowflake, Zap, ArrowRight, Shield, Swords, Pickaxe, Sparkles } from 'lucide-react';
+import { X, Swords, Pickaxe, Sparkles } from 'lucide-react';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { sound } from '../game/audio';
 
@@ -48,7 +48,8 @@ export const WeatherModal: React.FC<WeatherModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Atmospheric conditions dynamically alter combat effectiveness & open-world harvesting
+                Atmospheric conditions dynamically alter combat effectiveness & open-world
+                harvesting
               </p>
             </div>
           </div>
@@ -68,7 +69,9 @@ export const WeatherModal: React.FC<WeatherModalProps> = ({
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{activeConfig.icon}</span>
-                <span className="text-base font-bold text-white font-cinzel">{activeConfig.name}</span>
+                <span className="text-base font-bold text-white font-cinzel">
+                  {activeConfig.name}
+                </span>
                 <span className="text-xs text-cyan-300 font-mono">
                   (Next Shift in {Math.floor(durationRemainingSec)}s)
                 </span>
@@ -133,7 +136,8 @@ export const WeatherModal: React.FC<WeatherModalProps> = ({
                   <div className="font-bold text-white">
                     {activeConfig.troopDefenseMultipliers.shieldbearer > 1.0 ? (
                       <span className="text-emerald-400">
-                        +{Math.round((activeConfig.troopDefenseMultipliers.shieldbearer - 1) * 100)}% DEF
+                        +{Math.round((activeConfig.troopDefenseMultipliers.shieldbearer - 1) * 100)}
+                        % DEF
                       </span>
                     ) : (
                       'Normal'

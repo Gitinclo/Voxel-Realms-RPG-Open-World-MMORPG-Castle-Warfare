@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { X, Award, Shield, Swords, Sparkles, Star, ChevronRight } from 'lucide-react';
+import { X, Award, Swords, Sparkles, Star, ChevronRight } from 'lucide-react';
 import { Hero, HeroRarity } from '../types/game';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
@@ -21,7 +21,7 @@ interface HeroModalProps {
 export const HeroModal: React.FC<HeroModalProps> = ({
   heroes,
   playerExp,
-  diamonds,
+  diamonds: _diamonds,
   onLevelUpHero,
   onRecruitHero,
   onClose,
@@ -193,7 +193,9 @@ export const HeroModal: React.FC<HeroModalProps> = ({
 
                 {/* Troop Specialty & Stat Bonuses */}
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold text-slate-400">Army Leadership Multipliers</div>
+                  <div className="text-xs font-semibold text-slate-400">
+                    Army Leadership Multipliers
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700 text-center">
                       <div className="text-[11px] text-rose-400 font-semibold">Troop ATK</div>

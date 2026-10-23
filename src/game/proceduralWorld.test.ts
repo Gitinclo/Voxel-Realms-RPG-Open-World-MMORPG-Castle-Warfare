@@ -27,7 +27,10 @@ import { CPP_CODE_MODULES, CPP_ENGINE_SPEC, getSimulatedEngineStats } from './cp
 test('procedural voxel terrain builds instanced meshes and animated water plane cleanly', () => {
   const terrain = createVoxelTerrain();
   assert.equal(terrain.name, 'VoxelTerrain');
-  assert.ok(terrain.children.length >= 4, 'Terrain contains grass, stone, foliage tufts, and water');
+  assert.ok(
+    terrain.children.length >= 4,
+    'Terrain contains grass, stone, foliage tufts, and water'
+  );
 
   const waterMesh = terrain.getObjectByName('VoxelWaterPlane');
   assert.ok(waterMesh, 'Terrain includes animated PBR VoxelWaterPlane mesh');
@@ -55,7 +58,10 @@ test('createResourceNodeMesh, createNPCMesh, and createMonsterMesh build valid 3
   for (const npc of INITIAL_NPCS) {
     const mesh = createNPCMesh(npc);
     assert.equal(mesh.name, `NPC_${npc.id}`);
-    assert.ok(mesh.children.length >= 6, 'NPC has articulated legs, torso, belt, arms, head, and role gear');
+    assert.ok(
+      mesh.children.length >= 6,
+      'NPC has articulated legs, torso, belt, arms, head, and role gear'
+    );
   }
 
   for (const monster of INITIAL_MONSTERS) {

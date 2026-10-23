@@ -9,13 +9,16 @@ class SoundEngine {
 
   constructor() {
     // Sound starts unmuted or from saved setting
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('voxel_rpg_sound_muted') : null;
+    const saved =
+      typeof window !== 'undefined' ? localStorage.getItem('voxel_rpg_sound_muted') : null;
     this.muted = saved === 'true';
   }
 
   private initCtx() {
     if (!this.ctx && typeof window !== 'undefined') {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
