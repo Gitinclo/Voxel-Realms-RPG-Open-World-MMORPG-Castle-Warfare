@@ -162,6 +162,9 @@ npm run preview
 │   ├── PULL_REQUEST_TEMPLATE.md    # Pull Request verification checklist
 │   └── workflows/
 │       └── build.yml               # GitHub Actions CI/CD (lint, test, build, artifact upload)
+├── cpp/
+│   ├── VoxelRealmsGuardrails.hpp   # C++20 RAII smart-pointer & concept guardrail header
+│   └── engine_guardrail_test.cpp   # C++20 CTest static_assert & RAII verification unit test
 ├── src/
 │   ├── components/                 # React UI Modals & HUD Overlays
 │   │   ├── AdminConsoleModal.tsx   # GM / Admin dev console
@@ -169,7 +172,7 @@ npm run preview
 │   │   ├── CharacterCreationModal.tsx # Character creation & customization
 │   │   ├── ClanEmblemView.tsx      # SVG clan banner & insignia renderer
 │   │   ├── ClanModal.tsx           # Clan management & alliances
-│   │   ├── CppArchitectureModal.tsx# C++20 engine blueprint & SIMD viewer
+│   │   ├── CppArchitectureModal.tsx# C++20 engine blueprint, Guardrails & SIMD viewer
 │   │   ├── CultivationModal.tsx    # 4-path cultivation & realm ascension
 │   │   ├── DailyLoginModal.tsx     # 7-day login rewards & Veteran Scroll UI
 │   │   ├── GameCanvas.tsx          # Three.js 3D viewport & voxel renderer
@@ -186,7 +189,7 @@ npm run preview
 │   │   ├── audio.ts                # Web Audio sound FX synthesizer
 │   │   ├── clanMath.ts             # Clan buffs & territorial calculations
 │   │   ├── clanMath.test.ts        # Clan math unit tests
-│   │   ├── cppEngine.ts            # C++20 SIMD engine blueprint & code generators
+│   │   ├── cppEngine.ts            # C++20 SIMD engine blueprint & Guardrail code generators
 │   │   ├── cultivationMath.ts      # 4 paths, suppression, karma, master-disciple logic
 │   │   ├── cultivationMath.test.ts # Cultivation math unit tests
 │   │   ├── dailyLogin.ts           # Daily login streak & reward scaling logic
@@ -204,11 +207,14 @@ npm run preview
 │   ├── App.tsx                     # Main application container & state provider
 │   ├── index.css                   # Tailwind CSS styling
 │   └── main.tsx                    # Application entry point
+├── .clang-format                   # C++20 LLVM code formatter rules (IndentWidth: 4, ColumnLimit: 100)
+├── .clang-tidy                     # C++20 static analyzer rules (enforces std::unique_ptr/std::shared_ptr)
 ├── .env.example                    # Environment variable template (safe placeholders)
-├── .gitignore                      # Git ignore rules (node_modules, dist, .env, keystores)
+├── .gitignore                      # Git ignore rules (node_modules, dist, build, .env, keystores)
 ├── .prettierignore                 # Excluded paths for Prettier formatting checks
 ├── .prettierrc                     # Prettier code style configuration
 ├── CHANGELOG.md                    # Chronological release history
+├── CMakeLists.txt                  # C++20 strict compiler flags & CTest configuration
 ├── CODE_OF_CONDUCT.md              # Contributor Covenant Code of Conduct
 ├── CONTRIBUTING.md                 # Developer setup, Guardrails, testing & PR guidelines
 ├── LICENSE                         # Apache License 2.0
@@ -218,6 +224,7 @@ npm run preview
 ├── metadata.json                   # Applet configuration & metadata
 ├── package.json                    # Project dependencies, metadata & npm scripts
 ├── tsconfig.json                   # Strict TypeScript configuration (noUnusedLocals/Parameters)
+├── vcpkg.json                      # Declarative C++20 package manager manifest & baseline lock
 └── vite.config.ts                  # Vite build configuration
 ```
 
@@ -225,23 +232,31 @@ npm run preview
 
 ## 🧪 Testing Coverage & Anti-Spaghetti Guardrails
 
-To solve the **"Spaghetti Code" risk** (duplicated logic, unused variables, deprecated packages, inconsistent formatting, or silent regressions), Voxel Realms RPG combines **Automated Technical Guardrails** with a disciplined **AI Supervision Process**:
+To solve the **"Spaghetti Code" risk** across both TypeScript/WebGL and C++20 engine layers (preventing duplicated logic, memory leaks, raw pointers, unused variables, deprecated packages, inconsistent formatting, or silent regressions), Voxel Realms RPG combines **Automated Technical Guardrails** with a disciplined **AI Supervision Process**:
 
-### Part 1: The Technical Fix (4 Automated CI Guardrails in `.github/workflows/build.yml`)
+### Part 1A: TypeScript / WebGL Guardrails (`.github/workflows/build.yml` -> `quality-check`)
 
-Every push and Pull Request automatically runs four strict quality gates:
+Every push and Pull Request automatically runs four strict Web/TypeScript quality gates:
 
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—screaming immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
 4. **The Regression Test Suite (`npm test`)**: Runs all **55 unit and regression tests across 6 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
+### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
+
+In C++20, messy code can cause memory leaks, slow compilation, and undefined crashes. Our automated C++20 pipeline enforces three core guardrails at the repository root:
+
+1. **Linter / Static Analyzer (`clang-tidy` via `.clang-tidy`)**: Catches complex bugs, forbids raw owning pointers in favor of modern C++20 smart pointers (`std::unique_ptr`, `std::shared_ptr`, `std::make_unique`, `std::make_shared`), and treats warnings as errors (`WarningsAsErrors: '*'`).
+2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
+3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit so outdated or insecure C++ libraries are never introduced.
+
 ### Part 2: The Process Fix (AI Supervision & Prompting Strategy)
 
-- **The "Architect First" Rule**: Never prompt to _"just write the code"_. Always require an architectural plan first that audits `src/game/` for existing reusable functions before modifying files.
-- **The Refactor Session (Every 3–4 Features)**: Pause feature development every 3–4 features to audit modified modules for duplicate logic, unused state, or deprecated APIs, refactoring cleanly while keeping all 55 unit tests green.
+- **The "Architect First" Rule**: Never prompt to _"just write the code"_. Always require an architectural plan first that audits `src/game/` and `cpp/` for existing reusable functions before modifying files.
+- **The Refactor Session (Every 3–4 Features)**: Pause feature development every 3–4 features to audit modified modules for duplicate logic, raw pointers, unused state, or deprecated APIs, refactoring cleanly while keeping all unit tests green.
 
-### Automated Test Suites (`55/55 Passing`)
+### Automated Test Suites (`55/55 Passing` + `CTest C++20 Passing`)
 
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, 100x Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, 1,000T troop capacities, 1T rallies, and T1–T20 troop balance.
@@ -249,14 +264,16 @@ Every push and Pull Request automatically runs four strict quality gates:
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs (Foundation Glow, Golden Core, Nascent Soul Baby, Divine Halos, Red-Name Ring), and C++20 engine telemetry.
+- **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` 100.0x Realm Suppression `static_assert` and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
 
 Run all Guardrail checks locally:
 
 ```bash
-npm run lint                  # 1. Check for messy code & unused variables
-npm audit --audit-level=high  # 2. Check for vulnerabilities & deprecated packages
+npm run lint                  # 1. Check TypeScript for messy code & unused variables
+npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 55 unit & regression tests
+npm test                      # 4. Run all 55 TypeScript unit & regression tests
+clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
 ---

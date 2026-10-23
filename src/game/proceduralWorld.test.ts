@@ -118,8 +118,14 @@ test('C++20 engine telemetry and initial world data remain consistent and non-em
   const stats = getSimulatedEngineStats();
   assert.equal(stats.tickRateHz, 60.0);
   assert.equal(stats.peakLuminanceNits, 4000);
-  assert.equal(CPP_CODE_MODULES.length, 4);
-  assert.ok(CPP_ENGINE_SPEC.features.length >= 5);
+  assert.equal(CPP_CODE_MODULES.length, 5);
+  assert.ok(
+    CPP_CODE_MODULES.some(
+      (m) => m.id === 'cpp20_guardrail_stack' && m.code.includes('BasedOnStyle: LLVM')
+    ),
+    'Includes C++20 Guardrail Stack module (.clang-format, .clang-tidy, vcpkg.json, RAII smart pointers)'
+  );
+  assert.ok(CPP_ENGINE_SPEC.features.length >= 7);
 
   assert.ok(INITIAL_RESOURCES.wood > 0n);
   assert.ok(Object.keys(INITIAL_TROOPS).length >= 9);

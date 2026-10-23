@@ -31,7 +31,12 @@ export interface CppEngineStats {
 }
 
 export interface CppCodeModule {
-  id: 'ai_pathfinding' | 'cultivation_karma_master' | 'hdr10_aura_vulkan' | 'full_engine';
+  id:
+    | 'ai_pathfinding'
+    | 'cultivation_karma_master'
+    | 'hdr10_aura_vulkan'
+    | 'cpp20_guardrail_stack'
+    | 'full_engine';
   filename: string;
   title: string;
   subtitle: string;
@@ -535,6 +540,94 @@ struct alignas(16) Hdr10PlusAuraPushConstants {
 } // namespace VoxelEngine::Render::HDR10Plus
 `;
 
+export const CPP_GUARDRAIL_STACK_CODE = `// ============================================================================
+// Module 4: C++20 Anti-Spaghetti Guardrail Stack
+// Files: .clang-format | .clang-tidy | vcpkg.json | cpp/VoxelRealmsGuardrails.hpp
+// Prevents memory leaks (raw pointers -> std::unique_ptr / std::shared_ptr),
+// undefined behavior, slow compilation, and outdated 3rd-party dependencies.
+// ============================================================================
+
+/* --- 1. /.clang-format (Root Formatter Configuration) ---
+BasedOnStyle: LLVM
+IndentWidth: 4
+Standard: Latest # Forces C++20/C++23 style rules
+ColumnLimit: 100
+*/
+
+/* --- 2. /.clang-tidy (Static Analyzer & C++20 Modernization) ---
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  modernize-*,
+  performance-*
+WarningsAsErrors: '*'
+CheckOptions:
+  - key: modernize-make-unique.MakeSmartPtrFunction
+    value: 'std::make_unique'
+  - key: modernize-make-shared.MakeSmartPtrFunction
+    value: 'std::make_shared'
+*/
+
+/* --- 3. /vcpkg.json (Declarative Package Manager Manifest) ---
+{
+  "name": "voxel-realms-rpg-engine",
+  "version-semver": "1.2.0",
+  "builtin-baseline": "b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01",
+  "dependencies": [
+    { "name": "entt", "version>=": "3.13.2" },
+    { "name": "fmt", "version>=": "10.2.1" },
+    { "name": "glm", "version>=": "1.0.1" },
+    { "name": "sdl2", "version>=": "2.30.3" },
+    { "name": "gtest", "version>=": "1.14.0" }
+  ]
+}
+*/
+
+#pragma once
+#include <concepts>
+#include <cstdint>
+#include <memory>
+#include <string_view>
+#include <vector>
+
+namespace voxel::guardrails {
+
+// Zero raw pointers allowed: Clang-Tidy enforces RAII smart-pointer ownership
+class CultivatorNode final {
+  public:
+    explicit CultivatorNode(std::string_view cultivatorName, uint8_t initialRealm) noexcept
+        : name(cultivatorName), realm(initialRealm) {}
+
+    [[nodiscard]] uint8_t getRealm() const noexcept { return realm; }
+    [[nodiscard]] std::string_view getName() const noexcept { return name; }
+
+  private:
+    std::string_view name;
+    uint8_t realm;
+};
+
+class SectHierarchyManager final {
+  public:
+    void registerMaster(std::shared_ptr<CultivatorNode> masterNode) noexcept {
+        sectMaster = std::move(masterNode);
+    }
+
+    void enrollDisciple(std::string_view discipleName, uint8_t realm) {
+        disciples.push_back(std::make_unique<CultivatorNode>(discipleName, realm));
+    }
+
+    [[nodiscard]] std::size_t getDiscipleCount() const noexcept { return disciples.size(); }
+
+  private:
+    std::shared_ptr<CultivatorNode> sectMaster;
+    std::vector<std::unique_ptr<CultivatorNode>> disciples;
+};
+
+} // namespace voxel::guardrails
+`;
+
 export const CPP_CODE_MODULES: CppCodeModule[] = [
   {
     id: 'ai_pathfinding',
@@ -558,11 +651,18 @@ export const CPP_CODE_MODULES: CppCodeModule[] = [
     code: CPP_HDR10_AURA_CODE,
   },
   {
+    id: 'cpp20_guardrail_stack',
+    filename: '.clang-format + .clang-tidy + vcpkg.json + VoxelRealmsGuardrails.hpp',
+    title: '4. C++20 Guardrail Stack (Clang-Tidy, Clang-Format & vcpkg)',
+    subtitle: 'LLVM 100-Col Formatter, RAII std::unique_ptr Enforcement & vcpkg Dependency Locking',
+    code: CPP_GUARDRAIL_STACK_CODE,
+  },
+  {
     id: 'full_engine',
     filename: 'VoxelRealmsEngine_Complete_C++20.hpp',
-    title: '4. Combined Full Engine Header (All Systems)',
+    title: '5. Combined Full Engine Header (All Systems)',
     subtitle: 'Complete single-header Android NDK C++20 compilation unit',
-    code: `${CPP_ANDROID_AI_CODE}\n${CPP_CULTIVATION_KARMA_CODE}\n${CPP_HDR10_AURA_CODE}`,
+    code: `${CPP_ANDROID_AI_CODE}\n${CPP_CULTIVATION_KARMA_CODE}\n${CPP_HDR10_AURA_CODE}\n${CPP_GUARDRAIL_STACK_CODE}`,
   },
 ];
 
@@ -576,8 +676,9 @@ export const CPP_ENGINE_SPEC = {
     'Red-Name Karma Judge: Unlawful PK reveals Justice Bounty coordinates & strikes stationary fiends (>=8s) with Instant-Kill Tribulation Lightning + Equipped Loot Drop',
     'Master & Disciple Hierarchy: 50m Proximity Cultivation Speed Aura, Spirit Stone Tax Funneling, & Skill Scroll Transmission (Heaven Earth Sleeve)',
     'Vulkan 1.3 HDR10+ (Rec.2020 / SMPTE ST 2084 PQ 4000-nit) Cultivator Aura Pipeline replacing overhead level numbers',
+    'C++20 Guardrail Stack: .clang-format (LLVM, IndentWidth: 4, Standard: Latest, ColumnLimit: 100), .clang-tidy (std::unique_ptr/std::shared_ptr RAII enforcement), & vcpkg.json baseline locking',
   ],
-  sourceCodeSample: `${CPP_ANDROID_AI_CODE}\n${CPP_CULTIVATION_KARMA_CODE}\n${CPP_HDR10_AURA_CODE}`,
+  sourceCodeSample: `${CPP_ANDROID_AI_CODE}\n${CPP_CULTIVATION_KARMA_CODE}\n${CPP_HDR10_AURA_CODE}\n${CPP_GUARDRAIL_STACK_CODE}`,
 };
 
 export function getSimulatedEngineStats(): CppEngineStats {

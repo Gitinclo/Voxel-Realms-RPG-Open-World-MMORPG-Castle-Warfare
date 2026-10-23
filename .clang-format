@@ -1,0 +1,4 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+Standard: Latest # Forces C++20/C++23 style rules
+ColumnLimit: 100

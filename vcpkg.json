@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "voxel-realms-rpg-engine",
+  "version-semver": "1.2.0",
+  "description": "C++20 Android NDK & Desktop Open-World RPG Engine Dependencies managed via vcpkg manifest mode",
+  "homepage": "https://github.com/voxel-realms-rpg/voxel-realms-rpg",
+  "license": "Apache-2.0",
+  "supports": "(windows & x64) | (linux & x64) | (osx) | (android & arm64)",
+  "builtin-baseline": "b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01",
+  "dependencies": [
+    {
+      "name": "entt",
+      "version>=": "3.13.2"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.2.1"
+    },
+    {
+      "name": "glm",
+      "version>=": "1.0.1"
+    },
+    {
+      "name": "sdl2",
+      "version>=": "2.30.3"
+    },
+    {
+      "name": "gtest",
+      "version>=": "1.14.0"
+    }
+  ]
+}

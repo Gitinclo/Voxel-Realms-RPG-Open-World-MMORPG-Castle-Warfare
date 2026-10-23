@@ -62,3 +62,43 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 14
+
+  cpp20-guardrails:
+    name: C++20 Guardrails (Clang-Format, Clang-Tidy, vcpkg & CTest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Clang-Format, Clang-Tidy & CMake
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang clang-format clang-tidy cmake ninja-build jq
+
+      # 1. C++ Package Manager Manifest Audit (vcpkg.json baseline & dependency lock check)
+      - name: Verify vcpkg.json Manifest & Baseline Pinning
+        run: |
+          jq -e '.["builtin-baseline"] and (.dependencies | length >= 4)' vcpkg.json
+
+      # 2. C++ Formatter Check (enforces .clang-format LLVM 4-space 100-col standard)
+      - name: Run Clang-Format Check (.clang-format)
+        run: |
+          clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp
+
+      # 3. Configure C++20 Build & Export compile_commands.json
+      - name: Configure CMake (ISO C++20 Strict Mode)
+        run: |
+          cmake -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release
+
+      # 4. C++ Linter / Static Analyzer (catches raw pointers, memory leaks & modernizes to C++20)
+      - name: Run Clang-Tidy Static Analyzer (.clang-tidy)
+        run: |
+          clang-tidy -p build cpp/engine_guardrail_test.cpp
+
+      # 5. Build & Execute C++20 Guardrail Unit Tests
+      - name: Build & Run C++20 Engine Tests (CTest)
+        run: |
+          cmake --build build
+          ctest --test-dir build --output-on-failure

@@ -185,12 +185,20 @@ When using AI-assisted coding workflows, treat the AI as an engineer that requir
 
 ### Part 1: The Technical Fix (Automated CI Guardrails in `.github/workflows/build.yml`)
 
-Every push and Pull Request must pass four automated checks before merging:
+Every push and Pull Request must pass both our **Web/TypeScript Guardrails** and our **C++20 Guardrail Stack** before merging:
+
+#### A. TypeScript & WebGL Guardrails (`quality-check` job)
 
 1. **The Linter (`npm run lint`)**: Enforces strict TypeScript compilation with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`. Any unused variable, dead import, or type mismatch immediately fails the build.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Blocks outdated or vulnerable third-party packages.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting (`.prettierrc`) so every file in the repository looks like it was written by a single author.
 4. **The Regression Test Suite (`npm test`)**: Executes all 55 unit and regression tests across 6 suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
+
+#### B. C++20 Engine Guardrail Stack (`cpp20-guardrails` job)
+
+1. **Linter / Static Analyzer (`clang-tidy` via `.clang-tidy`)**: Catches memory leaks, forces modern C++20 smart pointers (`std::unique_ptr` and `std::shared_ptr` via `std::make_unique` / `std::make_shared`) instead of raw pointers, and treats all warnings as errors.
+2. **Formatter (`clang-format` via `.clang-format`)**: Enforces `BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, and `ColumnLimit: 100`.
+3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Locks C++20 libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) to a verified `builtin-baseline` commit and runs C++20 unit tests via `ctest`.
 
 ### Part 2: The Process Fix (Prompting & Architecture Strategy)
 
@@ -202,7 +210,7 @@ Tools catch syntax and formatting issues, while disciplined prompting preserves 
    - **Good Prompt**: _"Plan the logic for the character jump. Check `src/game/` for existing physics or movement functions we can reuse. Don't write code yet—just give me the plan."_
 2. **The Refactor Session (Every 3–4 Features)**:
    - After completing 3–4 features, pause feature work and run a dedicated refactor pass on modified files.
-   - **Refactor Prompt**: _"Review this file. Identify any duplicate logic, unused variables, or deprecated methods. Refactor it to be cleaner and more modular without changing the functionality, then run `npm run lint` and `npm test`."_
+   - **Refactor Prompt**: _"Review this file. Identify any duplicate logic, unused variables, raw pointers, or deprecated methods. Refactor it to be cleaner and more modular without changing the functionality, then run `npm run lint` and `npm test`."_
 
 ---
 

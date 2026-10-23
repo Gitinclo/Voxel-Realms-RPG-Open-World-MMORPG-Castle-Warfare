@@ -1,6 +1,11 @@
 node_modules/
 dist/
+build/
+vcpkg_installed/
 package-lock.json
 .env
+.clang-format
+.clang-tidy
 *.log
 public/assets/
+
