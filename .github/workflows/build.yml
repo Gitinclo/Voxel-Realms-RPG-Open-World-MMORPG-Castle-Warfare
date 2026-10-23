@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Typecheck, Unit Tests & Production Build
+    name: Typecheck, Regression Tests & Production Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -30,18 +30,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run TypeScript typecheck
+      - name: Run TypeScript strict typecheck (Zero Spaghetti / No Implicit Breaks)
         run: npm run lint
 
-      - name: Run unit test suite
+      - name: Run automated unit & regression test suite (All 6 Game Subsystems)
         run: npm test
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Verify production bundle integrity
+        run: |
+          test -f dist/index.html
+          echo "Production build verified successfully."
 
       - name: Upload production build artifact
         uses: actions/upload-artifact@v4

@@ -63,6 +63,8 @@ interface GameHUDProps {
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
   veteranScrollsOwned?: number;
+  graphicsQuality?: 'ultra' | 'high' | 'balanced';
+  onCycleGraphicsQuality?: () => void;
   godmode?: boolean;
   onTouchMove?: (delta: { x: number; y: number }) => void;
   onTouchEnd?: () => void;
@@ -101,6 +103,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
   veteranScrollsOwned = 0,
+  graphicsQuality = 'ultra',
+  onCycleGraphicsQuality,
   godmode,
   onTouchMove,
   onTouchEnd,
@@ -344,6 +348,22 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
+
+          {/* Graphics Quality Preset Selector (Ultra HDR / High / Balanced) */}
+          {onCycleGraphicsQuality && (
+            <button
+              onClick={() => {
+                sound.playSwing();
+                onCycleGraphicsQuality();
+              }}
+              data-testid="hud-graphics-quality-btn"
+              className="px-2.5 py-1 rounded-xl bg-slate-900 border border-purple-500/40 hover:border-purple-400 text-[11px] font-mono font-bold text-purple-200 hover:bg-slate-800 transition-all flex items-center gap-1"
+              title="Cycle 3D Graphics Quality (Ultra HDR Bloom + 2K Shadows / High PBR / Balanced)"
+            >
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              <span>{graphicsQuality === 'ultra' ? 'ULTRA HDR' : graphicsQuality.toUpperCase()}</span>
+            </button>
+          )}
 
           {/* GM / Admin Console Badge from admin_console.cpp */}
           <button

@@ -6,6 +6,10 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import {
   CharacterAppearance,
   MonsterTarget,
@@ -13,7 +17,9 @@ import {
   ResourceNode,
 } from '../types/game';
 import {
+  GraphicsQualityPreset,
   createMonsterMesh,
+  createNPCMesh,
   createPlayerMesh,
   createResourceNodeMesh,
   createVoxelCastle,
@@ -33,6 +39,7 @@ interface GameCanvasProps {
   npcs: NPC[];
   timeOfDayHours: number; // 0 to 24 hours
   weather?: WeatherType;
+  graphicsQuality?: GraphicsQualityPreset;
   onSelectMonster: (monster: MonsterTarget) => void;
   onSelectResourceNode: (node: ResourceNode) => void;
   onSelectCastle: () => void;
@@ -52,6 +59,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   npcs,
   timeOfDayHours,
   weather = 'clear',
+  graphicsQuality = 'ultra',
   onSelectMonster,
   onSelectResourceNode,
   onSelectCastle,
@@ -73,6 +81,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     npcs,
     timeOfDayHours,
     weather,
+    graphicsQuality,
     onSelectMonster,
     onSelectResourceNode,
     onSelectCastle,
@@ -93,6 +102,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       npcs,
       timeOfDayHours,
       weather,
+      graphicsQuality,
       onSelectMonster,
       onSelectResourceNode,
       onSelectCastle,
@@ -111,6 +121,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     npcs,
     timeOfDayHours,
     weather,
+    graphicsQuality,
     onSelectMonster,
     onSelectResourceNode,
     onSelectCastle,
@@ -139,10 +150,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Scene & Camera
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 300);
+    const bgColor = new THREE.Color(0x38bdf8);
+    scene.background = bgColor;
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 320);
     camera.position.set(0, 14, 22);
 
-    // Modern Renderer
+    // Studio PBR WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: !isSoftwareGl,
       powerPreference: 'high-performance',
@@ -151,64 +164,173 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     container.replaceChildren(renderer.domElement);
 
-    // Procedural RoomEnvironment for realistic PBR reflections
+    // Hardware Post-Processing Pipeline (RenderPass -> UnrealBloomPass -> OutputPass)
+    let composer: EffectComposer | null = null;
+    let bloomPass: UnrealBloomPass | null = null;
+    if (!isSoftwareGl) {
+      composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(Math.floor(width / 2), Math.floor(height / 2)),
+        0.38, // subtle HDR bloom strength
+        0.45, // radius
+        0.82 // threshold so only emissive runes, cores, sun & lanterns bloom
+      );
+      composer.addPass(bloomPass);
+
+      const outputPass = new OutputPass();
+      composer.addPass(outputPass);
+    }
+
+    // Procedural RoomEnvironment for realistic PBR reflections & clearcoat highlights
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     pmrem.dispose();
 
-    // Lighting: Sun & Moon rig for Day/Night cycle
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.8);
+    // 3-Point Studio & Atmospheric Lighting Rig
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.85);
     scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfff5e6, 2.2);
+    const sunLight = new THREE.DirectionalLight(0xfff5e6, 2.35);
     sunLight.position.set(25, 45, 25);
     sunLight.castShadow = !isSoftwareGl;
     if (!isSoftwareGl) {
-      sunLight.shadow.mapSize.width = 1024;
-      sunLight.shadow.mapSize.height = 1024;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
       sunLight.shadow.camera.near = 0.5;
-      sunLight.shadow.camera.far = 120;
-      sunLight.shadow.camera.left = -40;
-      sunLight.shadow.camera.right = 40;
-      sunLight.shadow.camera.top = 40;
-      sunLight.shadow.camera.bottom = -40;
+      sunLight.shadow.camera.far = 135;
+      sunLight.shadow.camera.left = -44;
+      sunLight.shadow.camera.right = 44;
+      sunLight.shadow.camera.top = 44;
+      sunLight.shadow.camera.bottom = -44;
       sunLight.shadow.bias = -0.0005;
+      sunLight.shadow.normalBias = 0.02;
     }
     scene.add(sunLight);
 
-    // Sun Visual Sphere
-    const sunMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(3.5, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xfff176 })
-    );
-    scene.add(sunMesh);
+    // Cool Atmospheric Rim Light (Separates 3D silhouettes from background)
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.75);
+    rimLight.position.set(-28, 18, -24);
+    scene.add(rimLight);
 
-    // Moon Visual Sphere
+    // Warm Citadel Courtyard Point Light
+    const citadelHeartLight = new THREE.PointLight(0xffb300, 1.8, 32);
+    citadelHeartLight.position.set(0, 8, 6);
+    scene.add(citadelHeartLight);
+
+    // Sun Visual Sphere + Corona Glow Halo
+    const sunGroup = new THREE.Group();
+    const sunMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(3.5, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfff59d })
+    );
+    const sunCorona = new THREE.Mesh(
+      new THREE.SphereGeometry(5.6, 24, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.28,
+        depthWrite: false,
+      })
+    );
+    sunGroup.add(sunMesh, sunCorona);
+    scene.add(sunGroup);
+
+    // Moon Visual Sphere + Halo
+    const moonGroup = new THREE.Group();
     const moonMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(2.8, 16, 16),
+      new THREE.SphereGeometry(2.8, 24, 24),
       new THREE.MeshBasicMaterial({ color: 0xe0e7ff })
     );
-    scene.add(moonMesh);
+    const moonHalo = new THREE.Mesh(
+      new THREE.SphereGeometry(4.4, 24, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x818cf8,
+        transparent: true,
+        opacity: 0.24,
+        depthWrite: false,
+      })
+    );
+    moonGroup.add(moonMesh, moonHalo);
+    scene.add(moonGroup);
+
+    // Drifting High-Altitude Voxel Cloud Layer
+    const cloudGroup = new THREE.Group();
+    cloudGroup.name = 'VolumetricVoxelClouds';
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.95,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.82,
+    });
+    for (let c = 0; c < 14; c++) {
+      const cluster = new THREE.Group();
+      const puffs = 3 + (c % 3);
+      for (let p = 0; p < puffs; p++) {
+        const puff = new THREE.Mesh(
+          new THREE.BoxGeometry(5 + (p % 2) * 3, 1.8 + (p % 2) * 0.6, 4.2 + p * 1.2),
+          cloudMat
+        );
+        puff.position.set((p - 1) * 2.6, (p % 2) * 0.5, ((p * 3) % 2) * 1.2);
+        cluster.add(puff);
+      }
+      const angle = (c / 14) * Math.PI * 2;
+      const dist = 34 + (c % 4) * 16;
+      cluster.position.set(
+        Math.cos(angle) * dist,
+        32 + (c % 3) * 4,
+        Math.sin(angle) * dist
+      );
+      cloudGroup.add(cluster);
+    }
+    scene.add(cloudGroup);
 
     // Starfield for night sky
     const starsGeo = new THREE.BufferGeometry();
-    const starCount = 350;
+    const starCount = 450;
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
-      starPositions[i] = (Math.random() - 0.5) * 220;
-      starPositions[i + 1] = Math.random() * 80 + 30;
-      starPositions[i + 2] = (Math.random() - 0.5) * 220;
+      starPositions[i] = (Math.random() - 0.5) * 230;
+      starPositions[i + 1] = Math.random() * 85 + 28;
+      starPositions[i + 2] = (Math.random() - 0.5) * 230;
     }
     starsGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.2, transparent: true, opacity: 0 });
+    const starsMat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 1.35,
+      transparent: true,
+      opacity: 0,
+    });
     const starsField = new THREE.Points(starsGeo, starsMat);
     scene.add(starsField);
+
+    // Ambient Spirit Qi Motes / Golden Fireflies floating over the valley
+    const fireflyCount = 120;
+    const fireflyGeo = new THREE.BufferGeometry();
+    const fireflyPositions = new Float32Array(fireflyCount * 3);
+    for (let i = 0; i < fireflyCount * 3; i += 3) {
+      fireflyPositions[i] = (Math.random() - 0.5) * 70;
+      fireflyPositions[i + 1] = 1.0 + Math.random() * 7.5;
+      fireflyPositions[i + 2] = (Math.random() - 0.5) * 70;
+    }
+    fireflyGeo.setAttribute('position', new THREE.BufferAttribute(fireflyPositions, 3));
+    const fireflyMat = new THREE.PointsMaterial({
+      color: 0xfde047,
+      size: 0.45,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const fireflyParticles = new THREE.Points(fireflyGeo, fireflyMat);
+    scene.add(fireflyParticles);
 
     // Weather Particle Systems (Rain & Snow)
     const rainCount = 1200;
@@ -255,14 +377,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     scene.add(lightningLight);
 
     // Atmospheric Fog
-    scene.fog = new THREE.FogExp2(0x87ceeb, 0.012);
+    scene.fog = new THREE.FogExp2(0x87ceeb, 0.011);
 
     // Add Voxel Terrain
     const terrain = createVoxelTerrain();
     scene.add(terrain);
 
     // Add Castle
-    const castleMesh = createVoxelCastle(propsRef.current.castleLevel);
+    let lastBuiltCastleLevel = propsRef.current.castleLevel;
+    let castleMesh = createVoxelCastle(lastBuiltCastleLevel);
     castleMesh.position.set(0, 0, 0);
     scene.add(castleMesh);
 
@@ -282,81 +405,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     });
     scene.add(monsterGroup);
 
-    // Add NPCs (6 autonomous roles: Elder, Guard, Blacksmith, Merchant, Marshal, Mystic)
+    // Add Detailed Multi-Part Autonomous NPCs (Elder, Guard, Blacksmith, Merchant, Marshal, Mystic)
     const npcGroup = new THREE.Group();
-    const roleColors: Record<string, number> = {
-      elder: 0x6a1b9a,
-      blacksmith: 0xd84315,
-      marshal: 0x1565c0,
-      guard: 0x00838f,
-      merchant: 0xf59e0b,
-      mystic: 0x10b981,
-    };
     propsRef.current.npcs.forEach((npc) => {
-      const npcModel = new THREE.Group();
-      npcModel.position.set(npc.x, 0, npc.z);
-      npcModel.name = `NPC_${npc.id}`;
-
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: roleColors[npc.role] || 0x1565c0,
-        roughness: 0.55,
-        metalness: npc.role === 'guard' || npc.role === 'marshal' ? 0.65 : 0.2,
-      });
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.7), bodyMat);
-      torso.position.y = 1.3;
-      torso.castShadow = true;
-      npcModel.add(torso);
-
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.8, 0.8, 0.8),
-        new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.7 })
-      );
-      head.position.y = 2.4;
-      head.castShadow = true;
-      npcModel.add(head);
-
-      // Role aura ring on ground
-      const auraGeo = new THREE.RingGeometry(0.9, 1.25, 20);
-      auraGeo.rotateX(-Math.PI / 2);
-      const auraMat = new THREE.MeshBasicMaterial({
-        color: roleColors[npc.role] || 0x38bdf8,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.5,
-        depthWrite: false,
-      });
-      const auraMesh = new THREE.Mesh(auraGeo, auraMat);
-      auraMesh.position.y = 0.06;
-      npcModel.add(auraMesh);
-
-      // NPC Overhead Billboard with Level & Role
-      const canvas = document.createElement('canvas');
-      canvas.width = 192;
-      canvas.height = 72;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
-        ctx.roundRect(4, 4, 184, 64, 10);
-        ctx.fill();
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.font = 'bold 17px sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${npc.name}`, 96, 26);
-        ctx.font = 'bold 15px monospace';
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillText(`Lv.${npc.level} ${npc.role.toUpperCase()}`, 96, 52);
-      }
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
-      spr.scale.set(3.8, 1.45, 1);
-      spr.position.y = 3.7;
-      npcModel.add(spr);
-
-      npcGroup.add(npcModel);
+      npcGroup.add(createNPCMesh(npc));
     });
     scene.add(npcGroup);
 
@@ -375,7 +427,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Player position and movement physics
     const playerPos = new THREE.Vector3(0, 0, 18);
-    const playerVel = new THREE.Vector3();
     const keysPressed: Record<string, boolean> = {};
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -464,11 +515,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // Resize Handler
     const onResize = () => {
       if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (composer) {
+        composer.setSize(w, h);
+      }
+      if (bloomPass) {
+        bloomPass.resolution.set(Math.floor(w / 2), Math.floor(h / 2));
+      }
     };
     window.addEventListener('resize', onResize);
 
@@ -497,6 +554,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
+      const quality = propsRef.current.graphicsQuality || 'ultra';
+
+      // Rebuild Castle if castleLevel changed
+      if (propsRef.current.castleLevel !== lastBuiltCastleLevel) {
+        scene.remove(castleMesh);
+        lastBuiltCastleLevel = propsRef.current.castleLevel;
+        castleMesh = createVoxelCastle(lastBuiltCastleLevel);
+        castleMesh.position.set(0, 0, 0);
+        scene.add(castleMesh);
+      }
+
       // 1. Calculate Day / Night Cycle Lighting & Colors
       const hour = propsRef.current.timeOfDayHours % 24;
       const sunAngle = ((hour - 6) / 24) * Math.PI * 2;
@@ -507,8 +575,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const sunZ = Math.sin(sunAngle * 0.5) * 20;
 
       sunLight.position.set(sunX, Math.max(sunY, -10), sunZ);
-      sunMesh.position.set(sunX, sunY, sunZ);
-      moonMesh.position.set(-sunX, -sunY, -sunZ);
+      sunGroup.position.set(sunX, sunY, sunZ);
+      moonGroup.position.set(-sunX, -sunY, -sunZ);
 
       const isNight = sunY < 0;
       const isDawnOrDusk = Math.abs(sunY) < 15;
@@ -517,32 +585,53 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const activeWeather = propsRef.current.weather || 'clear';
       const weatherCfg = WEATHER_CONFIGS[activeWeather] || WEATHER_CONFIGS.clear;
 
-      // Smooth Sky Color Interpolation taking weather into account
       let skyColor = weatherCfg.skyColorHex;
       if (isNight) {
         skyColor = 0x090d16; // Deep starry midnight
-        sunLight.intensity = 0.2 * weatherCfg.sunlightMult;
-        sunLight.color.setHex(0x64748b);
-        hemiLight.intensity = 0.35 * weatherCfg.sunlightMult;
+        sunLight.intensity = 0.25 * weatherCfg.sunlightMult;
+        sunLight.color.setHex(0x818cf8);
+        hemiLight.intensity = 0.4 * weatherCfg.sunlightMult;
+        rimLight.intensity = 0.9;
         starsMat.opacity = Math.min(1.0, -sunY / 15);
+        fireflyMat.opacity = 0.85;
       } else if (isDawnOrDusk) {
         skyColor = 0xf97316; // Sunset/dawn golden amber
-        sunLight.intensity = 1.8 * weatherCfg.sunlightMult;
-        sunLight.color.setHex(0xffaa55);
-        hemiLight.intensity = 0.7 * weatherCfg.sunlightMult;
+        sunLight.intensity = 1.9 * weatherCfg.sunlightMult;
+        sunLight.color.setHex(0xffb74d);
+        hemiLight.intensity = 0.72 * weatherCfg.sunlightMult;
+        rimLight.intensity = 0.65;
         starsMat.opacity = 0;
+        fireflyMat.opacity = 0.65;
       } else {
         skyColor = weatherCfg.skyColorHex;
-        sunLight.intensity = 2.4 * weatherCfg.sunlightMult;
+        sunLight.intensity = 2.45 * weatherCfg.sunlightMult;
         sunLight.color.setHex(0xfff8e7);
-        hemiLight.intensity = 0.9 * weatherCfg.sunlightMult;
+        hemiLight.intensity = 0.92 * weatherCfg.sunlightMult;
+        rimLight.intensity = 0.5;
         starsMat.opacity = 0;
+        fireflyMat.opacity = 0.35;
       }
 
-      scene.background = new THREE.Color(skyColor);
+      bgColor.setHex(skyColor);
       if (scene.fog) {
-        scene.fog.color.setHex(weatherCfg.fogColorHex);
-        (scene.fog as THREE.FogExp2).density = weatherCfg.fogDensity;
+        scene.fog.color.setHex(isNight ? 0x090d16 : weatherCfg.fogColorHex);
+        (scene.fog as THREE.FogExp2).density =
+          quality === 'balanced' ? weatherCfg.fogDensity * 1.2 : weatherCfg.fogDensity * 0.92;
+      }
+
+      // Animate Drifting Volumetric Clouds & Ambient Spirit Fireflies
+      cloudGroup.rotation.y += dt * 0.012;
+      const ffArr = fireflyGeo.attributes.position.array as Float32Array;
+      for (let i = 0; i < fireflyCount * 3; i += 3) {
+        ffArr[i + 1] += Math.sin(now * 0.002 + i) * 0.008;
+        ffArr[i] += Math.cos(now * 0.0015 + i) * 0.006;
+      }
+      fireflyGeo.attributes.position.needsUpdate = true;
+
+      // Animate Crystal Water Ripples
+      const waterPlane = terrain.getObjectByName('VoxelWaterPlane') as THREE.Mesh | undefined;
+      if (waterPlane) {
+        waterPlane.position.y = -2.05 + Math.sin(now * 0.002) * 0.08;
       }
 
       // Weather Particle Systems & Atmospheric Effects
@@ -581,11 +670,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         rainParticles.visible = true;
         snowParticles.visible = false;
 
-        // Torrential gale rain
         const rainPosArr = rainGeo.attributes.position.array as Float32Array;
         for (let i = 0; i < rainCount * 3; i += 3) {
           rainPosArr[i + 1] -= dt * 75;
-          rainPosArr[i] += dt * 18; // wind shear
+          rainPosArr[i] += dt * 18;
           if (rainPosArr[i + 1] < 0) {
             rainPosArr[i] = playerPos.x + (Math.random() - 0.5) * 80 - 15;
             rainPosArr[i + 1] = 40 + Math.random() * 5;
@@ -594,7 +682,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
         rainGeo.attributes.position.needsUpdate = true;
 
-        // Dynamic lightning storm flash
         if (Math.random() < 0.012) {
           lightningLight.intensity = 4.2;
           lightningLight.position.set(
@@ -607,7 +694,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           lightningLight.intensity = Math.max(0, lightningLight.intensity - dt * 10);
         }
       } else {
-        // Clear Skies
         rainParticles.visible = false;
         snowParticles.visible = false;
         lightningLight.intensity = 0;
@@ -622,7 +708,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (keysPressed['a'] || keysPressed['arrowleft']) moveX -= 1;
       if (keysPressed['d'] || keysPressed['arrowright']) moveX += 1;
 
-      // Add Touch input if present
       const touch = propsRef.current.touchInput;
       if (touch && (touch.x !== 0 || touch.y !== 0)) {
         moveX += touch.x;
@@ -634,7 +719,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const normX = moveX / moveLen;
         const normZ = moveZ / moveLen;
 
-        // Apply camera rotation to movement vector
         const cosCam = Math.cos(cameraOrbitAngle);
         const sinCam = Math.sin(cameraOrbitAngle);
 
@@ -645,15 +729,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         playerPos.x += worldMoveX * speed;
         playerPos.z += worldMoveZ * speed;
 
-        // Bound within world perimeter
         playerPos.x = Math.max(-36, Math.min(36, playerPos.x));
         playerPos.z = Math.max(-36, Math.min(36, playerPos.z));
 
-        // Rotate player mesh toward movement direction
         const targetRot = Math.atan2(worldMoveX, worldMoveZ);
         playerMesh.rotation.y = targetRot;
 
-        // Walking bob animation
         playerMesh.position.y = Math.sin(now * 0.015) * 0.15;
 
         if (propsRef.current.onPlayerPositionChange) {
@@ -688,7 +769,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         scene.add(playerMesh);
       }
 
-      // Animate Cultivator Aura Visual Cues (Spinning Golden Core, Floating Nascent Baby, Dao Halos)
+      // Animate Cultivator Aura Visual Cues
       const goldenCore = playerMesh.getObjectByName('CultivationGoldenCore');
       if (goldenCore) {
         goldenCore.rotation.y += dt * 3.2;
@@ -721,11 +802,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       camera.lookAt(playerPos.x, playerPos.y + 1.8, playerPos.z);
 
-      // 4. Animate World Elements (Castle spire, Autonomous Monsters & NPCs pathfinding, Telegraph Rings)
+      // 4. Animate World Elements (Castle spire & rings, Resource nodes, Monsters & NPCs)
       const spire = castleMesh.getObjectByName('CastleSpire');
       if (spire) {
-        spire.rotation.y += 0.02;
+        spire.rotation.y += dt * 1.2;
+        const outerRing = spire.getObjectByName('CastleSpireRingOuter');
+        if (outerRing) outerRing.rotation.z += dt * 1.8;
+        const innerRing = spire.getObjectByName('CastleSpireRingInner');
+        if (innerRing) innerRing.rotation.x -= dt * 2.4;
       }
+
+      // Animate Resource Node Windmills & Oil Pumpjacks
+      resourceGroup.children.forEach((rNode, idx) => {
+        const blades = rNode.getObjectByName('GrainWindmillBlades');
+        if (blades) {
+          blades.rotation.z += dt * 1.8;
+        }
+        const pump = rNode.getObjectByName('OilPumpHead');
+        if (pump) {
+          pump.rotation.z = Math.sin(now * 0.004 + idx) * 0.28;
+        }
+      });
 
       // Sync newly spawned monsters if count increased
       if (propsRef.current.monsters.length > monsterGroup.children.length) {
@@ -752,7 +849,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             mGroup.position.y = 0;
           }
 
-          // Pulse Attack Telegraph Ring during windup/combat states
           const ring = mGroup.getObjectByName('MonsterTelegraphRing') as THREE.Mesh | undefined;
           if (ring) {
             const isTelegraphing =
@@ -794,8 +890,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       });
 
-      // Render Scene
-      renderer.render(scene, camera);
+      // Render Scene (Use EffectComposer HDR Bloom on hardware GPUs when quality is 'ultra')
+      if (!isSoftwareGl && composer && quality === 'ultra') {
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
 
       if (isSoftwareGl) {
         afterDraw(tick);
@@ -819,6 +919,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       window.removeEventListener('mouseup', onMouseUp);
       dom.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('resize', onResize);
+      if (composer) {
+        composer.dispose();
+      }
       renderer.dispose();
       container.replaceChildren();
     };

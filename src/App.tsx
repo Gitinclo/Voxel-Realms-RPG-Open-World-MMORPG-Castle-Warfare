@@ -259,6 +259,7 @@ export default function App() {
   // Day / Night Cycle (hours: 0 to 24)
   const [timeOfDayHours, setTimeOfDayHours] = useState<number>(14.0); // Starts at 2 PM golden daylight
   const [timeSpeedMultiplier, setTimeSpeedMultiplier] = useState<number>(1);
+  const [graphicsQuality, setGraphicsQuality] = useState<'ultra' | 'high' | 'balanced'>('ultra');
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
@@ -1384,6 +1385,7 @@ export default function App() {
         npcs={npcs}
         timeOfDayHours={timeOfDayHours}
         weather={weather}
+        graphicsQuality={graphicsQuality}
         onSelectMonster={(m) => {
           setSelectedMonster(m);
           setActiveModal('world_boss');
@@ -1475,6 +1477,18 @@ export default function App() {
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
           veteranScrollsOwned={cultivation.veteranScrolls ?? 0}
+          graphicsQuality={graphicsQuality}
+          onCycleGraphicsQuality={() => {
+            const presets: Array<'ultra' | 'high' | 'balanced'> = ['ultra', 'high', 'balanced'];
+            const next = presets[(presets.indexOf(graphicsQuality) + 1) % presets.length];
+            setGraphicsQuality(next);
+            const labels = {
+              ultra: '✨ Graphics: ULTRA HDR (UnrealBloom Post-Processing + 2048px Shadows + PBR Clearcoat)',
+              high: '🎨 Graphics: HIGH (PBR Physical Materials + 2048px Soft Shadows)',
+              balanced: '⚡ Graphics: BALANCED (60 FPS Direct Render Mode)',
+            };
+            setToastMessage(labels[next]);
+          }}
           godmode={godmode}
           onTouchMove={(delta) => setTouchVector(delta)}
           onTouchEnd={() => setTouchVector({ x: 0, y: 0 })}
