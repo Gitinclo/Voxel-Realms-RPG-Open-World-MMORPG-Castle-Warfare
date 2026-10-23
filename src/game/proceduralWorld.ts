@@ -474,10 +474,19 @@ export function createMonsterMesh(monster: MonsterTarget): THREE.Group {
 }
 
 /**
- * Procedural Multi-part Player Avatar
- * Composite 3-12 parts: Head, hair, eyes, torso armor (T1-T20), arms, weapon, shield, legs, cape
+ * Procedural Multi-part Player Avatar with Cultivation Aura Visual Cues (No Overhead Level Numbers)
+ * - Qi Refinement (0): No aura
+ * - Foundation (1): Faint white glow
+ * - Golden Core (2): Spinning Golden Core behind back & inside translucent chest dantian
+ * - Nascent Soul (3..20): Floating astral "baby" avatar above head
+ * - Dao Creator (21..22): Divine Rings (Halos) behind back = # of Great Dao rules mastered
  */
-export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
+export function createPlayerMesh(
+  appearance: CharacterAppearance,
+  realmIndex: number = 3,
+  masteredGreatDaos: number = 3,
+  isRedName: boolean = false
+): THREE.Group {
   const player = new THREE.Group();
   player.name = 'PlayerAvatar';
 
@@ -485,24 +494,27 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
   const skinMat = new THREE.MeshStandardMaterial({
     color: appearance.skinColor,
     roughness: 0.7,
-    metalness: 0.05
+    metalness: 0.05,
   });
 
   // Hair material
   const hairMat = new THREE.MeshStandardMaterial({
     color: appearance.hairColor,
-    roughness: 0.8
+    roughness: 0.8,
   });
 
-  // Armor material with tier-based specular & emission
+  // Armor material with tier-based specular & Golden Core translucent chest support
   const isHighTier = appearance.armorTier > 10;
   const isGodTier = appearance.armorTier >= 18;
+  const isGoldenCoreRealm = realmIndex === 2;
   const armorMat = new THREE.MeshStandardMaterial({
     color: appearance.armorColor,
     roughness: isHighTier ? 0.25 : 0.6,
     metalness: isHighTier ? 0.85 : 0.3,
-    emissive: isGodTier ? 0x00e5ff : 0x000000,
-    emissiveIntensity: isGodTier ? 0.35 : 0
+    emissive: isGodTier ? 0x00e5ff : isGoldenCoreRealm ? 0xf59e0b : 0x000000,
+    emissiveIntensity: isGodTier ? 0.35 : isGoldenCoreRealm ? 0.22 : 0,
+    transparent: isGoldenCoreRealm,
+    opacity: isGoldenCoreRealm ? 0.68 : 1.0,
   });
 
   // Head
@@ -514,9 +526,9 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
 
   // Eyes
   const eyeMat = new THREE.MeshStandardMaterial({
-    color: appearance.eyeColor,
-    emissive: appearance.eyeColor,
-    emissiveIntensity: 0.6
+    color: isRedName ? 0xff1744 : appearance.eyeColor,
+    emissive: isRedName ? 0xff1744 : appearance.eyeColor,
+    emissiveIntensity: isRedName ? 0.95 : 0.6,
   });
   const eyeGeo = new THREE.BoxGeometry(0.12, 0.12, 0.08);
   const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
@@ -564,7 +576,6 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
   weaponGroup.position.set(0.65, 0.8, 0.2);
 
   if (appearance.weaponType === 'broadsword') {
-    // Greatsword
     const bladeGeo = new THREE.BoxGeometry(0.12, 1.4, 0.06);
     const bladeMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, metalness: 0.9, roughness: 0.1 });
     const blade = new THREE.Mesh(bladeGeo, bladeMat);
@@ -576,7 +587,6 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
     guard.position.y = 0.04;
     weaponGroup.add(guard);
   } else if (appearance.weaponType === 'crossbow') {
-    // Crossbow
     const bowStockGeo = new THREE.BoxGeometry(0.15, 0.15, 0.8);
     const bowStock = new THREE.Mesh(bowStockGeo, voxelMaterials.woodTrunk);
     weaponGroup.add(bowStock);
@@ -585,13 +595,11 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
     bowArms.position.z = 0.35;
     weaponGroup.add(bowArms);
   } else if (appearance.weaponType === 'siege_mortar') {
-    // Bomber Cannon / Mortar
     const cannonGeo = new THREE.CylinderGeometry(0.2, 0.25, 1.1, 8);
     const cannon = new THREE.Mesh(cannonGeo, voxelMaterials.steelOre);
     cannon.rotation.x = Math.PI / 4;
     weaponGroup.add(cannon);
   } else {
-    // Arcane Halberd
     const shaftGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.0, 6);
     const shaft = new THREE.Mesh(shaftGeo, voxelMaterials.woodTrunk);
     shaft.position.y = 0.5;
@@ -627,38 +635,149 @@ export function createPlayerMesh(appearance: CharacterAppearance): THREE.Group {
     const capeMat = new THREE.MeshStandardMaterial({ color: appearance.capeColor, roughness: 0.85 });
     const cape = new THREE.Mesh(capeGeo, capeMat);
     cape.position.set(0, 1.1, -0.35);
-    cape.rotation.x = 0.15; // flow backward
+    cape.rotation.x = 0.15;
     player.add(cape);
   }
 
-  // Floating Player Name & Title Banner
+  // ==========================================================================
+  // CULTIVATION POWER VISUAL CUES ("THE AURA" — Replaces Overhead Level Numbers)
+  // ==========================================================================
+  const auraGroup = new THREE.Group();
+  auraGroup.name = 'CultivationAuraGroup';
+
+  if (realmIndex === 1) {
+    // Foundation Establishment: Faint white spiritual glow
+    const mistGeo = new THREE.SphereGeometry(1.15, 16, 16);
+    const mistMat = new THREE.MeshBasicMaterial({
+      color: 0xf8fafc,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+    });
+    const mistShell = new THREE.Mesh(mistGeo, mistMat);
+    mistShell.position.y = 1.35;
+    mistShell.name = 'CultivationFoundationGlow';
+    auraGroup.add(mistShell);
+  } else if (realmIndex === 2) {
+    // Golden Core: Literal Golden Core spinning inside translucent chest AND behind back
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 1.4,
+      metalness: 0.95,
+      roughness: 0.1,
+    });
+    const chestCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 1), coreMat);
+    chestCore.position.set(0, 1.25, 0.05);
+    chestCore.name = 'CultivationChestCore';
+    auraGroup.add(chestCore);
+
+    const backCoreGroup = new THREE.Group();
+    backCoreGroup.position.set(0, 1.65, -0.68);
+    backCoreGroup.name = 'CultivationGoldenCore';
+    const backSphere = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 1), coreMat);
+    const backRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.62, 0.045, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfde047 })
+    );
+    backCoreGroup.add(backSphere);
+    backCoreGroup.add(backRing);
+    auraGroup.add(backCoreGroup);
+  } else if (realmIndex >= 3 && realmIndex <= 20) {
+    // Nascent Soul: A small astral "baby" avatar floating above the cultivator's head
+    const babyGroup = new THREE.Group();
+    babyGroup.position.set(0, 3.15, 0);
+    babyGroup.name = 'CultivationNascentBaby';
+
+    const babyMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 1.1,
+      transparent: true,
+      opacity: 0.88,
+    });
+    const babyBody = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 0.24), babyMat);
+    const babyHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), babyMat);
+    babyHead.position.y = 0.32;
+    const babyLotus = new THREE.Mesh(
+      new THREE.TorusGeometry(0.3, 0.05, 8, 16),
+      new THREE.MeshBasicMaterial({ color: 0xfde047 })
+    );
+    babyLotus.rotation.x = Math.PI / 2;
+    babyLotus.position.y = -0.18;
+
+    babyGroup.add(babyBody);
+    babyGroup.add(babyHead);
+    babyGroup.add(babyLotus);
+    auraGroup.add(babyGroup);
+  } else if (realmIndex >= 21) {
+    // Dao Creator / Ultimate Origin: Divine Rings (Halos) behind back = # of Great Dao rules mastered
+    const haloGroup = new THREE.Group();
+    haloGroup.position.set(0, 1.85, -0.75);
+    haloGroup.name = 'CultivationDivineHalos';
+
+    const haloCount = Math.max(1, Math.min(12, masteredGreatDaos));
+    for (let h = 0; h < haloCount; h++) {
+      const radius = 0.75 + h * 0.16;
+      const haloGeo = new THREE.TorusGeometry(radius, 0.035, 8, 32);
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: h % 2 === 0 ? 0xfde047 : 0xc084fc,
+      });
+      const haloRing = new THREE.Mesh(haloGeo, haloMat);
+      haloRing.rotation.z = (h * Math.PI) / haloCount;
+      haloGroup.add(haloRing);
+    }
+    auraGroup.add(haloGroup);
+  }
+
+  // Red-Name Karma Crimson Warning Ring on ground if player has negative Karma
+  if (isRedName) {
+    const redGeo = new THREE.RingGeometry(1.1, 1.45, 24);
+    redGeo.rotateX(-Math.PI / 2);
+    const redMat = new THREE.MeshBasicMaterial({
+      color: 0xff1744,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+    });
+    const redRing = new THREE.Mesh(redGeo, redMat);
+    redRing.position.y = 0.08;
+    redRing.name = 'RedNameKarmaRing';
+    auraGroup.add(redRing);
+  }
+
+  player.add(auraGroup);
+
+  // Floating Player Name & Sect Title Banner (No Level Numbers above head!)
   const canvas = document.createElement('canvas');
-  canvas.width = 180;
+  canvas.width = 200;
   canvas.height = 64;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.roundRect(4, 4, 172, 56, 10);
+    ctx.fillStyle = isRedName ? 'rgba(69, 10, 10, 0.90)' : 'rgba(15, 23, 42, 0.85)';
+    ctx.roundRect(4, 4, 192, 56, 10);
     ctx.fill();
-    ctx.strokeStyle = '#38bdf8';
+    ctx.strokeStyle = isRedName ? '#ff1744' : '#38bdf8';
     ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(`[${appearance.clanTag}] ${appearance.name}`, 90, 26);
     ctx.font = 'bold 18px sans-serif';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`${appearance.title}`, 90, 50);
+    ctx.fillStyle = isRedName ? '#fecdd3' : '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`[${appearance.clanTag}] ${appearance.name}`, 100, 26);
+    ctx.font = 'bold 15px monospace';
+    ctx.fillStyle = isRedName ? '#ff1744' : '#38bdf8';
+    ctx.fillText(isRedName ? '🩸 RED NAME · BOUNTY' : `${appearance.title}`, 100, 50);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const spriteMat = new THREE.SpriteMaterial({ map: texture });
   const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(3.5, 1.25, 1);
-  sprite.position.y = 3.2;
+  sprite.scale.set(3.6, 1.2, 1);
+  sprite.position.y = realmIndex >= 3 && realmIndex <= 20 ? 3.95 : 3.25;
   player.add(sprite);
 
   return player;
 }
+

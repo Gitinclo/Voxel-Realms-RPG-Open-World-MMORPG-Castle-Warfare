@@ -80,6 +80,92 @@ export interface CultivationPathProgress {
   currentEnergy: bigint;
 }
 
+export type KarmaAlignment = 'green_innocent' | 'white_neutral' | 'gold_justice' | 'red_fiend';
+
+export interface BountyRecord {
+  targetName: string;
+  realmName: string;
+  karmaValue: number;
+  x: number;
+  z: number;
+  rewardSpiritStones: bigint;
+  rewardDiamonds: bigint;
+  isRevealedToJustice: boolean;
+}
+
+export interface PlayerKarmaState {
+  karmaValue: number; // >= 0 is Green/White/Gold, < 0 is Red Name (Fiend)
+  alignment: KarmaAlignment;
+  unlawfulKills: number;
+  righteousKills: number;
+  stationarySeconds: number; // Red-name players struck by instant-kill Tribulation Lightning if stationary >= 8s
+  maxStationaryThresholdSec: number;
+  bountySpiritStones: bigint;
+  isLocationRevealed: boolean;
+  lastLightningStrikeMsg: string | null;
+  droppedLootHistory: string[];
+}
+
+export interface Disciple {
+  id: string;
+  name: string;
+  chineseName: string;
+  realmIndex: number;
+  layer: number;
+  loyalty: number; // 0 to 100
+  distanceMeters: number; // Distance from Master; <= 50m grants proximity cultivation speed buff
+  baseSpiritStonesPerSec: bigint;
+  baseQiPerSec: bigint;
+  equippedSkills: string[];
+  avatarIcon: string;
+}
+
+export interface MysticalPowerSkill {
+  id: string;
+  name: string;
+  chineseName: string;
+  tier: CultivationEra;
+  requiredRealmIndex: number;
+  description: string;
+  combatMultiplierBonus: number;
+  transcriptionCostQi: bigint;
+  transcriptionCostDiamonds: bigint;
+  marketValueSpiritStones: bigint;
+  icon: string;
+}
+
+export interface SkillScrollItem {
+  scrollId: string;
+  skillId: string;
+  skillName: string;
+  chineseName: string;
+  creatorMasterName: string;
+  combatMultiplierBonus: number;
+  marketValueSpiritStones: bigint;
+  createdAt: number;
+}
+
+export type AuraVisualCueType =
+  | 'none'
+  | 'faint_white_glow'
+  | 'spinning_golden_core'
+  | 'floating_nascent_baby'
+  | 'divine_halos';
+
+export interface CultivationAuraVisualSpec {
+  cueType: AuraVisualCueType;
+  label: string;
+  chineseLabel: string;
+  description: string;
+  primaryColorHex: string;
+  secondaryColorHex: string;
+  hdrPeakLuminanceNits: number; // HDR10+ nits (100 to 4000 nits)
+  haloCount: number; // For Dao Creator: number of Great Dao rules mastered
+  hasTranslucentChestCore: boolean;
+  hasFloatingBabyAvatar: boolean;
+  suppressOverheadLevelTag: boolean;
+}
+
 export interface PlayerCultivationState {
   // Primary Qi path fields kept in sync for backward compatibility
   currentRealmIndex: number; // 0 to 22
@@ -99,4 +185,17 @@ export interface PlayerCultivationState {
   inventoryPills: Record<string, number>;
   selectedRoot: 'lightning' | 'void' | 'fire' | 'water' | 'earth' | 'chaos';
   rootPurityPct: number;
+  // New Systems: Karma, Master & Disciple Social Hierarchy, and Great Dao Aura Cues
+  karma?: PlayerKarmaState;
+  disciples?: Disciple[];
+  masterTaxRatePct?: number; // % of disciple loot/spirit stones funneled to Master (e.g., 20%)
+  learnedMysticalSkills?: string[];
+  skillScrollInventory?: SkillScrollItem[];
+  spiritStones?: bigint;
+  masteredGreatDaos?: number; // Number of Great Dao rules mastered (determines Dao Creator Halo count)
+  auraOverrideRealmIndex?: number | null; // Optional preview override for 3D & HDR10+ visualizer
+  veteranScrolls?: number; // Special 'Veteran Scroll' inventory for cultivation
+  veteranScrollsComprehended?: number; // Total Veteran Scrolls activated for permanent cultivation bonuses
 }
+
+

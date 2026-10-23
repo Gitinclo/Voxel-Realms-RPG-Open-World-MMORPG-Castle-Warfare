@@ -25,6 +25,9 @@ import { sound } from '../game/audio';
 interface GameCanvasProps {
   castleLevel: number;
   playerAppearance: CharacterAppearance;
+  cultivationRealmIndex?: number;
+  masteredGreatDaos?: number;
+  isRedName?: boolean;
   monsters: MonsterTarget[];
   resourceNodes: ResourceNode[];
   npcs: NPC[];
@@ -41,6 +44,9 @@ interface GameCanvasProps {
 export const GameCanvas: React.FC<GameCanvasProps> = ({
   castleLevel,
   playerAppearance,
+  cultivationRealmIndex = 3,
+  masteredGreatDaos = 3,
+  isRedName = false,
   monsters,
   resourceNodes,
   npcs,
@@ -59,6 +65,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const propsRef = useRef({
     castleLevel,
     playerAppearance,
+    cultivationRealmIndex,
+    masteredGreatDaos,
+    isRedName,
     monsters,
     resourceNodes,
     npcs,
@@ -76,6 +85,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     propsRef.current = {
       castleLevel,
       playerAppearance,
+      cultivationRealmIndex,
+      masteredGreatDaos,
+      isRedName,
       monsters,
       resourceNodes,
       npcs,
@@ -91,6 +103,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   }, [
     castleLevel,
     playerAppearance,
+    cultivationRealmIndex,
+    masteredGreatDaos,
+    isRedName,
     monsters,
     resourceNodes,
     npcs,
@@ -345,8 +360,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     });
     scene.add(npcGroup);
 
-    // Add Player Avatar
-    let playerMesh = createPlayerMesh(propsRef.current.playerAppearance);
+    // Add Player Avatar with Cultivation Aura Visual Cues
+    let lastBuiltRealm = propsRef.current.cultivationRealmIndex;
+    let lastBuiltDaos = propsRef.current.masteredGreatDaos;
+    let lastBuiltRedName = propsRef.current.isRedName;
+    let playerMesh = createPlayerMesh(
+      propsRef.current.playerAppearance,
+      lastBuiltRealm,
+      lastBuiltDaos,
+      lastBuiltRedName
+    );
     playerMesh.position.set(0, 0, 18);
     scene.add(playerMesh);
 
@@ -642,6 +665,48 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       playerMesh.position.x = playerPos.x;
       playerMesh.position.z = playerPos.z;
+
+      // Sync Player Aura Mesh if Realm, Great Dao Halo Count, or Red-Name Karma changed
+      if (
+        propsRef.current.cultivationRealmIndex !== lastBuiltRealm ||
+        propsRef.current.masteredGreatDaos !== lastBuiltDaos ||
+        propsRef.current.isRedName !== lastBuiltRedName
+      ) {
+        const prevRotY = playerMesh.rotation.y;
+        scene.remove(playerMesh);
+        lastBuiltRealm = propsRef.current.cultivationRealmIndex;
+        lastBuiltDaos = propsRef.current.masteredGreatDaos;
+        lastBuiltRedName = propsRef.current.isRedName;
+        playerMesh = createPlayerMesh(
+          propsRef.current.playerAppearance,
+          lastBuiltRealm,
+          lastBuiltDaos,
+          lastBuiltRedName
+        );
+        playerMesh.position.copy(playerPos);
+        playerMesh.rotation.y = prevRotY;
+        scene.add(playerMesh);
+      }
+
+      // Animate Cultivator Aura Visual Cues (Spinning Golden Core, Floating Nascent Baby, Dao Halos)
+      const goldenCore = playerMesh.getObjectByName('CultivationGoldenCore');
+      if (goldenCore) {
+        goldenCore.rotation.y += dt * 3.2;
+        goldenCore.rotation.z += dt * 1.8;
+      }
+      const chestCore = playerMesh.getObjectByName('CultivationChestCore');
+      if (chestCore) {
+        chestCore.rotation.y -= dt * 4.0;
+      }
+      const nascentBaby = playerMesh.getObjectByName('CultivationNascentBaby');
+      if (nascentBaby) {
+        nascentBaby.position.y = 3.15 + Math.sin(now * 0.004) * 0.14;
+        nascentBaby.rotation.y = Math.sin(now * 0.002) * 0.35;
+      }
+      const divineHalos = playerMesh.getObjectByName('CultivationDivineHalos');
+      if (divineHalos) {
+        divineHalos.rotation.z += dt * 1.4;
+      }
 
       // 3. Smooth Damped Third-Person Camera Follow
       const camDist = 18;

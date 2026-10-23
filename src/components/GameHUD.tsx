@@ -24,6 +24,7 @@ import {
   CloudRain,
   Sparkles,
   Brain,
+  Gift,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -58,6 +59,10 @@ interface GameHUDProps {
   onOpenLeaderboard: () => void;
   onOpenCppCore: () => void;
   onOpenAdminConsole: () => void;
+  onOpenDailyLogin?: () => void;
+  canClaimDailyLogin?: boolean;
+  dailyStreakDays?: number;
+  veteranScrollsOwned?: number;
   godmode?: boolean;
   onTouchMove?: (delta: { x: number; y: number }) => void;
   onTouchEnd?: () => void;
@@ -92,6 +97,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenLeaderboard,
   onOpenCppCore,
   onOpenAdminConsole,
+  onOpenDailyLogin,
+  canClaimDailyLogin = false,
+  dailyStreakDays = 0,
+  veteranScrollsOwned = 0,
   godmode,
   onTouchMove,
   onTouchEnd,
@@ -262,10 +271,36 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             title="Diamond gems"
           >
             <span className="text-sm">💎</span>
-            <span className="text-xs font-mono font-bold text-cyan-300">
+            <span className="text-xs font-mono font-bold text-cyan-300" data-testid="hud-diamond-count">
               {formatBigInt(resources.diamond)}
             </span>
           </button>
+
+          {onOpenDailyLogin && (
+            <button
+              onClick={() => {
+                sound.playSwing();
+                onOpenDailyLogin();
+              }}
+              data-testid="hud-daily-login-btn"
+              className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                canClaimDailyLogin
+                  ? 'bg-amber-500/25 border-amber-400 text-amber-200 animate-pulse'
+                  : 'bg-slate-900/90 border-amber-500/40 text-amber-300 hover:bg-slate-800'
+              }`}
+              title="Open Daily Login Reward & Veteran Scroll Chamber"
+            >
+              <span className="text-sm">📜</span>
+              <span className="text-xs font-mono font-bold tabular-nums">
+                {veteranScrollsOwned} Scroll{veteranScrollsOwned === 1 ? '' : 's'}
+              </span>
+              {canClaimDailyLogin && (
+                <span className="px-1 rounded bg-amber-400 text-slate-950 text-[9px] font-mono font-black">
+                  CLAIM
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Dynamic Weather System & Day/Night Clock */}
@@ -407,6 +442,27 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             isDockCollapsed ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
           }`}
         >
+          {onOpenDailyLogin && (
+            <button
+              onClick={() => {
+                sound.playSwing();
+                onOpenDailyLogin();
+              }}
+              data-testid="dock-daily-login-btn"
+              className={`relative p-2 sm:px-3 sm:py-2 rounded-xl border flex flex-col sm:flex-row items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer ${
+                canClaimDailyLogin
+                  ? 'bg-amber-500/30 hover:bg-amber-500/40 border-amber-300 text-amber-100 shadow-md shadow-amber-500/30'
+                  : 'bg-amber-950/50 hover:bg-amber-900/50 border-amber-500/40 text-amber-200'
+              }`}
+            >
+              <Gift className="w-5 h-5 text-amber-300" />
+              <span className="text-xs font-bold font-cinzel">Daily Login</span>
+              <span className="text-[10px] font-mono text-amber-300 hidden sm:inline tabular-nums">
+                {canClaimDailyLogin ? 'READY!' : `${dailyStreakDays}d Streak`}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               sound.playSwing();

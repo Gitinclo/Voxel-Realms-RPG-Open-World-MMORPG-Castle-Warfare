@@ -22,11 +22,15 @@ import {
   Search,
 } from 'lucide-react';
 import {
+  CULTIVATION_REALMS,
   CULTIVATION_PATHS_REALMS,
   CULTIVATION_PATH_LIST,
   CULTIVATION_PATH_META,
   CULTIVATION_PILLS,
   CULTIVATION_MANUALS,
+  INITIAL_KARMA_STATE,
+  INITIAL_DISCIPLES,
+  MYSTICAL_POWER_SKILLS,
   getRealmDef,
   calculateQiRequired,
   calculateCultivationMultiplier,
@@ -37,6 +41,13 @@ import {
   calculateManualUpgradeCost,
   calculateEquippedManualsSummary,
   evaluateBreakthroughAttempt,
+  calculateRealmSuppression,
+  evaluatePvPKillKarma,
+  tickRedNameStationaryLightning,
+  resolveRedNameDeathLootDrop,
+  calculateMasterDiscipleEconomy,
+  createTransmissionSkillScroll,
+  getCultivationAuraVisualSpec,
 } from '../game/cultivationMath';
 import {
   PlayerCultivationState,
@@ -48,6 +59,10 @@ import { GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
+import {
+  applyVeteranScrollToCultivation,
+  calculateVeteranScrollBonuses,
+} from '../game/dailyLogin';
 import confetti from 'canvas-confetti';
 
 interface CultivationModalProps {
@@ -66,10 +81,18 @@ interface CultivationModalProps {
   onUpgradeManual: (manualId: string) => void;
   onDiscoverManual: (freeDeduction?: boolean) => void;
   onUnlockManualDirect: (manualId: string) => void;
+  onUpdateCultivation?: (updater: (prev: PlayerCultivationState) => PlayerCultivationState) => void;
   onClose: () => void;
 }
 
-type TabType = 'dantian' | 'breakthrough' | 'manuals' | 'codex' | 'alchemy' | 'meridians';
+type TabType =
+  | 'dantian'
+  | 'breakthrough'
+  | 'manuals'
+  | 'lineage_karma'
+  | 'codex'
+  | 'alchemy'
+  | 'meridians';
 
 const ERA_THEMES: Record<CultivationEra, { label: string; bg: string; border: string; text: string }> = {
   mortal: {
@@ -154,6 +177,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   onUpgradeManual,
   onDiscoverManual,
   onUnlockManualDirect,
+  onUpdateCultivation,
   onClose,
 }) => {
   const [selectedPath, setSelectedPath] = useState<CultivationPath>('qi');
@@ -164,6 +188,31 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   const [tribulationStrikesDone, setTribulationStrikesDone] = useState<number>(0);
   const [codexEraFilter, setCodexEraFilter] = useState<CultivationEra | 'all'>('all');
   const [manualPathFilter, setManualPathFilter] = useState<CultivationPath | 'all'>('all');
+  const [suppressionTargetRealm, setSuppressionTargetRealm] = useState<number>(0); // Default Qi Refinement
+  const [lineageNotice, setLineageNotice] = useState<string | null>(null);
+
+  const karmaState = cultivation.karma || INITIAL_KARMA_STATE;
+  const disciplesList = cultivation.disciples || INITIAL_DISCIPLES;
+  const masterTaxRatePct = cultivation.masterTaxRatePct ?? 20;
+  const learnedMysticalSkills = cultivation.learnedMysticalSkills || ['skill_heaven_earth_sleeve'];
+  const skillScrollInventory = cultivation.skillScrollInventory || [];
+  const spiritStones = cultivation.spiritStones ?? 48_000n;
+  const masteredGreatDaos = cultivation.masteredGreatDaos ?? 4;
+  const activeAuraRealmIndex =
+    typeof cultivation.auraOverrideRealmIndex === 'number'
+      ? cultivation.auraOverrideRealmIndex
+      : cultivation.paths.qi.realmIndex;
+
+  const masterDiscipleEconomy = calculateMasterDiscipleEconomy({
+    masterRealmIndex: cultivation.paths.qi.realmIndex,
+    disciples: disciplesList,
+    masterTaxRatePct,
+  });
+  const activeAuraSpec = getCultivationAuraVisualSpec(activeAuraRealmIndex, masteredGreatDaos);
+  const suppressionResult = calculateRealmSuppression(
+    cultivation.paths.qi.realmIndex,
+    suppressionTargetRealm
+  );
 
   const pathProgress = cultivation.paths[selectedPath];
   const pathMeta = CULTIVATION_PATH_META[selectedPath];
@@ -179,6 +228,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
     cultivation.ownedManuals
   );
   const activeManualSummary = manualsSummary.byPath[selectedPath];
+  const veteranScrollBonuses = calculateVeteranScrollBonuses(
+    cultivation.veteranScrollsComprehended ?? 0
+  );
 
   const requiredEnergy = calculateQiRequired(pathProgress.realmIndex, pathProgress.layer, selectedPath);
   const pathMultiplier = calculateCultivationMultiplier(
@@ -194,7 +246,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
     selectedPath,
     mindProgress.realmIndex,
     mindProgress.layer,
-    activeManualSummary.passiveRateBoostPct
+    activeManualSummary.passiveRateBoostPct + veteranScrollBonuses.passiveSpeedBonusPct
   );
   const eraTheme = ERA_THEMES[currentRealm.era];
 
@@ -224,7 +276,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
       requiredQi: requiredEnergy,
       pillBonusPct: pillBonus,
       mindBonusPct: mindBonuses.breakthroughBonusPct,
-      manualBonusPct: activeManualSummary.breakthroughBoostPct,
+      manualBonusPct:
+        activeManualSummary.breakthroughBoostPct + veteranScrollBonuses.breakthroughSuccessBonusPct,
       path: selectedPath,
     });
 
@@ -352,6 +405,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
             { id: 'dantian', label: `${pathMeta.vesselName} & 4-Path Resonance`, icon: Flame },
             { id: 'breakthrough', label: `Breakthrough (${pathProgress.layer}/9)`, icon: Zap },
             { id: 'manuals', label: `Ancient Manuals (${Object.keys(cultivation.ownedManuals).length}/${CULTIVATION_MANUALS.length})`, icon: ScrollText },
+            { id: 'lineage_karma', label: 'Master/Disciple, Karma & Aura', icon: Eye },
             { id: 'codex', label: `23 ${pathMeta.name} Realms`, icon: BookOpen },
             { id: 'alchemy', label: 'Alchemy Cauldron', icon: ShoppingBag },
             { id: 'meridians', label: 'Spiritual Roots', icon: Compass },
@@ -442,6 +496,29 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     >
                       <Zap className="w-4 h-4 text-amber-300" />
                       Breakthrough Layer ({pathProgress.layer}/9)
+                    </button>
+                    <button
+                      disabled={(cultivation.veteranScrolls ?? 0) <= 0}
+                      onClick={() => {
+                        if (!onUpdateCultivation) return;
+                        onUpdateCultivation((prev) => {
+                          const res = applyVeteranScrollToCultivation(prev, selectedPath, 1);
+                          if (res.success) {
+                            confetti({ particleCount: 55, spread: 70 });
+                            sound.playUpgradeFanfare();
+                          }
+                          return res.updatedCultivation;
+                        });
+                      }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold font-mono border transition-all flex items-center gap-1.5 ${
+                        (cultivation.veteranScrolls ?? 0) > 0
+                          ? 'bg-amber-950/90 hover:bg-amber-900 border-amber-400 text-amber-200 shadow-md active:scale-95 cursor-pointer'
+                          : 'bg-slate-900/60 border-slate-800 text-slate-500 cursor-not-allowed'
+                      }`}
+                      title="Comprehend 1 Veteran Scroll (earned from Daily Login Rewards) for +80% Layer Energy, +30 Scripture Fragments, and Permanent +18% Cultivation Speed"
+                    >
+                      <ScrollText className="w-4 h-4 text-amber-400" />
+                      Veteran Scroll ({cultivation.veteranScrolls ?? 0} Owned · +{veteranScrollBonuses.passiveSpeedBonusPct}% Speed)
                     </button>
                   </div>
                 </div>
@@ -1315,6 +1392,679 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MASTER/DISCIPLE HIERARCHY, THE KARMA SYSTEM, REALM SUPPRESSION & AURA VISUALIZER */}
+          {activeTab === 'lineage_karma' && (
+            <div className="space-y-6">
+              {lineageNotice && (
+                <div className="p-3.5 rounded-xl bg-amber-950/75 border border-amber-400/50 text-xs font-mono text-amber-200 flex items-center justify-between gap-2">
+                  <span>{lineageNotice}</span>
+                  <button
+                    onClick={() => setLineageNotice(null)}
+                    className="text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-900"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              {/* 1. REALM SUPPRESSION (Golden Core deals 100x damage to Qi Refinement) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/50 via-slate-900 to-rose-950/40 border border-amber-500/40 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-amber-200 flex items-center gap-2">
+                      <span>⚔️ 1. Realm Suppression Law (境界绝对压制 · 10^ΔRealm)</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono">
+                        Golden Core vs Qi Refinement = 100x Damage
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Each major realm above an opponent multiplies damage dealt by 10x (2 realms = 100x, 3 realms = 1,000x) and crushes incoming attacks.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div className="text-[11px] text-slate-400 font-mono">Your Qi Cultivation Realm</div>
+                    <div className="text-sm font-bold text-amber-300 mt-0.5">
+                      [{cultivation.paths.qi.realmIndex}] { getRealmDef('qi', cultivation.paths.qi.realmIndex).name }
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      Layer {cultivation.paths.qi.layer} / 9
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <label
+                      htmlFor="suppression-target-select"
+                      className="block text-[11px] text-slate-400 font-mono mb-1"
+                    >
+                      Target Cultivator Realm to Suppress
+                    </label>
+                    <select
+                      id="suppression-target-select"
+                      value={suppressionTargetRealm}
+                      onChange={(e) => setSuppressionTargetRealm(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                    >
+                      {CULTIVATION_REALMS.map((r) => (
+                        <option key={r.id} value={r.index}>
+                          [{r.index}] {r.name} ({r.chineseName})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/40">
+                    <div className="text-[11px] text-amber-300 font-mono font-bold">
+                      Active Suppression Multiplier
+                    </div>
+                    <div className="text-lg font-mono font-bold text-white mt-0.5">
+                      {suppressionResult.damageMultiplier >= 1
+                        ? `${suppressionResult.damageMultiplier.toLocaleString()}x Damage`
+                        : `${suppressionResult.damageMultiplier}x (Suppressed)`}
+                    </div>
+                    <div className="text-[11px] text-emerald-300 font-mono">
+                      Damage Reduction Taken: {suppressionResult.incomingDamageReductionPct}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. THE KARMA SYSTEM (Red Name Fiend, Tribulation Lightning, Bounty & Loot Drop) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/50 via-slate-900 to-indigo-950/50 border border-rose-500/40 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-rose-200 flex items-center gap-2">
+                      <span>⚡ 2. The Karma System (因果红名 · 天罚雷劫与悬赏爆装)</span>
+                      <span
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-mono font-bold border ${
+                          karmaState.alignment === 'red_fiend'
+                            ? 'bg-rose-600/30 border-rose-400 text-rose-200 animate-pulse'
+                            : karmaState.alignment === 'gold_justice'
+                            ? 'bg-amber-500/20 border-amber-400 text-amber-200'
+                            : 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
+                        }`}
+                      >
+                        {karmaState.alignment === 'red_fiend'
+                          ? '🩸 RED NAME FIEND'
+                          : karmaState.alignment === 'gold_justice'
+                          ? '⚖️ GOLD NAME · JUSTICE'
+                          : '🟢 GREEN NAME · INNOCENT'}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Killing a Green-Name lower-realm player turns your Karma negative (Red Name):
+                      (1) Stationary Red-Name players are struck by Instant-Kill Tribulation Lightning,
+                      (2) Location is revealed on the map with a Bounty to Justice players, and
+                      (3) Dying as a Red-Name drops equipped manuals/items!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Karma Stats Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div className="text-[11px] text-slate-400 font-mono">Karma Value</div>
+                    <div
+                      className={`text-lg font-mono font-bold mt-0.5 ${
+                        karmaState.karmaValue < 0 ? 'text-rose-400' : 'text-emerald-400'
+                      }`}
+                    >
+                      {karmaState.karmaValue > 0 ? `+${karmaState.karmaValue}` : karmaState.karmaValue}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Unlawful PKs: {karmaState.unlawfulKills} · Justice Kills: {karmaState.righteousKills}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      1. Tribulation Lock-On
+                    </div>
+                    <div className="text-lg font-mono font-bold text-amber-300 mt-0.5">
+                      {karmaState.karmaValue < 0
+                        ? `${karmaState.stationarySeconds}s / ${karmaState.maxStationaryThresholdSec}s`
+                        : 'Dormant (Safe)'}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {karmaState.karmaValue < 0
+                        ? 'Keep moving or face instant-kill lightning!'
+                        : 'Only strikes Red-Name Fiends'}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      2. Justice Map Bounty
+                    </div>
+                    <div className="text-lg font-mono font-bold text-rose-300 mt-0.5">
+                      {formatBigInt(karmaState.bountySpiritStones)} Stones
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {karmaState.isLocationRevealed
+                        ? '📍 Coordinates Revealed on Radar!'
+                        : '🛡️ Hidden in Seclusion'}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      3. Red-Name Loot Risk
+                    </div>
+                    <div className="text-sm font-mono font-bold text-purple-300 mt-1 truncate">
+                      {karmaState.droppedLootHistory.length > 0
+                        ? `Last Dropped: ${karmaState.droppedLootHistory[0]}`
+                        : karmaState.karmaValue < 0
+                        ? '⚠️ Equipped Manuals At Risk!'
+                        : 'Protected (Green Name)'}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Drops equipped items on Red-Name death
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Karma & Tribulation Action Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    onClick={() => {
+                      sound.playSwing();
+                      const res = evaluatePvPKillKarma({
+                        currentKarma: karmaState,
+                        attackerRealmIndex: Math.max(2, cultivation.paths.qi.realmIndex),
+                        victimRealmIndex: 0,
+                        victimKarmaValue: 100, // Green-Name Innocent
+                        victimName: 'Junior Disciple Lin (Qi Refinement)',
+                      });
+                      setLineageNotice(res.message);
+                      if (onUpdateCultivation) {
+                        onUpdateCultivation((prev) => ({
+                          ...prev,
+                          karma: res.updatedKarma,
+                        }));
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-rose-600/25 hover:bg-rose-600/40 border border-rose-500/50 text-rose-200 text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    🩸 Slay Green-Name Low-Level Player (Turn Red Name)
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      sound.playThunder();
+                      const stepRes = tickRedNameStationaryLightning({
+                        karma:
+                          karmaState.karmaValue < 0
+                            ? karmaState
+                            : {
+                                ...karmaState,
+                                karmaValue: -300,
+                                alignment: 'red_fiend',
+                                isLocationRevealed: true,
+                                bountySpiritStones: 100_000n,
+                              },
+                        isMoving: false,
+                        deltaSec: 4,
+                      });
+
+                      if (stepRes.struckByInstantKillLightning) {
+                        const dropRes = resolveRedNameDeathLootDrop({
+                          karma: stepRes.updatedKarma,
+                          equippedManuals: cultivation.equippedManuals,
+                          inventoryPills: cultivation.inventoryPills,
+                        });
+                        setLineageNotice(
+                          `${stepRes.warningMessage} High-Risk Death Penalty: Dropped [${dropRes.droppedItemName}]!`
+                        );
+                        if (onUpdateCultivation) {
+                          onUpdateCultivation((prev) => ({
+                            ...prev,
+                            equippedManuals: dropRes.updatedEquippedManuals,
+                            inventoryPills: dropRes.updatedInventoryPills,
+                            karma: dropRes.updatedKarma,
+                          }));
+                        }
+                      } else {
+                        setLineageNotice(
+                          stepRes.warningMessage ||
+                            `⚡ Stationary Red-Name Timer: ${stepRes.updatedKarma.stationarySeconds}s / ${stepRes.updatedKarma.maxStationaryThresholdSec}s. Linger once more to trigger Instant-Kill Tribulation Lightning!`
+                        );
+                        if (onUpdateCultivation) {
+                          onUpdateCultivation((prev) => ({
+                            ...prev,
+                            karma: stepRes.updatedKarma,
+                          }));
+                        }
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/50 text-amber-200 text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    ⚡ Camp Stationary (+4s Tribulation Lightning Test)
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      sound.playUpgradeFanfare();
+                      const res = evaluatePvPKillKarma({
+                        currentKarma: karmaState,
+                        attackerRealmIndex: cultivation.paths.qi.realmIndex,
+                        victimRealmIndex: cultivation.paths.qi.realmIndex,
+                        victimKarmaValue: -450, // Red-Name Demonic Fiend
+                        victimName: 'Blood Sea Patriarch [Red Name]',
+                      });
+                      setLineageNotice(res.message);
+                      if (onUpdateCultivation) {
+                        onUpdateCultivation((prev) => ({
+                          ...prev,
+                          karma: {
+                            ...res.updatedKarma,
+                            stationarySeconds: 0,
+                          },
+                          spiritStones: (prev.spiritStones ?? 48_000n) + res.bountyEarnedSpiritStones,
+                        }));
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/40 border border-emerald-500/50 text-emerald-200 text-xs font-mono font-bold transition-all cursor-pointer"
+                  >
+                    ⚖️ Hunt Red-Name Bounty (+150 Karma & Spirit Stones)
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. SOCIAL STRUCTURE: MASTER & DISCIPLE HIERARCHY (Resource Funneling & Skill Transmission) */}
+              <div className="p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/40 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-cyan-200 flex items-center gap-2">
+                      <span>🏯 5. Social Structure: Master & Disciple Hierarchy (师徒体系 · 资源反哺与神通传功)</span>
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono font-bold">
+                        Spirit Stones: {formatBigInt(spiritStones)} 💎
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Replaces standard parties with a Master-Disciple lineage: Disciples within 50m gain a{' '}
+                      <span className="text-emerald-300 font-mono font-bold">
+                        +{masterDiscipleEconomy.proximitySpeedBuffPct}%
+                      </span>{' '}
+                      cultivation speed aura, while the Master collects a{' '}
+                      <span className="text-amber-300 font-mono font-bold">{masterTaxRatePct}%</span>{' '}
+                      Spirit Stone & Qi tax and passes down rare Skill Scrolls!
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        sound.playUpgradeFanfare();
+                        if (onUpdateCultivation) {
+                          onUpdateCultivation((prev) => ({
+                            ...prev,
+                            disciples: (prev.disciples || INITIAL_DISCIPLES).map((d) => ({
+                              ...d,
+                              distanceMeters: 15,
+                            })),
+                          }));
+                        }
+                        setLineageNotice(
+                          '🔔 Summoned all Disciples into your Cave Abode (<50m)! All Disciples now receive the Master Proximity Cultivation Speed Buff!'
+                        );
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-xs font-mono font-bold cursor-pointer"
+                    >
+                      🔔 Summon All Disciples (&lt;50m Aura)
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        sound.playButton();
+                        const bonusStones =
+                          masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec * 30n;
+                        const bonusQi = masterDiscipleEconomy.totalMasterTaxQiPerSec * 30n;
+                        if (onUpdateCultivation) {
+                          onUpdateCultivation((prev) => ({
+                            ...prev,
+                            spiritStones: (prev.spiritStones ?? 48_000n) + bonusStones,
+                            currentQi: prev.currentQi + bonusQi,
+                            paths: {
+                              ...prev.paths,
+                              qi: {
+                                ...prev.paths.qi,
+                                currentEnergy: prev.paths.qi.currentEnergy + bonusQi,
+                              },
+                            },
+                          }));
+                        }
+                        setLineageNotice(
+                          `💰 Collected Filial Disciple Tax Tribute: +${formatBigInt(bonusStones)} Spirit Stones & +${formatBigInt(bonusQi)} Spiritual Qi!`
+                        );
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold cursor-pointer"
+                    >
+                      💰 Harvest Disciple Tax (+{formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec * 30n)})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Master Tax Slider */}
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <label
+                      htmlFor="master-tax-slider"
+                      className="text-xs font-bold text-amber-300 font-mono"
+                    >
+                      Master Resource Funnel Tax Rate: {masterTaxRatePct}% of Disciple Loot & Spirit Stones
+                    </label>
+                    <div className="text-[11px] text-slate-400">
+                      Master Passive Tax Income: +{formatBigInt(masterDiscipleEconomy.totalMasterTaxSpiritStonesPerSec)}{' '}
+                      Spirit Stones/s & +{formatBigInt(masterDiscipleEconomy.totalMasterTaxQiPerSec)} Qi/s
+                    </div>
+                  </div>
+                  <input
+                    id="master-tax-slider"
+                    type="range"
+                    min={5}
+                    max={50}
+                    step={5}
+                    value={masterTaxRatePct}
+                    onChange={(e) => {
+                      const nextTax = Number(e.target.value);
+                      if (onUpdateCultivation) {
+                        onUpdateCultivation((prev) => ({
+                          ...prev,
+                          masterTaxRatePct: nextTax,
+                        }));
+                      }
+                    }}
+                    className="w-full sm:w-56 accent-amber-400"
+                  />
+                </div>
+
+                {/* Disciples Roster Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {disciplesList.map((disc) => {
+                    const breakdown = masterDiscipleEconomy.discipleBreakdowns.find(
+                      (b) => b.discipleId === disc.id
+                    );
+                    const realmDef = getRealmDef('qi', disc.realmIndex);
+                    return (
+                      <div
+                        key={disc.id}
+                        className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between gap-2.5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-2xl p-2 rounded-xl bg-slate-900 border border-slate-700">
+                              {disc.avatarIcon}
+                            </span>
+                            <div>
+                              <div className="text-sm font-bold text-white flex items-center gap-1.5">
+                                <span>{disc.name}</span>
+                                <span className="text-[10px] text-cyan-300 font-mono">
+                                  ({disc.chineseName})
+                                </span>
+                              </div>
+                              <div className="text-xs text-amber-300 font-mono">
+                                {realmDef.name} · Layer {disc.layer}/9 · Loyalty {disc.loyalty}%
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold border ${
+                              breakdown?.isNearMaster
+                                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                                : 'bg-slate-800 border-slate-700 text-slate-400'
+                            }`}
+                          >
+                            {breakdown?.isNearMaster
+                              ? `Near Master (${disc.distanceMeters}m · +${breakdown.effectiveBuffPct}% Speed)`
+                              : `Expedition (${disc.distanceMeters}m)`}
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] font-mono text-slate-300 bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                          <span>
+                            Master Tax Tribute:{' '}
+                            <strong className="text-amber-300">
+                              +{formatBigInt(breakdown?.taxedToMasterSpiritStones || 0n)} Stones/s
+                            </strong>
+                          </span>
+                          <span>
+                            Transmitted Skills:{' '}
+                            <strong className="text-purple-300">{disc.equippedSkills.length}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Transmission: Create & Bestow Skill Scrolls (Mystical Power: Heaven Earth Sleeve) */}
+                <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                        📜 Skill Transmission (神通传功玉简 — Economy Skill Scrolls)
+                      </h4>
+                      <p className="text-[11px] text-slate-300">
+                        Transcribe learned Mystical Powers (like <em>Heaven Earth Sleeve</em>) into transferable Skill Scrolls to bestow upon loyal disciples or trade for Spirit Stones.
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono text-indigo-300 bg-indigo-950/80 px-2.5 py-1 rounded-lg border border-indigo-500/40">
+                      Scrolls in Bag: {skillScrollInventory.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {MYSTICAL_POWER_SKILLS.map((skill) => {
+                      const isLearned = learnedMysticalSkills.includes(skill.id);
+                      return (
+                        <div
+                          key={skill.id}
+                          className="p-3 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col justify-between gap-2"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <span>{skill.icon}</span>
+                                <span>{skill.name}</span>
+                              </span>
+                              <span className="text-[10px] font-mono text-amber-300">
+                                {skill.chineseName}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-1">{skill.description}</p>
+                            <div className="text-[10px] font-mono text-cyan-300 mt-1">
+                              Market Value: {formatBigInt(skill.marketValueSpiritStones)} Spirit Stones ·
+                              Transcribe Cost: {formatBigInt(skill.transcriptionCostQi)} Qi
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1">
+                            {!isLearned ? (
+                              <button
+                                onClick={() => {
+                                  sound.playUpgradeFanfare();
+                                  if (onUpdateCultivation) {
+                                    onUpdateCultivation((prev) => ({
+                                      ...prev,
+                                      learnedMysticalSkills: [
+                                        ...(prev.learnedMysticalSkills || ['skill_heaven_earth_sleeve']),
+                                        skill.id,
+                                      ],
+                                    }));
+                                  }
+                                  setLineageNotice(
+                                    `✨ Mastered [${skill.name} (${skill.chineseName})]! You can now transcribe Skill Scrolls for your disciples.`
+                                  );
+                                }}
+                                className="w-full py-1.5 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-mono font-bold cursor-pointer"
+                              >
+                                Enlighten & Learn Technique
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    sound.playSwing();
+                                    const res = createTransmissionSkillScroll({
+                                      skillId: skill.id,
+                                      masterName: 'Patriarch Han Jue',
+                                      currentQi: cultivation.paths.qi.currentEnergy + 10_000_000n,
+                                      currentDiamonds: resources.diamond + 10_000n,
+                                      learnedSkills: learnedMysticalSkills,
+                                    });
+                                    setLineageNotice(res.message);
+                                    if (res.success && res.scroll && onUpdateCultivation) {
+                                      onUpdateCultivation((prev) => ({
+                                        ...prev,
+                                        skillScrollInventory: [
+                                          res.scroll!,
+                                          ...(prev.skillScrollInventory || []),
+                                        ],
+                                      }));
+                                    }
+                                  }}
+                                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-mono font-bold cursor-pointer"
+                                >
+                                  📜 Create Skill Scroll
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    sound.playUpgradeFanfare();
+                                    if (onUpdateCultivation) {
+                                      onUpdateCultivation((prev) => ({
+                                        ...prev,
+                                        disciples: (prev.disciples || INITIAL_DISCIPLES).map(
+                                          (d, idx) =>
+                                            idx === 0 && !d.equippedSkills.includes(skill.id)
+                                              ? {
+                                                  ...d,
+                                                  loyalty: 100,
+                                                  equippedSkills: [...d.equippedSkills, skill.id],
+                                                }
+                                              : d
+                                        ),
+                                        spiritStones:
+                                          (prev.spiritStones ?? 48_000n) +
+                                          skill.marketValueSpiritStones,
+                                      }));
+                                    }
+                                    setLineageNotice(
+                                      `🎁 Transmitted [${skill.name}] Scroll to Chief Disciple & Sect Economy (+${formatBigInt(skill.marketValueSpiritStones)} Spirit Stones)!`
+                                    );
+                                  }}
+                                  className="flex-1 py-1.5 px-2.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/40 text-emerald-200 text-[11px] font-mono font-bold cursor-pointer"
+                                >
+                                  🎁 Bestow to Disciple
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. VISUALIZING POWER (THE "AURA" — No Overhead Level Numbers, HDR10+ Visual Cues) */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-amber-950/50 border border-purple-500/40 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-purple-200 flex items-center gap-2">
+                      <span>✨ 6. Visualizing Power: The "Aura" (无等级头衔 · 境界异象显化 & HDR10+)</span>
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 font-mono font-bold">
+                        {activeAuraSpec.hdrPeakLuminanceNits} Nits HDR10+
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Immortal cultivators never display crude level numbers above their heads. Instead, power is recognized by unmistakable 3D & HDR10+ visual cues!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {[
+                    { idx: 0, title: 'Qi Refinement', cue: 'No Aura (Mortal)', icon: '🧘' },
+                    { idx: 1, title: 'Foundation', cue: 'Faint White Glow', icon: '🌫️' },
+                    { idx: 2, title: 'Golden Core', cue: 'Spinning Golden Core', icon: '🔮' },
+                    { idx: 3, title: 'Nascent Soul', cue: 'Floating Baby Avatar', icon: '👶' },
+                    { idx: 21, title: 'Dao Creator', cue: `${masteredGreatDaos} Divine Halos`, icon: '☀️' },
+                  ].map((item) => {
+                    const isSelected = activeAuraRealmIndex === item.idx;
+                    return (
+                      <button
+                        key={item.idx}
+                        onClick={() => {
+                          sound.playSwing();
+                          if (onUpdateCultivation) {
+                            onUpdateCultivation((prev) => ({
+                              ...prev,
+                              auraOverrideRealmIndex: item.idx,
+                            }));
+                          }
+                          setLineageNotice(
+                            `✨ 3D Avatar Aura switched to [${item.title}]: ${item.cue} (Rendered live on your 3D character)!`
+                          );
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-950/70 border-amber-400 text-white shadow-md shadow-amber-500/15'
+                            : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div className="text-xl">{item.icon}</div>
+                        <div className="text-xs font-bold font-cinzel mt-1">{item.title}</div>
+                        <div className="text-[10px] font-mono text-amber-300 mt-0.5">{item.cue}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-amber-300 font-mono">
+                      Active 3D & Vulkan HDR10+ Aura: {activeAuraSpec.label} ({activeAuraSpec.chineseLabel})
+                    </div>
+                    <p className="text-xs text-slate-300">{activeAuraSpec.description}</p>
+                    <div className="text-[11px] font-mono text-cyan-300">
+                      Translucent Chest Core: {activeAuraSpec.hasTranslucentChestCore ? 'YES' : 'NO'} ·
+                      Floating Nascent Baby: {activeAuraSpec.hasFloatingBabyAvatar ? 'YES' : 'NO'} ·
+                      Divine Halos: {activeAuraSpec.haloCount}
+                    </div>
+                  </div>
+
+                  <div className="w-full sm:w-64 shrink-0">
+                    <label
+                      htmlFor="great-dao-halos-slider"
+                      className="block text-[11px] font-mono text-purple-300 mb-1"
+                    >
+                      Great Dao Rules Mastered: {masteredGreatDaos} Divine Halos
+                    </label>
+                    <input
+                      id="great-dao-halos-slider"
+                      type="range"
+                      min={1}
+                      max={12}
+                      value={masteredGreatDaos}
+                      onChange={(e) => {
+                        const count = Number(e.target.value);
+                        if (onUpdateCultivation) {
+                          onUpdateCultivation((prev) => ({
+                            ...prev,
+                            masteredGreatDaos: count,
+                          }));
+                        }
+                      }}
+                      className="w-full accent-purple-400"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}

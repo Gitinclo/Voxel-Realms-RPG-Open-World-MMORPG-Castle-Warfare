@@ -26,6 +26,15 @@ import {
   rollManualDiscovery,
   evaluateBreakthroughAttempt,
   calculateTribulationStrikeDefense,
+  calculateRealmSuppression,
+  INITIAL_KARMA_STATE,
+  INITIAL_DISCIPLES,
+  evaluatePvPKillKarma,
+  tickRedNameStationaryLightning,
+  resolveRedNameDeathLootDrop,
+  calculateMasterDiscipleEconomy,
+  createTransmissionSkillScroll,
+  getCultivationAuraVisualSpec,
 } from './cultivationMath';
 
 describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm Progression', () => {
@@ -265,4 +274,123 @@ describe('Cultivation System - Four Paths (Qi, Body, Soul, Mind) & Han Jue Realm
     assert.equal(newDiscoveryRoll.manual.id, 'manual_qi_six_paths');
     assert.equal(newDiscoveryRoll.fragmentsGained, 20);
   });
+
+  it('Realm Suppression: Golden Core (index 2) deals 100x damage to Qi Refinement (index 0)', () => {
+    const goldenVsQi = calculateRealmSuppression(2, 0);
+    assert.equal(goldenVsQi.realmDifference, 2);
+    assert.equal(goldenVsQi.damageMultiplier, 100);
+    assert.equal(goldenVsQi.incomingDamageReductionPct, 99);
+
+    const foundationVsQi = calculateRealmSuppression(1, 0);
+    assert.equal(foundationVsQi.damageMultiplier, 10);
+
+    const nascentVsQi = calculateRealmSuppression(3, 0);
+    assert.equal(nascentVsQi.damageMultiplier, 1000);
+
+    const qiVsGolden = calculateRealmSuppression(0, 2);
+    assert.equal(qiVsGolden.damageMultiplier, 0.01);
+  });
+
+  it('Karma System: killing a Green-Name low-level player turns Karma negative (Red Name), sets Bounty, strikes stationary with lightning, and drops equipped loot', () => {
+    const killRes = evaluatePvPKillKarma({
+      currentKarma: INITIAL_KARMA_STATE,
+      attackerRealmIndex: 2, // Golden Core
+      victimRealmIndex: 0, // Qi Refinement
+      victimKarmaValue: 100, // Green-Name Innocent
+      victimName: 'Disciple Zhang',
+    });
+
+    assert.ok(killRes.updatedKarma.karmaValue < 0, 'Karma must turn negative');
+    assert.equal(killRes.updatedKarma.alignment, 'red_fiend');
+    assert.equal(killRes.updatedKarma.isLocationRevealed, true, 'Map location revealed for Justice bounty');
+    assert.ok(killRes.updatedKarma.bountySpiritStones > 0n);
+
+    // Moving resets stationary timer
+    const step1 = tickRedNameStationaryLightning({
+      karma: killRes.updatedKarma,
+      isMoving: false,
+      deltaSec: 4,
+    });
+    assert.equal(step1.struckByInstantKillLightning, false);
+    assert.equal(step1.updatedKarma.stationarySeconds, 4);
+
+    const movedStep = tickRedNameStationaryLightning({
+      karma: step1.updatedKarma,
+      isMoving: true,
+      deltaSec: 2,
+    });
+    assert.equal(movedStep.updatedKarma.stationarySeconds, 0, 'Moving must reset lightning lock-on');
+
+    // Staying in one spot >= 8s triggers Instant-Kill Tribulation Lightning
+    const strikeStep = tickRedNameStationaryLightning({
+      karma: killRes.updatedKarma,
+      isMoving: false,
+      deltaSec: 8,
+    });
+    assert.equal(strikeStep.struckByInstantKillLightning, true);
+
+    // Dying as Red Name drops equipped item
+    const dropRes = resolveRedNameDeathLootDrop({
+      karma: strikeStep.updatedKarma,
+      equippedManuals: {
+        qi: 'manual_qi_jade_pure',
+        body: 'manual_body_vajra_marrow',
+        soul: null,
+        mind: null,
+      },
+      inventoryPills: { pill_qi_condensation: 2 },
+    });
+    assert.equal(dropRes.updatedEquippedManuals.qi, null, 'Equipped Qi manual must drop on Red-Name death');
+    assert.ok(dropRes.droppedItemName.includes('Jade Pure'));
+  });
+
+  it('Master & Disciple Hierarchy: calculates proximity speed buff, Master tax funneling, and Heaven Earth Sleeve Skill Scroll transmission', () => {
+    const economy = calculateMasterDiscipleEconomy({
+      masterRealmIndex: 3, // Nascent Soul Master
+      disciples: INITIAL_DISCIPLES,
+      masterTaxRatePct: 20,
+    });
+
+    assert.equal(economy.nearDisciplesCount, 3, '3 disciples are within 50m of Master');
+    assert.ok(economy.proximitySpeedBuffPct >= 76);
+    assert.ok(economy.totalMasterTaxSpiritStonesPerSec > 0n);
+    assert.ok(economy.totalMasterTaxQiPerSec > 0n);
+
+    // Transcribe Mystical Power: Heaven Earth Sleeve into a Skill Scroll item
+    const scrollRes = createTransmissionSkillScroll({
+      skillId: 'skill_heaven_earth_sleeve',
+      masterName: 'Han Jue',
+      currentQi: 1_000_000n,
+      currentDiamonds: 5_000n,
+      learnedSkills: ['skill_heaven_earth_sleeve'],
+    });
+    assert.equal(scrollRes.success, true);
+    assert.ok(scrollRes.scroll);
+    assert.equal(scrollRes.scroll?.skillName, 'Mystical Power: Heaven Earth Sleeve');
+  });
+
+  it('Visualizing Power (The Aura): resolves exact visual cues per realm and scales Dao Creator Halos with Great Dao count', () => {
+    const qiAura = getCultivationAuraVisualSpec(0, 3);
+    assert.equal(qiAura.cueType, 'none');
+    assert.equal(qiAura.suppressOverheadLevelTag, true);
+
+    const foundationAura = getCultivationAuraVisualSpec(1, 3);
+    assert.equal(foundationAura.cueType, 'faint_white_glow');
+
+    const goldenCoreAura = getCultivationAuraVisualSpec(2, 3);
+    assert.equal(goldenCoreAura.cueType, 'spinning_golden_core');
+    assert.equal(goldenCoreAura.hasTranslucentChestCore, true);
+
+    const nascentAura = getCultivationAuraVisualSpec(3, 3);
+    assert.equal(nascentAura.cueType, 'floating_nascent_baby');
+    assert.equal(nascentAura.hasFloatingBabyAvatar, true);
+
+    const daoCreator3 = getCultivationAuraVisualSpec(21, 3);
+    const daoCreator9 = getCultivationAuraVisualSpec(21, 9);
+    assert.equal(daoCreator3.cueType, 'divine_halos');
+    assert.equal(daoCreator3.haloCount, 3);
+    assert.equal(daoCreator9.haloCount, 9);
+    assert.equal(daoCreator9.hdrPeakLuminanceNits, 4000);
+  });
 });
+

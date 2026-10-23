@@ -12,6 +12,12 @@ import {
   CultivationEra,
   CultivationManual,
   OwnedManualState,
+  KarmaAlignment,
+  PlayerKarmaState,
+  Disciple,
+  MysticalPowerSkill,
+  SkillScrollItem,
+  CultivationAuraVisualSpec,
 } from '../types/cultivation';
 import { WeatherType } from './weather';
 
@@ -1792,3 +1798,628 @@ export function calculateTribulationStrikeDefense(
       : 'The heavenly tribulation shattered your defenses! Fortify your army and troops!',
   };
 }
+
+// ============================================================================
+// 1. REALM SUPPRESSION (境界压制)
+// Golden Core (index 2) vs Qi Refinement (index 0) = 10^2 = 100x Damage!
+// ============================================================================
+
+export function calculateRealmSuppression(
+  attackerRealmIndex: number,
+  defenderRealmIndex: number
+): {
+  realmDifference: number;
+  damageMultiplier: number;
+  incomingDamageReductionPct: number;
+  suppressionLabel: string;
+} {
+  const clampedAttacker = Math.max(0, Math.min(22, attackerRealmIndex));
+  const clampedDefender = Math.max(0, Math.min(22, defenderRealmIndex));
+  const realmDifference = clampedAttacker - clampedDefender;
+
+  // Each major realm above opponent grants 10x damage (2 realms = 100x, 3 realms = 1000x)
+  const damageMultiplier = Math.pow(10, realmDifference);
+
+  let incomingDamageReductionPct = 0;
+  if (realmDifference > 0) {
+    incomingDamageReductionPct = Number(((1 - 1 / damageMultiplier) * 100).toFixed(2));
+  }
+
+  let suppressionLabel = 'Equal Realm Clash (1.0x Damage)';
+  if (realmDifference >= 3) {
+    suppressionLabel = `Absolute Dimension Crushing (${damageMultiplier.toLocaleString()}x Damage)`;
+  } else if (realmDifference === 2) {
+    suppressionLabel = 'Major Realm Suppression (100x Damage — Core Fantasy)';
+  } else if (realmDifference === 1) {
+    suppressionLabel = 'Realm Suppression (10x Damage)';
+  } else if (realmDifference < 0) {
+    suppressionLabel = `Suppressed by Higher Realm (${damageMultiplier}x Damage)`;
+  }
+
+  return {
+    realmDifference,
+    damageMultiplier,
+    incomingDamageReductionPct,
+    suppressionLabel,
+  };
+}
+
+// ============================================================================
+// 2. THE KARMA SYSTEM (因果红名与天罚系统)
+// ============================================================================
+
+export function getKarmaAlignment(karmaValue: number): KarmaAlignment {
+  if (karmaValue < 0) return 'red_fiend';
+  if (karmaValue >= 300) return 'gold_justice';
+  if (karmaValue >= 50) return 'green_innocent';
+  return 'white_neutral';
+}
+
+export const INITIAL_KARMA_STATE: PlayerKarmaState = {
+  karmaValue: 120, // Starts as Green Name (Innocent / Orthodox Sect Disciple)
+  alignment: 'green_innocent',
+  unlawfulKills: 0,
+  righteousKills: 0,
+  stationarySeconds: 0,
+  maxStationaryThresholdSec: 8,
+  bountySpiritStones: 0n,
+  isLocationRevealed: false,
+  lastLightningStrikeMsg: null,
+  droppedLootHistory: [],
+};
+
+/**
+ * Evaluates Karma changes when a player kills another cultivator in the open world.
+ * - If a higher-level/higher-realm player kills a "green name" (innocent) lower-realm player,
+ *   their Karma turns negative (Red Name), placing a Bounty and revealing their map coordinates.
+ * - If a player kills a "Red Name" fiend, they gain Righteous Karma and claim the bounty.
+ */
+export function evaluatePvPKillKarma(params: {
+  currentKarma: PlayerKarmaState;
+  attackerRealmIndex: number;
+  victimRealmIndex: number;
+  victimKarmaValue: number; // >= 0 means Green/Innocent
+  victimName: string;
+}): {
+  updatedKarma: PlayerKarmaState;
+  bountyEarnedSpiritStones: bigint;
+  message: string;
+} {
+  const { currentKarma, attackerRealmIndex, victimRealmIndex, victimKarmaValue, victimName } = params;
+  const realmGap = Math.max(1, attackerRealmIndex - victimRealmIndex);
+
+  if (victimKarmaValue >= 0 && attackerRealmIndex > victimRealmIndex) {
+    // Unlawful slaughter of a lower-realm Green-Name cultivator!
+    const karmaPenalty = Math.max(250, realmGap * 200);
+    const nextVal = Math.min(-100, currentKarma.karmaValue - karmaPenalty);
+    const addedBounty = BigInt(realmGap * 50_000);
+    const nextBounty = currentKarma.bountySpiritStones + addedBounty;
+
+    const updatedKarma: PlayerKarmaState = {
+      ...currentKarma,
+      karmaValue: nextVal,
+      alignment: 'red_fiend',
+      unlawfulKills: currentKarma.unlawfulKills + 1,
+      bountySpiritStones: nextBounty,
+      isLocationRevealed: true,
+    };
+
+    return {
+      updatedKarma,
+      bountyEarnedSpiritStones: 0n,
+      message: `🩸 [RED NAME FIEND] You slaughtered innocent lower-realm cultivator ${victimName}! Karma dropped to ${nextVal}. Map coordinates revealed to Justice Enforcers & Heavenly Tribulation Lightning locked on!`,
+    };
+  } else if (victimKarmaValue < 0) {
+    // Righteous execution of a Red-Name Demonic Fiend!
+    const nextVal = currentKarma.karmaValue + 150;
+    const rewardStones = BigInt(Math.abs(victimKarmaValue) * 400);
+    const updatedKarma: PlayerKarmaState = {
+      ...currentKarma,
+      karmaValue: nextVal,
+      alignment: getKarmaAlignment(nextVal),
+      righteousKills: currentKarma.righteousKills + 1,
+      bountySpiritStones: nextVal >= 0 ? 0n : currentKarma.bountySpiritStones,
+      isLocationRevealed: nextVal < 0,
+    };
+
+    return {
+      updatedKarma,
+      bountyEarnedSpiritStones: rewardStones,
+      message: `⚖️ [HEAVENLY JUSTICE] Executed Red-Name Fiend ${victimName}! Karma +150 (${nextVal}) & claimed ${rewardStones.toLocaleString()} Spirit Stones Bounty!`,
+    };
+  }
+
+  // Equal or higher-realm duel
+  const nextVal = currentKarma.karmaValue - 20;
+  const updatedKarma: PlayerKarmaState = {
+    ...currentKarma,
+    karmaValue: nextVal,
+    alignment: getKarmaAlignment(nextVal),
+    isLocationRevealed: nextVal < 0,
+  };
+
+  return {
+    updatedKarma,
+    bountyEarnedSpiritStones: 0n,
+    message: `⚔️ Defeated ${victimName} in an equal-realm duel (Karma ${nextVal}).`,
+  };
+}
+
+/**
+ * Consequence #1: Tribulation Lightning on Stationary Red-Name Players.
+ * If a Red-Name player stays in one spot too long (stationarySeconds >= maxStationaryThresholdSec),
+ * the game engine strikes them with instant-kill Heavenly Judgment Lightning.
+ * Moving resets stationarySeconds to 0.
+ */
+export function tickRedNameStationaryLightning(params: {
+  karma: PlayerKarmaState;
+  isMoving: boolean;
+  deltaSec?: number;
+}): {
+  updatedKarma: PlayerKarmaState;
+  struckByInstantKillLightning: boolean;
+  warningMessage: string | null;
+} {
+  const { karma, isMoving, deltaSec = 1 } = params;
+
+  if (karma.karmaValue >= 0) {
+    return {
+      updatedKarma: { ...karma, stationarySeconds: 0, lastLightningStrikeMsg: null },
+      struckByInstantKillLightning: false,
+      warningMessage: null,
+    };
+  }
+
+  if (isMoving) {
+    return {
+      updatedKarma: {
+        ...karma,
+        stationarySeconds: 0,
+        lastLightningStrikeMsg: null,
+      },
+      struckByInstantKillLightning: false,
+      warningMessage: null,
+    };
+  }
+
+  const nextStationary = karma.stationarySeconds + deltaSec;
+  if (nextStationary >= karma.maxStationaryThresholdSec) {
+    const strikeMsg =
+      '⚡ [HEAVENLY JUDGMENT LIGHTNING] You lingered stationary as a Red-Name Fiend! Instant-Kill Crimson Tribulation Bolt struck your vessel!';
+    return {
+      updatedKarma: {
+        ...karma,
+        stationarySeconds: 0,
+        lastLightningStrikeMsg: strikeMsg,
+      },
+      struckByInstantKillLightning: true,
+      warningMessage: strikeMsg,
+    };
+  }
+
+  const remaining = Math.max(0, karma.maxStationaryThresholdSec - nextStationary);
+  return {
+    updatedKarma: {
+      ...karma,
+      stationarySeconds: nextStationary,
+    },
+    struckByInstantKillLightning: false,
+    warningMessage:
+      remaining <= 3
+        ? `⚠️ Tribulation Clouds Locking On! Move immediately (${remaining}s until Instant-Kill Lightning)!`
+        : null,
+  };
+}
+
+/**
+ * Consequence #3: High-Risk Loot Drop when a Red-Name player dies.
+ * Drops an equipped Cultivation Manual or Spirit Pill from their inventory.
+ */
+export function resolveRedNameDeathLootDrop(params: {
+  karma: PlayerKarmaState;
+  equippedManuals: Record<CultivationPath, string | null>;
+  inventoryPills: Record<string, number>;
+}): {
+  updatedEquippedManuals: Record<CultivationPath, string | null>;
+  updatedInventoryPills: Record<string, number>;
+  updatedKarma: PlayerKarmaState;
+  droppedItemName: string;
+} {
+  const { karma, equippedManuals, inventoryPills } = params;
+  const nextEquipped = { ...equippedManuals };
+  const nextPills = { ...inventoryPills };
+  let droppedItemName = '10,000 Spirit Stones Pouch';
+
+  // Check if any manual is equipped to drop
+  for (const path of CULTIVATION_PATH_LIST) {
+    const eqId = nextEquipped[path];
+    if (eqId) {
+      const manual = getManualById(eqId);
+      droppedItemName = manual ? `Equipped Manual: ${manual.name} (${manual.chineseName})` : `Equipped Manual (${eqId})`;
+      nextEquipped[path] = null;
+      break;
+    }
+  }
+
+  // If no manual was equipped, drop a stack of pills
+  if (droppedItemName === '10,000 Spirit Stones Pouch') {
+    for (const [pillId, count] of Object.entries(nextPills)) {
+      if (count > 0) {
+        const pillDef = CULTIVATION_PILLS.find((p) => p.id === pillId);
+        droppedItemName = `Spirit Pill: ${pillDef ? pillDef.name : pillId} x1`;
+        nextPills[pillId] = count - 1;
+        break;
+      }
+    }
+  }
+
+  const nextHistory = [droppedItemName, ...karma.droppedLootHistory].slice(0, 8);
+
+  return {
+    updatedEquippedManuals: nextEquipped,
+    updatedInventoryPills: nextPills,
+    updatedKarma: {
+      ...karma,
+      droppedLootHistory: nextHistory,
+    },
+    droppedItemName,
+  };
+}
+
+// ============================================================================
+// 3. SOCIAL STRUCTURE: MASTER & DISCIPLE HIERARCHY (师徒传承与气运反哺)
+// ============================================================================
+
+export const MYSTICAL_POWER_SKILLS: MysticalPowerSkill[] = [
+  {
+    id: 'skill_heaven_earth_sleeve',
+    name: 'Mystical Power: Heaven Earth Sleeve',
+    chineseName: '大神通 · 袖里乾坤',
+    tier: 'immortal_sage',
+    requiredRealmIndex: 2, // Golden Core+ can comprehend rudiments
+    description:
+      'Compresses an entire pocket dimension inside your robe sleeve to trap enemy armies, swallow projectiles, and harvest spirit veins.',
+    combatMultiplierBonus: 0.45,
+    transcriptionCostQi: 150_000n,
+    transcriptionCostDiamonds: 400n,
+    marketValueSpiritStones: 25_000n,
+    icon: '🌌',
+  },
+  {
+    id: 'skill_six_paths_seal',
+    name: 'Mystical Power: Six Paths Reincarnation Seal',
+    chineseName: '大神通 · 六道轮回印',
+    tier: 'immortal_sage',
+    requiredRealmIndex: 3,
+    description:
+      'Manifests the Six Paths of Reincarnation in a single palm strike, banishing enemy souls directly into the cycle of rebirth.',
+    combatMultiplierBonus: 0.75,
+    transcriptionCostQi: 500_000n,
+    transcriptionCostDiamonds: 800n,
+    marketValueSpiritStones: 65_000n,
+    icon: '☯️',
+  },
+  {
+    id: 'skill_sword_qi_meridian',
+    name: 'Mystical Power: Primordial Chaos Sword Qi',
+    chineseName: '无上神通 · 鸿蒙剑气',
+    tier: 'chaos_dao',
+    requiredRealmIndex: 5,
+    description:
+      'Fires an invisible thread of primordial chaos sword intent across star domains, ignoring defensive formations.',
+    combatMultiplierBonus: 1.25,
+    transcriptionCostQi: 2_000_000n,
+    transcriptionCostDiamonds: 1_500n,
+    marketValueSpiritStones: 180_000n,
+    icon: '⚔️',
+  },
+  {
+    id: 'skill_simulated_curse_book',
+    name: 'Mystical Power: Book of Misfortune & Karma',
+    chineseName: '至高神通 · 厄运天书',
+    tier: 'ultimate_origin',
+    requiredRealmIndex: 8,
+    description:
+      'Han Jue’s secluded cursing art—silently erodes an enemy sovereign’s luck and triggers sudden Qi deviation from afar.',
+    combatMultiplierBonus: 2.5,
+    transcriptionCostQi: 10_000_000n,
+    transcriptionCostDiamonds: 3_500n,
+    marketValueSpiritStones: 500_000n,
+    icon: '📕',
+  },
+];
+
+export const INITIAL_DISCIPLES: Disciple[] = [
+  {
+    id: 'disciple_yang_tiandong',
+    name: 'Yang Tiandong',
+    chineseName: '杨天冬 · 亲传大弟子',
+    realmIndex: 2, // Golden Core
+    layer: 5,
+    loyalty: 98,
+    distanceMeters: 12, // Cultivating inside Master's cave abode (<50m)
+    baseSpiritStonesPerSec: 450n,
+    baseQiPerSec: 1_800n,
+    equippedSkills: ['skill_heaven_earth_sleeve'],
+    avatarIcon: '🗡️',
+  },
+  {
+    id: 'disciple_su_qi',
+    name: 'Su Qi (Fortune Calamity)',
+    chineseName: '苏岐 · 气运之子',
+    realmIndex: 1, // Foundation Establishment
+    layer: 8,
+    loyalty: 94,
+    distanceMeters: 28, // Near Master (<50m)
+    baseSpiritStonesPerSec: 320n,
+    baseQiPerSec: 1_100n,
+    equippedSkills: [],
+    avatarIcon: '🍀',
+  },
+  {
+    id: 'disciple_tu_linger',
+    name: 'Tu Ling’er',
+    chineseName: '屠灵儿 · 护洞灵侍',
+    realmIndex: 2, // Golden Core
+    layer: 2,
+    loyalty: 100,
+    distanceMeters: 8, // Right beside Master's cushion (<50m)
+    baseSpiritStonesPerSec: 390n,
+    baseQiPerSec: 1_500n,
+    equippedSkills: [],
+    avatarIcon: '🦊',
+  },
+  {
+    id: 'disciple_murong_qi',
+    name: 'Murong Qi',
+    chineseName: '慕容起 · 剑道传人',
+    realmIndex: 1,
+    layer: 6,
+    loyalty: 91,
+    distanceMeters: 140, // Out on sect expedition (>50m)
+    baseSpiritStonesPerSec: 520n,
+    baseQiPerSec: 950n,
+    equippedSkills: [],
+    avatarIcon: '⚡',
+  },
+];
+
+/**
+ * Calculates Master & Disciple Resource Funneling:
+ * - Disciples within 50m of the Master receive a Proximity Cultivation Speed Buff (+40% to +120%).
+ * - Master receives `masterTaxRatePct` (%) of the loot / Spirit Stones and Qi earned by all Disciples.
+ */
+export function calculateMasterDiscipleEconomy(params: {
+  masterRealmIndex: number;
+  disciples: Disciple[];
+  masterTaxRatePct: number;
+}): {
+  proximitySpeedBuffPct: number;
+  nearDisciplesCount: number;
+  totalMasterTaxSpiritStonesPerSec: bigint;
+  totalMasterTaxQiPerSec: bigint;
+  discipleBreakdowns: Array<{
+    discipleId: string;
+    isNearMaster: boolean;
+    effectiveBuffPct: number;
+    grossSpiritStonesPerSec: bigint;
+    taxedToMasterSpiritStones: bigint;
+    netDiscipleQiPerSec: bigint;
+    taxedToMasterQi: bigint;
+  }>;
+} {
+  const { masterRealmIndex, disciples, masterTaxRatePct } = params;
+  const clampedTaxPct = Math.max(5, Math.min(50, masterTaxRatePct));
+  const proximitySpeedBuffPct = 40 + Math.min(160, masterRealmIndex * 12);
+
+  let nearDisciplesCount = 0;
+  let totalMasterTaxSpiritStonesPerSec = 0n;
+  let totalMasterTaxQiPerSec = 0n;
+
+  const discipleBreakdowns = disciples.map((d) => {
+    const isNearMaster = d.distanceMeters <= 50 && masterRealmIndex >= d.realmIndex;
+    if (isNearMaster) nearDisciplesCount += 1;
+
+    const skillBonusPct = d.equippedSkills.length * 35;
+    const effectiveBuffPct = (isNearMaster ? proximitySpeedBuffPct : 0) + skillBonusPct;
+    const buffMult = 1 + effectiveBuffPct / 100;
+
+    const grossStones = BigInt(Math.floor(Number(d.baseSpiritStonesPerSec) * buffMult));
+    const grossQi = BigInt(Math.floor(Number(d.baseQiPerSec) * buffMult));
+
+    const taxedStones = (grossStones * BigInt(clampedTaxPct)) / 100n;
+    const taxedQi = (grossQi * BigInt(clampedTaxPct)) / 100n;
+    const netDiscipleQi = grossQi - taxedQi;
+
+    totalMasterTaxSpiritStonesPerSec += taxedStones;
+    totalMasterTaxQiPerSec += taxedQi;
+
+    return {
+      discipleId: d.id,
+      isNearMaster,
+      effectiveBuffPct,
+      grossSpiritStonesPerSec: grossStones,
+      taxedToMasterSpiritStones: taxedStones,
+      netDiscipleQiPerSec: netDiscipleQi,
+      taxedToMasterQi: taxedQi,
+    };
+  });
+
+  return {
+    proximitySpeedBuffPct,
+    nearDisciplesCount,
+    totalMasterTaxSpiritStonesPerSec,
+    totalMasterTaxQiPerSec,
+    discipleBreakdowns,
+  };
+}
+
+/**
+ * Transmission (传功玉简): A Master who knows a rare Mystical Power (e.g. Heaven Earth Sleeve)
+ * can create a copy (Skill Scroll) to give to a loyal disciple or trade in the economy.
+ */
+export function createTransmissionSkillScroll(params: {
+  skillId: string;
+  masterName: string;
+  currentQi: bigint;
+  currentDiamonds: bigint;
+  learnedSkills: string[];
+}): {
+  success: boolean;
+  scroll?: SkillScrollItem;
+  qiCost: bigint;
+  diamondCost: bigint;
+  message: string;
+} {
+  const { skillId, masterName, currentQi, currentDiamonds, learnedSkills } = params;
+  const skill = MYSTICAL_POWER_SKILLS.find((s) => s.id === skillId);
+  if (!skill) {
+    return {
+      success: false,
+      qiCost: 0n,
+      diamondCost: 0n,
+      message: 'Mystical Power technique not found in Sect Archives.',
+    };
+  }
+
+  if (!learnedSkills.includes(skillId)) {
+    return {
+      success: false,
+      qiCost: 0n,
+      diamondCost: 0n,
+      message: `You must first comprehend [${skill.name}] before transcribing a Skill Scroll.`,
+    };
+  }
+
+  if (currentQi < skill.transcriptionCostQi || currentDiamonds < skill.transcriptionCostDiamonds) {
+    return {
+      success: false,
+      qiCost: skill.transcriptionCostQi,
+      diamondCost: skill.transcriptionCostDiamonds,
+      message: `Insufficient Qi or Diamonds to transcribe [${skill.name}] into a Jade Skill Scroll.`,
+    };
+  }
+
+  const scroll: SkillScrollItem = {
+    scrollId: `scroll_${skill.id}_${Date.now()}`,
+    skillId: skill.id,
+    skillName: skill.name,
+    chineseName: skill.chineseName,
+    creatorMasterName: masterName,
+    combatMultiplierBonus: skill.combatMultiplierBonus,
+    marketValueSpiritStones: skill.marketValueSpiritStones,
+    createdAt: Date.now(),
+  };
+
+  return {
+    success: true,
+    scroll,
+    qiCost: skill.transcriptionCostQi,
+    diamondCost: skill.transcriptionCostDiamonds,
+    message: `📜 Transcribed [${skill.name} (${skill.chineseName})] into a transferable Jade Skill Scroll!`,
+  };
+}
+
+// ============================================================================
+// 4. VISUALIZING POWER: THE "AURA" (无等级头衔 · 境界异象显化)
+// ============================================================================
+
+/**
+ * Resolves the exact 3D & HDR10+ visual cue for a cultivator's realm (since there are no levels above heads):
+ * - Qi Refinement (0): No aura.
+ * - Foundation (1): Faint white glow.
+ * - Golden Core (2): A literal golden core spins behind their back or inside their translucent chest model.
+ * - Nascent Soul (3..20): A small "baby" avatar floats above their head.
+ * - Dao Creator & Ultimate Origin (21..22): Divine Rings (Halos) behind them; more Great Dao rules = more halos.
+ */
+export function getCultivationAuraVisualSpec(
+  realmIndex: number,
+  masteredGreatDaos: number = 3
+): CultivationAuraVisualSpec {
+  const clampedRealm = Math.max(0, Math.min(22, realmIndex));
+  const clampedDaos = Math.max(1, Math.min(12, masteredGreatDaos));
+
+  if (clampedRealm === 0) {
+    return {
+      cueType: 'none',
+      label: 'Qi Refinement (Mortal Vessel — No External Aura)',
+      chineseLabel: '练气内敛 · 返璞归真',
+      description:
+        'No external aura or overhead level tag. Worldly Qi circulates silently inside mortal meridians.',
+      primaryColorHex: '#94a3b8',
+      secondaryColorHex: '#475569',
+      hdrPeakLuminanceNits: 120,
+      haloCount: 0,
+      hasTranslucentChestCore: false,
+      hasFloatingBabyAvatar: false,
+      suppressOverheadLevelTag: true,
+    };
+  }
+
+  if (clampedRealm === 1) {
+    return {
+      cueType: 'faint_white_glow',
+      label: 'Foundation Establishment (Faint White Mist Glow)',
+      chineseLabel: '筑基灵雾 · 莹白微光',
+      description:
+        'A faint, translucent white spiritual mist radiates softly from purified pores and meridians.',
+      primaryColorHex: '#f8fafc',
+      secondaryColorHex: '#bae6fd',
+      hdrPeakLuminanceNits: 420,
+      haloCount: 0,
+      hasTranslucentChestCore: false,
+      hasFloatingBabyAvatar: false,
+      suppressOverheadLevelTag: true,
+    };
+  }
+
+  if (clampedRealm === 2) {
+    return {
+      cueType: 'spinning_golden_core',
+      label: 'Golden Core (Spinning Golden Core in Translucent Chest & Back)',
+      chineseLabel: '金丹大成 · 胸腹金丹旋转',
+      description:
+        'A literal solid Golden Core spins rapidly behind the back and gleams inside a translucent chest dantian.',
+      primaryColorHex: '#fbbf24',
+      secondaryColorHex: '#f59e0b',
+      hdrPeakLuminanceNits: 1150,
+      haloCount: 1,
+      hasTranslucentChestCore: true,
+      hasFloatingBabyAvatar: false,
+      suppressOverheadLevelTag: true,
+    };
+  }
+
+  if (clampedRealm >= 21) {
+    return {
+      cueType: 'divine_halos',
+      label: `Dao Creator (${clampedDaos} Great Dao Divine Halos)`,
+      chineseLabel: `大道神轮 · ${clampedDaos}道法则光环`,
+      description: `Supreme Divine Rings (Halos) revolve behind the sovereign. Each mastered Great Dao law manifests an additional HDR10+ Halo (${clampedDaos} active).`,
+      primaryColorHex: '#fde047',
+      secondaryColorHex: '#c084fc',
+      hdrPeakLuminanceNits: 4000,
+      haloCount: clampedDaos,
+      hasTranslucentChestCore: true,
+      hasFloatingBabyAvatar: false,
+      suppressOverheadLevelTag: true,
+    };
+  }
+
+  // Realm indices 3..20 (Nascent Soul through Great Dao Supreme)
+  return {
+    cueType: 'floating_nascent_baby',
+    label: 'Nascent Soul & Immortal Spirit (Floating Astral Baby Avatar Above Head)',
+    chineseLabel: '元婴显圣 · 头顶元婴法相',
+    description:
+      'A luminous astral "baby" Nascent Soul avatar floats above the cultivator’s crown, meditating in lotus posture.',
+    primaryColorHex: '#38bdf8',
+    secondaryColorHex: '#a855f7',
+    hdrPeakLuminanceNits: 1850,
+    haloCount: clampedRealm >= 15 ? 2 : 0,
+    hasTranslucentChestCore: false,
+    hasFloatingBabyAvatar: true,
+    suppressOverheadLevelTag: true,
+  };
+}
+

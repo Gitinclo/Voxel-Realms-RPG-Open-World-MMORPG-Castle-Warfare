@@ -71,11 +71,25 @@ import { AdminConsoleModal } from './components/AdminConsoleModal';
 import { WeatherModal } from './components/WeatherModal';
 import { CultivationModal } from './components/CultivationModal';
 import { WorldAIDirectorModal } from './components/WorldAIDirectorModal';
+import { DailyLoginModal } from './components/DailyLoginModal';
+import {
+  DAILY_LOGIN_STORAGE_KEY,
+  INITIAL_DAILY_LOGIN_STATE,
+  PersistedDailyLoginState,
+  getCalendarDateKey,
+  evaluateDailyLoginState,
+  getSevenDayRewardSchedule,
+  claimDailyLoginReward,
+  calculateVeteranScrollBonuses,
+  applyVeteranScrollToCultivation,
+} from './game/dailyLogin';
 import { tickWorldAI, generateRadiantQuestForNPC } from './game/worldAI';
 import { PlayerCultivationState, CultivationPill, CultivationPath } from './types/cultivation';
 import {
   CULTIVATION_REALMS,
   CULTIVATION_PATH_META,
+  INITIAL_KARMA_STATE,
+  INITIAL_DISCIPLES,
   getRealmDef,
   getManualById,
   calculateFourPathSynergy,
@@ -105,7 +119,8 @@ type ActiveModal =
   | 'admin_console'
   | 'weather'
   | 'cultivation'
-  | 'world_ai';
+  | 'world_ai'
+  | 'daily_login';
 
 export default function App() {
   // Query param check for ?autostart=1
@@ -208,6 +223,32 @@ export default function App() {
     },
     selectedRoot: 'lightning',
     rootPurityPct: 92,
+    karma: INITIAL_KARMA_STATE,
+    disciples: INITIAL_DISCIPLES,
+    masterTaxRatePct: 20,
+    learnedMysticalSkills: ['skill_heaven_earth_sleeve', 'skill_six_paths_seal'],
+    skillScrollInventory: [],
+    spiritStones: 48_000n,
+    masteredGreatDaos: 4,
+    auraOverrideRealmIndex: null,
+    veteranScrolls: 1,
+    veteranScrollsComprehended: 0,
+  });
+
+  // Daily Login Reward State (persisted in localStorage, triggers on first load of the day)
+  const [dailyLoginState, setDailyLoginState] = useState<PersistedDailyLoginState>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(DAILY_LOGIN_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return { ...INITIAL_DAILY_LOGIN_STATE, ...parsed };
+        }
+      } catch {
+        // Fallback to initial state if localStorage is unavailable or malformed
+      }
+    }
+    return INITIAL_DAILY_LOGIN_STATE;
   });
 
   // Selected entities for modals
@@ -229,11 +270,16 @@ export default function App() {
   // Touch joystick vector (-1 to 1)
   const [touchVector, setTouchVector] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance
+  // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance & Veteran Scroll Mastery
   const maxTroopCapacity = calculateCastleTroopCapacity(castleLevel);
   const totalTroopsCount = Object.values(troops).reduce((sum, c) => sum + c, 0n);
   const fourPathSynergy = calculateFourPathSynergy(cultivation.paths);
-  const cultivationMultiplier = fourPathSynergy.totalCombinedMultiplier;
+  const veteranScrollBonuses = calculateVeteranScrollBonuses(
+    cultivation.veteranScrollsComprehended ?? 0
+  );
+  const cultivationMultiplier =
+    fourPathSynergy.totalCombinedMultiplier *
+    (1 + veteranScrollBonuses.combatResonanceBonusPct / 100);
   const baseKingdomPower = calculateMultiplicativePowerRating({
     troops,
     castleLevel,
@@ -241,6 +287,44 @@ export default function App() {
     researchLevel: clan.techLevel.troopAttack + clan.techLevel.troopDefense,
   });
   const playerPower = BigInt(Math.floor(Number(baseKingdomPower) * cultivationMultiplier));
+
+  // Evaluate Daily Login Reward status & 7-Day Scaled Schedule
+  const effectiveDateKey = getCalendarDateKey(new Date(), dailyLoginState.simulatedDayOffset);
+  const dailyLoginEvaluation = evaluateDailyLoginState(dailyLoginState, effectiveDateKey);
+  const dailyRewardSchedule = getSevenDayRewardSchedule({
+    castleLevel,
+    cultivationRealmIndex: cultivation.paths.qi.realmIndex,
+    totalDaysClaimed: dailyLoginState.totalDaysClaimed,
+  });
+
+  // Sync gameState to document.body.dataset.state
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.dataset.state = gameState;
+    }
+  }, [gameState]);
+
+  // Persist dailyLoginState to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(DAILY_LOGIN_STORAGE_KEY, JSON.stringify(dailyLoginState));
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+  }, [dailyLoginState]);
+
+  // Automatically trigger Daily Login Reward modal on first load of the day
+  useEffect(() => {
+    if (dailyLoginEvaluation.shouldAutoTriggerOnLoad) {
+      setActiveModal('daily_login');
+      setDailyLoginState((prev) => ({
+        ...prev,
+        lastAutoTriggeredDateKey: effectiveDateKey,
+      }));
+    }
+  }, [dailyLoginEvaluation.shouldAutoTriggerOnLoad, effectiveDateKey]);
 
   // Day & Night Simulation Clock (with Time Freeze from admin_console.cpp)
   useEffect(() => {
@@ -289,6 +373,7 @@ export default function App() {
         const mindRealm = prev.paths.mind.realmIndex;
         const mindLayer = prev.paths.mind.layer;
         const manualSummary = calculateEquippedManualsSummary(prev.equippedManuals, prev.ownedManuals);
+        const scrollBonuses = calculateVeteranScrollBonuses(prev.veteranScrollsComprehended ?? 0);
         const qiRate = calculatePassiveQiRate(
           prev.paths.qi.realmIndex,
           weather,
@@ -296,7 +381,7 @@ export default function App() {
           'qi',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.qi.passiveRateBoostPct
+          manualSummary.byPath.qi.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
         );
         const bodyRate = calculatePassiveQiRate(
           prev.paths.body.realmIndex,
@@ -305,7 +390,7 @@ export default function App() {
           'body',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.body.passiveRateBoostPct
+          manualSummary.byPath.body.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
         );
         const soulRate = calculatePassiveQiRate(
           prev.paths.soul.realmIndex,
@@ -314,7 +399,7 @@ export default function App() {
           'soul',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.soul.passiveRateBoostPct
+          manualSummary.byPath.soul.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
         );
         const mindRate = calculatePassiveQiRate(
           prev.paths.mind.realmIndex,
@@ -323,7 +408,7 @@ export default function App() {
           'mind',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.mind.passiveRateBoostPct
+          manualSummary.byPath.mind.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
         );
 
         const nextQiEnergy = prev.paths.qi.currentEnergy + qiRate;
@@ -1226,12 +1311,74 @@ export default function App() {
     }
   };
 
+  // Daily Login Reward Claim & Veteran Scroll Handlers
+  const handleClaimDailyLoginReward = () => {
+    const result = claimDailyLoginReward({
+      currentState: dailyLoginState,
+      effectiveDateKey,
+      castleLevel,
+      cultivationRealmIndex: cultivation.paths.qi.realmIndex,
+    });
+
+    if (!result.claimed || !result.reward) return;
+    const reward = result.reward;
+
+    setDailyLoginState(result.updatedState);
+    setResources((prev) => ({
+      wood: prev.wood + reward.resources.wood,
+      steel: prev.steel + reward.resources.steel,
+      copper: prev.copper + reward.resources.copper,
+      grain: prev.grain + reward.resources.grain,
+      oil: prev.oil + reward.resources.oil,
+      diamond: prev.diamond + reward.resources.diamond,
+    }));
+
+    setCultivation((prev) => ({
+      ...prev,
+      veteranScrolls: (prev.veteranScrolls ?? 0) + reward.veteranScrolls,
+      scriptureFragments: prev.scriptureFragments + reward.scriptureFragments,
+      spiritStones: (prev.spiritStones ?? 0n) + reward.spiritStones,
+    }));
+
+    sound.playUpgradeFanfare();
+    confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
+    setToastMessage(
+      `🎁 Claimed Day ${reward.day} Login Decree: +${formatBigInt(reward.resources.diamond)} 💎, +${reward.veteranScrolls}x Veteran Scroll & Scaled Resources!`
+    );
+  };
+
+  const handleAdvanceSimulatedDay = () => {
+    setDailyLoginState((prev) => ({
+      ...prev,
+      simulatedDayOffset: (prev.simulatedDayOffset || 0) + 1,
+    }));
+    setToastMessage('🌅 Advanced calendar by +1 Day! Next Daily Login Decree is now ready.');
+  };
+
+  const handleComprehendVeteranScroll = (targetPath: CultivationPath | 'all', count: number = 1) => {
+    const result = applyVeteranScrollToCultivation(cultivation, targetPath, count);
+    if (!result.success) {
+      setToastMessage(result.message);
+      return;
+    }
+    setCultivation(result.updatedCultivation);
+    confetti({ particleCount: 60, spread: 70 });
+    setToastMessage(result.message);
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">
       {/* 3D WebGL Canvas Viewport */}
       <GameCanvas
         castleLevel={castleLevel}
         playerAppearance={playerAppearance}
+        cultivationRealmIndex={
+          typeof cultivation.auraOverrideRealmIndex === 'number'
+            ? cultivation.auraOverrideRealmIndex
+            : cultivation.paths.qi.realmIndex
+        }
+        masteredGreatDaos={cultivation.masteredGreatDaos ?? 4}
+        isRedName={(cultivation.karma?.karmaValue ?? 120) < 0}
         monsters={monsters}
         resourceNodes={resourceNodes}
         npcs={npcs}
@@ -1254,6 +1401,18 @@ export default function App() {
         }}
         onPlayerPositionChange={(x, z) => {
           playerWorldPosRef.current = { x, z };
+          setCultivation((prev) => {
+            if (prev.karma && prev.karma.stationarySeconds > 0) {
+              return {
+                ...prev,
+                karma: {
+                  ...prev.karma,
+                  stationarySeconds: 0,
+                },
+              };
+            }
+            return prev;
+          });
         }}
         touchInput={touchVector}
       />
@@ -1270,6 +1429,8 @@ export default function App() {
         <TitleScreen
           onStartGame={() => setGameState('playing')}
           onOpenCharacterCreation={() => setActiveModal('character')}
+          onOpenDailyLogin={() => setActiveModal('daily_login')}
+          canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
         />
       )}
 
@@ -1310,6 +1471,10 @@ export default function App() {
           onOpenLeaderboard={() => setActiveModal('leaderboard')}
           onOpenCppCore={() => setActiveModal('cpp_core')}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
+          onOpenDailyLogin={() => setActiveModal('daily_login')}
+          canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
+          dailyStreakDays={dailyLoginEvaluation.currentStreak}
+          veteranScrollsOwned={cultivation.veteranScrolls ?? 0}
           godmode={godmode}
           onTouchMove={(delta) => setTouchVector(delta)}
           onTouchEnd={() => setTouchVector({ x: 0, y: 0 })}
@@ -1492,6 +1657,7 @@ export default function App() {
           onUpgradeManual={handleUpgradeManual}
           onDiscoverManual={handleDiscoverManual}
           onUnlockManualDirect={handleUnlockManualDirect}
+          onUpdateCultivation={setCultivation}
           onClose={() => setActiveModal('none')}
         />
       )}
@@ -1516,6 +1682,20 @@ export default function App() {
             setActiveModal('world_boss');
           }}
           onStepWorldAI={handleStepWorldAI}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {activeModal === 'daily_login' && (
+        <DailyLoginModal
+          evaluation={dailyLoginEvaluation}
+          schedule={dailyRewardSchedule}
+          castleLevel={castleLevel}
+          cultivation={cultivation}
+          onClaimToday={handleClaimDailyLoginReward}
+          onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
+          onComprehendVeteranScroll={handleComprehendVeteranScroll}
+          onOpenCultivationModal={() => setActiveModal('cultivation')}
           onClose={() => setActiveModal('none')}
         />
       )}
