@@ -126,6 +126,11 @@ npm run preview
 
 ```text
 ├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md           # Bug report template
+│   │   ├── feature_request.md      # Feature request template
+│   │   └── release_checklist.md    # Final release signoff issue template
+│   ├── PULL_REQUEST_TEMPLATE.md    # Pull Request verification checklist
 │   └── workflows/
 │       └── build.yml               # GitHub Actions CI/CD (lint, test, build, artifact upload)
 ├── src/
@@ -169,8 +174,17 @@ npm run preview
 │   ├── App.tsx                     # Main application container & state provider
 │   ├── index.css                   # Tailwind CSS styling
 │   └── main.tsx                    # Application entry point
+├── .env.example                    # Environment variable template (safe placeholders)
+├── .gitignore                      # Git ignore rules (node_modules, dist, .env, keystores)
+├── CHANGELOG.md                    # Chronological release history
+├── CODE_OF_CONDUCT.md              # Contributor Covenant Code of Conduct
+├── CONTRIBUTING.md                 # Developer setup, testing & PR guidelines
+├── LICENSE                         # Apache License 2.0
+├── PRIVACY.md                      # User Privacy Policy (GDPR/CCPA, localStorage, payments, ads)
+├── SECURITY.md                     # Private vulnerability disclosure policy
+├── TERMS.md                        # Terms and Conditions of use
 ├── metadata.json                   # Applet configuration & metadata
-├── package.json                    # Project dependencies & npm scripts
+├── package.json                    # Project dependencies, metadata & npm scripts
 ├── tsconfig.json                   # TypeScript configuration
 └── vite.config.ts                  # Vite build configuration
 ```
@@ -193,12 +207,26 @@ npm test
 
 ---
 
+## ✅ Final Pre-Release Gate Checklist
+
+Before tagging or publishing a release, confirm all release gates pass:
+
+- [x] `npm install` completes cleanly with consistent `package-lock.json`
+- [x] `npm run lint` (`tsc --noEmit`) passes with zero TypeScript errors
+- [x] `npm test` passes all 50 unit tests across 5 test suites
+- [x] `npm run build` succeeds and outputs production bundle under `dist/`
+- [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
+- [x] GitHub Actions CI workflow (`.github/workflows/build.yml`) is green
+- [x] No `.env` secrets, API keys, or Android signing keystores (`*.jks`, `*.keystore`) are exposed
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework**: React 19
 - **3D Graphics**: Three.js (WebGL with software fallback support)
 - **Styling**: Tailwind CSS v4
-- **Language**: TypeScript 5+
+- **Language**: TypeScript
 - **Bundler**: Vite 8
 - **Icons**: Lucide React
 - **Audio**: Web Audio API Procedural Synthesizer
@@ -206,6 +234,17 @@ npm test
 
 ---
 
+## 📚 Documentation, Community & Legal
+
+- **[Contributing Guide](./CONTRIBUTING.md)** — How to set up the repo, run tests, and submit Pull Requests.
+- **[Code of Conduct](./CODE_OF_CONDUCT.md)** — Community standards and expectations.
+- **[Changelog](./CHANGELOG.md)** — Version history and release notes (`v1.0.0` – `v1.2.0`).
+- **[Security Policy](./SECURITY.md)** — How to privately report security vulnerabilities (`creatergame31@gmail.com`).
+- **[Privacy Policy](./PRIVACY.md)** — How user data, `localStorage`, accounts, payments, and ads are handled.
+- **[Terms & Conditions](./TERMS.md)** — Rules of conduct, virtual goods policy, subscriptions, and liability disclaimers.
+
+---
+
 ## 📜 License
 
-MIT License. Crafted for high-scale browser and mobile MMORPG experiences.
+Licensed under the **[Apache License 2.0](./LICENSE)**. Crafted for high-scale browser and mobile MMORPG experiences.

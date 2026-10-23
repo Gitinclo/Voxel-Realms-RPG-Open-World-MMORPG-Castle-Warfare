@@ -20,7 +20,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment files
+# Environment files & Secrets
 .env
 .env.local
 .env.development.local
@@ -28,6 +28,15 @@ pnpm-debug.log*
 .env.production.local
 .env*.local
 !.env.example
+
+# Android & Signing Keystores (Never commit signing keys)
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+key.properties
+local.properties
 
 # IDE / Editor
 .vscode/

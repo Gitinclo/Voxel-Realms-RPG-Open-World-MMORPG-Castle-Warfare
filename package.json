@@ -1,7 +1,13 @@
 {
-  "name": "react-example",
+  "name": "voxel-realms-rpg",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.2.0",
+  "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with React 19, Three.js, TypeScript, and C++20 SIMD engine architecture.",
+  "author": "Voxel Realms RPG Team <creatergame31@gmail.com>",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
