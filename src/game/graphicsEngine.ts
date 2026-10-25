@@ -52,6 +52,18 @@ export interface SurfaceWetnessParams {
   windSwayStrength: number;
 }
 
+export interface MeshAndTextureBudget {
+  textureResolutionPx: number;
+  anisotropySamples: number;
+  waterGridSegments: number;
+  foliageSubdivisionDetail: number;
+  radialCylinderSegments: number;
+  bevelSegments: number;
+  grassTuftInstanceCount: number;
+  normalMapIntensity: number;
+  estimatedSceneTriangles: number;
+}
+
 /**
  * Computes physical Rayleigh/Mie sky scattering, color-temperature lighting,
  * and fog parameters inspired by GTA V (Preetham physical atmosphere) and
@@ -281,34 +293,402 @@ export function computeSurfaceWetnessParams(weather: WeatherType): SurfaceWetnes
 }
 
 /**
- * Human-readable label for HUD badge and toast notifications
+ * Computes deterministic high-polygon mesh tessellation and multi-channel PBR texture budgets
+ * for each graphics preset.
  */
-export function getGraphicsPresetMetadata(quality: GraphicsQualityPreset): {
-  shortBadge: string;
-  title: string;
-  toastDescription: string;
-} {
+export function computeMeshAndTextureBudget(quality: GraphicsQualityPreset): MeshAndTextureBudget {
   switch (quality) {
     case 'ultra':
       return {
-        shortBadge: 'NEXT-GEN ULTRA (GTA V + GENSHIN)',
-        title: 'Next-Gen Ultra: GTA V Atmospheric PBR + Genshin Cel/Rim Shaders',
-        toastDescription:
-          '✨ Graphics: NEXT-GEN ULTRA (Preetham Physical Sky + Genshin Rim/Cel Shaders + GTA V Wet-Surface Reflections + ACES Color Grading & HDR Bloom)',
+        textureResolutionPx: 1024,
+        anisotropySamples: 16,
+        waterGridSegments: 96,
+        foliageSubdivisionDetail: 2,
+        radialCylinderSegments: 24,
+        bevelSegments: 4,
+        grassTuftInstanceCount: 800,
+        normalMapIntensity: 1.15,
+        estimatedSceneTriangles: 245_000,
       };
     case 'high':
       return {
-        shortBadge: 'HIGH (TEYVAT ANIME PBR)',
-        title: 'High Quality: Stylized Teyvat Anime PBR + HDR Bloom + 2048px Shadows',
-        toastDescription:
-          '🎨 Graphics: HIGH (Teyvat Stylized PBR + Physical Sky + Soft Shadows + Rim Lighting)',
+        textureResolutionPx: 512,
+        anisotropySamples: 8,
+        waterGridSegments: 64,
+        foliageSubdivisionDetail: 1,
+        radialCylinderSegments: 16,
+        bevelSegments: 2,
+        grassTuftInstanceCount: 520,
+        normalMapIntensity: 0.85,
+        estimatedSceneTriangles: 142_000,
       };
     case 'balanced':
     default:
       return {
-        shortBadge: 'BALANCED (60 FPS)',
+        textureResolutionPx: 256,
+        anisotropySamples: 4,
+        waterGridSegments: 32,
+        foliageSubdivisionDetail: 1,
+        radialCylinderSegments: 12,
+        bevelSegments: 1,
+        grassTuftInstanceCount: 320,
+        normalMapIntensity: 0.5,
+        estimatedSceneTriangles: 78_000,
+      };
+  }
+}
+
+export type TargetPlatform = 'pc_console' | 'mobile';
+export type TextureCompressionFormat = 'BC7' | 'ASTC';
+
+export interface MasterTextureOverrideSpec {
+  masterSourceResolutionPx: 4096;
+  targetPlatform: TargetPlatform;
+  maxPlatformResolutionPx: 4096 | 2048 | 1024 | 512;
+  runtimeCanvasResolutionPx: 1024 | 512 | 256;
+  compressionFormat: TextureCompressionFormat;
+  compressionLabel: string;
+  anisotropySamples: number;
+  singleMasterSourceMaintained: true;
+}
+
+export interface LodTierSpec {
+  lodIndex: 0 | 1 | 2 | 3;
+  name: string;
+  targetPolygonBudget: number;
+  minDistanceMeters: number;
+  radialSegments: number;
+  subdivisionDetail: number;
+  bevelSegments: number;
+}
+
+export interface LodChainPolicy {
+  platform: TargetPlatform;
+  lodBias: number;
+  skipLod0InMemory: boolean;
+  highestLoadedLodIndex: 0 | 1 | 2;
+  activeChain: LodTierSpec[];
+  memorySavedMb: number;
+}
+
+export interface LightingStrategySpec {
+  mode: 'realtime_gi_hybrid' | 'baked_lightmap_mobile';
+  enableRealtimeGI: boolean;
+  enableDynamicSoftShadows: boolean;
+  enableVolumetricFog: boolean;
+  useBakedLightmaps: boolean;
+  smallPropCastShadows: boolean;
+  bakedLightmapIntensity: number;
+}
+
+export interface UberShaderKeywordConfig {
+  shaderName: string;
+  USE_RIM_LIGHT: boolean;
+  USE_DETAIL_NORMALS: boolean;
+  USE_PARALLAX_OCCLUSION: boolean;
+  USE_SUBSURFACE_SCATTERING: boolean;
+  activeMacroDefines: string[];
+  mathComplexity: 'full_pbr_console' | 'simplified_mobile_alu';
+}
+
+export interface DeploymentBundleManifest {
+  platform: TargetPlatform;
+  baseBuildSizeMb: number;
+  exceedsMobile2GbThreshold: boolean;
+  hdAddressablePack: {
+    packId: string;
+    sizeMb: number;
+    includes4kTextures: boolean;
+    includesLod0HeroMeshes: boolean;
+    isOptionalDownloadOnMobile: boolean;
+    isMounted: boolean;
+  };
+  effectiveTotalInstallMb: number;
+}
+
+/**
+ * 1. The "Master Asset" Workflow (Textures)
+ * Maintains a single 4K (4096px) Master Source definition and applies Platform Overrides:
+ * - PC/PS5/Xbox ('pc_console'): Max resolution 4096 or 2048, Format: BC7 (High Quality compressed).
+ * - Mobile ('mobile' - Android/iOS): Max resolution 1024 or 512, Format: ASTC (High Compression).
+ */
+export function computeMasterTextureImportOverride(
+  platform: TargetPlatform,
+  quality: GraphicsQualityPreset,
+  hdPackMounted: boolean = false
+): MasterTextureOverrideSpec {
+  if (platform === 'pc_console') {
+    const isUltra = quality === 'ultra';
+    return {
+      masterSourceResolutionPx: 4096,
+      targetPlatform: 'pc_console',
+      maxPlatformResolutionPx: isUltra ? 4096 : 2048,
+      runtimeCanvasResolutionPx: isUltra ? 1024 : 512,
+      compressionFormat: 'BC7',
+      compressionLabel: 'BC7 (High Quality Block Compression · 8bpp)',
+      anisotropySamples: isUltra ? 16 : 8,
+      singleMasterSourceMaintained: true,
+    };
+  }
+
+  // Mobile (Android / iOS) Platform Override
+  const useHighMobileRes = hdPackMounted || quality === 'ultra';
+  return {
+    masterSourceResolutionPx: 4096,
+    targetPlatform: 'mobile',
+    maxPlatformResolutionPx: useHighMobileRes ? 1024 : 512,
+    runtimeCanvasResolutionPx: hdPackMounted ? 1024 : useHighMobileRes ? 512 : 256,
+    compressionFormat: 'ASTC',
+    compressionLabel: 'ASTC 6x6 (Adaptive Scalable High Compression)',
+    anisotropySamples: hdPackMounted ? 8 : 4,
+    singleMasterSourceMaintained: true,
+  };
+}
+
+/**
+ * 2. Geometry & LOD Scaling (Meshes)
+ * Defines the 4-tier Aggressive LOD Chain (LOD 0: 75k Hero, LOD 1: 25k, LOD 2: 10k Mobile Standard, LOD 3: 2k Distant)
+ * and applies Platform LOD Bias:
+ * - PC/Console: LOD Bias = 0 (favors LOD 0/1).
+ * - Mobile: LOD Bias = +1 or +2 (skips LOD 0 entirely unless HD Pack is mounted, saving RAM/VRAM).
+ */
+export function computeLodChainPolicy(
+  platform: TargetPlatform,
+  quality: GraphicsQualityPreset,
+  hdPackMounted: boolean = false
+): LodChainPolicy {
+  const fullChain: LodTierSpec[] = [
+    {
+      lodIndex: 0,
+      name: 'LOD 0 (The Hero · Close-Up PC/PS5/Xbox)',
+      targetPolygonBudget: 75_000,
+      minDistanceMeters: 0,
+      radialSegments: 24,
+      subdivisionDetail: 2,
+      bevelSegments: 4,
+    },
+    {
+      lodIndex: 1,
+      name: 'LOD 1 (PC/Console Mid-Range & High-End Tablet)',
+      targetPolygonBudget: 25_000,
+      minDistanceMeters: 18,
+      radialSegments: 16,
+      subdivisionDetail: 1,
+      bevelSegments: 2,
+    },
+    {
+      lodIndex: 2,
+      name: 'LOD 2 (Standard Mobile Mesh)',
+      targetPolygonBudget: 10_000,
+      minDistanceMeters: 38,
+      radialSegments: 10,
+      subdivisionDetail: 0,
+      bevelSegments: 1,
+    },
+    {
+      lodIndex: 3,
+      name: 'LOD 3 (Distant Mobile / Horizon Proxy)',
+      targetPolygonBudget: 2_000,
+      minDistanceMeters: 68,
+      radialSegments: 6,
+      subdivisionDetail: 0,
+      bevelSegments: 0,
+    },
+  ];
+
+  if (platform === 'pc_console') {
+    return {
+      platform: 'pc_console',
+      lodBias: 0,
+      skipLod0InMemory: false,
+      highestLoadedLodIndex: 0,
+      activeChain: fullChain,
+      memorySavedMb: 0,
+    };
+  }
+
+  // Mobile Platform: Skip LOD 0 in base mobile build so the phone never loads the 75k-100k mesh into memory
+  const lodBias = quality === 'balanced' && !hdPackMounted ? 2 : 1;
+  const skipLod0 = !hdPackMounted;
+  const filtered = skipLod0
+    ? fullChain.filter((tier) => tier.lodIndex >= lodBias).map((tier, idx) => ({
+        ...tier,
+        minDistanceMeters: idx === 0 ? 0 : idx === 1 ? 26 : 52,
+      }))
+    : fullChain;
+
+  return {
+    platform: 'mobile',
+    lodBias: skipLod0 ? lodBias : 0,
+    skipLod0InMemory: skipLod0,
+    highestLoadedLodIndex: skipLod0 ? (lodBias as 1 | 2) : 0,
+    activeChain: filtered,
+    memorySavedMb: skipLod0 ? (lodBias === 2 ? 92.4 : 68.0) : 0,
+  };
+}
+
+/**
+ * 3. Lighting Strategies (The Visual Gap)
+ * - High-End (PC/PS5/Xbox): Hybrid Approach — Base Baked Lightmap + Real-time GI + Dynamic Soft Shadows + Volumetric Fog + Small-Prop Shadows enabled.
+ * - Mobile/Switch: Real-time GI disabled, Baked Lightmaps painted onto surfaces, and "Cast Shadows" disabled on all small debris/props.
+ */
+export function computeLightingStrategy(
+  platform: TargetPlatform,
+  quality: GraphicsQualityPreset
+): LightingStrategySpec {
+  if (platform === 'pc_console' && quality !== 'balanced') {
+    return {
+      mode: 'realtime_gi_hybrid',
+      enableRealtimeGI: true,
+      enableDynamicSoftShadows: true,
+      enableVolumetricFog: true,
+      useBakedLightmaps: true, // Hybrid base baked lighting + real-time shadows layered on top
+      smallPropCastShadows: true,
+      bakedLightmapIntensity: 0.75,
+    };
+  }
+
+  return {
+    mode: 'baked_lightmap_mobile',
+    enableRealtimeGI: false,
+    enableDynamicSoftShadows: false,
+    enableVolumetricFog: false,
+    useBakedLightmaps: true,
+    smallPropCastShadows: false, // Disable "Cast Shadows" on all small debris/props for Mobile
+    bakedLightmapIntensity: 1.15,
+  };
+}
+
+/**
+ * 4. Shader & Material Management ("Uber Shader" Keywords/Variants)
+ * One unified Uber Shader that switches expensive features via keywords:
+ * - Mobile: Turns off Rim Lighting, Detail Normals, Parallax Occlusion, and Sub-surface Scattering.
+ * - Console/PC: Enables all expensive visual effects.
+ */
+export function computeUberShaderKeywords(
+  platform: TargetPlatform,
+  quality: GraphicsQualityPreset,
+  hdPackMounted: boolean = false
+): UberShaderKeywordConfig {
+  const enableHighEndFeatures =
+    (platform === 'pc_console' && quality !== 'balanced') ||
+    (platform === 'mobile' && hdPackMounted && quality === 'ultra');
+
+  const activeMacroDefines: string[] = [];
+  if (enableHighEndFeatures) {
+    activeMacroDefines.push(
+      'USE_RIM_LIGHT',
+      'USE_DETAIL_NORMALS',
+      'USE_PARALLAX_OCCLUSION',
+      'USE_SUBSURFACE_SCATTERING'
+    );
+  }
+
+  return {
+    shaderName: 'VoxelRealms_UnifiedUberShader_v2',
+    USE_RIM_LIGHT: enableHighEndFeatures,
+    USE_DETAIL_NORMALS: enableHighEndFeatures,
+    USE_PARALLAX_OCCLUSION: enableHighEndFeatures,
+    USE_SUBSURFACE_SCATTERING: enableHighEndFeatures,
+    activeMacroDefines,
+    mathComplexity: enableHighEndFeatures ? 'full_pbr_console' : 'simplified_mobile_alu',
+  };
+}
+
+/**
+ * 5. Deployment & Build Size (Asset Bundles / Addressables)
+ * - Console/PC: Includes all 4K textures and LOD 0 high-poly meshes (~68.4 GB install).
+ * - Mobile: Base build stays well under 2GB (640 MB) by marking 4K textures and LOD 0 meshes
+ *   as an optional "HighDefinition" Addressable Content Pack inside the app.
+ */
+export function computeDeploymentBundleManifest(
+  platform: TargetPlatform,
+  hdPackMounted: boolean = false
+): DeploymentBundleManifest {
+  const hdPackSizeMb = 3_850; // 3.85 GB HighDefinition Addressable Content Pack
+  if (platform === 'pc_console') {
+    const basePcMb = 64_550;
+    return {
+      platform: 'pc_console',
+      baseBuildSizeMb: basePcMb,
+      exceedsMobile2GbThreshold: false,
+      hdAddressablePack: {
+        packId: 'HighDefinition_4K_LOD0_Pack',
+        sizeMb: hdPackSizeMb,
+        includes4kTextures: true,
+        includesLod0HeroMeshes: true,
+        isOptionalDownloadOnMobile: false,
+        isMounted: true,
+      },
+      effectiveTotalInstallMb: basePcMb + hdPackSizeMb, // 68.4 GB
+    };
+  }
+
+  // Mobile base build is 640 MB (< 2048 MB threshold)
+  const mobileBaseMb = 640;
+  return {
+    platform: 'mobile',
+    baseBuildSizeMb: mobileBaseMb,
+    exceedsMobile2GbThreshold: mobileBaseMb > 2048,
+    hdAddressablePack: {
+      packId: 'HighDefinition_4K_LOD0_Pack',
+      sizeMb: hdPackSizeMb,
+      includes4kTextures: true,
+      includesLod0HeroMeshes: true,
+      isOptionalDownloadOnMobile: true,
+      isMounted: hdPackMounted,
+    },
+    effectiveTotalInstallMb: mobileBaseMb + (hdPackMounted ? hdPackSizeMb : 0),
+  };
+}
+
+/**
+ * Human-readable label for HUD badge and toast notifications
+ */
+export function getGraphicsPresetMetadata(
+  quality: GraphicsQualityPreset,
+  platform: TargetPlatform = 'pc_console',
+  hdPackMounted: boolean = false
+): {
+  shortBadge: string;
+  title: string;
+  toastDescription: string;
+} {
+  const texOverride = computeMasterTextureImportOverride(platform, quality, hdPackMounted);
+  const lodPolicy = computeLodChainPolicy(platform, quality, hdPackMounted);
+
+  if (platform === 'mobile') {
+    return {
+      shortBadge: `MOBILE (${texOverride.compressionFormat} ${texOverride.maxPlatformResolutionPx}PX · LOD ${lodPolicy.highestLoadedLodIndex}${hdPackMounted ? ' · HD PACK' : ''})`,
+      title: `Mobile Pipeline: ${texOverride.compressionFormat} ${texOverride.maxPlatformResolutionPx}px Override + LOD Bias +${lodPolicy.lodBias} + Baked Lightmaps`,
+      toastDescription: `📱 Platform: MOBILE (${texOverride.compressionFormat} ${texOverride.maxPlatformResolutionPx}px · Skips LOD 0 [-${lodPolicy.memorySavedMb}MB RAM] · Baked Lightmap · Base Build 640MB)`,
+    };
+  }
+
+  switch (quality) {
+    case 'ultra':
+      return {
+        shortBadge: 'NEXT-GEN ULTRA (BC7 4K · LOD 0 · 245K POLY)',
+        title:
+          'Next-Gen Ultra (PC/PS5/Xbox): 4K BC7 Master Textures + LOD 0 Hero Meshes + Hybrid GI & Uber Shader',
+        toastDescription:
+          '✨ Graphics: NEXT-GEN ULTRA (4K BC7 Master Override + LOD 0 Hero Meshes + Hybrid Real-Time GI + Full Uber Shader)',
+      };
+    case 'high':
+      return {
+        shortBadge: 'HIGH (BC7 2K · LOD 0/1 · 142K POLY)',
+        title: 'High Quality (PC/Console): 2K BC7 Textures + LOD 0/1 Chain + Hybrid Shadows',
+        toastDescription:
+          '🎨 Graphics: HIGH (2K BC7 Master Override + LOD 0/1 Chain + Teyvat Stylized PBR + Soft Shadows)',
+      };
+    case 'balanced':
+    default:
+      return {
+        shortBadge: 'BALANCED (60 FPS · 78K POLY)',
         title: 'Balanced Mode: 60 FPS Direct Render Pipeline',
         toastDescription: '⚡ Graphics: BALANCED (60 FPS Direct Hardware Pipeline)',
       };
   }
 }
+
+

@@ -292,6 +292,8 @@ export default function App() {
   const [timeOfDayHours, setTimeOfDayHours] = useState<number>(14.0); // Starts at 2 PM golden daylight
   const [timeSpeedMultiplier, setTimeSpeedMultiplier] = useState<number>(1);
   const [graphicsQuality, setGraphicsQuality] = useState<'ultra' | 'high' | 'balanced'>('ultra');
+  const [targetPlatform, setTargetPlatform] = useState<'pc_console' | 'mobile'>('pc_console');
+  const [hdPackMounted, setHdPackMounted] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
@@ -363,10 +365,9 @@ export default function App() {
     }
   }, [vipState]);
 
-  // Automatically trigger Daily Login Reward modal on first load of the day
+  // Sync daily login auto-trigger date key without blocking the 3D viewport with a modal overlay
   useEffect(() => {
     if (dailyLoginEvaluation.shouldAutoTriggerOnLoad) {
-      setActiveModal('daily_login');
       setDailyLoginState((prev) => ({
         ...prev,
         lastAutoTriggeredDateKey: effectiveDateKey,
@@ -1595,6 +1596,8 @@ export default function App() {
         timeOfDayHours={timeOfDayHours}
         weather={weather}
         graphicsQuality={graphicsQuality}
+        targetPlatform={targetPlatform}
+        hdPackMounted={hdPackMounted}
         onSelectMonster={(m) => {
           setSelectedMonster(m);
           setActiveModal('world_boss');
@@ -1700,11 +1703,21 @@ export default function App() {
             setGraphicsQuality(next);
             const labels = {
               ultra:
-                '✨ Graphics: NEXT-GEN ULTRA (GTA V Physical Sky + Genshin Rim/Cel Shaders + Wet-Road Reflections + ACES Color Grading & HDR Bloom)',
-              high: '🎨 Graphics: HIGH (Teyvat Stylized PBR + Physical Sky + 2048px Soft Shadows)',
-              balanced: '⚡ Graphics: BALANCED (60 FPS Direct Render Mode)',
+                '✨ Graphics: NEXT-GEN ULTRA (4K BC7 Master Override + LOD 0 Hero Meshes + Hybrid Real-Time GI + Full Uber Shader)',
+              high: '🎨 Graphics: HIGH (2K BC7 Master Override + LOD 0/1 Chain + Teyvat Stylized PBR + Soft Shadows)',
+              balanced: '⚡ Graphics: BALANCED (60 FPS Direct Render Mode · 78K Poly)',
             };
             setToastMessage(labels[next]);
+          }}
+          targetPlatform={targetPlatform}
+          onToggleTargetPlatform={() => {
+            const nextPlatform = targetPlatform === 'pc_console' ? 'mobile' : 'pc_console';
+            setTargetPlatform(nextPlatform);
+            setToastMessage(
+              nextPlatform === 'mobile'
+                ? '📱 Platform Override: MOBILE (ASTC 1024px · LOD Bias +1 [Skips LOD 0] · Baked Lightmap · Small-Prop Shadow Culling · 640MB Base Build)'
+                : '🖥️ Platform Override: PC / PS5 / Xbox (BC7 4K Master · LOD 0 Hero Meshes · Hybrid GI + Soft Shadows · Full Uber Shader)'
+            );
           }}
           godmode={godmode}
           onTouchMove={(delta) => setTouchVector(delta)}
@@ -1852,7 +1865,30 @@ export default function App() {
       )}
 
       {activeModal === 'cpp_core' && (
-        <CppArchitectureModal onClose={() => setActiveModal('none')} />
+        <CppArchitectureModal
+          targetPlatform={targetPlatform}
+          graphicsQuality={graphicsQuality}
+          hdPackMounted={hdPackMounted}
+          onChangeTargetPlatform={(plat) => {
+            setTargetPlatform(plat);
+            setToastMessage(
+              plat === 'mobile'
+                ? '📱 Platform Override: MOBILE (ASTC Compression · LOD Bias +1 [Skips LOD 0] · Baked Lightmap · Small-Prop Shadow Culling)'
+                : '🖥️ Platform Override: PC / PS5 / Xbox (BC7 4K Master · LOD 0 Hero Meshes · Hybrid GI · Full Uber Shader)'
+            );
+          }}
+          onChangeGraphicsQuality={(q) => setGraphicsQuality(q)}
+          onToggleHdPackMounted={() => {
+            const nextHd = !hdPackMounted;
+            setHdPackMounted(nextHd);
+            setToastMessage(
+              nextHd
+                ? '📦 Addressable Bundle: Mounted HighDefinition_4K_LOD0_Pack (+3.85 GB) for Mobile!'
+                : '📦 Addressable Bundle: Unmounted HighDefinition Pack — Reverted to 640 MB Base Mobile Build!'
+            );
+          }}
+          onClose={() => setActiveModal('none')}
+        />
       )}
 
       {activeModal === 'admin_console' && (

@@ -15,6 +15,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { CharacterAppearance, MonsterTarget, NPC, ResourceNode } from '../types/game';
 import {
   GraphicsQualityPreset,
+  applyCrossPlatformPipeline,
   createMonsterMesh,
   createNPCMesh,
   createPlayerMesh,
@@ -24,8 +25,13 @@ import {
   updateWorldShaderUniforms,
 } from '../game/proceduralWorld';
 import {
+  TargetPlatform,
   computeAtmosphericSkyParams,
+  computeLightingStrategy,
+  computeLodChainPolicy,
+  computeMasterTextureImportOverride,
   computeSurfaceWetnessParams,
+  computeUberShaderKeywords,
   getPostProcessProfile,
 } from '../game/graphicsEngine';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -122,6 +128,8 @@ interface GameCanvasProps {
   timeOfDayHours: number; // 0 to 24 hours
   weather?: WeatherType;
   graphicsQuality?: GraphicsQualityPreset;
+  targetPlatform?: TargetPlatform;
+  hdPackMounted?: boolean;
   onSelectMonster: (monster: MonsterTarget) => void;
   onSelectResourceNode: (node: ResourceNode) => void;
   onSelectCastle: () => void;
@@ -142,6 +150,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   timeOfDayHours,
   weather = 'clear',
   graphicsQuality = 'ultra',
+  targetPlatform = 'pc_console',
+  hdPackMounted = false,
   onSelectMonster,
   onSelectResourceNode,
   onSelectCastle,
@@ -164,6 +174,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     timeOfDayHours,
     weather,
     graphicsQuality,
+    targetPlatform,
+    hdPackMounted,
     onSelectMonster,
     onSelectResourceNode,
     onSelectCastle,
@@ -185,6 +197,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       timeOfDayHours,
       weather,
       graphicsQuality,
+      targetPlatform,
+      hdPackMounted,
       onSelectMonster,
       onSelectResourceNode,
       onSelectCastle,
@@ -204,6 +218,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     timeOfDayHours,
     weather,
     graphicsQuality,
+    targetPlatform,
+    hdPackMounted,
     onSelectMonster,
     onSelectResourceNode,
     onSelectCastle,
@@ -615,11 +631,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     };
     dom.addEventListener('pointerdown', onPointerDown);
 
-    // Resize Handler
+    // Resize Handler + ResizeObserver for iframe container layout shifts
     const onResize = () => {
       if (!container) return;
-      const w = container.clientWidth || window.innerWidth;
-      const h = container.clientHeight || window.innerHeight;
+      const w = Math.max(container.clientWidth || window.innerWidth || 1280, 320);
+      const h = Math.max(container.clientHeight || window.innerHeight || 720, 240);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -634,6 +650,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
     };
     window.addEventListener('resize', onResize);
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => onResize()) : null;
+    resizeObserver?.observe(container);
 
     // Lossless Render Loop with Software WebGL Guard
     let animId = 0;
@@ -655,15 +674,45 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       animId = window.setTimeout(poll, 5);
     }
 
+    let lastPipelineSignature = '';
+
     const tick = () => {
       const now = performance.now();
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
 
       const quality = propsRef.current.graphicsQuality || 'ultra';
+      const platform = propsRef.current.targetPlatform || 'pc_console';
+      const hdPack = Boolean(propsRef.current.hdPackMounted);
       const activeWeather = propsRef.current.weather || 'clear';
       const postProfile = getPostProcessProfile(quality);
       const wetness = computeSurfaceWetnessParams(activeWeather);
+      const lightingStrategy = computeLightingStrategy(platform, quality);
+
+      // Sync Cross-Platform Pipeline (Master Asset Overrides, LOD Bias, Small-Prop Shadow Culling, Uber Shader Keywords)
+      const pipelineSig = `${platform}_${quality}_${hdPack}`;
+      if (pipelineSig !== lastPipelineSignature) {
+        lastPipelineSignature = pipelineSig;
+        const texOverride = computeMasterTextureImportOverride(platform, quality, hdPack);
+        const lodPolicy = computeLodChainPolicy(platform, quality, hdPack);
+        const uberKeywords = computeUberShaderKeywords(platform, quality, hdPack);
+
+        applyCrossPlatformPipeline(scene, {
+          anisotropySamples: texOverride.anisotropySamples,
+          compressionFormat: texOverride.compressionFormat,
+          lodBias: lodPolicy.lodBias,
+          skipLod0InMemory: lodPolicy.skipLod0InMemory,
+          smallPropCastShadows: lightingStrategy.smallPropCastShadows,
+          bakedLightmapIntensity: lightingStrategy.bakedLightmapIntensity,
+          useRimLight: uberKeywords.USE_RIM_LIGHT,
+          useDetailNormals: uberKeywords.USE_DETAIL_NORMALS,
+          useParallax: uberKeywords.USE_PARALLAX_OCCLUSION,
+          useSubsurface: uberKeywords.USE_SUBSURFACE_SCATTERING,
+        });
+
+        sunLight.castShadow = !isSoftwareGl && lightingStrategy.enableDynamicSoftShadows;
+        rimLight.visible = lightingStrategy.enableRealtimeGI;
+      }
 
       // Update GLSL foliage wind, Gerstner water waves & GTA V wet-surface PBR reflections
       updateWorldShaderUniforms(
@@ -714,7 +763,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       sunLight.color.setHex(skyParams.sunLightHex);
       hemiLight.color.setHex(skyParams.hemiSkyHex);
       hemiLight.groundColor.setHex(skyParams.hemiGroundHex);
-      hemiLight.intensity = skyParams.hemiIntensity;
+      hemiLight.intensity = lightingStrategy.enableRealtimeGI
+        ? skyParams.hemiIntensity
+        : skyParams.hemiIntensity * 1.18;
       rimLight.color.setHex(skyParams.rimLightHex);
       rimLight.intensity = skyParams.rimLightIntensity;
       starsMat.opacity = skyParams.starfieldOpacity;
@@ -724,7 +775,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       bgColor.setHex(sunY < 0 ? 0x090d16 : weatherCfg.skyColorHex);
       if (scene.fog) {
         scene.fog.color.setHex(skyParams.fogHex);
-        (scene.fog as THREE.FogExp2).density = skyParams.fogDensity;
+        (scene.fog as THREE.FogExp2).density = lightingStrategy.enableVolumetricFog
+          ? skyParams.fogDensity
+          : skyParams.fogDensity * 0.45;
       }
 
       // Sync Post-Processing Bloom & Next-Gen Color Grading Uniforms
@@ -1057,6 +1110,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       window.removeEventListener('mouseup', onMouseUp);
       dom.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('resize', onResize);
+      resizeObserver?.disconnect();
       if (composer) {
         composer.dispose();
       }

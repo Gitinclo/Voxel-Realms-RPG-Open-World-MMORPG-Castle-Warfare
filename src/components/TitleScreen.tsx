@@ -38,12 +38,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   }, [onStartGame]);
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col justify-between p-6 sm:p-12 bg-radial from-slate-900/60 via-slate-950/80 to-slate-950 pointer-events-auto select-none">
+    <div className="absolute inset-0 z-40 flex flex-col justify-between p-6 sm:p-12 bg-gradient-to-b from-slate-950/65 via-slate-950/15 to-slate-950/75 pointer-events-auto select-none">
       {/* Top Banner & Game Highlights */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          NEXT-GEN 3D · GTA V PHYSICAL SKY + GENSHIN CEL/RIM SHADERS
+          NEXT-GEN 3D · 245K HIGH-POLY MESHES · 1024PX PBR NORMAL MAPS · GTA V + GENSHIN SHADERS
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

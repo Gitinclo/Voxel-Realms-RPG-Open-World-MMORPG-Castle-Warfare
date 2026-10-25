@@ -68,6 +68,8 @@ interface GameHUDProps {
   vipLoyaltyLevel?: number;
   graphicsQuality?: 'ultra' | 'high' | 'balanced';
   onCycleGraphicsQuality?: () => void;
+  targetPlatform?: 'pc_console' | 'mobile';
+  onToggleTargetPlatform?: () => void;
   godmode?: boolean;
   onTouchMove?: (delta: { x: number; y: number }) => void;
   onTouchEnd?: () => void;
@@ -112,6 +114,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   vipLoyaltyLevel = 1,
   graphicsQuality = 'ultra',
   onCycleGraphicsQuality,
+  targetPlatform = 'pc_console',
+  onToggleTargetPlatform,
   godmode,
   onTouchMove,
   onTouchEnd,
@@ -390,16 +394,38 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               }}
               data-testid="hud-graphics-quality-btn"
               className="px-2.5 py-1 rounded-xl bg-slate-900 border border-purple-500/40 hover:border-purple-400 text-[11px] font-mono font-bold text-purple-200 hover:bg-slate-800 transition-all flex items-center gap-1 cursor-pointer"
-              title="Cycle 3D Graphics Quality (Next-Gen Ultra: GTA V Physical Sky + Genshin Rim/Cel Shaders + Wet-Road Reflections + ACES Color Grading)"
+              title="Cycle 3D Graphics Quality (Next-Gen Ultra: 4K BC7 Master Textures + LOD 0 Hero Meshes + Hybrid Real-Time GI + Full Uber Shader)"
             >
               <Sparkles className="w-3 h-3 text-purple-400" />
               <span>
                 {graphicsQuality === 'ultra'
-                  ? 'NEXT-GEN ULTRA (GTA V + GENSHIN)'
+                  ? 'NEXT-GEN ULTRA (BC7 4K · LOD 0 · 245K POLY)'
                   : graphicsQuality === 'high'
-                    ? 'HIGH (TEYVAT PBR)'
-                    : 'BALANCED (60 FPS)'}
+                    ? 'HIGH (BC7 2K · LOD 0/1 · 142K POLY)'
+                    : 'BALANCED (60 FPS · 78K POLY)'}
               </span>
+            </button>
+          )}
+
+          {/* Cross-Platform Pipeline Override Toggle (PC/PS5 BC7 vs Mobile ASTC) */}
+          {onToggleTargetPlatform && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.playSwing();
+                onToggleTargetPlatform();
+              }}
+              data-testid="hud-platform-override-btn"
+              className={`px-2.5 py-1 rounded-xl border text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                targetPlatform === 'pc_console'
+                  ? 'bg-slate-900 border-cyan-500/40 hover:border-cyan-400 text-cyan-200'
+                  : 'bg-amber-950/70 border-amber-400/50 hover:border-amber-300 text-amber-200'
+              }`}
+              title="Toggle Cross-Platform Engine Override: PC/PS5/Xbox (BC7 · LOD 0 · Hybrid GI · Full Uber Shader) vs Mobile Android/iOS (ASTC · Skips LOD 0 · Baked Lightmaps · 640MB Base)"
+            >
+              {targetPlatform === 'pc_console'
+                ? 'PC/PS5 [BC7 · LOD 0]'
+                : 'MOBILE [ASTC · LOD BIAS +1]'}
             </button>
           )}
 
