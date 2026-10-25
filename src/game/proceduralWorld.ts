@@ -47,26 +47,36 @@ function getOrCreateCanvasTexture(
 }
 
 function getGrassAlbedoTexture(): THREE.CanvasTexture | null {
-  return getOrCreateCanvasTexture('grass_albedo', 256, true, 1, (ctx, s) => {
-    ctx.fillStyle = '#43a047';
+  return getOrCreateCanvasTexture('grass_albedo_hd', 512, true, 1, (ctx, s) => {
+    const grad = ctx.createLinearGradient(0, 0, s, s);
+    grad.addColorStop(0, '#3cb371');
+    grad.addColorStop(0.5, '#43a047');
+    grad.addColorStop(1, '#2e7d32');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, s, s);
-    // Subtle organic grass blades & clover speckles
-    for (let i = 0; i < 900; i++) {
-      const x = (i * 73) % s;
-      const y = (i * 137) % s;
-      ctx.fillStyle = i % 3 === 0 ? '#2e7d32' : i % 3 === 1 ? '#66bb6a' : '#388e3c';
-      ctx.fillRect(x, y, 3, 6);
+
+    for (let i = 0; i < 2400; i++) {
+      const x = (i * 97) % s;
+      const y = (i * 181) % s;
+      ctx.fillStyle =
+        i % 4 === 0
+          ? '#1b5e20'
+          : i % 4 === 1
+            ? '#66bb6a'
+            : i % 4 === 2
+              ? '#81c784'
+              : '#388e3c';
+      ctx.fillRect(x, y, 3, 9);
     }
-    // Subtle voxel bevel border
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 4;
     ctx.strokeRect(2, 2, s - 4, s - 4);
   });
 }
 
 function getStoneMasonryTexture(): THREE.CanvasTexture | null {
-  return getOrCreateCanvasTexture('stone_masonry', 256, true, 1, (ctx, s) => {
-    ctx.fillStyle = '#607d8b';
+  return getOrCreateCanvasTexture('stone_masonry_hd', 512, true, 1, (ctx, s) => {
+    ctx.fillStyle = '#546e7a';
     ctx.fillRect(0, 0, s, s);
     const rows = 4;
     const rowH = s / rows;
@@ -77,20 +87,47 @@ function getStoneMasonryTexture(): THREE.CanvasTexture | null {
       const offset = (r % 2) * (colW / 2);
       for (let c = -1; c <= cols; c++) {
         const x = c * colW + offset;
-        const shade = ((r * 3 + c * 7) % 3) * 8 - 8;
-        ctx.fillStyle = `rgb(${102 + shade}, ${126 + shade}, ${138 + shade})`;
-        ctx.fillRect(x + 3, y + 3, colW - 6, rowH - 6);
-        // Highlight top edge
-        ctx.fillStyle = 'rgba(255,255,255,0.12)';
-        ctx.fillRect(x + 3, y + 3, colW - 6, 4);
+        const shade = ((r * 5 + c * 11) % 5) * 6 - 10;
+        ctx.fillStyle = `rgb(${112 + shade}, ${132 + shade}, ${145 + shade})`;
+        ctx.fillRect(x + 4, y + 4, colW - 8, rowH - 8);
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.fillRect(x + 4, y + 4, colW - 8, 6);
+        ctx.fillStyle = 'rgba(15,23,42,0.28)';
+        ctx.fillRect(x + 4, y + rowH - 10, colW - 8, 6);
+      }
+    }
+  });
+}
+
+function getStoneNormalMapTexture(): THREE.CanvasTexture | null {
+  return getOrCreateCanvasTexture('stone_normal_hd', 512, false, 1, (ctx, s) => {
+    ctx.fillStyle = 'rgb(128, 128, 255)';
+    ctx.fillRect(0, 0, s, s);
+    const rows = 4;
+    const rowH = s / rows;
+    for (let r = 0; r < rows; r++) {
+      const y = r * rowH;
+      const cols = 2;
+      const colW = s / cols;
+      const offset = (r % 2) * (colW / 2);
+      for (let c = -1; c <= cols; c++) {
+        const x = c * colW + offset;
+        ctx.fillStyle = 'rgb(128, 215, 240)';
+        ctx.fillRect(x + 4, y + 4, colW - 8, 8);
+        ctx.fillStyle = 'rgb(128, 45, 240)';
+        ctx.fillRect(x + 4, y + rowH - 12, colW - 8, 8);
+        ctx.fillStyle = 'rgb(55, 128, 240)';
+        ctx.fillRect(x + 4, y + 4, 8, rowH - 8);
+        ctx.fillStyle = 'rgb(205, 128, 240)';
+        ctx.fillRect(x + colW - 12, y + 4, 8, rowH - 8);
       }
     }
   });
 }
 
 function getStoneBumpTexture(): THREE.CanvasTexture | null {
-  return getOrCreateCanvasTexture('stone_bump', 256, false, 1, (ctx, s) => {
-    ctx.fillStyle = '#303030';
+  return getOrCreateCanvasTexture('stone_bump_hd', 512, false, 1, (ctx, s) => {
+    ctx.fillStyle = '#262626';
     ctx.fillRect(0, 0, s, s);
     const rows = 4;
     const rowH = s / rows;
@@ -101,34 +138,34 @@ function getStoneBumpTexture(): THREE.CanvasTexture | null {
       const offset = (r % 2) * (colW / 2);
       for (let c = -1; c <= cols; c++) {
         const x = c * colW + offset;
-        ctx.fillStyle = '#d0d0d0';
-        ctx.fillRect(x + 4, y + 4, colW - 8, rowH - 8);
+        ctx.fillStyle = '#d8d8d8';
+        ctx.fillRect(x + 5, y + 5, colW - 10, rowH - 10);
       }
     }
   });
 }
 
 function getWoodBarkTexture(): THREE.CanvasTexture | null {
-  return getOrCreateCanvasTexture('wood_bark', 256, true, 1, (ctx, s) => {
+  return getOrCreateCanvasTexture('wood_bark_hd', 512, true, 1, (ctx, s) => {
     ctx.fillStyle = '#5d4037';
     ctx.fillRect(0, 0, s, s);
-    for (let i = 0; i < 48; i++) {
+    for (let i = 0; i < 96; i++) {
       const x = (i * 19) % s;
-      ctx.fillStyle = i % 2 === 0 ? '#4e342e' : '#6d4c41';
-      ctx.fillRect(x, 0, 5, s);
+      ctx.fillStyle = i % 3 === 0 ? '#3e2723' : i % 3 === 1 ? '#4e342e' : '#6d4c41';
+      ctx.fillRect(x, 0, 6, s);
     }
   });
 }
 
 function getWaterNormalBumpTexture(): THREE.CanvasTexture | null {
-  return getOrCreateCanvasTexture('water_bump', 256, false, 14, (ctx, s) => {
-    ctx.fillStyle = '#808080';
+  return getOrCreateCanvasTexture('water_normal_hd', 512, false, 16, (ctx, s) => {
+    ctx.fillStyle = 'rgb(128, 128, 255)';
     ctx.fillRect(0, 0, s, s);
     for (let y = 0; y < s; y += 4) {
       for (let x = 0; x < s; x += 4) {
-        const wave = Math.sin((x / s) * Math.PI * 4) * Math.cos((y / s) * Math.PI * 4) * 0.5 + 0.5;
-        const val = Math.floor(80 + wave * 140);
-        ctx.fillStyle = `rgb(${val},${val},${val})`;
+        const nx = Math.sin((x / s) * Math.PI * 6) * 45 + 128;
+        const ny = Math.cos((y / s) * Math.PI * 6) * 45 + 128;
+        ctx.fillStyle = `rgb(${Math.floor(nx)},${Math.floor(ny)},245)`;
         ctx.fillRect(x, y, 4, 4);
       }
     }
@@ -167,149 +204,313 @@ function createSoftContactShadow(radius: number, opacity: number = 0.48): THREE.
 }
 
 // ============================================================================
-// STUDIO PBR MATERIALS (MeshPhysicalMaterial & MeshStandardMaterial)
+// NEXT-GEN SHADER UNIFORMS & STUDIO PBR MATERIALS (GTA V + GENSHIN IMPACT)
 // ============================================================================
+
+export const worldShaderUniforms = {
+  uTime: { value: 0 },
+  uWindStrength: { value: 0.75 },
+  uWaveHeight: { value: 0.09 },
+  uRimStrength: { value: 0.55 },
+};
+
+function attachGenshinFoliageShader(mat: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = worldShaderUniforms.uTime;
+    shader.uniforms.uWindStrength = worldShaderUniforms.uWindStrength;
+    shader.uniforms.uRimStrength = worldShaderUniforms.uRimStrength;
+
+    shader.vertexShader =
+      `
+      uniform float uTime;
+      uniform float uWindStrength;
+      ` +
+      shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        float breeze = sin(uTime * 2.4 + position.x * 0.9 + position.z * 0.9) * 0.09 * uWindStrength;
+        transformed.x += breeze * max(0.0, position.y + 0.5);
+        transformed.z += cos(uTime * 1.9 + position.y * 0.8) * 0.05 * uWindStrength;
+        `
+      );
+
+    shader.fragmentShader =
+      `
+      uniform float uRimStrength;
+      ` +
+      shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `
+        vec3 viewDir = normalize(vViewPosition);
+        float fresnelRim = pow(1.0 - abs(dot(viewDir, normal)), 2.6);
+        gl_FragColor.rgb += vec3(0.45, 0.85, 0.35) * fresnelRim * uRimStrength * 0.42;
+        #include <dithering_fragment>
+        `
+      );
+  };
+}
+
+function attachGerstnerWaterShader(mat: THREE.MeshPhysicalMaterial) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = worldShaderUniforms.uTime;
+    shader.uniforms.uWaveHeight = worldShaderUniforms.uWaveHeight;
+
+    shader.vertexShader =
+      `
+      uniform float uTime;
+      uniform float uWaveHeight;
+      varying vec3 vWaterWorldPos;
+      ` +
+      shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        float w1 = sin(position.x * 0.35 + uTime * 2.1) * cos(position.y * 0.32 + uTime * 1.7);
+        float w2 = sin((position.x + position.y) * 0.65 - uTime * 2.8) * 0.5;
+        transformed.z += (w1 + w2) * uWaveHeight;
+        vWaterWorldPos = vec3(position.x, position.y, transformed.z);
+        `
+      );
+
+    shader.fragmentShader =
+      `
+      uniform float uTime;
+      varying vec3 vWaterWorldPos;
+      ` +
+      shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `
+        float caustic = sin(vWaterWorldPos.x * 1.4 + uTime * 2.6) * cos(vWaterWorldPos.y * 1.4 - uTime * 2.1);
+        float foam = smoothstep(0.68, 0.96, caustic);
+        vec3 viewDirW = normalize(vViewPosition);
+        float skyFresnel = pow(1.0 - abs(dot(viewDirW, normal)), 3.0);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.38, 0.92, 1.0), skyFresnel * 0.45);
+        gl_FragColor.rgb += vec3(0.88, 0.98, 1.0) * foam * 0.22;
+        #include <dithering_fragment>
+        `
+      );
+  };
+}
 
 const grassMap = getGrassAlbedoTexture();
 const stoneMap = getStoneMasonryTexture();
+const stoneNormal = getStoneNormalMapTexture();
 const stoneBump = getStoneBumpTexture();
 const woodMap = getWoodBarkTexture();
-const waterBump = getWaterNormalBumpTexture();
+const waterNormal = getWaterNormalBumpTexture();
 
 const voxelMaterials = {
-  grass: new THREE.MeshStandardMaterial({
+  grass: new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     map: grassMap,
     bumpMap: grassMap,
-    bumpScale: 0.04,
-    roughness: 0.82,
-    metalness: 0.06,
+    bumpScale: 0.05,
+    roughness: 0.72,
+    metalness: 0.04,
+    clearcoat: 0.14,
+    clearcoatRoughness: 0.5,
   }),
   grassDark: new THREE.MeshStandardMaterial({
     color: 0x2e7d32,
-    roughness: 0.86,
+    roughness: 0.8,
     metalness: 0.05,
   }),
   dirt: new THREE.MeshStandardMaterial({
     color: 0x6d4c41,
-    roughness: 0.92,
+    roughness: 0.9,
     metalness: 0.04,
   }),
-  stone: new THREE.MeshStandardMaterial({
-    color: 0xcfd8dc,
+  stone: new THREE.MeshPhysicalMaterial({
+    color: 0xdbeafe,
     map: stoneMap,
+    normalMap: stoneNormal,
+    normalScale: new THREE.Vector2(0.65, 0.65),
     bumpMap: stoneBump,
     bumpScale: 0.08,
-    roughness: 0.65,
-    metalness: 0.18,
+    roughness: 0.52,
+    metalness: 0.22,
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.25,
   }),
-  stoneDark: new THREE.MeshStandardMaterial({
-    color: 0x78909c,
-    map: stoneMap,
-    bumpMap: stoneBump,
-    bumpScale: 0.1,
-    roughness: 0.58,
-    metalness: 0.28,
-  }),
-  cobblestone: new THREE.MeshStandardMaterial({
+  stoneDark: new THREE.MeshPhysicalMaterial({
     color: 0x90a4ae,
     map: stoneMap,
+    normalMap: stoneNormal,
+    normalScale: new THREE.Vector2(0.75, 0.75),
+    bumpMap: stoneBump,
+    bumpScale: 0.1,
+    roughness: 0.46,
+    metalness: 0.32,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.2,
+  }),
+  cobblestone: new THREE.MeshPhysicalMaterial({
+    color: 0xb0bec5,
+    map: stoneMap,
+    normalMap: stoneNormal,
+    normalScale: new THREE.Vector2(0.7, 0.7),
     bumpMap: stoneBump,
     bumpScale: 0.09,
-    roughness: 0.68,
-    metalness: 0.22,
+    roughness: 0.48,
+    metalness: 0.25,
+    clearcoat: 0.32,
+    clearcoatRoughness: 0.22,
   }),
   woodTrunk: new THREE.MeshStandardMaterial({
     color: 0x8d6e63,
     map: woodMap,
     bumpMap: woodMap,
     bumpScale: 0.06,
-    roughness: 0.85,
+    roughness: 0.82,
   }),
-  leaves: new THREE.MeshStandardMaterial({
-    color: 0x2e7d32,
-    roughness: 0.72,
-    metalness: 0.08,
+  leaves: new THREE.MeshPhysicalMaterial({
+    color: 0x2ebd59,
+    roughness: 0.58,
+    metalness: 0.06,
+    clearcoat: 0.25,
+    clearcoatRoughness: 0.35,
   }),
-  leavesLight: new THREE.MeshStandardMaterial({
-    color: 0x4caf50,
-    roughness: 0.7,
-    metalness: 0.08,
-  }),
-  leavesAutumn: new THREE.MeshPhysicalMaterial({
-    color: 0xd84315,
-    roughness: 0.45,
-    metalness: 0.15,
-    clearcoat: 0.35,
+  leavesLight: new THREE.MeshPhysicalMaterial({
+    color: 0x4ade80,
+    roughness: 0.55,
+    metalness: 0.06,
+    clearcoat: 0.28,
     clearcoatRoughness: 0.3,
   }),
+  leavesAutumn: new THREE.MeshPhysicalMaterial({
+    color: 0xf97316,
+    emissive: 0x7c2d12,
+    emissiveIntensity: 0.12,
+    roughness: 0.4,
+    metalness: 0.14,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.22,
+  }),
+  sakuraBlossom: new THREE.MeshPhysicalMaterial({
+    color: 0xf472b6,
+    emissive: 0xbe185d,
+    emissiveIntensity: 0.22,
+    roughness: 0.42,
+    metalness: 0.08,
+    clearcoat: 0.5,
+  }),
+  ginkgoGold: new THREE.MeshPhysicalMaterial({
+    color: 0xfacc15,
+    emissive: 0xb45309,
+    emissiveIntensity: 0.2,
+    roughness: 0.4,
+    metalness: 0.12,
+    clearcoat: 0.45,
+  }),
   water: new THREE.MeshPhysicalMaterial({
-    color: 0x0288d1,
-    emissive: 0x01579b,
-    emissiveIntensity: 0.18,
-    roughness: 0.08,
-    metalness: 0.15,
+    color: 0x06b6d4,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.26,
+    roughness: 0.05,
+    metalness: 0.18,
     clearcoat: 1.0,
-    clearcoatRoughness: 0.06,
-    reflectivity: 0.95,
+    clearcoatRoughness: 0.04,
+    reflectivity: 1.0,
     ior: 1.333,
-    bumpMap: waterBump,
-    bumpScale: 0.06,
+    normalMap: waterNormal,
+    normalScale: new THREE.Vector2(0.55, 0.55),
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.9,
   }),
   steelOre: new THREE.MeshPhysicalMaterial({
-    color: 0xcfd8dc,
-    roughness: 0.22,
-    metalness: 0.92,
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.15,
+    color: 0xe2e8f0,
+    roughness: 0.18,
+    metalness: 0.94,
+    clearcoat: 0.65,
+    clearcoatRoughness: 0.12,
   }),
   copperOre: new THREE.MeshPhysicalMaterial({
-    color: 0xe68a5c,
-    roughness: 0.26,
-    metalness: 0.88,
-    clearcoat: 0.45,
+    color: 0xfb923c,
+    roughness: 0.22,
+    metalness: 0.9,
+    clearcoat: 0.55,
   }),
   diamondOre: new THREE.MeshPhysicalMaterial({
     color: 0x00e5ff,
-    roughness: 0.06,
-    metalness: 0.2,
+    roughness: 0.04,
+    metalness: 0.22,
     clearcoat: 1.0,
-    clearcoatRoughness: 0.04,
+    clearcoatRoughness: 0.03,
     ior: 2.417,
     reflectivity: 1.0,
     emissive: 0x00b0ff,
-    emissiveIntensity: 0.65,
+    emissiveIntensity: 0.85,
   }),
   goldAccent: new THREE.MeshPhysicalMaterial({
     color: 0xffd700,
-    emissive: 0xb45309,
-    emissiveIntensity: 0.15,
-    roughness: 0.18,
-    metalness: 0.95,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.1,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.22,
+    roughness: 0.14,
+    metalness: 0.96,
+    clearcoat: 0.85,
+    clearcoatRoughness: 0.08,
   }),
   grainGold: new THREE.MeshStandardMaterial({
-    color: 0xfbc02d,
-    roughness: 0.78,
+    color: 0xfacc15,
+    roughness: 0.72,
     metalness: 0.1,
   }),
   oilDark: new THREE.MeshPhysicalMaterial({
-    color: 0x1e293b,
-    roughness: 0.12,
-    metalness: 0.85,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.08,
+    color: 0x0f172a,
+    roughness: 0.08,
+    metalness: 0.88,
+    clearcoat: 0.95,
+    clearcoatRoughness: 0.05,
   }),
   lanternGlow: new THREE.MeshStandardMaterial({
-    color: 0xffecb3,
+    color: 0xfef08a,
     emissive: 0xff9800,
-    emissiveIntensity: 1.8,
-    roughness: 0.1,
+    emissiveIntensity: 2.2,
+    roughness: 0.08,
+  }),
+  celestialJade: new THREE.MeshPhysicalMaterial({
+    color: 0x34d399,
+    emissive: 0x059669,
+    emissiveIntensity: 0.35,
+    roughness: 0.15,
+    metalness: 0.25,
+    clearcoat: 0.9,
   }),
 };
+
+attachGenshinFoliageShader(voxelMaterials.leaves);
+attachGenshinFoliageShader(voxelMaterials.leavesLight);
+attachGenshinFoliageShader(voxelMaterials.leavesAutumn);
+attachGenshinFoliageShader(voxelMaterials.sakuraBlossom);
+attachGenshinFoliageShader(voxelMaterials.ginkgoGold);
+attachGerstnerWaterShader(voxelMaterials.water);
+
+/**
+ * Updates animated shader uniforms & GTA V wet-surface PBR properties each frame
+ */
+export function updateWorldShaderUniforms(
+  elapsedSec: number,
+  roadRoughness: number,
+  roadClearcoat: number,
+  stoneRoughness: number,
+  stoneClearcoat: number,
+  waterWaveHeight: number,
+  windSwayStrength: number,
+  rimStrength: number
+): void {
+  worldShaderUniforms.uTime.value = elapsedSec;
+  worldShaderUniforms.uWaveHeight.value = waterWaveHeight;
+  worldShaderUniforms.uWindStrength.value = windSwayStrength;
+  worldShaderUniforms.uRimStrength.value = rimStrength;
+
+  voxelMaterials.cobblestone.roughness = roadRoughness;
+  voxelMaterials.cobblestone.clearcoat = roadClearcoat;
+  voxelMaterials.stone.roughness = stoneRoughness;
+  voxelMaterials.stone.clearcoat = stoneClearcoat;
+  voxelMaterials.stoneDark.roughness = Math.max(0.14, stoneRoughness - 0.06);
+  voxelMaterials.stoneDark.clearcoat = Math.min(1.0, stoneClearcoat + 0.08);
+}
 
 /**
  * Helper to draw high-DPI crisp canvas billboards
@@ -349,8 +550,9 @@ function createCrispBillboardSprite(
 }
 
 /**
- * Creates the High-Definition Voxel Open World Terrain with Biomes, Imperial Roads,
- * Foliage Tufts, Lantern Posts, and Animated Crystal Water
+ * Creates the Next-Gen Open World Terrain with Biomes, Wet-Specular Imperial Roads,
+ * Genshin Teleport Waypoints, Lush Sakura & Ginkgo Groves, Distant Alpine Mountains,
+ * Floating Celestia Jade Sky Islands, and Gerstner-Wave Crystal Water
  */
 export function createVoxelTerrain(): THREE.Group {
   const terrainGroup = new THREE.Group();
@@ -376,13 +578,15 @@ export function createVoxelTerrain(): THREE.Group {
   stoneInstanced.castShadow = true;
   stoneInstanced.receiveShadow = true;
 
-  // Instanced wild grass blades & wildflowers for lush surface micro-detail
-  const tuftGeo = new THREE.ConeGeometry(0.28, 0.65, 4);
-  const tuftMat = new THREE.MeshStandardMaterial({
+  // Instanced wild grass blades & Teyvat wildflowers (Cecilia white, Liyue gold, Sakura pink)
+  const tuftGeo = new THREE.ConeGeometry(0.3, 0.72, 5);
+  const tuftMat = new THREE.MeshPhysicalMaterial({
     color: 0x66bb6a,
-    roughness: 0.75,
+    roughness: 0.62,
+    clearcoat: 0.2,
   });
-  const grassTuftInstanced = new THREE.InstancedMesh(tuftGeo, tuftMat, 360);
+  attachGenshinFoliageShader(tuftMat);
+  const grassTuftInstanced = new THREE.InstancedMesh(tuftGeo, tuftMat, 480);
   grassTuftInstanced.castShadow = false;
   grassTuftInstanced.receiveShadow = true;
 
@@ -417,36 +621,45 @@ export function createVoxelTerrain(): THREE.Group {
       const currentGrassIndex = gIdx++;
       grassInstanced.setMatrixAt(currentGrassIndex, mat4);
 
-      // Per-instance biome color tinting
+      // Per-instance biome color tinting (Genshin Mondstadt / Liyue vibrancy)
       if (isImperialRoad) {
-        tempColor.setHex(0x90a4ae); // Paved imperial stone road
+        tempColor.setHex(0x94a3b8); // Polished imperial slate road
       } else if (elevation >= 2) {
-        tempColor.setHex(0x81c784); // Highland alpine meadow
+        tempColor.setHex(0x86efac); // Sunlit highland alpine meadow
       } else if (elevation <= -1) {
-        tempColor.setHex(0xa5d6a7); // Shoreline moss
+        tempColor.setHex(0x6ee7b7); // Turquoise shoreline moss
       } else {
-        const checker = (x + z) % 2 === 0 ? 0x66bb6a : 0x4caf50;
+        const checker = (x + z) % 2 === 0 ? 0x4ade80 : 0x22c55e;
         tempColor.setHex(checker);
       }
       grassInstanced.setColorAt(currentGrassIndex, tempColor);
 
-      // Scatter 3D grass tufts on flat meadow blocks outside the castle/road
+      // Scatter 3D grass tufts & wildflowers on flat meadow blocks
       if (
         !isImperialRoad &&
-        distFromCenter > 12 &&
+        distFromCenter > 11 &&
         elevation >= 0 &&
         tIdx < grassTuftInstanced.count &&
-        (x * 17 + z * 31) % 5 === 0
+        (x * 13 + z * 29) % 4 === 0
       ) {
         const tuftMat4 = new THREE.Matrix4();
         tuftMat4.makeRotationY((x * z) % 3.14);
         tuftMat4.setPosition(
-          worldX + ((x % 2) - 0.5) * 0.6,
-          heightY + 0.3,
-          worldZ + ((z % 2) - 0.5) * 0.6
+          worldX + ((x % 2) - 0.5) * 0.65,
+          heightY + 0.34,
+          worldZ + ((z % 2) - 0.5) * 0.65
         );
         grassTuftInstanced.setMatrixAt(tIdx, tuftMat4);
-        tempColor.setHex((x + z) % 7 === 0 ? 0xffca28 : 0x66bb6a);
+        const flowerRoll = (x * 7 + z * 11) % 12;
+        tempColor.setHex(
+          flowerRoll === 0
+            ? 0xfef08a
+            : flowerRoll === 1
+              ? 0xf472b6
+              : flowerRoll === 2
+                ? 0xe0f2fe
+                : 0x4ade80
+        );
         grassTuftInstanced.setColorAt(tIdx, tempColor);
         tIdx++;
       }
@@ -457,7 +670,7 @@ export function createVoxelTerrain(): THREE.Group {
         mat4.setPosition(worldX, heightY - 3, worldZ);
         const stoneIndex = sIdx++;
         stoneInstanced.setMatrixAt(stoneIndex, mat4);
-        tempColor.setHex(elevation > 2 ? 0xb0bec5 : 0x78909c);
+        tempColor.setHex(elevation > 2 ? 0xcbd5e1 : 0x64748b);
         stoneInstanced.setColorAt(stoneIndex, tempColor);
       }
     }
@@ -465,16 +678,21 @@ export function createVoxelTerrain(): THREE.Group {
 
   grassInstanced.instanceMatrix.needsUpdate = true;
   if (grassInstanced.instanceColor) grassInstanced.instanceColor.needsUpdate = true;
+  grassInstanced.computeBoundingSphere();
+
   stoneInstanced.instanceMatrix.needsUpdate = true;
   if (stoneInstanced.instanceColor) stoneInstanced.instanceColor.needsUpdate = true;
+  stoneInstanced.computeBoundingSphere();
+
   grassTuftInstanced.instanceMatrix.needsUpdate = true;
   if (grassTuftInstanced.instanceColor) grassTuftInstanced.instanceColor.needsUpdate = true;
+  grassTuftInstanced.computeBoundingSphere();
 
   terrainGroup.add(grassInstanced);
   terrainGroup.add(stoneInstanced);
   terrainGroup.add(grassTuftInstanced);
 
-  // Imperial Avenue Lantern Posts along South & North Approaches
+  // Imperial Avenue Lantern Posts + Golden Filigree Caps
   const lanternCoords = [
     [-3.2, 12],
     [3.2, 12],
@@ -483,21 +701,196 @@ export function createVoxelTerrain(): THREE.Group {
     [-3.2, -12],
     [3.2, -12],
   ];
-  const postGeo = new THREE.CylinderGeometry(0.12, 0.16, 2.8, 6);
-  const lampGeo = new THREE.BoxGeometry(0.45, 0.55, 0.45);
+  const postGeo = new THREE.CylinderGeometry(0.14, 0.18, 2.9, 8);
+  const lampGeo = new THREE.BoxGeometry(0.48, 0.58, 0.48);
+  const roofCapGeo = new THREE.ConeGeometry(0.46, 0.35, 4);
   lanternCoords.forEach(([lx, lz]) => {
     const post = new THREE.Mesh(postGeo, voxelMaterials.stoneDark);
-    post.position.set(lx, 1.4, lz);
+    post.position.set(lx, 1.45, lz);
     post.castShadow = true;
     terrainGroup.add(post);
 
     const lamp = new THREE.Mesh(lampGeo, voxelMaterials.lanternGlow);
-    lamp.position.set(lx, 2.95, lz);
+    lamp.position.set(lx, 3.0, lz);
     terrainGroup.add(lamp);
+
+    const cap = new THREE.Mesh(roofCapGeo, voxelMaterials.goldAccent);
+    cap.position.set(lx, 3.45, lz);
+    cap.rotation.y = Math.PI / 4;
+    terrainGroup.add(cap);
   });
 
-  // Crystal Water Plane in the Valley
-  const waterGeo = new THREE.PlaneGeometry(140, 140, 24, 24);
+  // 4 Iconic Genshin-Style Elemental Teleport Waypoints at Cardinal Plaza Corners
+  const waypointCoords = [
+    [-11, 14],
+    [11, 14],
+    [-11, -14],
+    [11, -14],
+  ];
+  waypointCoords.forEach(([wx, wz], idx) => {
+    const wpGroup = new THREE.Group();
+    wpGroup.name = `TeleportWaypoint_${idx}`;
+    wpGroup.position.set(wx, 0, wz);
+
+    const dais = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.1, 1.35, 0.45, 6),
+      voxelMaterials.stone
+    );
+    dais.position.y = 0.22;
+    dais.castShadow = true;
+    dais.receiveShadow = true;
+    wpGroup.add(dais);
+
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.48, 2.2, 6),
+      voxelMaterials.stoneDark
+    );
+    pillar.position.y = 1.3;
+    pillar.castShadow = true;
+    wpGroup.add(pillar);
+
+    const crystal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.55, 0),
+      voxelMaterials.diamondOre
+    );
+    crystal.name = `WaypointCrystal_${idx}`;
+    crystal.position.y = 3.15;
+    crystal.scale.set(0.75, 1.45, 0.75);
+    wpGroup.add(crystal);
+
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(0.72, 0.05, 8, 24),
+      voxelMaterials.goldAccent
+    );
+    halo.position.y = 3.15;
+    halo.rotation.x = Math.PI / 3;
+    wpGroup.add(halo);
+
+    terrainGroup.add(wpGroup);
+  });
+
+  // Scenic Sakura Blossom & Golden Liyue Ginkgo Trees Framing the Citadel Valley
+  const scenicTreeSpots: Array<[number, number, 'sakura' | 'ginkgo']> = [
+    [-16, 8, 'sakura'],
+    [16, 8, 'sakura'],
+    [-18, -8, 'ginkgo'],
+    [18, -8, 'ginkgo'],
+    [-8, 25, 'sakura'],
+    [8, 25, 'ginkgo'],
+    [-24, 18, 'ginkgo'],
+    [24, 18, 'sakura'],
+  ];
+  scenicTreeSpots.forEach(([tx, tz, kind]) => {
+    const tree = new THREE.Group();
+    tree.position.set(tx, 0, tz);
+    tree.add(createSoftContactShadow(2.2, 0.42));
+
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.48, 3.2, 7),
+      voxelMaterials.woodTrunk
+    );
+    trunk.position.y = 1.6;
+    trunk.castShadow = true;
+    tree.add(trunk);
+
+    const leafMat =
+      kind === 'sakura' ? voxelMaterials.sakuraBlossom : voxelMaterials.ginkgoGold;
+    const crownOffsets = [
+      [0, 3.8, 0, 1.85],
+      [-0.95, 3.2, 0.6, 1.35],
+      [0.95, 3.3, -0.6, 1.35],
+      [0, 4.6, 0.2, 1.25],
+    ];
+    crownOffsets.forEach(([cx, cy, cz, r]) => {
+      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), leafMat);
+      puff.position.set(cx, cy, cz);
+      puff.castShadow = true;
+      tree.add(puff);
+    });
+    terrainGroup.add(tree);
+  });
+
+  // Distant Alpine Mountain Perimeter Ring (GTA V / Genshin Horizon Vista)
+  const mountainCount = 24;
+  const snowCapMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf8fafc,
+    roughness: 0.35,
+    metalness: 0.1,
+    clearcoat: 0.4,
+  });
+  for (let m = 0; m < mountainCount; m++) {
+    const angle = (m / mountainCount) * Math.PI * 2;
+    const dist = 54 + (m % 3) * 6;
+    const mx = Math.cos(angle) * dist;
+    const mz = Math.sin(angle) * dist;
+    const mHeight = 18 + (m % 4) * 6;
+    const mRadius = 9 + (m % 3) * 2.5;
+
+    const peakGroup = new THREE.Group();
+    peakGroup.position.set(mx, -2, mz);
+
+    const rockBase = new THREE.Mesh(
+      new THREE.ConeGeometry(mRadius, mHeight, 7),
+      voxelMaterials.stoneDark
+    );
+    rockBase.position.y = mHeight / 2;
+    peakGroup.add(rockBase);
+
+    const snowCap = new THREE.Mesh(
+      new THREE.ConeGeometry(mRadius * 0.46, mHeight * 0.44, 7),
+      snowCapMat
+    );
+    snowCap.position.y = mHeight * 0.79;
+    peakGroup.add(snowCap);
+
+    terrainGroup.add(peakGroup);
+  }
+
+  // 3 Floating Celestia Jade Sky Islands in the Upper Horizon
+  const skyIslandCoords = [
+    [-28, 25, -28],
+    [30, 28, -24],
+    [0, 31, -38],
+  ];
+  skyIslandCoords.forEach(([ix, iy, iz], idx) => {
+    const island = new THREE.Group();
+    island.name = `CelestiaSkyIsland_${idx}`;
+    island.position.set(ix, iy, iz);
+
+    const underRock = new THREE.Mesh(
+      new THREE.ConeGeometry(4.2, 5.5, 7),
+      voxelMaterials.stoneDark
+    );
+    underRock.rotation.x = Math.PI;
+    underRock.position.y = -2.75;
+    island.add(underRock);
+
+    const terrace = new THREE.Mesh(
+      new THREE.CylinderGeometry(4.5, 4.1, 0.9, 7),
+      voxelMaterials.celestialJade
+    );
+    terrace.position.y = 0.45;
+    island.add(terrace);
+
+    const pagoda = new THREE.Mesh(
+      new THREE.ConeGeometry(2.4, 2.6, 6),
+      voxelMaterials.goldAccent
+    );
+    pagoda.position.y = 2.2;
+    island.add(pagoda);
+
+    const cascade = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.65, 8.5, 8),
+      voxelMaterials.diamondOre
+    );
+    cascade.position.set(1.8, -3.8, 1.8);
+    island.add(cascade);
+
+    terrainGroup.add(island);
+  });
+
+  // High-Subdivision Gerstner-Wave Crystal Water Plane in the Valley
+  const waterGeo = new THREE.PlaneGeometry(160, 160, 48, 48);
   const waterMesh = new THREE.Mesh(waterGeo, voxelMaterials.water);
   waterMesh.rotation.x = -Math.PI / 2;
   waterMesh.position.y = -2.05;

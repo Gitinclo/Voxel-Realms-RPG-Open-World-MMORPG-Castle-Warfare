@@ -18,6 +18,8 @@ import {
   ScrollText,
   ArrowUpCircle,
   Search,
+  Lock,
+  Crown,
 } from 'lucide-react';
 import {
   CULTIVATION_REALMS,
@@ -58,6 +60,11 @@ import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
 import { applyVeteranScrollToCultivation, calculateVeteranScrollBonuses } from '../game/dailyLogin';
+import {
+  INITIAL_VIP_SUBSCRIPTION_STATE,
+  PersistedVipSubscriptionState,
+  checkVipFeatureAccess,
+} from '../game/vipSubscription';
 import confetti from 'canvas-confetti';
 
 interface CultivationModalProps {
@@ -66,6 +73,9 @@ interface CultivationModalProps {
   playerPower: bigint;
   weather: WeatherType;
   clanBuffActive: boolean;
+  vipState?: PersistedVipSubscriptionState;
+  vipEffectiveDateKey?: string;
+  onOpenVipSubscription?: () => void;
   onMeditate: (path: CultivationPath, energyGained: bigint) => void;
   onBreakthrough: (path: CultivationPath, nextRealmIndex: number, nextLayer: number) => void;
   onCraftPill: (pill: CultivationPill, activePath: CultivationPath) => void;
@@ -159,6 +169,9 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   playerPower,
   weather,
   clanBuffActive,
+  vipState = INITIAL_VIP_SUBSCRIPTION_STATE,
+  vipEffectiveDateKey = '2026-01-01',
+  onOpenVipSubscription,
   onMeditate,
   onBreakthrough,
   onCraftPill,
@@ -185,6 +198,14 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   const [suppressionTargetRealm, setSuppressionTargetRealm] = useState<number>(0); // Default Qi Refinement
   const [lineageNotice, setLineageNotice] = useState<string | null>(null);
 
+  // Evaluate VIP access control for premium Cultivation privileges
+  const auraCrownAccess = checkVipFeatureAccess(vipState, vipEffectiveDateKey, 'custom_aura_crown');
+  const tribulationWardAccess = checkVipFeatureAccess(
+    vipState,
+    vipEffectiveDateKey,
+    'tribulation_ward_shield'
+  );
+
   const karmaState = cultivation.karma || INITIAL_KARMA_STATE;
   const disciplesList = cultivation.disciples || INITIAL_DISCIPLES;
   const masterTaxRatePct = cultivation.masterTaxRatePct ?? 20;
@@ -193,7 +214,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   const spiritStones = cultivation.spiritStones ?? 48_000n;
   const masteredGreatDaos = cultivation.masteredGreatDaos ?? 4;
   const activeAuraRealmIndex =
-    typeof cultivation.auraOverrideRealmIndex === 'number'
+    auraCrownAccess.allowed && typeof cultivation.auraOverrideRealmIndex === 'number'
       ? cultivation.auraOverrideRealmIndex
       : cultivation.paths.qi.realmIndex;
 
@@ -2079,12 +2100,31 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
               <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-amber-950/50 border border-purple-500/40 space-y-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-purple-200 flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold font-cinzel text-purple-200 flex items-center gap-2 flex-wrap">
                       <span>
                         ✨ 6. Visualizing Power: The "Aura" (无等级头衔 · 境界异象显化 & HDR10+)
                       </span>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 font-mono font-bold">
                         {activeAuraSpec.hdrPeakLuminanceNits} Nits HDR10+
+                      </span>
+                      <span
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-mono font-bold border flex items-center gap-1 ${
+                          auraCrownAccess.allowed
+                            ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
+                            : 'bg-slate-900 border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        {auraCrownAccess.allowed ? (
+                          <>
+                            <Crown className="w-3 h-3 text-amber-400" /> VIP 2+ Sovereign Aura
+                            Unlocked
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="w-3 h-3 text-amber-400" /> Custom Aura Override Locked
+                            [VIP 2+]
+                          </>
+                        )}
                       </span>
                     </h3>
                     <p className="text-xs text-slate-300 mt-0.5">
@@ -2092,6 +2132,17 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       Instead, power is recognized by unmistakable 3D & HDR10+ visual cues!
                     </p>
                   </div>
+                  {!auraCrownAccess.allowed && onOpenVipSubscription && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenVipSubscription();
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Crown className="w-3.5 h-3.5" /> Unlock VIP 2+ Aura Crown
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -2113,6 +2164,10 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         key={item.idx}
                         onClick={() => {
                           sound.playSwing();
+                          if (!auraCrownAccess.allowed) {
+                            setLineageNotice(`🔒 ${auraCrownAccess.reason}`);
+                            return;
+                          }
                           if (onUpdateCultivation) {
                             onUpdateCultivation((prev) => ({
                               ...prev,
@@ -2126,10 +2181,17 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-purple-950/70 border-amber-400 text-white shadow-md shadow-amber-500/15'
-                            : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:bg-slate-800'
+                            : auraCrownAccess.allowed
+                              ? 'bg-slate-950/70 border-slate-800 text-slate-300 hover:bg-slate-800'
+                              : 'bg-slate-950/50 border-slate-800/70 text-slate-400 hover:border-amber-500/40'
                         }`}
                       >
-                        <div className="text-xl">{item.icon}</div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl">{item.icon}</span>
+                          {!auraCrownAccess.allowed && (
+                            <Lock className="w-3.5 h-3.5 text-amber-400/80" />
+                          )}
+                        </div>
                         <div className="text-xs font-bold font-cinzel mt-1">{item.title}</div>
                         <div className="text-[10px] font-mono text-amber-300 mt-0.5">
                           {item.cue}
@@ -2159,15 +2221,21 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                       htmlFor="great-dao-halos-slider"
                       className="block text-[11px] font-mono text-purple-300 mb-1"
                     >
-                      Great Dao Rules Mastered: {masteredGreatDaos} Divine Halos
+                      Great Dao Rules Mastered: {masteredGreatDaos} Divine Halos{' '}
+                      {!auraCrownAccess.allowed ? '[VIP 2+ Locked]' : ''}
                     </label>
                     <input
                       id="great-dao-halos-slider"
                       type="range"
                       min={1}
                       max={12}
+                      disabled={!auraCrownAccess.allowed}
                       value={masteredGreatDaos}
                       onChange={(e) => {
+                        if (!auraCrownAccess.allowed) {
+                          setLineageNotice(`🔒 ${auraCrownAccess.reason}`);
+                          return;
+                        }
                         const count = Number(e.target.value);
                         if (onUpdateCultivation) {
                           onUpdateCultivation((prev) => ({
@@ -2176,7 +2244,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           }));
                         }
                       }}
-                      className="w-full accent-purple-400"
+                      className="w-full accent-purple-400 disabled:opacity-40"
                     />
                   </div>
                 </div>
@@ -2187,7 +2255,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
 
         {/* HEAVENLY TRIBULATION MODAL POPUP */}
         {isTribulationModalOpen && (
-          <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
+          <div className="absolute inset-0 z-50 bg-slate-950/95 p-6 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
             <div className="max-w-md space-y-4">
               <div className="p-4 rounded-full bg-rose-500/10 border-2 border-rose-500 inline-flex items-center justify-center text-5xl animate-bounce">
                 ⚡
@@ -2227,10 +2295,43 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     sound.playUpgradeFanfare();
                   }
                 }}
-                className="w-full py-3 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-sm shadow-lg shadow-rose-600/30 transition-all active:scale-95"
+                className="w-full py-3 px-6 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold font-mono text-sm shadow-lg shadow-rose-600/30 transition-all active:scale-95 cursor-pointer"
               >
                 Disperse Heavenly Strike ({tribulationStrikesDone + 1} /{' '}
                 {currentRealm.tribulationRounds}) 🛡️
+              </button>
+
+              {/* VIP 2+ Heavenly Tribulation Ward Shield */}
+              <button
+                onClick={() => {
+                  sound.playSwing();
+                  if (!tribulationWardAccess.allowed) {
+                    setBreakthroughNotice(`🔒 ${tribulationWardAccess.reason}`);
+                    return;
+                  }
+                  setIsTribulationModalOpen(false);
+                  const nextRealm = Math.min(pathRealms.length - 1, pathProgress.realmIndex + 1);
+                  onSurviveTribulation(selectedPath, nextRealm, 1);
+                  confetti({ particleCount: 100, spread: 100 });
+                  sound.playUpgradeFanfare();
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold font-mono text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  tribulationWardAccess.allowed
+                    ? 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-400 text-amber-200'
+                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-amber-500/40'
+                }`}
+              >
+                {tribulationWardAccess.allowed ? (
+                  <>
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    Invoke VIP 2+ Heavenly Tribulation Ward (Instant Ascension)
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-amber-400" />
+                    Heavenly Tribulation Ward Locked [Requires Active VIP 2+]
+                  </>
+                )}
               </button>
             </div>
           </div>

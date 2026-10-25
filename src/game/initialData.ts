@@ -673,12 +673,36 @@ export const INITIAL_CLAN_WAR: ClanWarState = {
   timeRemainingSec: 2400, // 40 minutes remaining
   outposts: [
     {
+      id: 'outpost_solara_watch',
+      name: 'Solara Watchtower',
+      controlledBy: 'player_clan',
+      defenseRating: 12_000_000n,
+      pointsPerMinute: 15,
+      garrisonTroops: 95_000n,
+    },
+    {
       id: 'outpost_sunken_obelisk',
       name: 'Sunken Obelisk',
       controlledBy: 'player_clan',
       defenseRating: 15_000_000n,
       pointsPerMinute: 20,
       garrisonTroops: 120_000n,
+    },
+    {
+      id: 'outpost_ashfall_ridge',
+      name: 'Ashfall Ridge Bastion',
+      controlledBy: 'enemy_clan',
+      defenseRating: 22_000_000n,
+      pointsPerMinute: 30,
+      garrisonTroops: 210_000n,
+    },
+    {
+      id: 'outpost_azure_leyline',
+      name: 'Azure Leyline Sanctum',
+      controlledBy: 'player_clan',
+      defenseRating: 18_000_000n,
+      pointsPerMinute: 25,
+      garrisonTroops: 160_000n,
     },
     {
       id: 'outpost_dragon_spire',
@@ -695,6 +719,30 @@ export const INITIAL_CLAN_WAR: ClanWarState = {
       defenseRating: 30_000_000n,
       pointsPerMinute: 50,
       garrisonTroops: 400_000n,
+    },
+    {
+      id: 'outpost_verdant_granary',
+      name: 'Verdant Supply Depot',
+      controlledBy: 'neutral',
+      defenseRating: 14_000_000n,
+      pointsPerMinute: 20,
+      garrisonTroops: 110_000n,
+    },
+    {
+      id: 'outpost_starfall_bridge',
+      name: 'Starfall Causeway',
+      controlledBy: 'enemy_clan',
+      defenseRating: 26_000_000n,
+      pointsPerMinute: 35,
+      garrisonTroops: 280_000n,
+    },
+    {
+      id: 'outpost_chronos_dreadkeep',
+      name: 'Chronos Dread Keep',
+      controlledBy: 'enemy_clan',
+      defenseRating: 38_000_000n,
+      pointsPerMinute: 60,
+      garrisonTroops: 520_000n,
     },
   ],
 };

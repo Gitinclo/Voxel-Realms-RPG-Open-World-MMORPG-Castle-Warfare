@@ -22,12 +22,16 @@ import {
   getCastleEra,
   MAX_CASTLE_LEVEL,
 } from '../game/math';
+import { applyVipDiscountToCosts } from '../game/vipSubscription';
 import { GameResources } from '../types/game';
 import { sound } from '../game/audio';
 
 interface CastleModalProps {
   castleLevel: number;
   resources: GameResources;
+  vipDiscountPct?: number;
+  vipRallyBonusPct?: number;
+  vipBadgeLabel?: string;
   onUpgradeCastle: () => void;
   onClose: () => void;
 }
@@ -35,14 +39,20 @@ interface CastleModalProps {
 export const CastleModal: React.FC<CastleModalProps> = ({
   castleLevel,
   resources,
+  vipDiscountPct = 0,
+  vipRallyBonusPct = 0,
+  vipBadgeLabel = 'VIP 0',
   onUpgradeCastle,
   onClose,
 }) => {
   const currentCapacity = calculateCastleTroopCapacity(castleLevel);
   const nextCapacity = calculateCastleTroopCapacity(castleLevel + 1);
-  const currentRally = calculateRallyCapacity(castleLevel);
-  const nextRally = calculateRallyCapacity(castleLevel + 1);
-  const upgradeCost = getCastleUpgradeCost(castleLevel);
+  const baseCurrentRally = calculateRallyCapacity(castleLevel);
+  const baseNextRally = calculateRallyCapacity(castleLevel + 1);
+  const currentRally = (baseCurrentRally * BigInt(100 + vipRallyBonusPct)) / 100n;
+  const nextRally = (baseNextRally * BigInt(100 + vipRallyBonusPct)) / 100n;
+  const baseUpgradeCost = getCastleUpgradeCost(castleLevel);
+  const upgradeCost = applyVipDiscountToCosts(baseUpgradeCost, vipDiscountPct);
   const currentEra = getCastleEra(castleLevel);
 
   const canAfford =
@@ -63,7 +73,7 @@ export const CastleModal: React.FC<CastleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div className="relative w-full max-w-3xl bg-slate-900 border-2 border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="relative px-6 py-5 bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border-b border-amber-500/30 flex items-center justify-between">
@@ -181,7 +191,11 @@ export const CastleModal: React.FC<CastleModalProps> = ({
                 <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                   <Swords className="w-4 h-4 text-rose-400" /> Max Rally Capacity
                 </span>
-                <span className="text-xs text-rose-400 font-mono">Max 1 Trillion</span>
+                <span className="text-xs text-rose-400 font-mono">
+                  {vipRallyBonusPct > 0
+                    ? `${vipBadgeLabel} +${vipRallyBonusPct}% Active`
+                    : 'Max 1 Trillion'}
+                </span>
               </div>
               <div className="flex items-baseline justify-between">
                 <div>
@@ -211,10 +225,21 @@ export const CastleModal: React.FC<CastleModalProps> = ({
           {/* Upgrade Cost Table */}
           {!isMaxLevel ? (
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-amber-200 uppercase tracking-wider flex items-center gap-2">
-                <Shield className="w-4 h-4 text-amber-400" />
-                Required Materials for Castle Level {castleLevel + 1}
-              </h3>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h3 className="text-sm font-bold text-amber-200 uppercase tracking-wider flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-amber-400" />
+                  Required Materials for Castle Level {castleLevel + 1}
+                </h3>
+                {vipDiscountPct > 0 ? (
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300">
+                    👑 {vipBadgeLabel} Discount: -{vipDiscountPct}% Cost Applied
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-mono text-slate-400">
+                    🔒 VIP 1+ unlocks -10% to -35% Castle Upgrade Cost Discount
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div
                   className={`p-3 rounded-lg border ${

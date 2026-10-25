@@ -50,6 +50,7 @@ import {
 import { INITIAL_CLAN_BUFFS } from '../game/initialData';
 import { sound } from '../game/audio';
 import { ClanEmblemView } from './ClanEmblemView';
+import { ClanTerritoryMap } from './ClanTerritoryMap';
 
 interface ClanModalProps {
   clan: Clan;
@@ -303,7 +304,7 @@ export const ClanModal: React.FC<ClanModalProps> = ({
   const playerClanScorePct = war ? Math.round((war.playerClanScore / totalWarScore) * 100) : 50;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 animate-in fade-in duration-200">
       <div className="relative w-full max-w-5xl bg-slate-900 border-2 border-blue-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
         {/* Header */}
         <div className="relative px-4 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-indigo-950/90 border-b border-blue-500/30 flex items-center justify-between">
@@ -376,11 +377,13 @@ export const ClanModal: React.FC<ClanModalProps> = ({
             return (
               <button
                 key={tab.id}
+                type="button"
+                data-testid={`clan-tab-${tab.id}`}
                 onClick={() => {
                   setActiveTab(tab.id as TabType);
                   sound.playSwing();
                 }}
-                className={`px-3 sm:px-4 py-2.5 text-xs font-bold rounded-t-xl flex items-center gap-1.5 border-t-2 shrink-0 transition-all ${
+                className={`px-3 sm:px-4 py-2.5 text-xs font-bold rounded-t-xl flex items-center gap-1.5 border-t-2 shrink-0 transition-all cursor-pointer ${
                   active
                     ? 'bg-slate-900 border-blue-400 text-blue-200 shadow-inner'
                     : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
@@ -508,10 +511,12 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                     {war?.opponentClan.name || 'Chronos Imperium'}
                   </div>
                   <button
+                    type="button"
+                    data-testid="open-clan-war-tab-btn"
                     onClick={() => setActiveTab('war')}
-                    className="text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 pt-1"
+                    className="text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 pt-1 cursor-pointer"
                   >
-                    Outpost Assault &rarr;
+                    Territory Map &amp; Assault &rarr;
                   </button>
                 </div>
 
@@ -1060,83 +1065,19 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                     />
                   </div>
 
-                  {/* War Outposts Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                    {war.outposts.map((outpost) => {
-                      const isPlayer = outpost.controlledBy === 'player_clan';
-                      const isEnemy = outpost.controlledBy === 'enemy_clan';
-
-                      return (
-                        <div
-                          key={outpost.id}
-                          className={`p-3.5 rounded-xl border flex flex-col justify-between gap-3 ${
-                            isPlayer
-                              ? 'bg-blue-950/40 border-blue-500/50'
-                              : isEnemy
-                                ? 'bg-rose-950/40 border-rose-500/50'
-                                : 'bg-slate-800/60 border-slate-700'
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                                <Swords className="w-3.5 h-3.5" /> {outpost.name}
-                              </span>
-                              <span
-                                className={`text-[10px] px-2 py-0.2 rounded font-mono font-bold ${
-                                  isPlayer
-                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40'
-                                    : isEnemy
-                                      ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                                      : 'bg-slate-700 text-slate-300'
-                                }`}
-                              >
-                                {isPlayer
-                                  ? 'Held by Clan'
-                                  : isEnemy
-                                    ? 'Enemy Garrison'
-                                    : 'Contested Neutral'}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-mono mt-2 space-y-0.5">
-                              <div>
-                                Defense:{' '}
-                                <span className="text-amber-300">
-                                  {formatBigInt(outpost.defenseRating)}
-                                </span>
-                              </div>
-                              <div>
-                                Garrison:{' '}
-                                <span className="text-slate-200">
-                                  {formatBigInt(outpost.garrisonTroops)} Troops
-                                </span>
-                              </div>
-                              <div>
-                                Output:{' '}
-                                <span className="text-emerald-400">
-                                  +{outpost.pointsPerMinute} pts/min
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => {
-                              onAssaultOutpost(outpost.id);
-                              sound.playUpgradeFanfare();
-                            }}
-                            className={`w-full py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
-                              isPlayer
-                                ? 'bg-blue-600/40 hover:bg-blue-600 text-blue-200 border border-blue-400/40'
-                                : 'bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/30 active:scale-95'
-                            }`}
-                          >
-                            {isPlayer ? 'Reinforce Outpost' : 'Launch Siege Assault'}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {/* Interactive Clan Territory Map Visualization (3x3 Grid of Controlled Outposts vs Enemy-Occupied Zones) */}
+                  <ClanTerritoryMap
+                    playerClanName={clan.name}
+                    playerClanTag={clan.tag}
+                    playerClanEmblem={clan.emblem}
+                    enemyClanName={war.opponentClan.name}
+                    enemyClanTag={war.opponentClan.tag}
+                    enemyClanEmblem={war.opponentClan.emblem}
+                    outposts={war.outposts}
+                    playerPower={playerPower}
+                    onAssaultOutpost={onAssaultOutpost}
+                    onSendTacticalPing={(msg) => onSendChatMessage(msg, true, 'TERRITORY MAP')}
+                  />
                 </div>
               )}
 

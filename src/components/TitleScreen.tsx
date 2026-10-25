@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Play, Shield, Sparkles, Gift } from 'lucide-react';
+import { Play, Shield, Sparkles, Gift, Crown } from 'lucide-react';
 import { sound } from '../game/audio';
 
 interface TitleScreenProps {
@@ -12,6 +12,9 @@ interface TitleScreenProps {
   onOpenCharacterCreation: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
+  onOpenVipSubscription?: () => void;
+  vipBadgeLabel?: string;
+  canClaimVipStipend?: boolean;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -19,6 +22,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenCharacterCreation,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
+  onOpenVipSubscription,
+  vipBadgeLabel = 'VIP 0',
+  canClaimVipStipend = false,
 }) => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -37,10 +43,27 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          HDR10+ ADVANCED 3D · C++ 20+ SIMD ENGINE
+          NEXT-GEN 3D · GTA V PHYSICAL SKY + GENSHIN CEL/RIM SHADERS
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {onOpenVipSubscription && (
+            <button
+              type="button"
+              data-testid="title-vip-pass-btn"
+              onClick={onOpenVipSubscription}
+              className="relative px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-amber-400/60 text-xs font-bold text-amber-300 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+            >
+              <Crown className="w-4 h-4 text-amber-400" />
+              <span>VIP Member Pass ({vipBadgeLabel})</span>
+              {canClaimVipStipend && (
+                <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mono font-black text-[10px]">
+                  STIPEND
+                </span>
+              )}
+            </button>
+          )}
+
           {onOpenDailyLogin && (
             <button
               type="button"

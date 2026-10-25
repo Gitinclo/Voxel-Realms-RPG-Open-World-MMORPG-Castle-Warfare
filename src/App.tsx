@@ -69,6 +69,7 @@ import { WeatherModal } from './components/WeatherModal';
 import { CultivationModal } from './components/CultivationModal';
 import { WorldAIDirectorModal } from './components/WorldAIDirectorModal';
 import { DailyLoginModal } from './components/DailyLoginModal';
+import { VipSubscriptionModal } from './components/VipSubscriptionModal';
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -80,6 +81,19 @@ import {
   calculateVeteranScrollBonuses,
   applyVeteranScrollToCultivation,
 } from './game/dailyLogin';
+import {
+  VIP_SUBSCRIPTION_STORAGE_KEY,
+  INITIAL_VIP_SUBSCRIPTION_STATE,
+  PersistedVipSubscriptionState,
+  VipTierId,
+  BillingCycle,
+  VIP_TIER_CONFIGS,
+  evaluateVipSubscription,
+  activateVipSubscription,
+  claimVipDailyStipend,
+  applyVipDiscountToCosts,
+  checkVipFeatureAccess,
+} from './game/vipSubscription';
 import { tickWorldAI, generateRadiantQuestForNPC } from './game/worldAI';
 import { PlayerCultivationState, CultivationPill, CultivationPath } from './types/cultivation';
 import {
@@ -117,7 +131,8 @@ type ActiveModal =
   | 'weather'
   | 'cultivation'
   | 'world_ai'
-  | 'daily_login';
+  | 'daily_login'
+  | 'vip_subscription';
 
 export default function App() {
   // Query param check for ?autostart=1
@@ -252,6 +267,22 @@ export default function App() {
     return INITIAL_DAILY_LOGIN_STATE;
   });
 
+  // VIP Member Subscription State (persisted in localStorage)
+  const [vipState, setVipState] = useState<PersistedVipSubscriptionState>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(VIP_SUBSCRIPTION_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return { ...INITIAL_VIP_SUBSCRIPTION_STATE, ...parsed };
+        }
+      } catch {
+        // Fallback to initial state
+      }
+    }
+    return INITIAL_VIP_SUBSCRIPTION_STATE;
+  });
+
   // Selected entities for modals
   const [selectedMonster, setSelectedMonster] = useState<MonsterTarget>(INITIAL_MONSTERS[0]);
   const [activeModal, setActiveModal] = useState<ActiveModal>('none');
@@ -272,7 +303,11 @@ export default function App() {
   // Touch joystick vector (-1 to 1)
   const [touchVector, setTouchVector] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance & Veteran Scroll Mastery
+  // Evaluate VIP Member Subscription status & multipliers
+  const vipEffectiveDateKey = getCalendarDateKey(new Date(), vipState.simulatedVipDayOffset);
+  const vipEvaluation = evaluateVipSubscription(vipState, vipEffectiveDateKey);
+
+  // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance, Veteran Scroll Mastery & VIP Covenant
   const maxTroopCapacity = calculateCastleTroopCapacity(castleLevel);
   const fourPathSynergy = calculateFourPathSynergy(cultivation.paths);
   const veteranScrollBonuses = calculateVeteranScrollBonuses(
@@ -280,7 +315,8 @@ export default function App() {
   );
   const cultivationMultiplier =
     fourPathSynergy.totalCombinedMultiplier *
-    (1 + veteranScrollBonuses.combatResonanceBonusPct / 100);
+    (1 + veteranScrollBonuses.combatResonanceBonusPct / 100) *
+    vipEvaluation.totalEffectiveCombatMultiplier;
   const baseKingdomPower = calculateMultiplicativePowerRating({
     troops,
     castleLevel,
@@ -315,6 +351,17 @@ export default function App() {
       }
     }
   }, [dailyLoginState]);
+
+  // Persist vipState to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(VIP_SUBSCRIPTION_STORAGE_KEY, JSON.stringify(vipState));
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+  }, [vipState]);
 
   // Automatically trigger Daily Login Reward modal on first load of the day
   useEffect(() => {
@@ -366,7 +413,10 @@ export default function App() {
     return () => clearInterval(weatherTimer);
   }, [isTimeFrozen]);
 
-  // Ambient Four-Path Cultivation Loop (Qi, Body, Soul, Mind — Weather Resonance, Mind Speed & Equipped Manuals)
+  // Ambient Four-Path Cultivation Loop (Qi, Body, Soul, Mind — Weather Resonance, Mind Speed, Equipped Manuals & VIP Bonus)
+  const vipCultivationBonusPct = vipEvaluation.tierConfig.perks.cultivationSpeedBonusPct;
+  const vipGatherBonusPct = vipEvaluation.tierConfig.perks.gatherSpeedBonusPct;
+
   useEffect(() => {
     const qiInterval = setInterval(() => {
       const clanBuffActive = clan.activeBuffs.length > 0;
@@ -378,6 +428,7 @@ export default function App() {
           prev.ownedManuals
         );
         const scrollBonuses = calculateVeteranScrollBonuses(prev.veteranScrollsComprehended ?? 0);
+        const totalExtraBoost = scrollBonuses.passiveSpeedBonusPct + vipCultivationBonusPct;
         const qiRate = calculatePassiveQiRate(
           prev.paths.qi.realmIndex,
           weather,
@@ -385,7 +436,7 @@ export default function App() {
           'qi',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.qi.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
+          manualSummary.byPath.qi.passiveRateBoostPct + totalExtraBoost
         );
         const bodyRate = calculatePassiveQiRate(
           prev.paths.body.realmIndex,
@@ -394,7 +445,7 @@ export default function App() {
           'body',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.body.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
+          manualSummary.byPath.body.passiveRateBoostPct + totalExtraBoost
         );
         const soulRate = calculatePassiveQiRate(
           prev.paths.soul.realmIndex,
@@ -403,7 +454,7 @@ export default function App() {
           'soul',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.soul.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
+          manualSummary.byPath.soul.passiveRateBoostPct + totalExtraBoost
         );
         const mindRate = calculatePassiveQiRate(
           prev.paths.mind.realmIndex,
@@ -412,7 +463,7 @@ export default function App() {
           'mind',
           mindRealm,
           mindLayer,
-          manualSummary.byPath.mind.passiveRateBoostPct + scrollBonuses.passiveSpeedBonusPct
+          manualSummary.byPath.mind.passiveRateBoostPct + totalExtraBoost
         );
 
         const nextQiEnergy = prev.paths.qi.currentEnergy + qiRate;
@@ -429,9 +480,9 @@ export default function App() {
       });
     }, 1000);
     return () => clearInterval(qiInterval);
-  }, [weather, clan.activeBuffs]);
+  }, [weather, clan.activeBuffs, vipCultivationBonusPct]);
 
-  // Continuous Gathering Loop with Weather Multiplier
+  // Continuous Gathering Loop with Weather & VIP Multiplier
   useEffect(() => {
     const gatherInterval = setInterval(() => {
       setResourceNodes((prev) => {
@@ -439,11 +490,12 @@ export default function App() {
         const updated = prev.map((node) => {
           if (node.assignedTroops > 0n && node.remainingCapacity > 0n) {
             hasMined = true;
-            const effectiveRate = calculateWeatherGatherRate(
+            const weatherRate = calculateWeatherGatherRate(
               node.gatherRatePerSec,
               node.type,
               weather
             );
+            const effectiveRate = (weatherRate * BigInt(100 + vipGatherBonusPct)) / 100n;
             const mined = effectiveRate * 2n;
             const actualMined = mined > node.remainingCapacity ? node.remainingCapacity : mined;
             setResources((res) => ({
@@ -461,7 +513,7 @@ export default function App() {
       });
     }, 2000);
     return () => clearInterval(gatherInterval);
-  }, [weather]);
+  }, [weather, vipGatherBonusPct]);
 
   // Backtick (~) hotkey to open GM Console as in admin_console.cpp
   useEffect(() => {
@@ -483,10 +535,14 @@ export default function App() {
     }
   }, [toastMessage]);
 
-  // Castle Upgrade
+  // Castle Upgrade (with active VIP Castle Upgrade Discount applied)
   const handleUpgradeCastle = () => {
     if (castleLevel >= MAX_CASTLE_LEVEL) return;
-    const cost = getCastleUpgradeCost(castleLevel);
+    const baseCost = getCastleUpgradeCost(castleLevel);
+    const cost = applyVipDiscountToCosts(
+      baseCost,
+      vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct
+    );
 
     setResources((prev) => ({
       wood: prev.wood - cost.wood,
@@ -1139,8 +1195,25 @@ export default function App() {
     });
   };
 
-  // Dispatch Gather
+  // Dispatch Gather (Enforces VIP Extra March Queue Access Control)
   const handleDispatchGather = (nodeId: string, troopsAmount: bigint) => {
+    const targetNode = resourceNodes.find((n) => n.id === nodeId);
+    const activeGatherMarches = resourceNodes.filter((n) => n.assignedTroops > 0n).length;
+    const isAlreadyGatheringThisNode = Boolean(targetNode && targetNode.assignedTroops > 0n);
+
+    if (!isAlreadyGatheringThisNode) {
+      const marchAccess = checkVipFeatureAccess(
+        vipState,
+        vipEffectiveDateKey,
+        'extra_gather_march',
+        { activeGatherMarches }
+      );
+      if (!marchAccess.allowed) {
+        setToastMessage(`🔒 ${marchAccess.reason}`);
+        return;
+      }
+    }
+
     setResourceNodes((prev) =>
       prev.map((n) => (n.id === nodeId ? { ...n, assignedTroops: troopsAmount } : n))
     );
@@ -1390,6 +1463,118 @@ export default function App() {
     setToastMessage(result.message);
   };
 
+  // VIP Member Subscription Handlers
+  const handleActivateVipTier = (
+    tierId: VipTierId,
+    billingCycle: BillingCycle,
+    paymentMethod: 'store_pass' | 'diamonds'
+  ) => {
+    const targetConfig = VIP_TIER_CONFIGS[tierId];
+    const diamondCost =
+      billingCycle === 'annual' ? targetConfig.annualDiamondCost : targetConfig.monthlyDiamondCost;
+
+    if (paymentMethod === 'diamonds' && resources.diamond < diamondCost) {
+      setToastMessage('⚠️ Insufficient Diamonds in treasury for this VIP tier.');
+      return;
+    }
+
+    const activation = activateVipSubscription(vipState, tierId, billingCycle, vipEffectiveDateKey);
+    setVipState(activation.nextState);
+
+    setResources((prev) => ({
+      ...prev,
+      diamond:
+        prev.diamond -
+        (paymentMethod === 'diamonds' ? diamondCost : 0n) +
+        activation.instantBonusDiamonds,
+    }));
+
+    confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
+    setToastMessage(
+      `👑 Activated ${targetConfig.name} (${billingCycle === 'annual' ? 'Annual' : 'Monthly'})! Gained +${formatBigInt(activation.instantBonusDiamonds)} 💎 & +${activation.pointsAdded} VIP Loyalty Pts!`
+    );
+  };
+
+  const handleClaimVipStipend = () => {
+    const result = claimVipDailyStipend(vipState, vipEffectiveDateKey);
+    if (!result.claimed) return;
+
+    setVipState(result.nextState);
+    const stipend = result.stipend;
+
+    setResources((prev) => ({
+      wood: prev.wood + stipend.resources.wood,
+      steel: prev.steel + stipend.resources.steel,
+      copper: prev.copper + stipend.resources.copper,
+      grain: prev.grain + stipend.resources.grain,
+      oil: prev.oil + stipend.resources.oil,
+      diamond: prev.diamond + stipend.diamonds,
+    }));
+
+    setCultivation((prev) => ({
+      ...prev,
+      spiritStones: (prev.spiritStones ?? 0n) + stipend.spiritStones,
+      veteranScrolls: (prev.veteranScrolls ?? 0) + stipend.veteranScrolls,
+      secludedYears: prev.secludedYears + stipend.secludedYears,
+      scriptureFragments: prev.scriptureFragments + stipend.scriptureFragments,
+    }));
+
+    confetti({ particleCount: 70, spread: 75, origin: { y: 0.6 } });
+    setToastMessage(
+      `👑 Claimed ${vipEvaluation.tierConfig.name} Daily Stipend: +${formatBigInt(stipend.diamonds)} 💎, +${formatBigInt(stipend.spiritStones)} Spirit Stones & +${stipend.veteranScrolls} Veteran Scrolls!`
+    );
+  };
+
+  const handleAdvanceSimulatedVipDay = () => {
+    setVipState((prev) => {
+      const nextDaysRemaining =
+        prev.expiresAtDaysRemaining > 1
+          ? prev.expiresAtDaysRemaining - 1
+          : prev.autoRenewEnabled && prev.activeTier !== 'free'
+            ? prev.billingCycle === 'annual'
+              ? 365
+              : 30
+            : 0;
+      const nextActiveTier = nextDaysRemaining > 0 ? prev.activeTier : 'free';
+      if (nextActiveTier === 'free') {
+        setCultivation((c) => ({ ...c, auraOverrideRealmIndex: null }));
+      }
+      return {
+        ...prev,
+        activeTier: nextActiveTier,
+        simulatedVipDayOffset: (prev.simulatedVipDayOffset || 0) + 1,
+        expiresAtDaysRemaining: nextDaysRemaining,
+      };
+    });
+    setToastMessage('🌅 Advanced VIP Covenant calendar by +1 Day! Daily VIP Stipend is now ready.');
+  };
+
+  const handleToggleVipAutoRenew = () => {
+    setVipState((prev) => {
+      const next = !prev.autoRenewEnabled;
+      setToastMessage(
+        `🔄 VIP Auto-Renewal turned ${next ? 'ON' : 'OFF'}. You can change this at any time.`
+      );
+      return { ...prev, autoRenewEnabled: next };
+    });
+  };
+
+  const handleCancelVipSubscription = () => {
+    setVipState((prev) => ({
+      ...prev,
+      activeTier: 'free',
+      expiresAtDaysRemaining: 0,
+      autoRenewEnabled: false,
+    }));
+    setCultivation((prev) => ({
+      ...prev,
+      auraOverrideRealmIndex: null,
+    }));
+    setToastMessage(
+      '🛡️ VIP Membership cancelled and reverted to Free Sovereign. All VIP-locked features have been re-locked.'
+    );
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">
       {/* 3D WebGL Canvas Viewport */}
@@ -1397,6 +1582,7 @@ export default function App() {
         castleLevel={castleLevel}
         playerAppearance={playerAppearance}
         cultivationRealmIndex={
+          vipEvaluation.tierConfig.perks.customAuraCrown &&
           typeof cultivation.auraOverrideRealmIndex === 'number'
             ? cultivation.auraOverrideRealmIndex
             : cultivation.paths.qi.realmIndex
@@ -1456,6 +1642,9 @@ export default function App() {
           onOpenCharacterCreation={() => setActiveModal('character')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
+          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
+          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
+          canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
         />
       )}
 
@@ -1500,6 +1689,10 @@ export default function App() {
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
           veteranScrollsOwned={cultivation.veteranScrolls ?? 0}
+          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
+          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
+          canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
+          vipLoyaltyLevel={vipEvaluation.vipLoyaltyLevel}
           graphicsQuality={graphicsQuality}
           onCycleGraphicsQuality={() => {
             const presets: Array<'ultra' | 'high' | 'balanced'> = ['ultra', 'high', 'balanced'];
@@ -1507,8 +1700,8 @@ export default function App() {
             setGraphicsQuality(next);
             const labels = {
               ultra:
-                '✨ Graphics: ULTRA HDR (UnrealBloom Post-Processing + 2048px Shadows + PBR Clearcoat)',
-              high: '🎨 Graphics: HIGH (PBR Physical Materials + 2048px Soft Shadows)',
+                '✨ Graphics: NEXT-GEN ULTRA (GTA V Physical Sky + Genshin Rim/Cel Shaders + Wet-Road Reflections + ACES Color Grading & HDR Bloom)',
+              high: '🎨 Graphics: HIGH (Teyvat Stylized PBR + Physical Sky + 2048px Soft Shadows)',
               balanced: '⚡ Graphics: BALANCED (60 FPS Direct Render Mode)',
             };
             setToastMessage(labels[next]);
@@ -1525,6 +1718,9 @@ export default function App() {
         <CastleModal
           castleLevel={castleLevel}
           resources={resources}
+          vipDiscountPct={vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct}
+          vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
+          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
           onUpgradeCastle={handleUpgradeCastle}
           onClose={() => setActiveModal('none')}
         />
@@ -1536,6 +1732,10 @@ export default function App() {
           resources={resources}
           castleLevel={castleLevel}
           maxCapacity={maxTroopCapacity}
+          vipSpeedBonusPct={vipEvaluation.tierConfig.perks.gatherSpeedBonusPct}
+          vipState={vipState}
+          vipEffectiveDateKey={vipEffectiveDateKey}
+          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           onTrainTroops={handleTrainTroops}
           onClose={() => setActiveModal('none')}
         />
@@ -1595,6 +1795,7 @@ export default function App() {
           castleLevel={castleLevel}
           heroes={heroes}
           weather={weather}
+          vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
           onVictoryLoot={handleVictoryLoot}
           onCasualties={handleCasualties}
           onClose={() => setActiveModal('none')}
@@ -1605,6 +1806,9 @@ export default function App() {
         <ResourceGatherModal
           nodes={resourceNodes}
           weather={weather}
+          maxGatherMarches={1 + vipEvaluation.tierConfig.perks.extraMarchQueues}
+          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
+          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           onDispatchGather={handleDispatchGather}
           onHarvestCollect={handleHarvestCollect}
           onFocusNode={handleFocusNode}
@@ -1687,6 +1891,9 @@ export default function App() {
           playerPower={playerPower}
           weather={weather}
           clanBuffActive={clan.activeBuffs.length > 0}
+          vipState={vipState}
+          vipEffectiveDateKey={vipEffectiveDateKey}
+          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           onMeditate={handleMeditateQi}
           onBreakthrough={handleCultivationBreakthrough}
           onCraftPill={handleCraftPill}
@@ -1736,6 +1943,20 @@ export default function App() {
           onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
           onComprehendVeteranScroll={handleComprehendVeteranScroll}
           onOpenCultivationModal={() => setActiveModal('cultivation')}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {activeModal === 'vip_subscription' && (
+        <VipSubscriptionModal
+          vipState={vipState}
+          evaluation={vipEvaluation}
+          playerDiamonds={resources.diamond}
+          onActivateTier={handleActivateVipTier}
+          onClaimDailyStipend={handleClaimVipStipend}
+          onAdvanceSimulatedVipDay={handleAdvanceSimulatedVipDay}
+          onToggleAutoRenew={handleToggleVipAutoRenew}
+          onCancelSubscription={handleCancelVipSubscription}
           onClose={() => setActiveModal('none')}
         />
       )}

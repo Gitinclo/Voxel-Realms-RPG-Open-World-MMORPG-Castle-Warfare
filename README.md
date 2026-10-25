@@ -218,6 +218,7 @@ npm run preview
 ├── CODE_OF_CONDUCT.md              # Contributor Covenant Code of Conduct
 ├── CONTRIBUTING.md                 # Developer setup, Guardrails, testing & PR guidelines
 ├── LICENSE                         # Apache License 2.0
+├── NOTICE                          # Apache 2.0 Section 4(d) mandatory attribution & indexing notice
 ├── PRIVACY.md                      # User Privacy Policy (GDPR/CCPA, localStorage, payments, ads)
 ├── SECURITY.md                     # Private vulnerability disclosure policy
 ├── TERMS.md                        # Terms and Conditions of use
@@ -327,7 +328,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **Framework**: React 19
 - **3D Graphics**: Three.js (WebGL with software fallback support)
 - **Styling**: Tailwind CSS v4
-- **Language**: TypeScript
+- **Language**: TypeScript & C++20
 - **Bundler**: Vite 8
 - **Icons**: Lucide React
 - **Audio**: Web Audio API Procedural Synthesizer
@@ -343,9 +344,26 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **[Security Policy](./SECURITY.md)** — How to privately report security vulnerabilities (`creatergame31@gmail.com`).
 - **[Privacy Policy](./PRIVACY.md)** — How user data, `localStorage`, accounts, payments, and ads are handled.
 - **[Terms & Conditions](./TERMS.md)** — Rules of conduct, virtual goods policy, subscriptions, and liability disclaimers.
+- **[Apache-2.0 License](./LICENSE)** & **[Mandatory Attribution Notice](./NOTICE)** — Full license text and Section 4(d) attribution requirements.
 
 ---
 
-## 📜 License
+## 📜 License & Public Code Index Attribution Policy
 
-Licensed under the **[Apache License 2.0](./LICENSE)**. Crafted for high-scale browser and mobile MMORPG experiences.
+Licensed under the **[Apache License 2.0](./LICENSE)** with mandatory attribution terms defined in **[NOTICE](./NOTICE)**.
+
+### Public Code Index / Reference Hub Compliance (e.g., XERJ / Copus Hub)
+
+This repository is verified compliant for open-source reference indexing under **Apache License 2.0**:
+
+1. **License & Notice Verification**: Root [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE) files are present and require preservation of copyright notices (`Copyright 2026 Voxel Realms RPG Studio Contributors (Gitinclo)`), `SPDX-License-Identifier: Apache-2.0` headers, and repository attribution under Apache-2.0 Sections 4(a)–4(d).
+2. **Third-Party Dependency & Asset Audit**: All dependencies in `package.json` and `vcpkg.json` use permissive open-source licenses compatible with Apache-2.0, and all 3D geometry, PBR textures, and audio are 100% procedurally generated in-engine.
+3. **Zero Secrets Exposed**: `.gitignore` enforces strict exclusion of `.env*`, `*.jks`, `*.keystore`, `*.pem`, and `*.key` files.
+4. **Non-Endorsement (Section 6)**: Indexing or redistributing code under Apache-2.0 does not grant trademark rights or imply endorsement by the project authors.
+
+#### Ready-to-Use Maintainer Response Templates
+
+- **Option A — Approve with Apache-2.0 Conditions:**
+  > "Thanks for reaching out. This repository is licensed under Apache License 2.0. You may include it in your public reference index provided that full attribution to the repository and author (`Gitinclo`) is retained, the Apache-2.0 `LICENSE` and `NOTICE` files and per-file copyright headers are preserved intact, no code is relicensed under different terms, and inclusion is not presented as an official endorsement."
+- **Option B — Decline / Opt Out:**
+  > "No thank you — please do not include this repository in your public code index."

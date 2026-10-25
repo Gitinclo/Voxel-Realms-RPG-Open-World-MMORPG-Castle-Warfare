@@ -12,6 +12,8 @@ import {
   createNPCMesh,
   createMonsterMesh,
   createPlayerMesh,
+  updateWorldShaderUniforms,
+  worldShaderUniforms,
 } from './proceduralWorld';
 import {
   INITIAL_APPEARANCE,
@@ -24,16 +26,28 @@ import {
 } from './initialData';
 import { CPP_CODE_MODULES, CPP_ENGINE_SPEC, getSimulatedEngineStats } from './cppEngine';
 
-test('procedural voxel terrain builds instanced meshes and animated water plane cleanly', () => {
+test('procedural voxel terrain builds instanced meshes, Genshin waypoints, Celestia sky islands, and animated water plane cleanly', () => {
   const terrain = createVoxelTerrain();
   assert.equal(terrain.name, 'VoxelTerrain');
   assert.ok(
-    terrain.children.length >= 4,
-    'Terrain contains grass, stone, foliage tufts, and water'
+    terrain.children.length >= 10,
+    'Terrain contains grass, stone, foliage tufts, waypoints, mountain peaks, sky islands, and water'
   );
 
   const waterMesh = terrain.getObjectByName('VoxelWaterPlane');
   assert.ok(waterMesh, 'Terrain includes animated PBR VoxelWaterPlane mesh');
+
+  const waypoint = terrain.getObjectByName('TeleportWaypoint_0');
+  assert.ok(waypoint, 'Terrain includes Genshin-style TeleportWaypoint_0 monument');
+  assert.ok(terrain.getObjectByName('WaypointCrystal_0'), 'Includes hovering WaypointCrystal_0');
+
+  const skyIsland = terrain.getObjectByName('CelestiaSkyIsland_0');
+  assert.ok(skyIsland, 'Terrain includes Floating CelestiaSkyIsland_0 in upper horizon');
+
+  updateWorldShaderUniforms(12.5, 0.16, 0.88, 0.28, 0.72, 0.14, 1.35, 0.65);
+  assert.equal(worldShaderUniforms.uTime.value, 12.5);
+  assert.equal(worldShaderUniforms.uWaveHeight.value, 0.14);
+  assert.equal(worldShaderUniforms.uWindStrength.value, 1.35);
 });
 
 test('createVoxelCastle scales geometry and celestial runic spire rings across levels 1 to 100', () => {

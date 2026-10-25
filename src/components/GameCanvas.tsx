@@ -6,9 +6,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { CharacterAppearance, MonsterTarget, NPC, ResourceNode } from '../types/game';
 import {
@@ -19,9 +21,94 @@ import {
   createResourceNodeMesh,
   createVoxelCastle,
   createVoxelTerrain,
+  updateWorldShaderUniforms,
 } from '../game/proceduralWorld';
+import {
+  computeAtmosphericSkyParams,
+  computeSurfaceWetnessParams,
+  getPostProcessProfile,
+} from '../game/graphicsEngine';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { sound } from '../game/audio';
+
+/**
+ * Custom Post-Processing ShaderPass combining:
+ * - Genshin Impact Teyvat Vibrance & S-Curve Contrast
+ * - GTA V Warm/Cool Split-Toning & Sun Glare
+ * - Unsharp-Mask Micro-Detail Edge Sharpening & Subtle Vignette
+ */
+const NextGenColorGradeShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uResolution: { value: new THREE.Vector2(1440, 900) },
+    uSaturation: { value: 1.22 },
+    uContrast: { value: 1.12 },
+    uVibrance: { value: 0.24 },
+    uSharpen: { value: 0.35 },
+    uVignette: { value: 0.28 },
+    uGodRayIntensity: { value: 0.65 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform vec2 uResolution;
+    uniform float uSaturation;
+    uniform float uContrast;
+    uniform float uVibrance;
+    uniform float uSharpen;
+    uniform float uVignette;
+    uniform float uGodRayIntensity;
+    varying vec2 vUv;
+
+    void main() {
+      vec2 texel = 1.0 / max(uResolution, vec2(1.0));
+      vec4 baseSample = texture2D(tDiffuse, vUv);
+      vec3 col = baseSample.rgb;
+
+      // 1. Micro-Detail Edge Sharpening (3-tap cross kernel)
+      if (uSharpen > 0.01) {
+        vec3 n = texture2D(tDiffuse, vUv + vec2(0.0, texel.y)).rgb;
+        vec3 s = texture2D(tDiffuse, vUv - vec2(0.0, texel.y)).rgb;
+        vec3 e = texture2D(tDiffuse, vUv + vec2(texel.x, 0.0)).rgb;
+        vec3 w = texture2D(tDiffuse, vUv - vec2(texel.x, 0.0)).rgb;
+        vec3 edge = col * 4.0 - (n + s + e + w);
+        col += edge * (uSharpen * 0.28);
+      }
+
+      // 2. Genshin Impact Vibrance & Saturation Boost
+      float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+      float maxChannel = max(col.r, max(col.g, col.b));
+      float minChannel = min(col.r, min(col.g, col.b));
+      float sat = maxChannel - minChannel;
+      col = mix(vec3(luma), col, uSaturation + uVibrance * (1.0 - sat));
+
+      // 3. GTA V Warm Golden Highlights & Cool Azure Shadow Split-Toning
+      vec3 shadowTint = vec3(0.94, 0.97, 1.05);
+      vec3 highlightTint = vec3(1.04, 1.01, 0.94);
+      col *= mix(shadowTint, highlightTint, smoothstep(0.15, 0.85, luma));
+
+      // 4. Filmic S-Curve Contrast
+      col = clamp((col - 0.5) * uContrast + 0.5, 0.0, 1.0);
+
+      // 5. Atmospheric Upper-Horizon Sun Shaft Warmth
+      float topGlow = pow(max(0.0, vUv.y), 2.5) * uGodRayIntensity * 0.08;
+      col += vec3(1.0, 0.88, 0.65) * topGlow;
+
+      // 6. Subtle Optical Lens Vignette
+      vec2 centered = vUv - 0.5;
+      float vig = 1.0 - dot(centered, centered) * uVignette;
+      col *= clamp(vig, 0.65, 1.0);
+
+      gl_FragColor = vec4(clamp(col, 0.0, 1.0), baseSample.a);
+    }
+  `,
+};
 
 interface GameCanvasProps {
   castleLevel: number;
@@ -147,8 +234,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const scene = new THREE.Scene();
     const bgColor = new THREE.Color(0x38bdf8);
     scene.background = bgColor;
-    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 320);
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 360);
     camera.position.set(0, 14, 22);
+
+    // Preetham Physical Atmospheric Sky Dome (GTA V / Genshin Impact Atmosphere)
+    const sky = new Sky();
+    sky.scale.setScalar(420);
+    scene.add(sky);
+    const skyUniforms = sky.material.uniforms;
+    skyUniforms['turbidity'].value = 2.4;
+    skyUniforms['rayleigh'].value = 1.65;
+    skyUniforms['mieCoefficient'].value = 0.0045;
+    skyUniforms['mieDirectionalG'].value = 0.86;
+    const skySunVec = new THREE.Vector3();
 
     // Studio PBR WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -159,15 +257,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 1.24;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     container.replaceChildren(renderer.domElement);
 
-    // Hardware Post-Processing Pipeline (RenderPass -> UnrealBloomPass -> OutputPass)
+    // Hardware Post-Processing Pipeline (RenderPass -> UnrealBloomPass -> NextGenColorGradePass -> OutputPass)
     let composer: EffectComposer | null = null;
     let bloomPass: UnrealBloomPass | null = null;
+    let colorGradePass: ShaderPass | null = null;
     if (!isSoftwareGl) {
       composer = new EffectComposer(renderer);
       const renderPass = new RenderPass(scene, camera);
@@ -175,11 +274,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       bloomPass = new UnrealBloomPass(
         new THREE.Vector2(Math.floor(width / 2), Math.floor(height / 2)),
-        0.38, // subtle HDR bloom strength
-        0.45, // radius
-        0.82 // threshold so only emissive runes, cores, sun & lanterns bloom
+        0.48,
+        0.52,
+        0.76
       );
       composer.addPass(bloomPass);
+
+      colorGradePass = new ShaderPass(NextGenColorGradeShader);
+      colorGradePass.uniforms['uResolution'].value.set(width, height);
+      composer.addPass(colorGradePass);
 
       const outputPass = new OutputPass();
       composer.addPass(outputPass);
@@ -191,52 +294,61 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     pmrem.dispose();
 
     // 3-Point Studio & Atmospheric Lighting Rig
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0x7dd3fc, 0x1e293b, 1.05);
     scene.add(hemiLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfff5e6, 2.35);
+    const sunLight = new THREE.DirectionalLight(0xfff8e7, 3.1);
     sunLight.position.set(25, 45, 25);
     sunLight.castShadow = !isSoftwareGl;
     if (!isSoftwareGl) {
       sunLight.shadow.mapSize.width = 2048;
       sunLight.shadow.mapSize.height = 2048;
       sunLight.shadow.camera.near = 0.5;
-      sunLight.shadow.camera.far = 135;
-      sunLight.shadow.camera.left = -44;
-      sunLight.shadow.camera.right = 44;
-      sunLight.shadow.camera.top = 44;
-      sunLight.shadow.camera.bottom = -44;
+      sunLight.shadow.camera.far = 145;
+      sunLight.shadow.camera.left = -46;
+      sunLight.shadow.camera.right = 46;
+      sunLight.shadow.camera.top = 46;
+      sunLight.shadow.camera.bottom = -46;
       sunLight.shadow.bias = -0.0005;
       sunLight.shadow.normalBias = 0.02;
     }
     scene.add(sunLight);
 
-    // Cool Atmospheric Rim Light (Separates 3D silhouettes from background)
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.75);
+    // Cool/Golden Atmospheric Rim Light (Separates 3D silhouettes like Genshin Impact)
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
     rimLight.position.set(-28, 18, -24);
     scene.add(rimLight);
 
     // Warm Citadel Courtyard Point Light
-    const citadelHeartLight = new THREE.PointLight(0xffb300, 1.8, 32);
+    const citadelHeartLight = new THREE.PointLight(0xffb300, 2.1, 36);
     citadelHeartLight.position.set(0, 8, 6);
     scene.add(citadelHeartLight);
 
-    // Sun Visual Sphere + Corona Glow Halo
+    // Sun Visual Sphere + Volumetric God-Ray Corona Halos
     const sunGroup = new THREE.Group();
     const sunMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(3.5, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0xfff59d })
+      new THREE.SphereGeometry(3.8, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0xfffbeb })
     );
     const sunCorona = new THREE.Mesh(
-      new THREE.SphereGeometry(5.6, 24, 24),
+      new THREE.SphereGeometry(6.8, 24, 24),
       new THREE.MeshBasicMaterial({
         color: 0xfbbf24,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.34,
         depthWrite: false,
       })
     );
-    sunGroup.add(sunMesh, sunCorona);
+    const sunOuterGlare = new THREE.Mesh(
+      new THREE.SphereGeometry(11.5, 24, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false,
+      })
+    );
+    sunGroup.add(sunMesh, sunCorona, sunOuterGlare);
     scene.add(sunGroup);
 
     // Moon Visual Sphere + Halo
@@ -246,11 +358,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       new THREE.MeshBasicMaterial({ color: 0xe0e7ff })
     );
     const moonHalo = new THREE.Mesh(
-      new THREE.SphereGeometry(4.4, 24, 24),
+      new THREE.SphereGeometry(4.6, 24, 24),
       new THREE.MeshBasicMaterial({
         color: 0x818cf8,
         transparent: true,
-        opacity: 0.24,
+        opacity: 0.28,
         depthWrite: false,
       })
     );
@@ -517,6 +629,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (bloomPass) {
         bloomPass.resolution.set(Math.floor(w / 2), Math.floor(h / 2));
       }
+      if (colorGradePass) {
+        colorGradePass.uniforms['uResolution'].value.set(w, h);
+      }
     };
     window.addEventListener('resize', onResize);
 
@@ -546,6 +661,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       lastTime = now;
 
       const quality = propsRef.current.graphicsQuality || 'ultra';
+      const activeWeather = propsRef.current.weather || 'clear';
+      const postProfile = getPostProcessProfile(quality);
+      const wetness = computeSurfaceWetnessParams(activeWeather);
+
+      // Update GLSL foliage wind, Gerstner water waves & GTA V wet-surface PBR reflections
+      updateWorldShaderUniforms(
+        now * 0.001,
+        wetness.roadRoughness,
+        wetness.roadClearcoat,
+        wetness.stoneRoughness,
+        wetness.stoneClearcoat,
+        wetness.waterWaveHeight,
+        wetness.windSwayStrength,
+        postProfile.rimLightShaderStrength
+      );
 
       // Rebuild Castle if castleLevel changed
       if (propsRef.current.castleLevel !== lastBuiltCastleLevel) {
@@ -556,8 +686,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         scene.add(castleMesh);
       }
 
-      // 1. Calculate Day / Night Cycle Lighting & Colors
+      // 1. Calculate Physical Atmospheric Sky Scattering & Lighting (GTA V / Genshin Impact)
       const hour = propsRef.current.timeOfDayHours % 24;
+      const skyParams = computeAtmosphericSkyParams(hour, activeWeather, quality);
       const sunAngle = ((hour - 6) / 24) * Math.PI * 2;
       const sunRadius = 60;
 
@@ -569,45 +700,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       sunGroup.position.set(sunX, sunY, sunZ);
       moonGroup.position.set(-sunX, -sunY, -sunZ);
 
-      const isNight = sunY < 0;
-      const isDawnOrDusk = Math.abs(sunY) < 15;
+      // Sync Preetham Physical Sky Dome Uniforms
+      skyUniforms['turbidity'].value = skyParams.turbidity;
+      skyUniforms['rayleigh'].value = skyParams.rayleigh;
+      skyUniforms['mieCoefficient'].value = skyParams.mieCoefficient;
+      skyUniforms['mieDirectionalG'].value = skyParams.mieDirectionalG;
+      skySunVec.set(sunX, sunY, sunZ).normalize();
+      skyUniforms['sunPosition'].value.copy(skySunVec);
+      sky.visible = sunY >= -6;
 
-      // Dynamic Weather Environmental State & Status Visuals
-      const activeWeather = propsRef.current.weather || 'clear';
+      renderer.toneMappingExposure = skyParams.exposure;
+      sunLight.intensity = skyParams.sunLightIntensity;
+      sunLight.color.setHex(skyParams.sunLightHex);
+      hemiLight.color.setHex(skyParams.hemiSkyHex);
+      hemiLight.groundColor.setHex(skyParams.hemiGroundHex);
+      hemiLight.intensity = skyParams.hemiIntensity;
+      rimLight.color.setHex(skyParams.rimLightHex);
+      rimLight.intensity = skyParams.rimLightIntensity;
+      starsMat.opacity = skyParams.starfieldOpacity;
+      fireflyMat.opacity = sunY < 0 ? 0.88 : 0.45;
+
       const weatherCfg = WEATHER_CONFIGS[activeWeather] || WEATHER_CONFIGS.clear;
-
-      let skyColor = weatherCfg.skyColorHex;
-      if (isNight) {
-        skyColor = 0x090d16; // Deep starry midnight
-        sunLight.intensity = 0.25 * weatherCfg.sunlightMult;
-        sunLight.color.setHex(0x818cf8);
-        hemiLight.intensity = 0.4 * weatherCfg.sunlightMult;
-        rimLight.intensity = 0.9;
-        starsMat.opacity = Math.min(1.0, -sunY / 15);
-        fireflyMat.opacity = 0.85;
-      } else if (isDawnOrDusk) {
-        skyColor = 0xf97316; // Sunset/dawn golden amber
-        sunLight.intensity = 1.9 * weatherCfg.sunlightMult;
-        sunLight.color.setHex(0xffb74d);
-        hemiLight.intensity = 0.72 * weatherCfg.sunlightMult;
-        rimLight.intensity = 0.65;
-        starsMat.opacity = 0;
-        fireflyMat.opacity = 0.65;
-      } else {
-        skyColor = weatherCfg.skyColorHex;
-        sunLight.intensity = 2.45 * weatherCfg.sunlightMult;
-        sunLight.color.setHex(0xfff8e7);
-        hemiLight.intensity = 0.92 * weatherCfg.sunlightMult;
-        rimLight.intensity = 0.5;
-        starsMat.opacity = 0;
-        fireflyMat.opacity = 0.35;
+      bgColor.setHex(sunY < 0 ? 0x090d16 : weatherCfg.skyColorHex);
+      if (scene.fog) {
+        scene.fog.color.setHex(skyParams.fogHex);
+        (scene.fog as THREE.FogExp2).density = skyParams.fogDensity;
       }
 
-      bgColor.setHex(skyColor);
-      if (scene.fog) {
-        scene.fog.color.setHex(isNight ? 0x090d16 : weatherCfg.fogColorHex);
-        (scene.fog as THREE.FogExp2).density =
-          quality === 'balanced' ? weatherCfg.fogDensity * 1.2 : weatherCfg.fogDensity * 0.92;
+      // Sync Post-Processing Bloom & Next-Gen Color Grading Uniforms
+      if (bloomPass) {
+        bloomPass.strength = postProfile.bloomStrength;
+        bloomPass.radius = postProfile.bloomRadius;
+        bloomPass.threshold = postProfile.bloomThreshold;
+      }
+      if (colorGradePass) {
+        colorGradePass.uniforms['uSaturation'].value = postProfile.saturationBoost;
+        colorGradePass.uniforms['uContrast'].value = postProfile.contrastBoost;
+        colorGradePass.uniforms['uVibrance'].value = postProfile.vibranceBoost;
+        colorGradePass.uniforms['uSharpen'].value = postProfile.sharpenStrength;
+        colorGradePass.uniforms['uVignette'].value = postProfile.vignetteDarkness;
+        colorGradePass.uniforms['uGodRayIntensity'].value = skyParams.godRayIntensity;
       }
 
       // Animate Drifting Volumetric Clouds & Ambient Spirit Fireflies
@@ -619,10 +751,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
       fireflyGeo.attributes.position.needsUpdate = true;
 
-      // Animate Crystal Water Ripples
+      // Animate Crystal Water Ripples & Teleport Waypoint Crystals
       const waterPlane = terrain.getObjectByName('VoxelWaterPlane') as THREE.Mesh | undefined;
       if (waterPlane) {
-        waterPlane.position.y = -2.05 + Math.sin(now * 0.002) * 0.08;
+        waterPlane.position.y = -2.05 + Math.sin(now * 0.002) * 0.06;
+      }
+      for (let wIdx = 0; wIdx < 4; wIdx++) {
+        const wpCrystal = terrain.getObjectByName(`WaypointCrystal_${wIdx}`);
+        if (wpCrystal) {
+          wpCrystal.rotation.y += dt * 1.6;
+          wpCrystal.position.y = 3.15 + Math.sin(now * 0.003 + wIdx) * 0.16;
+        }
+      }
+      for (let sIdx = 0; sIdx < 3; sIdx++) {
+        const skyIsland = terrain.getObjectByName(`CelestiaSkyIsland_${sIdx}`);
+        if (skyIsland) {
+          skyIsland.position.y = 25 + sIdx * 3 + Math.sin(now * 0.0012 + sIdx * 2) * 0.45;
+        }
       }
 
       // Weather Particle Systems & Atmospheric Effects
@@ -780,9 +925,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         divineHalos.rotation.z += dt * 1.4;
       }
 
-      // 3. Smooth Damped Third-Person Camera Follow
-      const camDist = 18;
-      const camHeight = 11;
+      // 3. Smooth Damped Third-Person Horizon-Framing Camera (Genshin Impact / GTA V Vista)
+      const camDist = 17.5;
+      const camHeight = 6.8;
       const targetCamX = playerPos.x + Math.sin(cameraOrbitAngle) * camDist;
       const targetCamZ = playerPos.z + Math.cos(cameraOrbitAngle) * camDist;
       const targetCamY = playerPos.y + camHeight;
@@ -791,7 +936,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       camera.position.y += (targetCamY - camera.position.y) * (1 - Math.exp(-6 * dt));
       camera.position.z += (targetCamZ - camera.position.z) * (1 - Math.exp(-6 * dt));
 
-      camera.lookAt(playerPos.x, playerPos.y + 1.8, playerPos.z);
+      const lookAheadX = playerPos.x - Math.sin(cameraOrbitAngle) * 8;
+      const lookAheadZ = playerPos.z - Math.cos(cameraOrbitAngle) * 8;
+      camera.lookAt(lookAheadX, playerPos.y + 4.8, lookAheadZ);
 
       // 4. Animate World Elements (Castle spire & rings, Resource nodes, Monsters & NPCs)
       const spire = castleMesh.getObjectByName('CastleSpire');
@@ -881,8 +1028,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }
       });
 
-      // Render Scene (Use EffectComposer HDR Bloom on hardware GPUs when quality is 'ultra')
-      if (!isSoftwareGl && composer && quality === 'ultra') {
+      // Render Scene (Use EffectComposer HDR Bloom + NextGenColorGradePass on hardware GPUs)
+      if (!isSoftwareGl && composer && postProfile.enableComposer) {
         composer.render();
       } else {
         renderer.render(scene, camera);

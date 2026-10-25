@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <cmath>
-#include <concepts>
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -20,14 +18,8 @@ enum class CultivationRealm : uint8_t {
     DaoCreator = 21,
 };
 
-template <typename T>
-concept CultivatorEntity = requires(const T& entity) {
-    { entity.getRealm() } -> std::convertible_to<CultivationRealm>;
-    { entity.getKarmaScore() } -> std::convertible_to<int32_t>;
-};
-
-[[nodiscard]] constexpr double computeRealmSuppressionMultiplier(CultivationRealm attacker,
-                                                                 CultivationRealm defender) noexcept {
+[[nodiscard]] constexpr double
+computeRealmSuppressionMultiplier(CultivationRealm attacker, CultivationRealm defender) noexcept {
     const int32_t delta = static_cast<int32_t>(attacker) - static_cast<int32_t>(defender);
     if (delta == 0) {
         return 1.0;

@@ -23,6 +23,7 @@ import {
   Sparkles,
   Brain,
   Gift,
+  Crown,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -61,6 +62,10 @@ interface GameHUDProps {
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
   veteranScrollsOwned?: number;
+  onOpenVipSubscription?: () => void;
+  vipBadgeLabel?: string;
+  canClaimVipStipend?: boolean;
+  vipLoyaltyLevel?: number;
   graphicsQuality?: 'ultra' | 'high' | 'balanced';
   onCycleGraphicsQuality?: () => void;
   godmode?: boolean;
@@ -101,6 +106,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
   veteranScrollsOwned = 0,
+  onOpenVipSubscription,
+  vipBadgeLabel = 'VIP 0',
+  canClaimVipStipend = false,
+  vipLoyaltyLevel = 1,
   graphicsQuality = 'ultra',
   onCycleGraphicsQuality,
   godmode,
@@ -199,9 +208,29 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 <Sparkles className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
                 {cultivationRealmName} L{cultivationLayer}
               </button>
+              {onOpenVipSubscription && (
+                <button
+                  type="button"
+                  data-testid="hud-vip-badge-btn"
+                  onClick={() => {
+                    sound.playSwing();
+                    onOpenVipSubscription();
+                  }}
+                  className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Open Imperial VIP Member Subscription & Daily Stipend Chest"
+                >
+                  <Crown className="w-2.5 h-2.5 text-amber-400" />
+                  <span>{vipBadgeLabel}</span>
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
-              <span className="text-emerald-400 font-bold">{formatBigInt(playerPower)} Might</span>
+              <span
+                className="text-emerald-400 font-bold tabular-nums"
+                data-testid="hud-player-might"
+              >
+                {formatBigInt(playerPower)} Might
+              </span>
               <span>·</span>
               <span className="text-cyan-400 font-bold">Castle Lv.{castleLevel}</span>
             </div>
@@ -352,7 +381,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             )}
           </button>
 
-          {/* Graphics Quality Preset Selector (Ultra HDR / High / Balanced) */}
+          {/* Graphics Quality Preset Selector (Next-Gen Ultra GTA V + Genshin / High / Balanced) */}
           {onCycleGraphicsQuality && (
             <button
               onClick={() => {
@@ -360,12 +389,16 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 onCycleGraphicsQuality();
               }}
               data-testid="hud-graphics-quality-btn"
-              className="px-2.5 py-1 rounded-xl bg-slate-900 border border-purple-500/40 hover:border-purple-400 text-[11px] font-mono font-bold text-purple-200 hover:bg-slate-800 transition-all flex items-center gap-1"
-              title="Cycle 3D Graphics Quality (Ultra HDR Bloom + 2K Shadows / High PBR / Balanced)"
+              className="px-2.5 py-1 rounded-xl bg-slate-900 border border-purple-500/40 hover:border-purple-400 text-[11px] font-mono font-bold text-purple-200 hover:bg-slate-800 transition-all flex items-center gap-1 cursor-pointer"
+              title="Cycle 3D Graphics Quality (Next-Gen Ultra: GTA V Physical Sky + Genshin Rim/Cel Shaders + Wet-Road Reflections + ACES Color Grading)"
             >
               <Sparkles className="w-3 h-3 text-purple-400" />
               <span>
-                {graphicsQuality === 'ultra' ? 'ULTRA HDR' : graphicsQuality.toUpperCase()}
+                {graphicsQuality === 'ultra'
+                  ? 'NEXT-GEN ULTRA (GTA V + GENSHIN)'
+                  : graphicsQuality === 'high'
+                    ? 'HIGH (TEYVAT PBR)'
+                    : 'BALANCED (60 FPS)'}
               </span>
             </button>
           )}
@@ -378,7 +411,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             }}
             className={`px-2.5 py-1 rounded-xl text-xs font-mono font-black border transition-all active:scale-95 ${
               godmode
-                ? 'bg-red-600 text-white border-red-400 shadow-md shadow-red-600/40 animate-pulse'
+                ? 'bg-red-600 text-white border-red-400 shadow-md shadow-red-600/40'
                 : 'bg-gradient-to-r from-red-950 to-amber-950 text-amber-300 border-red-500/50 hover:border-amber-400'
             }`}
             title="Open GM Admin Console (Hotkey: ~ / Backtick)"
@@ -391,7 +424,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       {/* Zone Indicator (Safe Zone / Wilderness) from ironhold.html & ShadowRealm */}
       <div className="mx-auto pointer-events-auto">
         <div className="px-3.5 py-1 rounded-full bg-slate-950/80 border border-emerald-500/40 text-[11px] font-cinzel text-emerald-300 shadow-lg flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
           <span>Solara Citadel [Safe Zone]</span>
           <span className="text-slate-500">·</span>
           <span className="text-amber-400 font-mono text-[10px]">PvE Enabled</span>
@@ -407,7 +440,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           onTouchStart={handleJoystickTouchStart}
           onTouchMove={handleJoystickMove}
           onTouchEnd={handleJoystickTouchEnd}
-          className="pointer-events-auto relative w-24 h-24 rounded-full bg-slate-950/60 border-2 border-slate-700/80 backdrop-blur-xs flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100"
+          className="pointer-events-auto relative w-24 h-24 rounded-full bg-slate-950/75 border-2 border-slate-700/80 flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100"
           title="Virtual D-Pad (Touch / Drag to move hero)"
         >
           <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-500 font-mono font-bold">
@@ -469,6 +502,28 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               : 'translate-y-0 opacity-100'
           }`}
         >
+          {onOpenVipSubscription && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.playSwing();
+                onOpenVipSubscription();
+              }}
+              data-testid="dock-vip-pass-btn"
+              className={`relative p-2 sm:px-3 sm:py-2 rounded-xl border flex flex-col sm:flex-row items-center gap-1.5 transition-all active:scale-95 shrink-0 cursor-pointer ${
+                canClaimVipStipend
+                  ? 'bg-amber-500/30 hover:bg-amber-500/40 border-amber-300 text-amber-100 shadow-md shadow-amber-500/30'
+                  : 'bg-slate-900 hover:bg-slate-800 border-amber-500/50 text-amber-300'
+              }`}
+            >
+              <Crown className="w-5 h-5 text-amber-400" />
+              <span className="text-xs font-bold font-cinzel">VIP Pass</span>
+              <span className="text-[10px] font-mono text-amber-300 hidden sm:inline tabular-nums">
+                {canClaimVipStipend ? 'STIPEND!' : `Lv.${vipLoyaltyLevel}`}
+              </span>
+            </button>
+          )}
+
           {onOpenDailyLogin && (
             <button
               onClick={() => {

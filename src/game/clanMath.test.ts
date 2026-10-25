@@ -14,8 +14,11 @@ import {
   calculateClanTotalPower,
   calculateOutpostAssault,
   calculateCoopBossStrike,
+  buildClanTerritoryGrid,
+  evaluateTerritoryControlSummary,
 } from './clanMath';
 import { ClanMember } from '../types/game';
+import { INITIAL_CLAN_WAR } from './initialData';
 
 test('role permissions enforce strict hierarchical rights', () => {
   const leaderPerms = getRolePermissions('Leader');
@@ -126,4 +129,32 @@ test('coop boss strike applies clan buff multipliers', () => {
 
   assert.ok(buffedDmg > normalDmg);
   assert.equal(buffedDmg, (normalDmg * 130n) / 100n);
+});
+
+test('buildClanTerritoryGrid and evaluateTerritoryControlSummary map 3x3 outposts and reflect live captures', () => {
+  const initialGrid = buildClanTerritoryGrid(INITIAL_CLAN_WAR.outposts, 50_000_000n);
+  assert.equal(initialGrid.length, 9);
+  assert.equal(initialGrid[0].sectorCode, 'A1');
+  assert.equal(initialGrid[4].sectorCode, 'B2');
+  assert.equal(initialGrid[8].sectorCode, 'C3');
+
+  const initialSummary = evaluateTerritoryControlSummary(initialGrid);
+  assert.equal(initialSummary.totalSectors, 9);
+  assert.equal(initialSummary.playerControlledCount, 3);
+  assert.equal(initialSummary.enemyControlledCount, 4);
+  assert.equal(initialSummary.neutralCount, 2);
+  assert.ok(initialSummary.frontlineSectorsCount > 0);
+
+  // Simulate capturing enemy Iron Citadel (B3) and neutral Dragon Spire (B2)
+  const updatedOutposts = INITIAL_CLAN_WAR.outposts.map((o) =>
+    o.id === 'outpost_iron_citadel' || o.id === 'outpost_dragon_spire'
+      ? { ...o, controlledBy: 'player_clan' as const }
+      : o
+  );
+  const updatedGrid = buildClanTerritoryGrid(updatedOutposts, 50_000_000n);
+  const updatedSummary = evaluateTerritoryControlSummary(updatedGrid);
+  assert.equal(updatedSummary.playerControlledCount, 5);
+  assert.equal(updatedSummary.enemyControlledCount, 3);
+  assert.equal(updatedSummary.neutralCount, 1);
+  assert.equal(updatedSummary.dominanceStatus, 'Tactical Advantage');
 });

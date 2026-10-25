@@ -157,3 +157,294 @@ export function calculateCoopBossStrike(
   const finalDmg = Number(baseDmg > 1n ? baseDmg : 1n) * buffMult;
   return BigInt(Math.max(1, Math.floor(finalDmg)));
 }
+
+export type TerritorySectorType =
+  'citadel' | 'obelisk' | 'leyline' | 'watchtower' | 'depot' | 'causeway';
+
+export interface TerritoryGridSector {
+  outpostId: string;
+  sectorCode: string; // e.g., 'A1' .. 'C3'
+  row: number; // 0 .. 2
+  col: number; // 0 .. 2
+  name: string;
+  sectorType: TerritorySectorType;
+  controlledBy: 'player_clan' | 'enemy_clan' | 'neutral';
+  defenseRating: bigint;
+  garrisonTroops: bigint;
+  pointsPerMinute: number;
+  strategicBonus: string;
+  isFrontlineContested: boolean;
+  assaultWinProbabilityPct: number;
+}
+
+export interface TerritoryControlSummary {
+  totalSectors: number;
+  playerControlledCount: number;
+  enemyControlledCount: number;
+  neutralCount: number;
+  playerControlPct: number;
+  enemyControlPct: number;
+  neutralControlPct: number;
+  playerPointsPerMinute: number;
+  enemyPointsPerMinute: number;
+  frontlineSectorsCount: number;
+  dominanceStatus:
+    'Sovereign Dominance' | 'Tactical Advantage' | 'Contested Frontline' | 'Enemy Encirclement';
+}
+
+interface DefaultSectorBlueprint {
+  outpostId: string;
+  sectorCode: string;
+  row: number;
+  col: number;
+  name: string;
+  sectorType: TerritorySectorType;
+  defaultControlledBy: 'player_clan' | 'enemy_clan' | 'neutral';
+  defaultDefenseRating: bigint;
+  defaultGarrisonTroops: bigint;
+  defaultPointsPerMinute: number;
+  strategicBonus: string;
+}
+
+export const DEFAULT_TERRITORY_SECTOR_BLUEPRINTS: DefaultSectorBlueprint[] = [
+  {
+    outpostId: 'outpost_solara_watch',
+    sectorCode: 'A1',
+    row: 0,
+    col: 0,
+    name: 'Solara Watchtower',
+    sectorType: 'watchtower',
+    defaultControlledBy: 'player_clan',
+    defaultDefenseRating: 12_000_000n,
+    defaultGarrisonTroops: 95_000n,
+    defaultPointsPerMinute: 15,
+    strategicBonus: '+10% Western Flank Recon & Early Raid Warning',
+  },
+  {
+    outpostId: 'outpost_sunken_obelisk',
+    sectorCode: 'A2',
+    row: 0,
+    col: 1,
+    name: 'Sunken Obelisk',
+    sectorType: 'obelisk',
+    defaultControlledBy: 'player_clan',
+    defaultDefenseRating: 15_000_000n,
+    defaultGarrisonTroops: 120_000n,
+    defaultPointsPerMinute: 20,
+    strategicBonus: '+15% Arcane Shieldbearer Resilience',
+  },
+  {
+    outpostId: 'outpost_ashfall_ridge',
+    sectorCode: 'A3',
+    row: 0,
+    col: 2,
+    name: 'Ashfall Ridge Bastion',
+    sectorType: 'watchtower',
+    defaultControlledBy: 'enemy_clan',
+    defaultDefenseRating: 22_000_000n,
+    defaultGarrisonTroops: 210_000n,
+    defaultPointsPerMinute: 30,
+    strategicBonus: '+12% High-Ground Shooter Volley Range',
+  },
+  {
+    outpostId: 'outpost_azure_leyline',
+    sectorCode: 'B1',
+    row: 1,
+    col: 0,
+    name: 'Azure Leyline Sanctum',
+    sectorType: 'leyline',
+    defaultControlledBy: 'player_clan',
+    defaultDefenseRating: 18_000_000n,
+    defaultGarrisonTroops: 160_000n,
+    defaultPointsPerMinute: 25,
+    strategicBonus: '+18% Spiritual Qi & Clan Honor Harvest',
+  },
+  {
+    outpostId: 'outpost_dragon_spire',
+    sectorCode: 'B2',
+    row: 1,
+    col: 1,
+    name: 'Dragon Spire',
+    sectorType: 'obelisk',
+    defaultControlledBy: 'neutral',
+    defaultDefenseRating: 25_000_000n,
+    defaultGarrisonTroops: 250_000n,
+    defaultPointsPerMinute: 35,
+    strategicBonus: '+20% All-Legion March Speed Across Central Rift',
+  },
+  {
+    outpostId: 'outpost_iron_citadel',
+    sectorCode: 'B3',
+    row: 1,
+    col: 2,
+    name: 'Iron Citadel Fortress',
+    sectorType: 'citadel',
+    defaultControlledBy: 'enemy_clan',
+    defaultDefenseRating: 30_000_000n,
+    defaultGarrisonTroops: 400_000n,
+    defaultPointsPerMinute: 50,
+    strategicBonus: '+25% Siege Bomber Artillery Payload',
+  },
+  {
+    outpostId: 'outpost_verdant_granary',
+    sectorCode: 'C1',
+    row: 2,
+    col: 0,
+    name: 'Verdant Supply Depot',
+    sectorType: 'depot',
+    defaultControlledBy: 'neutral',
+    defaultDefenseRating: 14_000_000n,
+    defaultGarrisonTroops: 110_000n,
+    defaultPointsPerMinute: 20,
+    strategicBonus: '-15% Garrison Upkeep & +20% Grain Supply',
+  },
+  {
+    outpostId: 'outpost_starfall_bridge',
+    sectorCode: 'C2',
+    row: 2,
+    col: 1,
+    name: 'Starfall Causeway',
+    sectorType: 'causeway',
+    defaultControlledBy: 'enemy_clan',
+    defaultDefenseRating: 26_000_000n,
+    defaultGarrisonTroops: 280_000n,
+    defaultPointsPerMinute: 35,
+    strategicBonus: '+15% Southern Vanguard Reinforcement Velocity',
+  },
+  {
+    outpostId: 'outpost_chronos_dreadkeep',
+    sectorCode: 'C3',
+    row: 2,
+    col: 2,
+    name: 'Chronos Dread Keep',
+    sectorType: 'citadel',
+    defaultControlledBy: 'enemy_clan',
+    defaultDefenseRating: 38_000_000n,
+    defaultGarrisonTroops: 520_000n,
+    defaultPointsPerMinute: 60,
+    strategicBonus: '+30% Sovereign War Score & Heavy Garrison Cap',
+  },
+];
+
+export function buildClanTerritoryGrid(
+  outposts: {
+    id: string;
+    name: string;
+    controlledBy: 'player_clan' | 'enemy_clan' | 'neutral';
+    defenseRating: bigint;
+    pointsPerMinute: number;
+    garrisonTroops: bigint;
+  }[],
+  playerPower: bigint = 25_000_000n
+): TerritoryGridSector[] {
+  const outpostById = new Map(outposts.map((o) => [o.id, o]));
+
+  const initialCells = DEFAULT_TERRITORY_SECTOR_BLUEPRINTS.map((bp, idx) => {
+    const matched = outpostById.get(bp.outpostId) || outposts[idx];
+    const controlledBy =
+      matched && matched.id === bp.outpostId ? matched.controlledBy : bp.defaultControlledBy;
+    const defenseRating =
+      matched && matched.id === bp.outpostId ? matched.defenseRating : bp.defaultDefenseRating;
+    const garrisonTroops =
+      matched && matched.id === bp.outpostId ? matched.garrisonTroops : bp.defaultGarrisonTroops;
+    const pointsPerMinute =
+      matched && matched.id === bp.outpostId ? matched.pointsPerMinute : bp.defaultPointsPerMinute;
+    const name = matched && matched.id === bp.outpostId ? matched.name : bp.name;
+
+    const assaultEval = calculateOutpostAssault(playerPower, defenseRating);
+    const ratioPct =
+      defenseRating > 0n
+        ? Math.min(99, Math.max(8, Number((assaultEval.damageDealt * 100n) / defenseRating)))
+        : 99;
+    const assaultWinProbabilityPct = assaultEval.conquered ? 99 : ratioPct;
+
+    return {
+      outpostId: bp.outpostId,
+      sectorCode: bp.sectorCode,
+      row: bp.row,
+      col: bp.col,
+      name,
+      sectorType: bp.sectorType,
+      controlledBy,
+      defenseRating,
+      garrisonTroops,
+      pointsPerMinute,
+      strategicBonus: bp.strategicBonus,
+      isFrontlineContested: false,
+      assaultWinProbabilityPct,
+    };
+  });
+
+  // Determine frontline contested status: any sector orthogonally adjacent to an opposing controller
+  return initialCells.map((cell) => {
+    const neighbors = initialCells.filter(
+      (other) => Math.abs(other.row - cell.row) + Math.abs(other.col - cell.col) === 1
+    );
+    const isFrontlineContested =
+      cell.controlledBy === 'neutral' ||
+      neighbors.some(
+        (n) =>
+          (cell.controlledBy === 'player_clan' && n.controlledBy === 'enemy_clan') ||
+          (cell.controlledBy === 'enemy_clan' && n.controlledBy === 'player_clan')
+      );
+
+    return {
+      ...cell,
+      isFrontlineContested,
+    };
+  });
+}
+
+export function evaluateTerritoryControlSummary(
+  grid: TerritoryGridSector[]
+): TerritoryControlSummary {
+  const totalSectors = grid.length || 1;
+  let playerControlledCount = 0;
+  let enemyControlledCount = 0;
+  let neutralCount = 0;
+  let playerPointsPerMinute = 0;
+  let enemyPointsPerMinute = 0;
+  let frontlineSectorsCount = 0;
+
+  for (const sector of grid) {
+    if (sector.isFrontlineContested) {
+      frontlineSectorsCount += 1;
+    }
+    if (sector.controlledBy === 'player_clan') {
+      playerControlledCount += 1;
+      playerPointsPerMinute += sector.pointsPerMinute;
+    } else if (sector.controlledBy === 'enemy_clan') {
+      enemyControlledCount += 1;
+      enemyPointsPerMinute += sector.pointsPerMinute;
+    } else {
+      neutralCount += 1;
+    }
+  }
+
+  const playerControlPct = Math.round((playerControlledCount / totalSectors) * 100);
+  const enemyControlPct = Math.round((enemyControlledCount / totalSectors) * 100);
+  const neutralControlPct = Math.max(0, 100 - playerControlPct - enemyControlPct);
+
+  let dominanceStatus: TerritoryControlSummary['dominanceStatus'] = 'Contested Frontline';
+  if (playerControlledCount >= Math.ceil(totalSectors * 0.65)) {
+    dominanceStatus = 'Sovereign Dominance';
+  } else if (playerControlledCount > enemyControlledCount) {
+    dominanceStatus = 'Tactical Advantage';
+  } else if (enemyControlledCount >= Math.ceil(totalSectors * 0.65)) {
+    dominanceStatus = 'Enemy Encirclement';
+  }
+
+  return {
+    totalSectors: grid.length,
+    playerControlledCount,
+    enemyControlledCount,
+    neutralCount,
+    playerControlPct,
+    enemyControlPct,
+    neutralControlPct,
+    playerPointsPerMinute,
+    enemyPointsPerMinute,
+    frontlineSectorsCount,
+    dominanceStatus,
+  };
+}

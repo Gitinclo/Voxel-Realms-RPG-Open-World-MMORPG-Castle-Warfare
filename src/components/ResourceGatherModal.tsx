@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { X, Pickaxe, MapPin, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Pickaxe, MapPin, Sparkles, ArrowRight, Lock, Crown } from 'lucide-react';
 import { ResourceNode, ResourceType } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
@@ -13,6 +13,9 @@ import { sound } from '../game/audio';
 interface ResourceGatherModalProps {
   nodes: ResourceNode[];
   weather?: WeatherType;
+  maxGatherMarches?: number;
+  vipBadgeLabel?: string;
+  onOpenVipSubscription?: () => void;
   onDispatchGather: (nodeId: string, troopsAmount: bigint) => void;
   onHarvestCollect: (nodeId: string) => void;
   onFocusNode: (x: number, z: number) => void;
@@ -22,12 +25,18 @@ interface ResourceGatherModalProps {
 export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
   nodes,
   weather = 'clear',
+  maxGatherMarches = 1,
+  vipBadgeLabel = 'VIP 0',
+  onOpenVipSubscription,
   onDispatchGather,
   onHarvestCollect,
   onFocusNode,
   onClose,
 }) => {
   const weatherConfig = WEATHER_CONFIGS[weather] || WEATHER_CONFIGS.clear;
+  const activeGatheringCount = nodes.filter((n) => n.assignedTroops > 0n).length;
+  const isMarchQueueFull = activeGatheringCount >= maxGatherMarches;
+
   const getResourceIcon = (type: ResourceType) => {
     switch (type) {
       case 'wood':
@@ -48,7 +57,7 @@ export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl bg-slate-900 border-2 border-emerald-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="relative px-6 py-5 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-950/80 border-b border-emerald-500/30 flex items-center justify-between">
@@ -57,10 +66,13 @@ export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
               <Pickaxe className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-xl font-bold font-cinzel text-emerald-100 flex items-center gap-2">
+              <h2 className="text-xl font-bold font-cinzel text-emerald-100 flex items-center gap-2 flex-wrap">
                 Open World Resource Points
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono">
                   Level 1 - 10 Nodes
+                </span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono">
+                  Active Marches: {activeGatheringCount} / {maxGatherMarches} ({vipBadgeLabel})
                 </span>
               </h2>
               <p className="text-xs text-emerald-200/70">
@@ -101,6 +113,28 @@ export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
               </span>
             </div>
           </div>
+
+          {/* VIP March Queue Access Control Banner */}
+          {isMarchQueueFull && (
+            <div className="p-3 rounded-xl bg-amber-950/50 border border-amber-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-amber-200 font-mono">
+              <span className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                March Queue Limit Reached ({activeGatheringCount}/{maxGatherMarches}). Extra
+                simultaneous gathering marches require an active VIP 1+ subscription.
+              </span>
+              {onOpenVipSubscription && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenVipSubscription();
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <Crown className="w-3 h-3" /> Upgrade VIP
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {nodes.map((node) => {
@@ -207,10 +241,23 @@ export const ResourceGatherModal: React.FC<ResourceGatherModalProps> = ({
                           sound.playSwing();
                           onDispatchGather(node.id, 2500n);
                         }}
-                        className="w-full py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 border border-emerald-500/30 active:scale-95 transition-all"
+                        className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                          isMarchQueueFull
+                            ? 'bg-slate-900 border-slate-700 text-slate-400 hover:border-amber-500/40'
+                            : 'bg-slate-700 hover:bg-slate-600 text-emerald-300 border-emerald-500/30 active:scale-95'
+                        }`}
                       >
-                        <Pickaxe className="w-3.5 h-3.5" />
-                        Dispatch 2,500 Troops to Gather
+                        {isMarchQueueFull ? (
+                          <>
+                            <Lock className="w-3.5 h-3.5 text-amber-400" />
+                            March Slot Locked [VIP 1+] ({activeGatheringCount}/{maxGatherMarches})
+                          </>
+                        ) : (
+                          <>
+                            <Pickaxe className="w-3.5 h-3.5" />
+                            Dispatch 2,500 Troops to Gather
+                          </>
+                        )}
                       </button>
                     )}
                   </div>

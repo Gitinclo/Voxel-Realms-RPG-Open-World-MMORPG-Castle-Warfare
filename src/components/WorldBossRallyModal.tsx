@@ -17,6 +17,7 @@ interface WorldBossRallyModalProps {
   castleLevel: number;
   heroes: Hero[];
   weather?: WeatherType;
+  vipRallyBonusPct?: number;
   onVictoryLoot: (loot: Partial<Record<ResourceType, bigint>>, exp: bigint) => void;
   onCasualties: (casualties: { shieldbearers: bigint; shooters: bigint; bombers: bigint }) => void;
   onClose: () => void;
@@ -28,6 +29,7 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
   castleLevel,
   heroes,
   weather = 'clear',
+  vipRallyBonusPct = 0,
   onVictoryLoot,
   onCasualties,
   onClose,
@@ -44,7 +46,8 @@ export const WorldBossRallyModal: React.FC<WorldBossRallyModalProps> = ({
     aiProfile.attackPatterns.find((p) => p.id === monster.activeAttackPatternId) ||
     aiProfile.attackPatterns[0];
 
-  const rallyCapacity = calculateRallyCapacity(castleLevel);
+  const baseRallyCapacity = calculateRallyCapacity(castleLevel);
+  const rallyCapacity = (baseRallyCapacity * BigInt(100 + vipRallyBonusPct)) / 100n;
   const leadHero = heroes.find((h) => h.id === selectedHeroId) || heroes[0];
 
   // Calculate player's available highest tier troops
