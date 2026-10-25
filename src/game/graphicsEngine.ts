@@ -511,10 +511,12 @@ export function computeLodChainPolicy(
   const lodBias = quality === 'balanced' && !hdPackMounted ? 2 : 1;
   const skipLod0 = !hdPackMounted;
   const filtered = skipLod0
-    ? fullChain.filter((tier) => tier.lodIndex >= lodBias).map((tier, idx) => ({
-        ...tier,
-        minDistanceMeters: idx === 0 ? 0 : idx === 1 ? 26 : 52,
-      }))
+    ? fullChain
+        .filter((tier) => tier.lodIndex >= lodBias)
+        .map((tier, idx) => ({
+          ...tier,
+          minDistanceMeters: idx === 0 ? 0 : idx === 1 ? 26 : 52,
+        }))
     : fullChain;
 
   return {
@@ -690,5 +692,3 @@ export function getGraphicsPresetMetadata(
       };
   }
 }
-
-

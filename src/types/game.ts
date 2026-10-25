@@ -52,6 +52,9 @@ export interface Hero {
   star: number;
   power: bigint;
   avatarIcon: string;
+  baseAvatarIcon?: string;
+  equippedSkinId?: string;
+  activeAuraType?: string;
   troopSpecialty: TroopType;
   statBonus: {
     attackBonusPct: number;

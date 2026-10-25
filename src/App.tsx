@@ -51,6 +51,7 @@ import {
   MAX_CASTLE_LEVEL,
 } from './game/math';
 import { calculateOutpostAssault } from './game/clanMath';
+import { applySkinToHero, HERO_SKIN_CATALOG, HeroSkinId } from './game/heroSkins';
 import { sound } from './game/audio';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
@@ -1154,6 +1155,18 @@ export default function App() {
     setToastMessage(`✨ Summoned Mythic Hero: ${newHero.name}!`);
   };
 
+  // Hero Aesthetic Skin & Particle Aura Customization
+  const handleSelectHeroSkin = (heroId: string, skinId: HeroSkinId) => {
+    const hero = heroes.find((h) => h.id === heroId);
+    if (!hero) return;
+    const updatedHero = applySkinToHero(hero, skinId);
+    const skinMeta = HERO_SKIN_CATALOG[skinId];
+    setHeroes((prev) => prev.map((h) => (h.id === heroId ? updatedHero : h)));
+    setToastMessage(
+      `✨ ${hero.name} equipped aesthetic skin "${skinMeta?.name ?? skinId}" (${updatedHero.avatarIcon} · ${skinMeta?.auraName ?? 'Aura'})!`
+    );
+  };
+
   // World Boss Battle Loot
   const handleVictoryLoot = (loot: Partial<Record<ResourceType, bigint>>, exp: bigint) => {
     setPlayerExp((prev) => prev + exp);
@@ -1772,6 +1785,7 @@ export default function App() {
           diamonds={resources.diamond}
           onLevelUpHero={handleLevelUpHero}
           onRecruitHero={handleRecruitHero}
+          onSelectHeroSkin={handleSelectHeroSkin}
           onClose={() => setActiveModal('none')}
         />
       )}

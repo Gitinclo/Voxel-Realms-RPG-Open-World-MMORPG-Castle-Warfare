@@ -183,5 +183,3 @@ test('5. Deployment & Build Size: Mobile base build stays under 2GB with optiona
     mobileBaseBuild.baseBuildSizeMb + mobileWithHdPack.hdAddressablePack.sizeMb
   );
 });
-
-

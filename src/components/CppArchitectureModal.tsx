@@ -115,8 +115,8 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-emerald-200/75 truncate mt-0.5">
-                Master Asset Texture Overrides · Aggressive LOD Chains · Hybrid GI / Baked Lightmaps ·
-                Unified Uber Shader · Addressable HD Packs
+                Master Asset Texture Overrides · Aggressive LOD Chains · Hybrid GI / Baked Lightmaps
+                · Unified Uber Shader · Addressable HD Packs
               </p>
             </div>
           </div>
@@ -143,8 +143,9 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   5-Pillar Cross-Platform Pipeline (PC/PS5/Xbox vs Mobile Android/iOS)
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Single 4K Master Source with automatic platform overrides, LOD Bias memory culling,
-                  Hybrid GI/Baked Lightmaps, Unified Uber Shader switches, and Addressable Bundles.
+                  Single 4K Master Source with automatic platform overrides, LOD Bias memory
+                  culling, Hybrid GI/Baked Lightmaps, Unified Uber Shader switches, and Addressable
+                  Bundles.
                 </p>
               </div>
 
@@ -215,12 +216,13 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Master Source: <span className="text-white font-bold">4096×4096 (4K)</span> (Single
-                  File Maintained)
+                  Master Source: <span className="text-white font-bold">4096×4096 (4K)</span>{' '}
+                  (Single File Maintained)
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  Override: <span className="text-emerald-300">{texOverride.compressionLabel}</span> ·
-                  Anisotropy: <span className="text-amber-300">{texOverride.anisotropySamples}×</span>
+                  Override: <span className="text-emerald-300">{texOverride.compressionLabel}</span>{' '}
+                  · Anisotropy:{' '}
+                  <span className="text-amber-300">{texOverride.anisotropySamples}×</span>
                 </div>
               </div>
 
@@ -265,8 +267,12 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Real-Time GI: <span className="text-white">{lightingSpec.enableRealtimeGI ? 'ON' : 'OFF'}</span>{' '}
-                  · Vol. Fog: <span className="text-white">{lightingSpec.enableVolumetricFog ? 'ON' : 'OFF'}</span>
+                  Real-Time GI:{' '}
+                  <span className="text-white">{lightingSpec.enableRealtimeGI ? 'ON' : 'OFF'}</span>{' '}
+                  · Vol. Fog:{' '}
+                  <span className="text-white">
+                    {lightingSpec.enableVolumetricFog ? 'ON' : 'OFF'}
+                  </span>
                 </div>
                 <div className="text-[11px] text-slate-400">
                   Small Debris/Prop Shadows:{' '}
@@ -347,8 +353,8 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   {targetPlatform === 'mobile' ? (
                     <>
                       Base Mobile Build: <span className="text-emerald-300 font-mono">640 MB</span>{' '}
-                      (Strictly &lt; 2GB Store Limit). 4K Textures &amp; LOD 0 Hero Meshes are isolated
-                      in the optional{' '}
+                      (Strictly &lt; 2GB Store Limit). 4K Textures &amp; LOD 0 Hero Meshes are
+                      isolated in the optional{' '}
                       <span className="text-amber-300 font-mono">
                         {bundleManifest.hdAddressablePack.packId}
                       </span>{' '}
@@ -357,8 +363,8 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   ) : (
                     <>
                       Console / PC Build: <span className="text-cyan-300 font-mono">68.40 GB</span>{' '}
-                      (Pre-bundles all 4K BC7 Master Textures, uncompressed audio, and LOD 0 75k–100k
-                      Hero Meshes).
+                      (Pre-bundles all 4K BC7 Master Textures, uncompressed audio, and LOD 0
+                      75k–100k Hero Meshes).
                     </>
                   )}
                 </div>

@@ -269,13 +269,9 @@ function getWaterNormalBumpTexture(): THREE.CanvasTexture | null {
     for (let y = 0; y < s; y += 4) {
       for (let x = 0; x < s; x += 4) {
         const nx =
-          Math.sin((x / s) * Math.PI * 8) * 38 +
-          Math.cos(((x + y) / s) * Math.PI * 16) * 18 +
-          128;
+          Math.sin((x / s) * Math.PI * 8) * 38 + Math.cos(((x + y) / s) * Math.PI * 16) * 18 + 128;
         const ny =
-          Math.cos((y / s) * Math.PI * 8) * 38 +
-          Math.sin(((x - y) / s) * Math.PI * 16) * 18 +
-          128;
+          Math.cos((y / s) * Math.PI * 8) * 38 + Math.sin(((x - y) / s) * Math.PI * 16) * 18 + 128;
         ctx.fillStyle = `rgb(${Math.floor(nx)},${Math.floor(ny)},245)`;
         ctx.fillRect(x, y, 4, 4);
       }
@@ -289,7 +285,14 @@ function getWaterNormalBumpTexture(): THREE.CanvasTexture | null {
  */
 function getBakedLightmapTexture(): THREE.CanvasTexture | null {
   return getOrCreateCanvasTexture('baked_lightmap_1024', 1024, false, 1, (ctx, s) => {
-    const radGrad = ctx.createRadialGradient(s * 0.5, s * 0.5, s * 0.08, s * 0.5, s * 0.5, s * 0.68);
+    const radGrad = ctx.createRadialGradient(
+      s * 0.5,
+      s * 0.5,
+      s * 0.08,
+      s * 0.5,
+      s * 0.5,
+      s * 0.68
+    );
     radGrad.addColorStop(0, '#ffffff');
     radGrad.addColorStop(0.65, '#e2e8f0');
     radGrad.addColorStop(1, '#94a3b8');
@@ -316,10 +319,7 @@ const geometryCache = new Map<string, THREE.BufferGeometry>();
  * - LOD 2 (38m - 68m): Standard Mobile Icosahedron (detail=0, 20 tris)
  * - LOD 3 (68m+): Distant Mobile Octahedron proxy (detail=0, 8 tris)
  */
-function createMultiLodCanopyCluster(
-  radius: number,
-  material: THREE.Material
-): THREE.LOD {
+function createMultiLodCanopyCluster(radius: number, material: THREE.Material): THREE.LOD {
   const lod = new THREE.LOD();
   lod.name = 'MultiTierLodCluster';
   lod.userData.isSmallProp = true;
@@ -567,7 +567,9 @@ function attachGenshinFoliageShader(mat: THREE.MeshStandardMaterial | THREE.Mesh
  * - Console/PC: Enables Parallax Relief, Detail Normal micro-Perturbation, and Fresnel Rim Highlighting.
  * - Mobile: Simplifies to fast single-pass baked lightmap + base albedo math.
  */
-function attachUnifiedStoneUberShader(mat: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
+function attachUnifiedStoneUberShader(
+  mat: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial
+) {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uUseRimLight = worldShaderUniforms.uUseRimLight;
     shader.uniforms.uUseDetailNormals = worldShaderUniforms.uUseDetailNormals;
@@ -1269,8 +1271,7 @@ export function createVoxelTerrain(): THREE.Group {
       tree.add(bough);
     });
 
-    const leafMat =
-      kind === 'sakura' ? voxelMaterials.sakuraBlossom : voxelMaterials.ginkgoGold;
+    const leafMat = kind === 'sakura' ? voxelMaterials.sakuraBlossom : voxelMaterials.ginkgoGold;
     const crownOffsets = [
       [0, 3.85, 0, 1.9],
       [-1.05, 3.25, 0.65, 1.4],
@@ -1596,7 +1597,10 @@ export function createVoxelCastle(level: number): THREE.Group {
     pedestal.position.set(bx, 0.72, 9.8);
     castle.add(pedestal);
 
-    const flame = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 2), voxelMaterials.lanternGlow);
+    const flame = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.45, 2),
+      voxelMaterials.lanternGlow
+    );
     flame.position.set(bx, 1.68, 9.8);
     castle.add(flame);
   });
@@ -2669,4 +2673,3 @@ export function createPlayerMesh(
 
   return player;
 }
-
