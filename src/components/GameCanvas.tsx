@@ -267,13 +267,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // Studio PBR WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: !isSoftwareGl,
+      preserveDrawingBuffer: true,
       powerPreference: 'high-performance',
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.24;
+    renderer.toneMappingExposure = 0.96;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -290,9 +291,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       bloomPass = new UnrealBloomPass(
         new THREE.Vector2(Math.floor(width / 2), Math.floor(height / 2)),
-        0.48,
-        0.52,
-        0.76
+        0.18,
+        0.28,
+        0.92
       );
       composer.addPass(bloomPass);
 
@@ -335,32 +336,32 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     rimLight.position.set(-28, 18, -24);
     scene.add(rimLight);
 
-    // Warm Citadel Courtyard Point Light
-    const citadelHeartLight = new THREE.PointLight(0xffb300, 2.1, 36);
+    // Warm Citadel Courtyard Point Light (subdued during daytime so castle walls do not wash out)
+    const citadelHeartLight = new THREE.PointLight(0xffb300, 0.55, 28);
     citadelHeartLight.position.set(0, 8, 6);
     scene.add(citadelHeartLight);
 
-    // Sun Visual Sphere + Volumetric God-Ray Corona Halos
+    // Sun Visual Sphere + Subtle Corona Halos
     const sunGroup = new THREE.Group();
     const sunMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(3.8, 24, 24),
+      new THREE.SphereGeometry(3.2, 24, 24),
       new THREE.MeshBasicMaterial({ color: 0xfffbeb })
     );
     const sunCorona = new THREE.Mesh(
-      new THREE.SphereGeometry(6.8, 24, 24),
+      new THREE.SphereGeometry(5.6, 24, 24),
       new THREE.MeshBasicMaterial({
         color: 0xfbbf24,
         transparent: true,
-        opacity: 0.34,
+        opacity: 0.18,
         depthWrite: false,
       })
     );
     const sunOuterGlare = new THREE.Mesh(
-      new THREE.SphereGeometry(11.5, 24, 24),
+      new THREE.SphereGeometry(8.8, 24, 24),
       new THREE.MeshBasicMaterial({
         color: 0xf59e0b,
         transparent: true,
-        opacity: 0.14,
+        opacity: 0.08,
         depthWrite: false,
       })
     );
@@ -768,6 +769,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         : skyParams.hemiIntensity * 1.18;
       rimLight.color.setHex(skyParams.rimLightHex);
       rimLight.intensity = skyParams.rimLightIntensity;
+      citadelHeartLight.intensity = sunY < 0 ? 1.15 : 0.35;
       starsMat.opacity = skyParams.starfieldOpacity;
       fireflyMat.opacity = sunY < 0 ? 0.88 : 0.45;
 

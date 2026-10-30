@@ -92,75 +92,75 @@ export function computeAtmosphericSkyParams(
 
   let turbidity = 2.4;
   let rayleigh = 1.65;
-  let mieCoefficient = 0.0045;
-  let mieDirectionalG = 0.86;
-  let exposure = 1.24;
+  let mieCoefficient = 0.0035;
+  let mieDirectionalG = 0.84;
+  let exposure = 0.96;
 
   let sunLightHex = 0xfff8e7;
-  let sunLightIntensity = 3.1 * weatherSunlightMult;
+  let sunLightIntensity = 2.1 * weatherSunlightMult;
   let hemiSkyHex = 0x7dd3fc;
   let hemiGroundHex = 0x1e293b;
-  let hemiIntensity = 1.05 * weatherSunlightMult;
+  let hemiIntensity = 0.82 * weatherSunlightMult;
   let rimLightHex = 0x38bdf8;
-  let rimLightIntensity = 0.85;
+  let rimLightIntensity = 0.65;
   let fogHex = 0x93c5fd;
   let fogDensity = 0.0065;
   let starfieldOpacity = 0;
-  let godRayIntensity = 0.65 * weatherSunlightMult;
+  let godRayIntensity = 0.22 * weatherSunlightMult;
 
   if (isNight) {
     turbidity = 1.2;
     rayleigh = 0.35;
     mieCoefficient = 0.002;
     mieDirectionalG = 0.75;
-    exposure = 1.05;
+    exposure = 0.9;
     sunLightHex = 0x818cf8;
-    sunLightIntensity = 0.48 * weatherSunlightMult;
+    sunLightIntensity = 0.45 * weatherSunlightMult;
     hemiSkyHex = 0x312e81;
     hemiGroundHex = 0x0f172a;
-    hemiIntensity = 0.58 * weatherSunlightMult;
+    hemiIntensity = 0.54 * weatherSunlightMult;
     rimLightHex = 0x60a5fa;
-    rimLightIntensity = 1.25;
+    rimLightIntensity = 0.95;
     fogHex = 0x0b1120;
     fogDensity = 0.0085;
     starfieldOpacity = Math.min(1.0, Math.abs(sinElev) * 2.2);
-    godRayIntensity = 0.15;
+    godRayIntensity = 0.08;
   } else if (isGoldenHour) {
     // GTA V / Genshin Liyue sunset & sunrise golden-hour scattering
-    turbidity = 7.5;
-    rayleigh = 3.1;
-    mieCoefficient = 0.012;
-    mieDirectionalG = 0.92;
-    exposure = 1.28;
+    turbidity = 6.2;
+    rayleigh = 2.75;
+    mieCoefficient = 0.0085;
+    mieDirectionalG = 0.88;
+    exposure = 0.98;
     sunLightHex = 0xff9e44;
-    sunLightIntensity = 2.65 * weatherSunlightMult;
+    sunLightIntensity = 1.85 * weatherSunlightMult;
     hemiSkyHex = 0xfdba74;
     hemiGroundHex = 0x311b2c;
-    hemiIntensity = 0.92 * weatherSunlightMult;
+    hemiIntensity = 0.76 * weatherSunlightMult;
     rimLightHex = 0xfbbf24;
-    rimLightIntensity = 1.15;
+    rimLightIntensity = 0.85;
     fogHex = 0xfb923c;
     fogDensity = 0.0078;
     starfieldOpacity = Math.max(0, (0.12 - sinElev) * 2.5);
-    godRayIntensity = 0.95 * weatherSunlightMult;
+    godRayIntensity = 0.34 * weatherSunlightMult;
   } else {
-    // High-altitude Teyvat / Los Santos clear daylight
-    turbidity = isStorm || isRain ? 11.0 : 2.2;
-    rayleigh = isStorm || isRain ? 0.85 : 1.75;
-    mieCoefficient = isStorm ? 0.018 : 0.0042;
-    mieDirectionalG = 0.88;
-    exposure = 1.25;
+    // High-altitude Teyvat / Los Santos clear daylight (calibrated to prevent washout)
+    turbidity = isStorm || isRain ? 9.5 : 2.1;
+    rayleigh = isStorm || isRain ? 0.85 : 1.65;
+    mieCoefficient = isStorm ? 0.012 : 0.0032;
+    mieDirectionalG = 0.84;
+    exposure = 0.96;
     sunLightHex = isSnow ? 0xe0f2fe : 0xfffbeb;
-    sunLightIntensity = 3.25 * weatherSunlightMult;
+    sunLightIntensity = 2.15 * weatherSunlightMult;
     hemiSkyHex = isStorm ? 0x475569 : isSnow ? 0xbae6fd : 0x60a5fa;
-    hemiGroundHex = isSnow ? 0x475569 : 0x1e293b;
-    hemiIntensity = 1.12 * weatherSunlightMult;
+    hemiGroundHex = isSnow ? 0x334155 : 0x1e293b;
+    hemiIntensity = 0.84 * weatherSunlightMult;
     rimLightHex = 0x38bdf8;
-    rimLightIntensity = 0.82;
-    fogHex = isStorm ? 0x1e293b : isRain ? 0x475569 : isSnow ? 0xe2e8f0 : 0xbae6fd;
+    rimLightIntensity = 0.62;
+    fogHex = isStorm ? 0x1e293b : isRain ? 0x334155 : isSnow ? 0xcbd5e1 : 0x93c5fd;
     fogDensity = isStorm ? 0.014 : isRain ? 0.011 : isSnow ? 0.0095 : 0.0058;
     starfieldOpacity = 0;
-    godRayIntensity = 0.72 * weatherSunlightMult;
+    godRayIntensity = 0.22 * weatherSunlightMult;
   }
 
   if (quality === 'balanced') {
@@ -192,8 +192,8 @@ export function computeAtmosphericSkyParams(
 
 /**
  * Returns post-processing & shader configuration for each GraphicsQualityPreset.
- * - 'ultra': Full GTA V + Genshin Impact Next-Gen HDR (ACES Filmic + Bloom + Color Grading + Sharpen + Rim Light)
- * - 'high': Stylized High PBR + Bloom + Rim Light
+ * - 'ultra': Full GTA V + Genshin Impact Next-Gen HDR (ACES Filmic + Controlled Bloom + Color Grading + Sharpen + Rim Light)
+ * - 'high': Stylized High PBR + Subtle Bloom + Rim Light
  * - 'balanced': Fast 60 FPS Direct Render
  */
 export function getPostProcessProfile(quality: GraphicsQualityPreset): PostProcessProfile {
@@ -201,31 +201,31 @@ export function getPostProcessProfile(quality: GraphicsQualityPreset): PostProce
     case 'ultra':
       return {
         enableComposer: true,
-        bloomStrength: 0.48,
-        bloomRadius: 0.52,
-        bloomThreshold: 0.76,
-        saturationBoost: 1.22,
-        contrastBoost: 1.12,
-        vibranceBoost: 0.24,
+        bloomStrength: 0.18,
+        bloomRadius: 0.28,
+        bloomThreshold: 0.92,
+        saturationBoost: 1.16,
+        contrastBoost: 1.09,
+        vibranceBoost: 0.18,
         sharpenStrength: 0.35,
-        vignetteDarkness: 0.28,
-        chromaticAberration: 0.0012,
-        rimLightShaderStrength: 0.65,
+        vignetteDarkness: 0.26,
+        chromaticAberration: 0.001,
+        rimLightShaderStrength: 0.42,
         shadowMapSize: 2048,
       };
     case 'high':
       return {
         enableComposer: true,
-        bloomStrength: 0.32,
-        bloomRadius: 0.4,
-        bloomThreshold: 0.82,
-        saturationBoost: 1.15,
-        contrastBoost: 1.08,
-        vibranceBoost: 0.16,
+        bloomStrength: 0.11,
+        bloomRadius: 0.22,
+        bloomThreshold: 0.94,
+        saturationBoost: 1.12,
+        contrastBoost: 1.06,
+        vibranceBoost: 0.12,
         sharpenStrength: 0.18,
         vignetteDarkness: 0.2,
         chromaticAberration: 0.0,
-        rimLightShaderStrength: 0.48,
+        rimLightShaderStrength: 0.32,
         shadowMapSize: 2048,
       };
     case 'balanced':
@@ -241,7 +241,7 @@ export function getPostProcessProfile(quality: GraphicsQualityPreset): PostProce
         sharpenStrength: 0,
         vignetteDarkness: 0,
         chromaticAberration: 0,
-        rimLightShaderStrength: 0.25,
+        rimLightShaderStrength: 0.2,
         shadowMapSize: 1024,
       };
   }

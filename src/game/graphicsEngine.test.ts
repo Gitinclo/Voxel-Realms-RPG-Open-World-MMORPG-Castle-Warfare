@@ -23,10 +23,11 @@ test('computeAtmosphericSkyParams calculates distinct Golden Hour, Noon, and Mid
   const sunset = computeAtmosphericSkyParams(17.8, 'clear', 'ultra');
   const midnight = computeAtmosphericSkyParams(0, 'clear', 'ultra');
 
-  // Noon has highest sun elevation and zero stars
+  // Noon has highest sun elevation, calibrated anti-washout exposure, and zero stars
   assert.ok(noon.sunElevationDeg > 75);
   assert.equal(noon.starfieldOpacity, 0);
-  assert.ok(noon.sunLightIntensity > 2.8);
+  assert.ok(noon.sunLightIntensity > 1.8 && noon.sunLightIntensity <= 2.4);
+  assert.ok(noon.exposure <= 1.05);
 
   // Golden hour sunset has elevated Rayleigh & turbidity for warm orange scattering and high god-rays
   assert.ok(sunset.rayleigh > noon.rayleigh);
@@ -59,6 +60,8 @@ test('getPostProcessProfile and getGraphicsPresetMetadata return calibrated pres
 
   assert.equal(ultra.enableComposer, true);
   assert.ok(ultra.bloomStrength > high.bloomStrength);
+  assert.ok(ultra.bloomStrength <= 0.25);
+  assert.ok(ultra.bloomThreshold >= 0.9);
   assert.ok(ultra.saturationBoost > high.saturationBoost);
   assert.ok(ultra.sharpenStrength > 0);
   assert.equal(balanced.enableComposer, false);

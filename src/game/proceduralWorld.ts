@@ -681,16 +681,16 @@ const voxelMaterials = {
     metalness: 0.04,
   }),
   stone: new THREE.MeshPhysicalMaterial({
-    color: 0xdbeafe,
+    color: 0xcbd5e1,
     map: stoneMap,
     normalMap: stoneNormal,
     normalScale: new THREE.Vector2(1.05, 1.05),
     bumpMap: stoneBump,
     bumpScale: 0.1,
-    roughness: 0.48,
-    metalness: 0.24,
-    clearcoat: 0.34,
-    clearcoatRoughness: 0.22,
+    roughness: 0.54,
+    metalness: 0.18,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.28,
   }),
   stoneDark: new THREE.MeshPhysicalMaterial({
     color: 0x90a4ae,
@@ -809,25 +809,25 @@ const voxelMaterials = {
   }),
   diamondOre: new THREE.MeshPhysicalMaterial({
     color: 0x00e5ff,
-    roughness: 0.03,
+    roughness: 0.06,
     metalness: 0.24,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.02,
+    clearcoat: 0.9,
+    clearcoatRoughness: 0.05,
     ior: 2.417,
-    reflectivity: 1.0,
+    reflectivity: 0.9,
     emissive: 0x00b0ff,
-    emissiveIntensity: 0.9,
+    emissiveIntensity: 0.45,
   }),
   goldAccent: new THREE.MeshPhysicalMaterial({
     color: 0xffd700,
     normalMap: armorNormal,
     normalScale: new THREE.Vector2(0.5, 0.5),
     emissive: 0xd97706,
-    emissiveIntensity: 0.25,
-    roughness: 0.12,
-    metalness: 0.97,
-    clearcoat: 0.9,
-    clearcoatRoughness: 0.06,
+    emissiveIntensity: 0.08,
+    roughness: 0.18,
+    metalness: 0.92,
+    clearcoat: 0.75,
+    clearcoatRoughness: 0.1,
   }),
   grainGold: new THREE.MeshStandardMaterial({
     color: 0xfacc15,
@@ -845,8 +845,8 @@ const voxelMaterials = {
   lanternGlow: new THREE.MeshStandardMaterial({
     color: 0xfef08a,
     emissive: 0xff9800,
-    emissiveIntensity: 2.4,
-    roughness: 0.06,
+    emissiveIntensity: 0.85,
+    roughness: 0.12,
   }),
   celestialJade: new THREE.MeshPhysicalMaterial({
     color: 0x34d399,
@@ -962,7 +962,29 @@ export function applyCrossPlatformPipeline(
 }
 
 /**
- * Helper to draw high-DPI crisp canvas billboards
+ * Helper to draw high-contrast text with crisp dark outline for 3D world nameplates
+ */
+function drawCrispOutlinedText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fillStyle: string,
+  strokeWidth: number = 7
+): void {
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.98)';
+  ctx.lineWidth = strokeWidth;
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fillStyle;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+/**
+ * Helper to draw high-DPI crisp canvas billboards immune to scene bloom/exposure washout
  */
 function createCrispBillboardSprite(
   width: number,
@@ -991,6 +1013,7 @@ function createCrispBillboardSprite(
     map: texture,
     transparent: true,
     depthTest: true,
+    toneMapped: false,
   });
   const sprite = new THREE.Sprite(spriteMat);
   sprite.scale.set(scaleX, scaleY, 1);
@@ -1480,10 +1503,10 @@ export function createVoxelCastle(level: number): THREE.Group {
 
   // High-Poly Stained-Glass Gothic Rose Window on Front Keep Facade
   const windowMat = new THREE.MeshStandardMaterial({
-    color: 0xffecb3,
-    emissive: level > 40 ? 0x00e5ff : 0xffb300,
-    emissiveIntensity: 1.5,
-    roughness: 0.08,
+    color: 0xfde68a,
+    emissive: level > 40 ? 0x0284c7 : 0xd97706,
+    emissiveIntensity: 0.55,
+    roughness: 0.18,
   });
   const roseWindow = new THREE.Mesh(
     new THREE.TorusKnotGeometry(1.15, 0.08, 64, 12, 2, 3),
@@ -1607,14 +1630,14 @@ export function createVoxelCastle(level: number): THREE.Group {
 
   // High-Poly Glowing Runic Spire at the top (Power Level Indicator) + 3 Orbital Astrolabe Rings
   const spireColor = level > 80 ? 0xff00ff : level > 40 ? 0x00e5ff : 0xffd700;
-  const spireEmissive = level > 80 ? 0xd500f9 : level > 40 ? 0x00b0ff : 0xffab00;
+  const spireEmissive = level > 80 ? 0xd500f9 : level > 40 ? 0x00b0ff : 0xd97706;
   const spireMat = new THREE.MeshPhysicalMaterial({
     color: spireColor,
     emissive: spireEmissive,
-    emissiveIntensity: 1.45,
-    roughness: 0.06,
-    metalness: 0.88,
-    clearcoat: 1.0,
+    emissiveIntensity: 0.55,
+    roughness: 0.14,
+    metalness: 0.82,
+    clearcoat: 0.85,
   });
   const spireRadius = 1.85 + Math.min(2, level * 0.02);
   const spireGeo = new THREE.IcosahedronGeometry(spireRadius, 2);
@@ -1853,21 +1876,22 @@ export function createResourceNodeMesh(node: ResourceNode): THREE.Group {
     group.add(barrel1, barrel2);
   }
 
-  // High-DPI Retina Floating Resource Badge
-  const badge = createCrispBillboardSprite(256, 128, 3.1, 1.55, 5.3 * scaleFactor, (ctx, w, h) => {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+  // High-DPI Retina Floating Resource Badge with High-Opacity Dark Backing & Outlined Text
+  const badge = createCrispBillboardSprite(300, 136, 3.2, 1.45, 5.3 * scaleFactor, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.96)';
     ctx.roundRect(8, 8, w - 16, h - 16, 22);
     ctx.fill();
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 8;
     ctx.stroke();
-    ctx.font = 'bold 42px sans-serif';
-    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 4;
+    ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillText(`${node.type.toUpperCase()}`, w / 2, 56);
-    ctx.font = 'bold 38px monospace';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`Lv.${node.level}`, w / 2, 102);
+    ctx.font = 'bold 40px sans-serif';
+    drawCrispOutlinedText(ctx, `${node.type.toUpperCase()}`, w / 2, 58, '#ffffff', 7);
+    ctx.font = 'bold 36px monospace';
+    drawCrispOutlinedText(ctx, `Lv.${node.level}`, w / 2, 106, '#38bdf8', 6);
   });
   group.add(badge);
 
@@ -2098,28 +2122,38 @@ export function createMonsterMesh(monster: MonsterTarget): THREE.Group {
   telegraphRing.name = 'MonsterTelegraphRing';
   group.add(telegraphRing);
 
-  // High-DPI Retina Overhead Nameplate
-  const sprite = createCrispBillboardSprite(384, 152, 4.6, 1.85, 5.25 * scale, (ctx, w, h) => {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
-    ctx.roundRect(8, 8, w - 16, h - 16, 20);
+  // High-DPI Retina Overhead Nameplate with High-Opacity Backing & Outlined Text
+  const sprite = createCrispBillboardSprite(440, 160, 4.7, 1.75, 5.25 * scale, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.96)';
+    ctx.roundRect(8, 8, w - 16, h - 16, 22);
     ctx.fill();
-    ctx.strokeStyle = isBoss ? '#f43f5e' : '#eab308';
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 8;
     ctx.stroke();
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = isBoss ? '#f43f5e' : '#eab308';
+    ctx.lineWidth = 4.5;
+    ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillText(`${monster.name.slice(0, 18)}`, w / 2, 48);
-    ctx.font = 'bold 34px monospace';
-    ctx.fillStyle = isBoss ? '#fb7185' : '#fde047';
-    ctx.fillText(
+    ctx.font = 'bold 34px sans-serif';
+    drawCrispOutlinedText(ctx, `${monster.name.slice(0, 20)}`, w / 2, 50, '#ffffff', 7);
+    ctx.font = 'bold 32px monospace';
+    drawCrispOutlinedText(
+      ctx,
       `Lv.${monster.level} [${(monster.aiState || 'patrol').split('_')[0].toUpperCase()}]`,
       w / 2,
-      96
+      98,
+      isBoss ? '#fb7185' : '#fde047',
+      6
     );
-    ctx.font = 'bold 26px monospace';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`${(monster.movementPolicy || 'pack_swarmer').replace('_', ' ')}`, w / 2, 130);
+    ctx.font = 'bold 25px monospace';
+    drawCrispOutlinedText(
+      ctx,
+      `${(monster.movementPolicy || 'pack_swarmer').replace('_', ' ')}`,
+      w / 2,
+      134,
+      '#38bdf8',
+      5
+    );
   });
   group.add(sprite);
 
@@ -2328,21 +2362,29 @@ export function createNPCMesh(npc: NPC): THREE.Group {
   auraMesh.position.y = 0.06;
   npcModel.add(auraMesh);
 
-  // High-DPI Retina NPC Overhead Billboard
-  const spr = createCrispBillboardSprite(384, 144, 3.85, 1.45, 3.85, (ctx, w, h) => {
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
-    ctx.roundRect(8, 8, w - 16, h - 16, 20);
+  // High-DPI Retina NPC Overhead Billboard with High-Opacity Dark Backing & Outlined Text
+  const spr = createCrispBillboardSprite(480, 148, 3.85, 1.22, 3.85, (ctx, w, h) => {
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.96)';
+    ctx.roundRect(8, 8, w - 16, h - 16, 22);
     ctx.fill();
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 8;
     ctx.stroke();
-    ctx.font = 'bold 34px sans-serif';
-    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 4.5;
+    ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillText(`${npc.name}`, w / 2, 54);
+    ctx.font = 'bold 34px sans-serif';
+    drawCrispOutlinedText(ctx, `${npc.name}`, w / 2, 56, '#ffffff', 7);
     ctx.font = 'bold 30px monospace';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(`Lv.${npc.level} ${npc.role.toUpperCase()}`, w / 2, 106);
+    drawCrispOutlinedText(
+      ctx,
+      `Lv.${npc.level} ${npc.role.toUpperCase()}`,
+      w / 2,
+      108,
+      '#38bdf8',
+      6
+    );
   });
   npcModel.add(spr);
 
@@ -2646,27 +2688,42 @@ export function createPlayerMesh(
 
   player.add(auraGroup);
 
-  // High-DPI Retina Floating Player Name & Sect Title Banner (No Level Numbers above head!)
+  // High-DPI Retina Floating Player Name & Sect Title Banner (High-Opacity Backing + Crisp Text Outlines)
   const sprite = createCrispBillboardSprite(
-    400,
-    128,
-    3.6,
-    1.2,
+    520,
+    144,
+    3.9,
+    1.12,
     realmIndex >= 3 && realmIndex <= 20 ? 3.95 : 3.25,
     (ctx, w, h) => {
-      ctx.fillStyle = isRedName ? 'rgba(69, 10, 10, 0.92)' : 'rgba(15, 23, 42, 0.88)';
-      ctx.roundRect(8, 8, w - 16, h - 16, 20);
+      ctx.fillStyle = isRedName ? 'rgba(69, 10, 10, 0.97)' : 'rgba(2, 6, 23, 0.96)';
+      ctx.roundRect(8, 8, w - 16, h - 16, 22);
       ctx.fill();
-      ctx.strokeStyle = isRedName ? '#ff1744' : '#38bdf8';
-      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 8;
       ctx.stroke();
-      ctx.font = 'bold 36px sans-serif';
-      ctx.fillStyle = isRedName ? '#fecdd3' : '#ffffff';
+      ctx.strokeStyle = isRedName ? '#ff1744' : '#38bdf8';
+      ctx.lineWidth = 4.5;
+      ctx.stroke();
       ctx.textAlign = 'center';
-      ctx.fillText(`[${appearance.clanTag}] ${appearance.name}`, w / 2, 52);
+      ctx.font = 'bold 36px sans-serif';
+      drawCrispOutlinedText(
+        ctx,
+        `[${appearance.clanTag}] ${appearance.name}`,
+        w / 2,
+        56,
+        isRedName ? '#fecdd3' : '#ffffff',
+        8
+      );
       ctx.font = 'bold 30px monospace';
-      ctx.fillStyle = isRedName ? '#ff1744' : '#38bdf8';
-      ctx.fillText(isRedName ? '🩸 RED NAME · BOUNTY' : `${appearance.title}`, w / 2, 100);
+      drawCrispOutlinedText(
+        ctx,
+        isRedName ? '🩸 RED NAME · BOUNTY' : `${appearance.title}`,
+        w / 2,
+        106,
+        isRedName ? '#ff1744' : '#38bdf8',
+        6
+      );
     }
   );
   player.add(sprite);
