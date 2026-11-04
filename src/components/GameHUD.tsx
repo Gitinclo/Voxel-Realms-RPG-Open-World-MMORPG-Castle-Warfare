@@ -27,6 +27,7 @@ import {
   Package,
   Settings,
   LayoutGrid,
+  Gavel,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -241,6 +242,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     <span>{vipBadgeLabel}</span>
                   </button>
                 )}
+                <button
+                  type="button"
+                  data-testid="hud-gm-mod-badge-btn"
+                  onClick={() => {
+                    sound.playSwing();
+                    onOpenAdminConsole();
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-500/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                  title="Open Administration, GM, Moderator Control & Contact (creatergame31@gmail.com)"
+                >
+                  <Gavel className="w-2.5 h-2.5 text-red-400" />
+                  <span>GM · MOD</span>
+                </button>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-mono">
                 <span
@@ -810,6 +824,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               <Cpu className="w-5 h-5 text-emerald-400" />
               <span className="text-[10px] font-bold font-mono whitespace-nowrap">C++ 20+</span>
               <span className="text-[9px] font-mono text-emerald-400">Engine</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="dock-gm-mod-btn"
+              onClick={() => {
+                sound.playSwing();
+                setIsMoreHubOpen(false);
+                onOpenAdminConsole();
+              }}
+              className="p-2 rounded-xl bg-red-950/70 hover:bg-red-900/70 border border-red-500/50 text-red-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+            >
+              <Gavel className="w-5 h-5 text-red-400" />
+              <span className="text-[10px] font-bold font-mono whitespace-nowrap">GM / Mod</span>
+              <span className="text-[9px] font-mono text-amber-300">Admin</span>
             </button>
           </div>
         )}

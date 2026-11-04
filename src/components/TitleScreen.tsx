@@ -4,8 +4,9 @@
  */
 
 import React, { useEffect } from 'react';
-import { Play, Shield, Sparkles, Gift, Crown } from 'lucide-react';
+import { Play, Shield, Sparkles, Gift, Crown, Gavel } from 'lucide-react';
 import { sound } from '../game/audio';
+import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
 
 interface TitleScreenProps {
   onStartGame: () => void;
@@ -15,6 +16,7 @@ interface TitleScreenProps {
   onOpenVipSubscription?: () => void;
   vipBadgeLabel?: string;
   canClaimVipStipend?: boolean;
+  onOpenAdminConsole?: () => void;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -25,6 +27,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenVipSubscription,
   vipBadgeLabel = 'VIP 0',
   canClaimVipStipend = false,
+  onOpenAdminConsole,
 }) => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -47,6 +50,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {onOpenAdminConsole && (
+            <button
+              type="button"
+              data-testid="title-admin-console-btn"
+              onClick={onOpenAdminConsole}
+              className="px-3.5 py-2 rounded-xl bg-red-950/85 hover:bg-red-900/85 border border-red-500/60 text-xs font-mono font-bold text-red-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title={`Open Administration, GM, Moderator Control & Contact (${PRIMARY_ADMIN_EMAIL})`}
+            >
+              <Gavel className="w-4 h-4 text-red-400" />
+              <span>GM / Admin / Mod ({PRIMARY_ADMIN_EMAIL})</span>
+            </button>
+          )}
+
           {onOpenVipSubscription && (
             <button
               type="button"

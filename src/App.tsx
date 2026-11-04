@@ -116,6 +116,13 @@ import {
   getNextWeather,
   calculateWeatherGatherRate,
 } from './game/weather';
+import {
+  PRIMARY_ADMIN_EMAIL,
+  INITIAL_MODERATED_PLAYERS,
+  INITIAL_SUPPORT_TICKETS,
+  ModeratedPlayerRecord,
+  SupportTicket,
+} from './game/adminModeration';
 
 type ActiveModal =
   | 'none'
@@ -298,6 +305,10 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
+  const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
+  const [moderatedPlayers, setModeratedPlayers] =
+    useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
 
   // Dynamic Weather System State (Clear, Rain, Snow, Storm)
   const [weather, setWeather] = useState<WeatherType>('clear');
@@ -1661,6 +1672,7 @@ export default function App() {
           onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
           canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
+          onOpenAdminConsole={() => setActiveModal('admin_console')}
         />
       )}
 
@@ -1929,6 +1941,19 @@ export default function App() {
           onSetWeather={(w) => {
             setWeather(w);
             setWeatherRemainingSec(60);
+          }}
+          activeAccountEmail={activeAccountEmail}
+          onChangeAccountEmail={(email) => {
+            setActiveAccountEmail(email);
+            setToastMessage(`🛡️ Active Session Bound to: ${email}`);
+          }}
+          moderatedPlayers={moderatedPlayers}
+          onUpdateModeratedPlayers={(updated) => setModeratedPlayers(updated)}
+          supportTickets={supportTickets}
+          onUpdateSupportTickets={(updated) => setSupportTickets(updated)}
+          onBroadcastSystemMessage={(msg, tag) => {
+            handleSendClanChat(msg, true, tag);
+            setToastMessage(`📢 ${msg}`);
           }}
           onClose={() => setActiveModal('none')}
         />
