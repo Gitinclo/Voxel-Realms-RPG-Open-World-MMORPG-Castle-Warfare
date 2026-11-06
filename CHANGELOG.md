@@ -249,6 +249,20 @@ export interface SiegeDeltaUpdatePacket {
 
 ---
 
+## [1.4.1] - 2026-11-05
+
+### Added
+
+- **Administration, GM, Admin & Moderator RBAC Control System (`src/game/adminModeration.ts`)**:
+  - Bound root account **`creatergame31@gmail.com`** at Clearance Level 999 with full `Administration`, `Game Master (GM)`, `Admin`, `Moderator`, and `Official Contact` privileges.
+  - Added immutable root protection guardrails preventing `creatergame31@gmail.com` from being sanctioned, muted, banned, or demoted.
+  - Added **Admin & Moderator Control** tab in `AdminConsoleModal` with Server-Wide GM/Moderator Decree broadcasts and live player moderation actions (`Warn`, `Mute Chat`, `Temp Ban`, `Restore`, `+Moderator`, `+Admin`).
+  - Added **Official Contact & Support Tickets** tab routing all Administration, GM Live-Ops, Moderation, Appeal, and Security tickets directly to `creatergame31@gmail.com`.
+- **Comprehensive Legal, Governance & Technical Documentation Suite**:
+  - Added [`LICENSE.md`](./LICENSE.md), [`ROADMAP.md`](./ROADMAP.md), [`SUPPORT.md`](./SUPPORT.md), [`GOVERNANCE.md`](./GOVERNANCE.md), [`ARCHITECTURE.md`](./ARCHITECTURE.md), and [`.github/ISSUE_TEMPLATE.md`](./.github/ISSUE_TEMPLATE.md).
+
+---
+
 ## [1.4.0] - 2026-03-20
 
 ### Added

@@ -338,13 +338,30 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 ## 📚 Documentation, Community & Legal
 
-- **[Contributing Guide](./CONTRIBUTING.md)** — How to set up the repo, run tests, and submit Pull Requests.
-- **[Code of Conduct](./CODE_OF_CONDUCT.md)** — Community standards and expectations.
-- **[Changelog](./CHANGELOG.md)** — Version history and release notes (`v1.0.0` – `v1.2.0`).
-- **[Security Policy](./SECURITY.md)** — How to privately report security vulnerabilities (`creatergame31@gmail.com`).
-- **[Privacy Policy](./PRIVACY.md)** — How user data, `localStorage`, accounts, payments, and ads are handled.
-- **[Terms & Conditions](./TERMS.md)** — Rules of conduct, virtual goods policy, subscriptions, and liability disclaimers.
-- **[Apache-2.0 License](./LICENSE)** & **[Mandatory Attribution Notice](./NOTICE)** — Full license text and Section 4(d) attribution requirements.
+### Legal & Compliance
+
+- **[Apache-2.0 License (`LICENSE.md`)](./LICENSE.md)** & **[Raw `LICENSE`](./LICENSE)** / **[`NOTICE`](./NOTICE)** — Full Apache 2.0 terms, permissions, and Section 4(d) attribution requirements.
+- **[Code of Conduct (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)** — Community standards, acceptable behavior, and enforcement rules (`creatergame31@gmail.com`).
+- **[Privacy Policy (`PRIVACY.md`)](./PRIVACY.md)** — How user data, `localStorage`, accounts, payments, cookies, and GDPR/CCPA requests are handled.
+- **[Terms & Conditions (`TERMS.md`)](./TERMS.md)** — Rules of conduct, virtual goods policy, subscriptions, and liability disclaimers.
+- **[Security Policy (`SECURITY.md`)](./SECURITY.md)** — Private vulnerability disclosure policy (`creatergame31@gmail.com`).
+
+### Project Tracking & History
+
+- **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.4.1`).
+- **[Project Roadmap (`ROADMAP.md`)](./ROADMAP.md)** — High-level vision and upcoming milestones (`v1.5.0` 50v50 WebSocket Sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU Flocking, `v2.0.0` Native C++20/Vulkan).
+
+### Support & Technical Guidance
+
+- **[Support Guide (`SUPPORT.md`)](./SUPPORT.md)** — Official Administration / GM / Moderator contact directory (`creatergame31@gmail.com`), in-app ticketing, and troubleshooting FAQ.
+- **[Project Governance (`GOVERNANCE.md`)](./GOVERNANCE.md)** — Decision-making structure, RBAC clearance hierarchy (`Lv. 999` Root Owner down to `Lv. 1`), and Architect-First RFC workflow.
+- **[System Architecture (`ARCHITECTURE.md`)](./ARCHITECTURE.md)** — Technical deep-dive into the Functional Core / Imperative Shell pattern, `BigInt` trillion-scale math, A\* pathfinding, and 3D PBR rendering.
+- **[Contributing Guide (`CONTRIBUTING.md`)](./CONTRIBUTING.md)** — How to set up the repo, run tests, and submit Pull Requests.
+
+### Automation & GitHub Templates (`.github/`)
+
+- **[Pull Request Template (`.github/PULL_REQUEST_TEMPLATE.md`)](./.github/PULL_REQUEST_TEMPLATE.md)** — Pre-merge validation checklist for build, test, and architectural guardrails.
+- **[Issue Template (`.github/ISSUE_TEMPLATE.md`)](./.github/ISSUE_TEMPLATE.md)** — Pre-formatted form for filing bug reports, feature requests, and system specifications (alongside [`.github/ISSUE_TEMPLATE/bug_report.md`](./.github/ISSUE_TEMPLATE/bug_report.md) and [`feature_request.md`](./.github/ISSUE_TEMPLATE/feature_request.md)).
 
 ---
 

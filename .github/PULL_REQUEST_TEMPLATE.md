@@ -24,7 +24,7 @@ Please confirm all items below before requesting a review or merging:
 
 - [ ] `npm install` completes cleanly with no dependency conflicts
 - [ ] `npm run lint` (`tsc --noEmit`) passes with zero TypeScript errors
-- [ ] `npm test` passes all unit test suites (`cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`)
+- [ ] `npm test` passes all 86+ unit tests across all suites (`adminModeration`, `cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`, `vipSubscription`, `troopTraining`, `heroSkins`, `graphicsEngine`, `proceduralWorld`)
 - [ ] `npm run build` generates the production bundle under `dist/` without errors
 
 ### 2. Runtime Smoke Test
@@ -33,7 +33,8 @@ Please confirm all items below before requesting a review or merging:
 - [ ] Title screen, 3D voxel world, and HUD render without console crashes
 - [ ] Core gameplay flows affected by this PR work on both desktop and mobile viewports
 
-### 3. Security & Hygiene
+### 3. Architecture, Security & Hygiene
 
+- [ ] Pure calculations and state transitions are decoupled into `src/game/` with unit tests per [`ARCHITECTURE.md`](../ARCHITECTURE.md) and [`GOVERNANCE.md`](../GOVERNANCE.md)
 - [ ] No `.env` files, API keys, tokens, or Android signing keystores (`*.jks`, `*.keystore`) are included
-- [ ] `README.md` and `CHANGELOG.md` are updated if user-facing features or setup steps changed
+- [ ] `README.md`, `ROADMAP.md`, and `CHANGELOG.md` are updated if user-facing features or setup steps changed
