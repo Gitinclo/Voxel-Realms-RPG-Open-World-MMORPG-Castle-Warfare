@@ -7,7 +7,7 @@ labels: ['release']
 
 ## 📦 Release Candidate Overview
 
-- **Target Version:** `v1.2.0`
+- **Target Version:** `v1.5.0` (`06/11/2026`)
 - **Target Branch:** `main`
 - **Release Type:** Web App / GitHub Release / Android Build
 
@@ -23,17 +23,18 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all unit test suites
+- [ ] `npm test` passes all 92 unit tests across all 13 test suites
 - [ ] `npm run build` succeeds and generates output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
 
 - [ ] Title screen loads and save slot / character creation works
 - [ ] 3D Voxel world, HDR lighting, and dynamic weather render smoothly
-- [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks function properly
+- [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
-- [ ] Daily Login Reward modal and Veteran Scroll comprehension work
-- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles) and C++20 SIMD Architecture viewer work
+- [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles) and C++20 Software & Hardware Architect Studio (`06/11/2026`) work
+- [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 
 ## 4. 🔐 Environment, Secrets & Security Review
@@ -46,11 +47,11 @@ labels: ['release']
 ## 5. 📚 Git Hygiene & Documentation Readiness
 
 - [ ] `README.md` reflects actual setup, features, and project structure
-- [ ] `CHANGELOG.md` is updated with release notes (new features, bug fixes, known issues)
-- [ ] Legal & community docs are in place (`LICENSE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`)
+- [ ] `CHANGELOG.md` and `ROADMAP.md` are updated with release notes and upcoming milestones
+- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
 
 ## 6. ⚙️ CI/CD & Final Signoff Gate
 
 - [ ] GitHub Actions workflow (`.github/workflows/build.yml`) is green on `push` / `pull_request`
 - [ ] Production build artifact (`voxel-realms-rpg-dist`) uploads cleanly
-- [ ] Tag release commit (`git tag -a v1.2.0 -m "Release v1.2.0"`)
+- [ ] Tag release commit (`git tag -a v1.5.0 -m "Release v1.5.0 (06/11/2026)"`)

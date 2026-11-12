@@ -249,6 +249,19 @@ export interface SiegeDeltaUpdatePacket {
 
 ---
 
+## [1.5.0] - 2026-11-06 (06/11/2026)
+
+### Added
+
+- **Software Architect & Hardware Architect Compatibility & Optimization Engine (`src/game/architectOptimization.ts`)**:
+  - **Hardware Architect ISA & SIMD Matrix**: Added deterministic hardware profiles for `x86_64 AVX-512F/BW` (512-bit, 16× float32 lanes, 64B cache line), `ARMv9-A NEON + SVE2` (heterogeneous Prime/Performance/Efficiency core pinning), `Apple Silicon M-Series` (`alignas(128)` 128B cache line + zero-copy Unified Memory Architecture), and `RISC-V RV64GC + RVV 1.0` (Vector-Length Agnostic strip-mining).
+  - **GPU Compute & Thermal TDP Envelopes**: Added compatibility tiers across `Vulkan 1.3`, `DirectX 12 Ultimate`, `Apple Metal 3`, `WebGPU`, `WebGL 2.0`, and `CPU Software Rasterizer (SwiftShader)` alongside sustained Thermal TDP governors (`350W Desktop`, `200W Console`, `25W Handheld APU`, and `8W Mobile Passive`).
+  - **Software Architect Data-Oriented Design (DOD) & Lock-Free Job DAG**: Implemented interactive `SoA` (Structure-of-Arrays) vs `AoS` (Array-of-Structures) cache-miss and memory-bandwidth profiler (`4.75x` hot-loop speedup), a zero-mutex Lock-Free Work-Stealing Job Scheduler across 2–64 logical cores, and a deterministic Frame-Budget Auto-Scaler (`60Hz` / `120Hz` / `240Hz`).
+  - **C++20 Cache-Line Aligned Guardrails (`cpp/VoxelRealmsGuardrails.hpp`)**: Added `alignas(64)` `SoaEntityKinematicChunk` and `constexpr computeCacheLineBytesForIsa` verified via `static_assert` in `cpp/engine_guardrail_test.cpp`.
+  - **Interactive Architect Studio UI (`src/components/CppArchitectureModal.tsx`)**: Added live CPU ISA, GPU backend, Thermal TDP, SoA/AoS memory layout, and Lock-Free Job Pool controls with a composite `100/100` Optimization Score badge.
+
+---
+
 ## [1.4.1] - 2026-11-05
 
 ### Added

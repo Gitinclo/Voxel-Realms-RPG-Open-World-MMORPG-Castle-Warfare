@@ -33,7 +33,7 @@ The governance structure mirrors the deterministic Role-Based Access Control (RB
 ### A. Routine Bug Fixes, UI Polish & Test Additions
 
 - May be submitted directly via a Pull Request following [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md).
-- Requires all automated CI checks (`86+` unit tests, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
+- Requires all automated CI checks (`92+` unit tests across 13 suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
 
 ### B. Major Gameplay, Mathematical or Engine Changes ("Architect-First" RFCs)
 
@@ -41,6 +41,7 @@ Any change that alters:
 
 - Trillion-scale Castle or Troop power math (`src/game/math.ts`),
 - Four-Path Cultivation realms, suppression exponents, or Karma rules (`src/game/cultivationMath.ts`),
+- Software & Hardware Architect ISA/GPU/TDP/SoA optimization (`src/game/architectOptimization.ts`),
 - Network wire schemas (`CHANGELOG.md` / `v1.5.0` Siege Protocol), or
 - C++20 RAII / SIMD headers (`cpp/VoxelRealmsGuardrails.hpp`),
 

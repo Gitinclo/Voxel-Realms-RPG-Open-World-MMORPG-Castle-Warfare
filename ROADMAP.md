@@ -3,7 +3,7 @@
 This document outlines the high-level vision, engineering milestones, and upcoming feature releases for **Voxel Realms RPG: Open World MMORPG & Castle Warfare**.
 
 - **Project Lead / Supreme Administrator:** [creatergame31@gmail.com](mailto:creatergame31@gmail.com)
-- **Current Production Release:** `v1.4.x`
+- **Current Production Release:** `v1.5.0` (`06/11/2026` / `November 6, 2026`)
 - **Architecture Principle:** All roadmap milestones strictly follow the **Architect-First** and **Decoupled Pure-Logic (`src/game/*.ts`) + Unit-Tested (`src/game/*.test.ts`)** guardrails defined in [`ARCHITECTURE.md`](./ARCHITECTURE.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
@@ -20,22 +20,23 @@ This document outlines the high-level vision, engineering milestones, and upcomi
 
 ## 📅 Milestone Timeline & Release Schedule
 
-### ✅ Completed Milestones (`v1.0.0` – `v1.4.x`)
+### ✅ Completed Milestones (`v1.0.0` – `v1.5.0` · `06/11/2026`)
 
-| Version    | Milestone                        | Key Deliverables                                                                                                         |   Status   |
-| :--------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :--------: |
-| **v1.0.0** | Core Voxel RPG Foundation        | 3D Voxel terrain, Castle Levels 0–100, T1–T20 Tri-Branch Troops (`Shieldbearer`, `Shooter`, `Bomber`)                    | ✅ Shipped |
-| **v1.1.0** | Studio PBR + HDR & WebAudio      | Procedural 2D canvas normal/bump textures, `UnrealBloomPass` HDR pipeline, procedural WebAudio synthesizer               | ✅ Shipped |
-| **v1.2.0** | Autonomous World AI (Lv 1–1000)  | 5 monster complexity brackets, A\* grid pathfinding around keep walls, 6 autonomous NPC roles & caravan barter           | ✅ Shipped |
-| **v1.3.0** | Clan Territory Warfare & Rallies | 9-sector (`A1`–`C3`) clan war map, heraldic SVG emblem editor, 600M HP Void Leviathan co-op boss                         | ✅ Shipped |
-| **v1.4.0** | Four-Path Cultivation & VIP Pass | 23 Xianxia realms, Karma & Tribulation lightning, 7-day Daily Login Decrees, Veteran Scrolls, VIP Tiers 0–3              | ✅ Shipped |
-| **v1.4.1** | Admin / GM / Moderator RBAC      | Root account binding (`creatergame31@gmail.com`), player moderation roster, global GM decrees, live support ticket queue | ✅ Shipped |
+| Version    | Milestone                        | Key Deliverables                                                                                                                     |   Status   |
+| :--------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :--------: |
+| **v1.0.0** | Core Voxel RPG Foundation        | 3D Voxel terrain, Castle Levels 0–100, T1–T20 Tri-Branch Troops (`Shieldbearer`, `Shooter`, `Bomber`)                                | ✅ Shipped |
+| **v1.1.0** | Studio PBR + HDR & WebAudio      | Procedural 2D canvas normal/bump textures, `UnrealBloomPass` HDR pipeline, procedural WebAudio synthesizer                           | ✅ Shipped |
+| **v1.2.0** | Autonomous World AI (Lv 1–1000)  | 5 monster complexity brackets, A\* grid pathfinding around keep walls, 6 autonomous NPC roles & caravan barter                       | ✅ Shipped |
+| **v1.3.0** | Clan Territory Warfare & Rallies | 9-sector (`A1`–`C3`) clan war map, heraldic SVG emblem editor, 600M HP Void Leviathan co-op boss                                     | ✅ Shipped |
+| **v1.4.0** | Four-Path Cultivation & VIP Pass | 23 Xianxia realms, Karma & Tribulation lightning, 7-day Daily Login Decrees, Veteran Scrolls, VIP Tiers 0–3                          | ✅ Shipped |
+| **v1.4.1** | Admin / GM / Moderator RBAC      | Root account binding (`creatergame31@gmail.com`), player moderation roster, global GM decrees, live support ticket queue             | ✅ Shipped |
+| **v1.5.0** | Software & Hardware Architect    | `06/11/2026` CPU ISA (`x86_64`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V`), `SoA` DOD memory, Lock-Free Job DAG & Auto-Scaler | ✅ Shipped |
 
 ---
 
-### 🚀 Upcoming Milestones (`v1.5.0` – `v2.0.0`)
+### 🚀 Upcoming Milestones (`v1.5.1` – `v2.0.0`)
 
-#### Phase 1: `v1.5.0` — Real-Time 50v50 Multiplayer Castle Siege Engine (Q1 2027)
+#### Phase 1: `v1.5.1` — Real-Time 50v50 Multiplayer Castle Siege Engine (Q1 2027)
 
 - **Authoritative 20Hz WebSocket Siege Server (`src/game/siegeNetProtocol.ts`)**:
   - Implementation of the binary/JSON `SiegeNetEnvelope` wire protocol specified in [`CHANGELOG.md`](./CHANGELOG.md).

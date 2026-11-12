@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** October 23, 2026
+**Last updated:** November 6, 2026 (`06/11/2026`)
 
 Welcome to **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", or "us"). Your privacy is important to us. This Privacy Policy explains what information we collect, how we use and protect it, when it may be shared with third-party processors, and your legal rights regarding your personal data.
 
@@ -13,8 +13,8 @@ Welcome to **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", 
   - Cloud-synced gameplay data associated with your account.
 - **Local & Cloud Game State Data:** The App generates and stores gameplay progression data, including:
   - Character level, Cultivation Realm status, Karma score, and Master/Disciple hierarchy state.
-  - Kingdom resources (Wood, Stone, Gold, Food, Diamonds, Spirit Stones, and Veteran Scrolls).
-  - Daily Login Reward streak progress, claim timestamps, and audio preferences (`voxel_rpg_sound_muted`).
+  - Kingdom resources (Wood, Steel, Copper, Grain, Oil, Diamonds, Spirit Stones, and Veteran Scrolls).
+  - Daily Login Reward streak progress (`voxel_realms_daily_login_v1`), VIP Covenant subscription state (`voxel_realms_vip_subscription_v1`), Administration/Moderation state (`voxel_realms_admin_moderation_v1`), and audio preferences (`voxel_rpg_sound_muted`).
 - **Payment & Transaction Information:** If you make in-app purchases or subscribe to premium features, transaction records (such as item purchased, timestamp, currency, and transaction ID) are collected. Full payment card details are processed directly by our third-party payment processors and are never stored on our servers.
 - **Usage & Advertising Data:** When accessing the App, technical metadata (such as IP address, browser type, operating system, device identifiers/Advertising IDs, WebGL capabilities, and interaction logs) may be collected automatically by our hosting infrastructure or integrated analytics and advertising SDKs.
 

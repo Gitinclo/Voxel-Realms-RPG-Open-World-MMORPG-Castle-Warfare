@@ -64,41 +64,56 @@ This project and everyone participating in it is governed by our [Code of Conduc
 | `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                 |
 | `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                               |
 | `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                |
-| `npm test`                     | Runs the Node.js test runner against all 6 pure game logic & 3D scene-graph test suites (`55` tests)                             |
+| `npm test`                     | Runs the Node.js test runner against all 13 pure game logic & 3D scene-graph test suites (`92` tests)                            |
 | `npm run clean`                | Cleans build artifacts (`dist/`, `server.js`)                                                                                    |
 
 ---
 
 ## Repository Architecture
 
+For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** and **[`GOVERNANCE.md`](./GOVERNANCE.md)**.
+
 ```text
 /
-├── .github/workflows/    # CI/CD pipelines (build, test, lint)
+├── .github/                  # CI/CD workflows & Issue/PR templates
+├── cpp/                      # C++20 RAII & SIMD engine guardrail headers & CTest suite
 ├── src/
-│   ├── components/       # React 19 UI overlays, HUD, Daily Login, Realm Panels
-│   │   ├── ThreeBattlefield.tsx # Three.js WebGL canvas & scene lifecycle
-│   │   ├── DailyLoginModal.tsx  # Daily login rewards & streak progression
+│   ├── components/           # React 19 UI overlays, HUD, Modals & 3D Canvas
+│   │   ├── GameCanvas.tsx          # Three.js WebGL2 canvas & scene lifecycle
+│   │   ├── GameHUD.tsx             # Consolidated HUD, touch D-pad & 5-tab command dock
+│   │   ├── AdminConsoleModal.tsx   # GM cheats, T20 spawner, RBAC moderation & contact hub
+│   │   ├── CultivationModal.tsx    # Four-Path cultivation, manuals, pills & tribulations
+│   │   ├── DailyLoginModal.tsx     # Daily login decrees & Veteran Scroll sanctum
+│   │   ├── VipSubscriptionModal.tsx# VIP Tiers 0-3, daily stipends & loyalty progression
 │   │   └── ...
-│   ├── game/             # Pure decoupled game logic & mathematical engines
-│   │   ├── cultivation.ts      # 4 cultivation paths, realm suppression formulas
-│   │   ├── cultivation.test.ts # Unit tests for realm power scaling
-│   │   ├── karma.ts            # Karma counter, Tribulation Lightning, Red Name bounty
-│   │   ├── karma.test.ts       # Unit tests for karma transitions & drops
-│   │   ├── siegeEngine.ts      # 1000T Castle Warfare, siege weaponry, gate HP
-│   │   ├── siegeEngine.test.ts # Unit tests for siege damage calculation
-│   │   ├── monsterEcosystem.ts # Lv 1-1000 procedural stats, agro behavior
-│   │   ├── monsterEcosystem.test.ts # Unit tests for scaling & loot tables
-│   │   ├── masterDisciple.ts   # Master-Disciple hierarchy, tax, skill transmission
-│   │   ├── masterDisciple.test.ts # Unit tests for disciple buff & scroll creation
-│   │   └── dailyRewards.ts     # 7-day reward streak & VIP bonus calculations
-│   ├── types/            # TypeScript interfaces, enums, and data definitions
-│   ├── App.tsx           # Main application state orchestrator
-│   └── main.tsx          # React application root
-├── public/               # Static assets, textures, and sounds
-├── CHANGELOG.md          # Version release history
-├── CODE_OF_CONDUCT.md    # Contributor Covenant v2.1
-├── CONTRIBUTING.md       # Contribution guidelines (this file)
-└── SECURITY.md           # Vulnerability disclosure policy
+│   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites
+│   │   ├── adminModeration.ts      # Root RBAC (creatergame31@gmail.com), moderation & tickets
+│   │   ├── architectOptimization.ts# 06/11/2026 Software & Hardware Architect optimization engine
+│   │   ├── clanMath.ts             # Clan buffs, vault rations & 9-sector outpost math
+│   │   ├── cultivationMath.ts      # 4 paths, 100x realm suppression, karma & disciples
+│   │   ├── dailyLogin.ts           # 7-day reward streak & Veteran Scroll scaling
+│   │   ├── graphicsEngine.ts       # PC/Console BC7 vs Mobile ASTC LOD pipeline logic
+│   │   ├── heroSkins.ts            # Hero aesthetic skins & particle aura catalog
+│   │   ├── math.ts                 # Castle Lv 0-100, 1000T capacity & T1-T20 troop math
+│   │   ├── proceduralWorld.ts      # Deterministic 3D voxel terrain, castle & aura meshes
+│   │   ├── troopTraining.ts        # Real-time troop training queue & speedup math
+│   │   ├── vipSubscription.ts      # VIP tiers, discounts & feature access gates
+│   │   ├── weather.ts              # Weather cycle & gathering/combat multipliers
+│   │   └── worldAI.ts              # Lv 1-1000 monster brackets, A* pathfinding & NPC roles
+│   ├── types/                # TypeScript interfaces and domain models
+│   ├── App.tsx               # Main application state orchestrator
+│   └── main.tsx              # React application root
+├── ARCHITECTURE.md           # Functional Core / Imperative Shell technical reference
+├── CHANGELOG.md              # Version release history & v1.5.0 network protocol
+├── CODE_OF_CONDUCT.md        # Contributor Covenant v2.1
+├── CONTRIBUTING.md           # Contribution guidelines (this file)
+├── GOVERNANCE.md             # Roles, RBAC clearances & RFC decision-making process
+├── LICENSE.md                # Apache License 2.0 summary & full legal text
+├── PRIVACY.md                # User privacy, localStorage & GDPR/CCPA policy
+├── ROADMAP.md                # Upcoming milestones (v1.5.0 - v2.0.0)
+├── SECURITY.md               # Private vulnerability disclosure policy
+├── SUPPORT.md                # Official contact directory (creatergame31@gmail.com) & FAQ
+└── TERMS.md                  # Terms and Conditions of use
 ```
 
 ---
@@ -107,7 +122,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ### 1. Pure Decoupled Logic
 
-- All game mechanics (realm suppression formulas, karma calculations, siege calculations, AI behavior logic) **must** reside in pure functions under `src/game/`.
+- All game mechanics (realm suppression formulas, karma calculations, siege calculations, AI behavior logic, RBAC moderation) **must** reside in pure functions under `src/game/`.
 - Never couple gameplay math directly to React hooks or UI component state.
 - Always accompany new game mechanics with corresponding unit tests in `src/game/*.test.ts`.
 
@@ -119,7 +134,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ### 3. Three.js & WebGL Memory Management
 
-- In Three.js components (such as `ThreeBattlefield.tsx`), always ensure proper lifecycle cleanup.
+- In Three.js components (such as `GameCanvas.tsx` and `src/game/proceduralWorld.ts`), always ensure proper lifecycle cleanup.
 - Dispose of geometries, materials, and textures when objects or scenes are unmounted:
   ```typescript
   geometry.dispose();
@@ -192,7 +207,7 @@ Every push and Pull Request must pass both our **Web/TypeScript Guardrails** and
 1. **The Linter (`npm run lint`)**: Enforces strict TypeScript compilation with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`. Any unused variable, dead import, or type mismatch immediately fails the build.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Blocks outdated or vulnerable third-party packages.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting (`.prettierrc`) so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Executes all 55 unit and regression tests across 6 suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Executes all 92 unit and regression tests across 13 suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 #### B. C++20 Engine Guardrail Stack (`cpp20-guardrails` job)
 
@@ -222,7 +237,7 @@ Tools catch syntax and formatting issues, while disciplined prompting preserves 
    npm run lint                  # 1. Catch messy code & unused variables
    npm audit --audit-level=high  # 2. Check for vulnerable/deprecated packages
    npx prettier --check .        # 3. Verify consistent code formatting (or run `npm run format`)
-   npm test                      # 4. Run all 55 unit & regression tests
+   npm test                      # 4. Run all 92 unit & regression tests across 13 suites
    npm run build                 # 5. Verify production bundle compiles cleanly
    ```
 

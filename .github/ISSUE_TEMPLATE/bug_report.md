@@ -23,4 +23,4 @@ What you expected to happen.
 
 - **Device / OS:** (e.g., Windows 11, macOS, Android 15)
 - **Browser:** (e.g., Chrome, Firefox, Safari)
-- **Game Version:** (e.g., v1.2.0)
+- **Game Version:** (e.g., v1.4.1)

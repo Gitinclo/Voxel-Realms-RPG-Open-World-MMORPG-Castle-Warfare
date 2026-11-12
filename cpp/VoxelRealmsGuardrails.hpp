@@ -1,14 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
-// VoxelRealmsGuardrails.hpp — C++20 RAII Smart-Pointer & Concept Guardrail Header
+// VoxelRealmsGuardrails.hpp — C++20 RAII Smart-Pointer, Hardware/Software Architect & Concept Guardrail Header
+// Synchronized Release: v1.5.0 (06/11/2026 / 2026-11-06)
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string_view>
 #include <vector>
 
 namespace voxel::guardrails {
+
+inline constexpr std::string_view kEngineReleaseVersion = "v1.5.0";
+inline constexpr std::string_view kEngineReleaseDate = "06/11/2026";
+inline constexpr std::size_t kX86CacheLineBytes = 64U;
+inline constexpr std::size_t kAppleSiliconCacheLineBytes = 128U;
+inline constexpr std::size_t kSoaSimdChunkCapacity = 64U;
+
+enum class HardwareIsaTier : uint8_t {
+    X86_64_AVX512 = 0,
+    ARM64_SVE2 = 1,
+    AppleSilicon_UMA128 = 2,
+    RISCV_RVV1 = 3,
+};
 
 enum class CultivationRealm : uint8_t {
     QiRefinement = 0,
@@ -35,6 +51,30 @@ computeRealmSuppressionMultiplier(CultivationRealm attacker, CultivationRealm de
 static_assert(computeRealmSuppressionMultiplier(CultivationRealm::GoldenCore,
                                                 CultivationRealm::QiRefinement) == 100.0,
               "Golden Core (2) vs Qi Refinement (0) must deal 100.0x damage");
+
+[[nodiscard]] constexpr std::size_t
+computeCacheLineBytesForIsa(HardwareIsaTier isa) noexcept {
+    return isa == HardwareIsaTier::AppleSilicon_UMA128 ? kAppleSiliconCacheLineBytes
+                                                       : kX86CacheLineBytes;
+}
+
+static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::X86_64_AVX512) == 64U,
+              "x86_64 AVX-512 must align hot SoA streams to 64-byte L1/L2 cache lines");
+static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::AppleSilicon_UMA128) == 128U,
+              "Apple Silicon M-Series must align hot SoA streams to 128-byte cache lines");
+
+// Software & Hardware Architect: 64-byte cache-line aligned Structure-of-Arrays (SoA) hot transform chunk
+struct alignas(kX86CacheLineBytes) SoaEntityKinematicChunk final {
+    std::array<float, kSoaSimdChunkCapacity> posX{};
+    std::array<float, kSoaSimdChunkCapacity> posY{};
+    std::array<float, kSoaSimdChunkCapacity> posZ{};
+    std::array<float, kSoaSimdChunkCapacity> velX{};
+    std::array<float, kSoaSimdChunkCapacity> velY{};
+    std::array<float, kSoaSimdChunkCapacity> velZ{};
+};
+
+static_assert(alignof(SoaEntityKinematicChunk) == 64U,
+              "SoaEntityKinematicChunk must enforce 64-byte SIMD cache-line alignment");
 
 class CultivatorNode final {
   public:

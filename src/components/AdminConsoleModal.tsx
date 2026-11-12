@@ -95,7 +95,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   >(initialTab);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
     `[AdminAuth] Root account ${PRIMARY_ADMIN_EMAIL} authenticated with Administration, GM, Admin & Moderator control (Clearance Lv.999).`,
-    '[GameEngine] AVX-512 SIMD vector subsystem: ONLINE.',
+    '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
     '[AdminConsole] Causality tick & RBAC moderation guardrails hooked into Game::update(float dt).',
   ]);
 

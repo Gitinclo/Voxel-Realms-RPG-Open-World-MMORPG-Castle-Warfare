@@ -45,7 +45,7 @@ Paste any relevant browser console errors, screenshots, or stack traces here.
 - **Browser & Version:** (e.g., Chrome 134, Firefox 135, Safari 18)
 - **Graphics Quality Preset:** (`NEXT-GEN ULTRA` / `HIGH` / `BALANCED`)
 - **Platform Override Mode:** (`PC/PS5 [BC7 · LOD 0]` / `MOBILE [ASTC · LOD BIAS +1]`)
-- **Game Version / Commit:** (e.g., `v1.4.1`)
+- **Game Version / Commit:** (e.g., `v1.5.0` · `06/11/2026`)
 
 ---
 
@@ -59,4 +59,4 @@ If proposing a new feature or code change, indicate which modules in [`ARCHITECT
 - [ ] `src/game/clanMath.ts` (Clan Territory Wars, Vault, Co-op Boss)
 - [ ] `src/game/proceduralWorld.ts` / `src/components/GameCanvas.tsx` (3D Voxel PBR + HDR Engine)
 - [ ] `src/game/adminModeration.ts` / `src/components/AdminConsoleModal.tsx` (GM, Admin & Moderator Control)
-- [ ] `cpp/VoxelRealmsGuardrails.hpp` (C++20 SIMD & RAII Engine Blueprint)
+- [ ] `src/game/architectOptimization.ts` / `cpp/VoxelRealmsGuardrails.hpp` (Software & Hardware Architect SIMD & SoA Engine)

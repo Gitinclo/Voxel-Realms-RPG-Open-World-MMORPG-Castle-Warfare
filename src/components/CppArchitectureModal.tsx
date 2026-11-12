@@ -40,6 +40,19 @@ import {
   computeMasterTextureImportOverride,
   computeUberShaderKeywords,
 } from '../game/graphicsEngine';
+import {
+  ARCHITECT_RELEASE_DATE_DISPLAY,
+  ARCHITECT_RELEASE_VERSION,
+  GPU_BACKEND_COMPATIBILITY,
+  GpuComputeBackendId,
+  HARDWARE_ISA_PROFILES,
+  HardwareIsaId,
+  MemoryLayoutStrategy,
+  THERMAL_TDP_ENVELOPES,
+  TargetRefreshRateHz,
+  ThermalTdpEnvelopeId,
+  generateArchitectCompatibilityDiagnostic,
+} from '../game/architectOptimization';
 import { sound } from '../game/audio';
 
 interface CppArchitectureModalProps {
@@ -66,6 +79,15 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
   );
   const [copied, setCopied] = useState(false);
 
+  // Software & Hardware Architect Optimizer interactive state (06/11/2026 — v1.5.0)
+  const [isaId, setIsaId] = useState<HardwareIsaId>('x86_64_avx512');
+  const [gpuBackendId, setGpuBackendId] = useState<GpuComputeBackendId>('vulkan_1_3');
+  const [thermalEnvelopeId, setThermalEnvelopeId] =
+    useState<ThermalTdpEnvelopeId>('enthusiast_desktop_350w');
+  const [memoryLayout, setMemoryLayout] = useState<MemoryLayoutStrategy>('soa_contiguous');
+  const [logicalCores, setLogicalCores] = useState<number>(16);
+  const [targetRefreshHz, setTargetRefreshHz] = useState<TargetRefreshRateHz>(60);
+
   // Interactive C++20 Realm Suppression & HDR10+ Aura Simulator state
   const [simAttackerRealm, setSimAttackerRealm] = useState<number>(2); // Golden Core (Index 2)
   const [simDefenderRealm, setSimDefenderRealm] = useState<number>(0); // Qi Refinement (Index 0)
@@ -77,6 +99,16 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
 
   const suppression = calculateRealmSuppression(simAttackerRealm, simDefenderRealm);
   const auraSpec = getCultivationAuraVisualSpec(simAttackerRealm, simGreatDaos);
+
+  const architectReport = generateArchitectCompatibilityDiagnostic({
+    isaId,
+    gpuBackendId,
+    thermalEnvelopeId,
+    memoryLayout,
+    entityCount: 100_000,
+    logicalCores,
+    targetRefreshHz,
+  });
 
   // Compute live 5-pillar Cross-Platform Engine specs
   const texOverride = computeMasterTextureImportOverride(
@@ -108,15 +140,16 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-xl font-bold font-cinzel text-emerald-100">
-                  Cross-Platform 3D Engine Pipeline & C++20 Architecture
+                  Software & Hardware Architect Studio · C++20 Engine
                 </h2>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono font-bold">
-                  4K Master BC7/ASTC · LOD 0–3 · Uber Shader
+                  {ARCHITECT_RELEASE_VERSION} · {ARCHITECT_RELEASE_DATE_DISPLAY} · Score{' '}
+                  {architectReport.overallOptimizationScore}/100
                 </span>
               </div>
               <p className="text-xs text-emerald-200/75 truncate mt-0.5">
-                Master Asset Texture Overrides · Aggressive LOD Chains · Hybrid GI / Baked Lightmaps
-                · Unified Uber Shader · Addressable HD Packs
+                x86_64 AVX-512 · ARM64 SVE2 · Apple Silicon 128B UMA · RISC-V RVV 1.0 · SoA Memory ·
+                Lock-Free Job DAG
               </p>
             </div>
           </div>
@@ -131,6 +164,245 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-slate-200">
+          {/* Software Architect & Hardware Architect Compatibility & Optimization Panel (06/11/2026) */}
+          <div
+            className="p-4 rounded-xl bg-slate-950/95 border border-emerald-500/40 space-y-4"
+            data-testid="architect-optimization-panel"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-emerald-400" />
+                  Software & Hardware Architect Compatibility Matrix (
+                  {ARCHITECT_RELEASE_DATE_DISPLAY})
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Configure CPU ISA vector widths, GPU compute backend, Thermal TDP envelope, SoA vs
+                  AoS memory layout, and Lock-Free Work-Stealing Job Thread Pool for 100,000 ECS
+                  entities.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  data-testid="architect-score-badge"
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 font-mono text-xs font-bold"
+                >
+                  Optimization Score: {architectReport.overallOptimizationScore}/100
+                </span>
+                <span className="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-mono text-xs font-bold">
+                  Wasm SIMD128: {architectReport.wasmSimd128Compatible ? 'READY' : 'FALLBACK'}
+                </span>
+              </div>
+            </div>
+
+            {/* Hardware Architect Controls: CPU ISA, GPU Backend, Thermal TDP */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label
+                  htmlFor="arch-isa-select"
+                  className="block text-[11px] font-mono text-emerald-300 font-bold mb-1"
+                >
+                  Hardware CPU ISA & SIMD Profile
+                </label>
+                <select
+                  id="arch-isa-select"
+                  data-testid="arch-isa-select"
+                  value={isaId}
+                  onChange={(e) => {
+                    sound.playButton();
+                    setIsaId(e.target.value as HardwareIsaId);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                >
+                  {Object.values(HARDWARE_ISA_PROFILES).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                  {architectReport.activeHardwareIsa.simdRegisterWidthBits}-bit (
+                  {architectReport.activeHardwareIsa.float32LanesPerRegister}× float32) ·{' '}
+                  {architectReport.activeHardwareIsa.cacheLineSizeBytes}B Cache Line ·{' '}
+                  {architectReport.activeHardwareIsa.peakGflopsPerCore} GFLOPS/core
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="arch-gpu-select"
+                  className="block text-[11px] font-mono text-cyan-300 font-bold mb-1"
+                >
+                  Hardware GPU Compute & Render Tier
+                </label>
+                <select
+                  id="arch-gpu-select"
+                  data-testid="arch-gpu-select"
+                  value={gpuBackendId}
+                  onChange={(e) => {
+                    sound.playButton();
+                    setGpuBackendId(e.target.value as GpuComputeBackendId);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                >
+                  {Object.values(GPU_BACKEND_COMPATIBILITY).map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                  Min VRAM: {architectReport.activeGpuBackend.minRecommendedVramGb} GB · Max
+                  Instanced Draws: {architectReport.activeGpuBackend.maxInstancedDrawCallsPerFrame}
+                  /frame · Fallback: {architectReport.activeGpuBackend.fallbackBackendId}
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="arch-thermal-select"
+                  className="block text-[11px] font-mono text-amber-300 font-bold mb-1"
+                >
+                  Hardware Thermal & TDP Envelope
+                </label>
+                <select
+                  id="arch-thermal-select"
+                  data-testid="arch-thermal-select"
+                  value={thermalEnvelopeId}
+                  onChange={(e) => {
+                    sound.playButton();
+                    setThermalEnvelopeId(e.target.value as ThermalTdpEnvelopeId);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+                >
+                  {Object.values(THERMAL_TDP_ENVELOPES).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="text-[10px] text-slate-400 font-mono mt-1">
+                  Sustained: {architectReport.activeThermalEnvelope.sustainedTdpWatts}W (Boost{' '}
+                  {architectReport.activeThermalEnvelope.peakBoostWatts}W) · Throttle:{' '}
+                  {architectReport.activeThermalEnvelope.thermalThrottleThresholdC}°C
+                </div>
+              </div>
+            </div>
+
+            {/* Software Architect Controls: Memory Layout (SoA vs AoS), Logical Cores, Display Refresh */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-300">
+                    DOD Memory Layout (100k Entities)
+                  </span>
+                  <button
+                    type="button"
+                    data-testid="arch-toggle-memory-layout-btn"
+                    onClick={() => {
+                      sound.playButton();
+                      setMemoryLayout((prev) =>
+                        prev === 'soa_contiguous' ? 'aos_legacy' : 'soa_contiguous'
+                      );
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                      memoryLayout === 'soa_contiguous'
+                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
+                        : 'bg-rose-500/25 border-rose-400 text-rose-200'
+                    }`}
+                  >
+                    {memoryLayout === 'soa_contiguous'
+                      ? 'SoA Contiguous (SIMD)'
+                      : 'AoS Legacy (Object)'}
+                  </button>
+                </div>
+                <div className="text-[11px] font-mono text-slate-300">
+                  Hot Loop:{' '}
+                  <span className="text-white font-bold">
+                    {architectReport.memoryComparison.hotLoopFrameTimeMs} ms
+                  </span>{' '}
+                  ({architectReport.memoryComparison.speedupVsAosMultiplier}× vs AoS)
+                </div>
+                <div className="text-[10px] font-mono text-slate-400">
+                  L1/L2 Cache Miss:{' '}
+                  <span className="text-emerald-300">
+                    {architectReport.memoryComparison.estimatedCacheMissRatePct}%
+                  </span>{' '}
+                  · Bandwidth:{' '}
+                  <span className="text-cyan-300">
+                    {architectReport.memoryComparison.memoryBandwidthGbPerSecAt60Hz} GB/s
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="arch-cores-range"
+                    className="text-xs font-bold text-cyan-300 cursor-pointer"
+                  >
+                    Lock-Free Job Pool ({logicalCores} Cores)
+                  </label>
+                  <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">
+                    0.00ms Mutex Stall
+                  </span>
+                </div>
+                <input
+                  id="arch-cores-range"
+                  type="range"
+                  min={2}
+                  max={32}
+                  step={2}
+                  value={logicalCores}
+                  onChange={(e) => setLogicalCores(Number(e.target.value))}
+                  className="w-full accent-cyan-400"
+                />
+                <div className="text-[10px] font-mono text-slate-400">
+                  Active Workers: {architectReport.jobSystemReport.workerThreadsActive} · DAG Frame
+                  Time:{' '}
+                  <span className="text-white font-bold">
+                    {architectReport.jobSystemReport.totalFrameExecutionMs} ms
+                  </span>{' '}
+                  ({architectReport.jobSystemReport.parallelEfficiencyPct}% Eff.)
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-300">Frame-Budget Auto-Scaler</span>
+                  <div className="flex items-center gap-1">
+                    {([60, 120, 240] as TargetRefreshRateHz[]).map((hz) => (
+                      <button
+                        key={hz}
+                        type="button"
+                        onClick={() => {
+                          sound.playButton();
+                          setTargetRefreshHz(hz);
+                        }}
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border cursor-pointer ${
+                          targetRefreshHz === hz
+                            ? 'bg-amber-500/25 border-amber-400 text-amber-200'
+                            : 'bg-slate-950 border-slate-700 text-slate-400'
+                        }`}
+                      >
+                        {hz}Hz
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="text-[11px] font-mono text-slate-300">
+                  Measured:{' '}
+                  <span className="text-white font-bold">
+                    {architectReport.frameBudgetReport.measuredFrameTimeMs} ms
+                  </span>{' '}
+                  / Budget {architectReport.frameBudgetReport.frameBudgetMs} ms
+                </div>
+                <div className="text-[10px] font-mono text-emerald-300 truncate">
+                  {architectReport.frameBudgetReport.governorActionLabel}
+                </div>
+              </div>
+            </div>
+          </div>
           {/* 5-Pillar Cross-Platform Engine Pipeline Interactive Control Center */}
           <div
             className="p-4 rounded-xl bg-slate-950/95 border border-cyan-500/40 space-y-4"

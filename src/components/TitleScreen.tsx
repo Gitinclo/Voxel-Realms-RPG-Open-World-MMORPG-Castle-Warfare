@@ -46,7 +46,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          NEXT-GEN 3D · 245K HIGH-POLY MESHES · 1024PX PBR NORMAL MAPS · GTA V + GENSHIN SHADERS
+          v1.5.0 (06/11/2026) · SOFTWARE &amp; HARDWARE ARCHITECT OPTIMIZED · 245K PBR + HDR
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
