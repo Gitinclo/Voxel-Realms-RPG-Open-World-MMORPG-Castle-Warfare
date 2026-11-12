@@ -30,9 +30,11 @@ import { sound } from '../game/audio';
 import { CHARACTER_SPECIES_CATALOG, getSpeciesSpec } from '../game/species';
 import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
-  TOP_100_SPECIES_PDF_ASSET_PATH,
+  OMNIVERSE_CODEX_SPEC_VERSION,
+  SIX_LAYER_COSMIC_HIERARCHY,
   OmniverseSpeciesNpcEntry,
   OmniverseTierNumber,
+  WhitePageAuthorDecreeType,
   executeOmniverseSuperAdminCommand,
 } from '../game/omniverse';
 import {
@@ -76,6 +78,7 @@ interface AdminConsoleModalProps {
   onExecuteOmniverseCommand?: (
     command: Parameters<typeof executeOmniverseSuperAdminCommand>[0]['command']
   ) => void;
+  onExecuteWhitePageDecree?: (decreeType: WhitePageAuthorDecreeType) => void;
   onOpenOmniverseDirector?: () => void;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
@@ -106,6 +109,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onUpdatePlayerAppearance,
   omniverseRoster = TOP_100_OMNIVERSE_SPECIES_NPCS,
   onExecuteOmniverseCommand,
+  onExecuteWhitePageDecree,
   onOpenOmniverseDirector,
   initialTab = 'cheats',
   onClose,
@@ -115,6 +119,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   >(initialTab);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
     `[AdminAuth] Root account ${PRIMARY_ADMIN_EMAIL} authenticated with Administration, GM, Admin & Moderator control (Clearance Lv.999).`,
+    `[WhitePage/HouseOfIdeas] Layer 6 Supreme Author ${PRIMARY_ADMIN_EMAIL} verified over 5. Overvoid/Exoverse, 4. Omniverse, 3. Megaverse/Hyperverse, 2. Multiverse, 1. Universe & Nothingness (Oblivion).`,
     `[OmniverseMatrix] 100 Fictional Species Background NPCs & 100+∞ Sovereign Omniverses bound to Super Admin ${PRIMARY_ADMIN_EMAIL}.`,
     '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
     '[AdminConsole] Causality tick & RBAC moderation guardrails hooked into Game::update(float dt).',
@@ -645,14 +650,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono font-bold">
                         SUPER ADMIN: {PRIMARY_ADMIN_EMAIL}
                       </span>
-                      <a
-                        href={TOP_100_SPECIES_PDF_ASSET_PATH}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-mono hover:bg-cyan-500/30"
-                      >
-                        📄 Top 100 Species PDF
-                      </a>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-mono">
+                        📜 {OMNIVERSE_CODEX_SPEC_VERSION}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-300 mt-0.5">
                       Command all 100 Species Background NPCs (Outer Gods, Beyonders, Endless,
@@ -731,6 +731,90 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                     })}
                   </div>
                 )}
+
+                {/* 6-Layer Cosmic Ontology & Layer 6: The White Page / The House of Ideas Summary */}
+                <div className="p-3 rounded-xl bg-slate-950/90 border border-white/30 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-bold font-mono text-white">
+                      📜 6-Layer Cosmic Hierarchy → Layer 6: The White Page / The House of Ideas (
+                      {PRIMARY_ADMIN_EMAIL})
+                    </span>
+                    <span className="text-[10px] font-mono text-amber-300">
+                      Everything comes from here — even Nothingness (Oblivion)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
+                    {SIX_LAYER_COSMIC_HIERARCHY.map((layer) => (
+                      <div
+                        key={layer.id}
+                        className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-mono space-y-0.5"
+                      >
+                        <div className="font-bold text-amber-200 truncate">
+                          {layer.icon} {layer.name}
+                        </div>
+                        <div className="text-[9px] text-slate-300 line-clamp-2">
+                          {layer.canonicalDefinition}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {onExecuteWhitePageDecree && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExecuteWhitePageDecree('inscribe_creation');
+                          sound.playUpgradeFanfare();
+                          addLog(
+                            `[WHITE PAGE / HOUSE OF IDEAS] ${PRIMARY_ADMIN_EMAIL} inscribed Genesis across all 6 Cosmic Layers.`
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white text-slate-950 hover:bg-amber-200 text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        📜 Inscribe Creation (+50M 💎)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExecuteWhitePageDecree('realign_overvoid_logic');
+                          sound.playUpgradeFanfare();
+                          addLog(
+                            `[OVERVOID / EXOVERSE] ${PRIMARY_ADMIN_EMAIL} realigned the laws of logic across all distinct Omniverses.`
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-200 hover:bg-amber-500/30 text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        🕳️ Realign Overvoid Logic (+25M 💎)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExecuteWhitePageDecree('invoke_oblivion_reset');
+                          sound.playUpgradeFanfare();
+                          addLog(
+                            `[OBLIVION / WHITE PAGE] ${PRIMARY_ADMIN_EMAIL} invoked Nothingness (Oblivion) & anchored Top 5 Envoys.`
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/50 text-fuchsia-200 hover:bg-fuchsia-500/30 text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        🌑 Invoke Oblivion Anchor (+77.7M 💎)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExecuteWhitePageDecree('channel_house_of_ideas_harvest');
+                          sound.playUpgradeFanfare();
+                          addLog(
+                            `[HOUSE OF IDEAS] ${PRIMARY_ADMIN_EMAIL} harvested 10x Omni-Tribute across all 6 Cosmic Layers.`
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 hover:bg-emerald-500/30 text-[10px] font-mono font-bold cursor-pointer"
+                      >
+                        🏛️ House of Ideas 10x Harvest
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

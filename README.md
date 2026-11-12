@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-98_Passing_(15_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-100_Passing_(15_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
@@ -10,7 +10,7 @@
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with support for Studio PBR materials, `UnrealBloomPass` HDR10+ tone-mapped post-processing, adaptive PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) rendering pipelines, **10-Species / Race Character Creation & 3D Procedural Meshes**, **Infinite Omniverse & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026` — `x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` DOD memory, Lock-Free Job DAG)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with support for Studio PBR materials, `UnrealBloomPass` HDR10+ tone-mapped post-processing, adaptive PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) rendering pipelines, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy (1. Universe → 2. Multiverse → 3. Megaverse/Hyperverse → 4. Omniverse → 5. The Overvoid/Exoverse → 6. The White Page / The House of Ideas) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026` — `x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` DOD memory, Lock-Free Job DAG)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -106,16 +106,23 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Full 3D Procedural Meshes & Innate Passives**: Real-time Three.js `SpeciesTraitGroup` attachments (pointed elven ears, fox spirit ears, braided dwarf runic beard, orc tusks, draconic/obsidian horns, feathered angelic/demonic wings, draconic/nine-tailed spirit tails, orbiting void crystals, and golem chest core reactors), body stature scaling (`bodyScale`), and innate combat/cultivation buffs.
 - **Admin Permission Gate (`creatergame31@gmail.com`)**: Initial creation allows free selection of any species; switching species after creation (`speciesLocked: true`) requires authorization from Root Administrator **`creatergame31@gmail.com`** via live GM decree or `[SPECIES REBIRTH]` support ticket.
 
-### 13. 🌌 Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+### 13. 🌌 6-Layer Cosmic Hierarchy, Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
 
+- **6-Layer Cosmic Ontology & Cosmological Hierarchy (`SIX_LAYER_COSMIC_HIERARCHY`)**:
+  1. **1. Universe**: _A single reality with its own space, time, and matter, etc._ (`1x` Scale).
+  2. **2. Multiverse**: _A collection of parallel/series universes_ (`10x` Scale).
+  3. **3. Megaverse / Hyperverse**: _A cluster of multiple multiverses_ (`100x` Scale).
+  4. **4. Omniverse**: _Every universe, multiverse, and reality that has ever existed or could exist_ (`1,000x` Scale).
+  5. **5. The Overvoid / Exoverse**: _A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy_ (`10,000x` Scale).
+  6. **6. The White Page / The House of Ideas**: _Everything comes from here — even nothingness (Oblivion). Sovereign Supreme Creator: **`creatergame31@gmail.com`**_ (`100,000x` Scale).
 - **All 100 Iconic Species & Races Across 5 Tiers (Ranks 1–100)**:
   - **Tier 1 (1–20)**: _Omniversal, Cosmic & Reality-Warping Entities_ (Outer Gods, Beyonders, The Endless, Monitors, The Gentry, Celestialsapiens, Zeno's Race, Q Continuum, Downstreamers, Fifth-Dimensional Imps, Celestials, Angels, Chronovores, Naljians, Great Old Ones, Spiral Races, Eternals, Watchers, Guardians of the Universe, Chaos Gods).
   - **Tier 2 (21–40)**: _Type IV+ Civilizations & Hyper-Advanced Sci-Fi Races_ (Xeelee, Photino Birds, Time Lords, Daleks, Culture Minds, Precursors, Forerunners, The Qu, Necrons, C'tan, Old Ones, The Vex, The Hive, The Ancients / Alterans, The Ori, Reapers, Protheans, Cybertronians, Coluans, Firstborn).
   - **Tier 3 (41–60)**: _Divine, Mythic & Metaphysical Pantheons_ (Gods / Deities, Old Gods, New Gods, Asgardians, Olympians, Ainur, Fiendcelestials, Otsutsuki Clan, Soul Reapers / Shinigami, Dragons, Demons / Archfiends, Phoenix, Qilin / Kirin, Anodites, Glind / Core People, Titans, Daedra, Witchers, Vampires, True Fae / Fair Folk).
   - **Tier 4 (61–80)**: _Planet-Busting Warriors & Biological Powerhouses_ (Saiyans, Kryptonians, Viltrumites, Rognarrs, Martians, Frieza's Race, Namekians, Majins, Atomix's Species, To'kustars, Chronosapiens, Eternals, Symbiotes / Klyntar, Daxamites, Czarnians, Tamaraneans, Strontians, Eleos, Gourmet Cell Demons, Gems).
   - **Tier 5 (81–100)**: _Iconic Galactic Empires, Hives & Fantasy Archetypes_ (Humans, Mutants, Inhumans, Aeldari / Eldar, Orks / Krorks, Tyranids, The Flood, Zerg, Protoss, Xenomorphs, Yautja / Predators, Kree, Skrulls, Shi'ar, The Borg, Species 8472 / Undine, Klingons, Vulcans, Elves, Dwarves).
-- **Sovereign Omniverse Per Race + Infinite Transfinite Continuum (`Ω-001` to `Ω-∞`)**: Every race owns its own Sovereign Omniverse (`OMNI-001`..`OMNI-100`), and `resolveInfiniteOmniverseByIndex` resolves any arbitrary omniverse coordinate from `1` to `∞`.
-- **Background Characters (NPCs) Under Exclusive Control of Super Admin `creatergame31@gmail.com`**: All 100 Level-1000 Background NPC Envoys are bound to `creatergame31@gmail.com`, who can project/recall them into the 3D Voxel Overworld, set their directives (`channel_tribute`, `patrol_citadel`, `hunt_realm_threats`, `guard_dimensional_gate`, `enforce_admin_decree`), and harvest cosmic tribute across all 100 Omniverses.
+- **Sovereign Omniverse Per Race + Infinite Transfinite Continuum (`Ω-001` to `Ω-∞`)**: Every race owns its own Sovereign Omniverse (`OMNI-001`..`OMNI-100`) and full 6-Layer Cosmological Lineage (`resolveSpeciesSixLayerCosmology`), and `resolveInfiniteOmniverseByIndex` resolves any arbitrary omniverse coordinate from `1` to `∞`.
+- **Background Characters (NPCs) & Layer-6 White Page Decrees Under `creatergame31@gmail.com`**: All 100 Level-1000 Background NPC Envoys are bound to `creatergame31@gmail.com`, who can project/recall them into the 3D Voxel Overworld, set their directives, and issue Layer-6 **White Page / House of Ideas Authorial Decrees** (`inscribe_creation`, `realign_overvoid_logic`, `invoke_oblivion_reset`, `channel_house_of_ideas_harvest`).
 
 ---
 
@@ -148,7 +155,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit & Regression Tests
 
-Execute all **98 unit and regression tests across 15 decoupled test suites**:
+Execute all **100 unit and regression tests across 15 decoupled test suites**:
 
 ```bash
 npm test
@@ -281,7 +288,7 @@ Every push and Pull Request automatically runs four strict Web/TypeScript qualit
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **98 unit and regression tests across 15 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Runs all **100 unit and regression tests across 15 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -291,7 +298,7 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
 3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
 
-### Automated Test Suites (`98/98 Passing` across 15 TypeScript Suites + `CTest C++20 Passing`)
+### Automated Test Suites (`100/100 Passing` across 15 TypeScript Suites + `CTest C++20 Passing`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
@@ -301,7 +308,7 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) texture compression, shadow culling, and addressable HD pack mounting.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
-- **`omniverse.test.ts`**: Verifies all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`) across Tiers 1–5, their 100 Sovereign Omniverses, infinite transfinite Omniverse coordinate resolution (`resolveInfiniteOmniverseByIndex`), 3D Overworld NPC projection, and strict Super Admin (`creatergame31@gmail.com`) command enforcement.
+- **`omniverse.test.ts`**: Verifies the 6-Layer Cosmic Hierarchy (`1. Universe` → `2. Multiverse` → `3. Megaverse / Hyperverse` → `4. Omniverse` → `5. The Overvoid / Exoverse` → `6. The White Page / The House of Ideas` under `creatergame31@gmail.com`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), infinite transfinite Omniverse coordinate resolution, 3D Overworld NPC projection, and Layer-6 White Page / House of Ideas authorial decrees.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, and C++20 engine telemetry.
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
@@ -316,7 +323,7 @@ Run all Guardrail checks locally:
 npm run lint                  # 1. Check TypeScript for messy code & unused variables
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 98 TypeScript unit & regression tests
+npm test                      # 4. Run all 100 TypeScript unit & regression tests
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -330,12 +337,12 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 
 ### 1. Asset & Code Provenance Summary
 
-| Category                     | Implementation Method                                                                                                   | Runtime External AI Calls?                   |
-| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
-| **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`) | **No** (Zero external model assets)          |
-| **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                           | **No**                                       |
-| **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)         | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 98 automated unit tests | **No** (100% deterministic local simulation) |
+| Category                     | Implementation Method                                                                                                    | Runtime External AI Calls?                   |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
+| **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)  | **No** (Zero external model assets)          |
+| **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                            | **No**                                       |
+| **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)          | **No**                                       |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 100 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -357,7 +364,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 98 unit & regression tests across 15 test suites
+- [x] `npm test` passes all 100 unit & regression tests across 15 test suites
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
 - [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) is green

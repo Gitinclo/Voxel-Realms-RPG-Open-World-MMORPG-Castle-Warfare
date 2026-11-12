@@ -23,7 +23,7 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 98 unit tests across all 15 test suites
+- [ ] `npm test` passes all 100 unit tests across all 15 test suites
 - [ ] `npm run build` succeeds and generates output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)

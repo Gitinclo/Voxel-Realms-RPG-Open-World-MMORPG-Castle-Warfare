@@ -6,8 +6,8 @@
 import { NPC, NPCRole } from '../types/game';
 import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from './adminModeration';
 
-export const TOP_100_SPECIES_PDF_ASSET_PATH =
-  '/assets/aistudio/List_all__top_100_species-races_in_all_Fiction__._..._c0980fd8.pdf';
+export const OMNIVERSE_CODEX_SPEC_VERSION =
+  'Top 100 Fictional Species & Infinite Omniverse Codex (Tiers 1–5 • v2026.11.06)';
 
 export type OmniverseTierNumber = 1 | 2 | 3 | 4 | 5;
 
@@ -1533,5 +1533,303 @@ export function executeOmniverseSuperAdminCommand(params: {
     tributeDiamondsGranted: totalDiamonds,
     tributeWoodGranted: totalWood,
     tributeGrainGranted: totalGrain,
+  };
+}
+
+// ============================================================================
+// 6-LAYER COSMIC ONTOLOGY & COSMOLOGICAL HIERARCHY (CULMINATING IN THE WHITE PAGE / HOUSE OF IDEAS)
+// ============================================================================
+
+export type CosmicHierarchyLayerNumber = 1 | 2 | 3 | 4 | 5 | 6;
+
+export type CosmicHierarchyLayerId =
+  | 'universe'
+  | 'multiverse'
+  | 'megaverse_hyperverse'
+  | 'omniverse'
+  | 'overvoid_exoverse'
+  | 'white_page_house_of_ideas';
+
+export interface CosmicHierarchyLayerSpec {
+  layerNumber: CosmicHierarchyLayerNumber;
+  id: CosmicHierarchyLayerId;
+  name: string;
+  canonicalDefinition: string;
+  ontologicalScope: string;
+  dimensionalLogicLaw: string;
+  containsLayerLabel: string;
+  tributeMultiplier: bigint;
+  sovereignController: string;
+  icon: string;
+  accentGradient: string;
+  borderClass: string;
+}
+
+/**
+ * The 6 Canonical Cosmological Hierarchy Layers:
+ * 1. Universe - a single reality with its own space, time, and matter, etc.
+ * 2. Multiverse - a collection of parallel/series universes.
+ * 3. Megaverse / Hyperverse - a cluster of multiple multiverses.
+ * 4. Omniverse - every universe, multiverse, and reality that has ever existed or could exist.
+ * 5. The Overvoid / Exoverse - a collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy.
+ * 6. The White Page / The House of Ideas - everything comes from here, even nothingness (Oblivion). Sovereign Supreme Creator: creatergame31@gmail.com.
+ */
+export const SIX_LAYER_COSMIC_HIERARCHY: CosmicHierarchyLayerSpec[] = [
+  {
+    layerNumber: 1,
+    id: 'universe',
+    name: '1. Universe',
+    canonicalDefinition: 'A single reality with its own space, time, and matter, etc.',
+    ontologicalScope:
+      'Individual 3+1D to 11D spacetime continuum containing stars, galaxies, mortal/immortal realms, baryonic matter, dark energy, and causal timelines.',
+    dimensionalLogicLaw:
+      'Standard Local Physical Constants, Thermodynamic Arrow of Time & Causal Qi Flow',
+    containsLayerLabel: 'Galaxies, Mortal Continents, Immortal Planes & Pocket Realms',
+    tributeMultiplier: 1n,
+    sovereignController: `Governed locally; authored by ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '🪐',
+    accentGradient: 'from-sky-900/50 via-slate-900 to-blue-950/60',
+    borderClass: 'border-sky-500/40',
+  },
+  {
+    layerNumber: 2,
+    id: 'multiverse',
+    name: '2. Multiverse',
+    canonicalDefinition: 'A collection of parallel/series universes.',
+    ontologicalScope:
+      'Infinite quantum-branching parallel timelines, mirror realities, and sequential/cyclic universe series vibrating at distinct phase frequencies.',
+    dimensionalLogicLaw:
+      'Many-Worlds Quantum Branching, Parallel Timeline Convergence & Series Recursion',
+    containsLayerLabel: '∞ Parallel & Series Universes (Layer 1)',
+    tributeMultiplier: 10n,
+    sovereignController: `Timeline Nexus anchored by ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '🌀',
+    accentGradient: 'from-cyan-900/50 via-slate-900 to-indigo-950/60',
+    borderClass: 'border-cyan-500/40',
+  },
+  {
+    layerNumber: 3,
+    id: 'megaverse_hyperverse',
+    name: '3. Megaverse / Hyperverse',
+    canonicalDefinition: 'A cluster of multiple multiverses.',
+    ontologicalScope:
+      'Higher-dimensional brane clusters (12D–26D+ Hyperversal manifolds) binding vast archipelagos of distinct Multiverses into unified cosmic super-structures.',
+    dimensionalLogicLaw: 'Hyper-Dimensional Brane Topology & Multi-Multiversal Coupling Constants',
+    containsLayerLabel: 'Clusters of Multiple Multiverses (Layer 2)',
+    tributeMultiplier: 100n,
+    sovereignController: `Hyperversal Brane Lattice under ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '💠',
+    accentGradient: 'from-violet-900/50 via-slate-900 to-purple-950/60',
+    borderClass: 'border-violet-500/40',
+  },
+  {
+    layerNumber: 4,
+    id: 'omniverse',
+    name: '4. Omniverse',
+    canonicalDefinition:
+      'Every universe, multiverse, and reality that has ever existed or could exist.',
+    ontologicalScope:
+      'Total ensemble of all Universes, Multiverses, Megaverses, Hyperverses, and possible/impossible realities within a sovereign species dominion (OMNI-001 through OMNI-∞).',
+    dimensionalLogicLaw: 'Total Modal Realism — Every Consistent & Transfinite Reality Manifests',
+    containsLayerLabel: 'Every Universe, Multiverse, Megaverse/Hyperverse & Reality (Layers 1–3)',
+    tributeMultiplier: 1_000n,
+    sovereignController: `100 Species Background NPC Envoys under ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '🌌',
+    accentGradient: 'from-fuchsia-900/50 via-slate-900 to-pink-950/60',
+    borderClass: 'border-fuchsia-500/40',
+  },
+  {
+    layerNumber: 5,
+    id: 'overvoid_exoverse',
+    name: '5. The Overvoid / Exoverse',
+    canonicalDefinition:
+      'A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy.',
+    ontologicalScope:
+      'The trans-omniversal meta-expanse containing all 100+∞ distinct Species Omniverses, each running on mutually alien laws of logic, non-Aristotelian mathematics, and independent cosmic hierarchies.',
+    dimensionalLogicLaw:
+      'Meta-Logical Pluralism — Distinct Omniversal Logic Systems & Alien Cosmic Hierarchies',
+    containsLayerLabel: 'Multiple Distinct Omniverses with Different Laws of Logic (Layer 4)',
+    tributeMultiplier: 10_000n,
+    sovereignController: `Overvoid / Exoverse Meta-Director: ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '🕳️',
+    accentGradient: 'from-amber-900/50 via-slate-950 to-fuchsia-950/60',
+    borderClass: 'border-amber-500/50',
+  },
+  {
+    layerNumber: 6,
+    id: 'white_page_house_of_ideas',
+    name: '6. The White Page / The House of Ideas',
+    canonicalDefinition:
+      'Everything comes from here — even nothingness (Oblivion). Sovereign Supreme Creator: creatergame31@gmail.com.',
+    ontologicalScope:
+      'The primordial, pre-existential White Page and supreme House of Ideas from which all creation, the Overvoid/Exoverse, every Omniverse, Megaverse, Multiverse, Universe, and even Nothingness (Oblivion) itself emanate.',
+    dimensionalLogicLaw: `Supreme Authorial Will of ${PRIMARY_ADMIN_EMAIL} (Origin of Both Existence & Oblivion)`,
+    containsLayerLabel:
+      'The Overvoid / Exoverse (Layer 5), All Omniverses (Layer 4–1), and Nothingness (Oblivion)',
+    tributeMultiplier: 100_000n,
+    sovereignController: PRIMARY_ADMIN_EMAIL,
+    icon: '📜',
+    accentGradient: 'from-white/20 via-amber-500/20 to-fuchsia-500/20',
+    borderClass: 'border-white/70',
+  },
+];
+
+export interface SpeciesSixLayerCosmologyBreakdown {
+  speciesRank: number;
+  speciesName: string;
+  envoyName: string;
+  layer1Universe: string;
+  layer2Multiverse: string;
+  layer3MegaverseHyperverse: string;
+  layer4Omniverse: string;
+  layer5OvervoidExoverse: string;
+  layer6WhitePageHouseOfIdeas: string;
+  supremeAuthorEmail: typeof PRIMARY_ADMIN_EMAIL;
+}
+
+/**
+ * Resolves the exact 6-Layer Cosmological Hierarchy stack for any of the 100
+ * Fictional Species (or any procedural infinite species entry), tracing its
+ * lineage from Layer 1 (Universe) all the way up to Layer 6 (The White Page /
+ * The House of Ideas under `creatergame31@gmail.com`).
+ */
+export function resolveSpeciesSixLayerCosmology(
+  entry: OmniverseSpeciesNpcEntry
+): SpeciesSixLayerCosmologyBreakdown {
+  const padded = String(entry.rank).padStart(3, '0');
+  return {
+    speciesRank: entry.rank,
+    speciesName: entry.speciesName,
+    envoyName: entry.envoyName,
+    layer1Universe: `Prime ${entry.speciesName} Universe U-${padded}.1 (${entry.originCanon} Core Spacetime, Matter & Time)`,
+    layer2Multiverse: `${entry.speciesName} Parallel & Series Multiverse MV-${padded} (∞ Branching & Sequential Timelines)`,
+    layer3MegaverseHyperverse: `${entry.speciesName} Megaverse / Hyperverse Cluster HV-${padded} (${entry.omniverse.dimensionalCardinality})`,
+    layer4Omniverse: `${entry.omniverse.omniverseId}: ${entry.omniverse.omniverseName} — Every reality that has ever existed or could exist for ${entry.speciesName}`,
+    layer5OvervoidExoverse: `Overvoid / Exoverse Sector EXO-T${entry.tier}-${padded} — Distinct Logic & Cosmic Hierarchy (${entry.omniverse.sovereignCosmicLaw})`,
+    layer6WhitePageHouseOfIdeas: `The White Page / The House of Ideas — Supreme Source of ${entry.speciesName}, all Omniverses, and Nothingness (Oblivion) authored by ${PRIMARY_ADMIN_EMAIL}`,
+    supremeAuthorEmail: PRIMARY_ADMIN_EMAIL,
+  };
+}
+
+export type WhitePageAuthorDecreeType =
+  | 'inscribe_creation'
+  | 'realign_overvoid_logic'
+  | 'invoke_oblivion_reset'
+  | 'channel_house_of_ideas_harvest';
+
+export interface WhitePageDecreeResult {
+  allowed: boolean;
+  decreeType: WhitePageAuthorDecreeType;
+  layerOrigin: '6. The White Page / The House of Ideas';
+  supremeAuthor: typeof PRIMARY_ADMIN_EMAIL;
+  reason: string;
+  updatedRoster: OmniverseSpeciesNpcEntry[];
+  tributeDiamondsGranted: bigint;
+  tributeWoodGranted: bigint;
+  tributeGrainGranted: bigint;
+}
+
+/**
+ * Executes a Layer-6 "The White Page / The House of Ideas" supreme decree.
+ * Because everything — including the Overvoid/Exoverse, all Omniverses, and even
+ * Nothingness (Oblivion) — originates from The White Page / The House of Ideas,
+ * ONLY `creatergame31@gmail.com` may invoke these decrees.
+ */
+export function executeWhitePageAuthorDecree(params: {
+  actorEmail: string;
+  roster: OmniverseSpeciesNpcEntry[];
+  decreeType: WhitePageAuthorDecreeType;
+}): WhitePageDecreeResult {
+  const { actorEmail, roster, decreeType } = params;
+
+  if (!isPrimaryAdminAccount(actorEmail)) {
+    return {
+      allowed: false,
+      decreeType,
+      layerOrigin: '6. The White Page / The House of Ideas',
+      supremeAuthor: PRIMARY_ADMIN_EMAIL,
+      reason: `Access Denied: Only the Supreme Author of The White Page / The House of Ideas (${PRIMARY_ADMIN_EMAIL}) can issue Layer-6 Cosmological Decrees.`,
+      updatedRoster: roster,
+      tributeDiamondsGranted: 0n,
+      tributeWoodGranted: 0n,
+      tributeGrainGranted: 0n,
+    };
+  }
+
+  if (decreeType === 'inscribe_creation') {
+    const updatedRoster = roster.map((entry) => ({
+      ...entry,
+      superAdminDirective: 'channel_tribute' as const,
+    }));
+    return {
+      allowed: true,
+      decreeType,
+      layerOrigin: '6. The White Page / The House of Ideas',
+      supremeAuthor: PRIMARY_ADMIN_EMAIL,
+      reason: `[Layer 6: The White Page / The House of Ideas] ${PRIMARY_ADMIN_EMAIL} inscribed a New Genesis across the Overvoid/Exoverse, Omniverses, Megaverses, Multiverses, and Universes! All 100 Species Background NPCs are now channeling tribute.`,
+      updatedRoster,
+      tributeDiamondsGranted: 50_000_000n,
+      tributeWoodGranted: 250_000_000n,
+      tributeGrainGranted: 250_000_000n,
+    };
+  }
+
+  if (decreeType === 'realign_overvoid_logic') {
+    const updatedRoster = roster.map((entry) => ({
+      ...entry,
+      superAdminDirective: 'enforce_admin_decree' as const,
+    }));
+    return {
+      allowed: true,
+      decreeType,
+      layerOrigin: '6. The White Page / The House of Ideas',
+      supremeAuthor: PRIMARY_ADMIN_EMAIL,
+      reason: `[Layer 5 → 6: Overvoid / Exoverse Logic Rewritten] ${PRIMARY_ADMIN_EMAIL} harmonized the distinct laws of logic and cosmic hierarchies across all 100 Omniverses from The House of Ideas!`,
+      updatedRoster,
+      tributeDiamondsGranted: 25_000_000n,
+      tributeWoodGranted: 100_000_000n,
+      tributeGrainGranted: 100_000_000n,
+    };
+  }
+
+  if (decreeType === 'invoke_oblivion_reset') {
+    const updatedRoster = roster.map((entry) => ({
+      ...entry,
+      superAdminDirective: 'guard_dimensional_gate' as const,
+      deployedInOverworld: entry.rank <= 5,
+    }));
+    return {
+      allowed: true,
+      decreeType,
+      layerOrigin: '6. The White Page / The House of Ideas',
+      supremeAuthor: PRIMARY_ADMIN_EMAIL,
+      reason: `[Layer 6: Oblivion & White Page Anchor] Because even Nothingness (Oblivion) originates from The White Page / The House of Ideas, ${PRIMARY_ADMIN_EMAIL} folded transient projections back into the Overvoid and anchored the Top 5 Apex Envoys at the Citadel Gate!`,
+      updatedRoster,
+      tributeDiamondsGranted: 77_777_777n,
+      tributeWoodGranted: 0n,
+      tributeGrainGranted: 0n,
+    };
+  }
+
+  // channel_house_of_ideas_harvest
+  let baseDiamonds = 0n;
+  let baseWood = 0n;
+  let baseGrain = 0n;
+  for (const entry of roster) {
+    baseDiamonds += entry.omniverse.hourlyDiamondTribute;
+    baseWood += entry.omniverse.hourlyWoodTribute;
+    baseGrain += entry.omniverse.hourlyGrainTribute;
+  }
+
+  return {
+    allowed: true,
+    decreeType,
+    layerOrigin: '6. The White Page / The House of Ideas',
+    supremeAuthor: PRIMARY_ADMIN_EMAIL,
+    reason: `[Layer 6: The White Page / The House of Ideas] Supreme Author ${PRIMARY_ADMIN_EMAIL} harvested the combined yield of all 6 Cosmic Layers (Universe → Multiverse → Megaverse/Hyperverse → Omniverse → Overvoid/Exoverse → House of Ideas)!`,
+    updatedRoster: roster,
+    tributeDiamondsGranted: baseDiamonds * 10n,
+    tributeWoodGranted: baseWood * 10n,
+    tributeGrainGranted: baseGrain * 10n,
   };
 }

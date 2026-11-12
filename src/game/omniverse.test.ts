@@ -8,9 +8,12 @@ import assert from 'node:assert/strict';
 import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
   OMNIVERSE_TIER_METADATA,
+  SIX_LAYER_COSMIC_HIERARCHY,
   resolveInfiniteOmniverseByIndex,
+  resolveSpeciesSixLayerCosmology,
   projectOmniverseNpcToWorldNPC,
   executeOmniverseSuperAdminCommand,
+  executeWhitePageAuthorDecree,
 } from './omniverse';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 
@@ -108,4 +111,125 @@ test('executeOmniverseSuperAdminCommand strictly enforces Super Admin creatergam
   });
   assert.equal(harvest.allowed, true);
   assert.ok(harvest.tributeDiamondsGranted > 10_000_000n);
+});
+
+test('executeOmniverseSuperAdminCommand supports bulk directive updates across all 100 species Background NPCs', () => {
+  const bulkUpdate = executeOmniverseSuperAdminCommand({
+    actorEmail: PRIMARY_ADMIN_EMAIL,
+    roster: TOP_100_OMNIVERSE_SPECIES_NPCS,
+    command: {
+      type: 'set_directive',
+      directive: 'enforce_admin_decree',
+    },
+  });
+  assert.equal(bulkUpdate.allowed, true);
+  assert.equal(
+    bulkUpdate.updatedRoster.every((e) => e.superAdminDirective === 'enforce_admin_decree'),
+    true
+  );
+});
+
+test('executeOmniverseSuperAdminCommand projects and recalls entire cosmic tiers in the 3D Overworld', () => {
+  const deployTier3 = executeOmniverseSuperAdminCommand({
+    actorEmail: PRIMARY_ADMIN_EMAIL,
+    roster: TOP_100_OMNIVERSE_SPECIES_NPCS,
+    command: {
+      type: 'project_tier_to_overworld',
+      targetTier: 3,
+      deploy: true,
+    },
+  });
+  assert.equal(deployTier3.allowed, true);
+  const tier3Entries = deployTier3.updatedRoster.filter((e) => e.tier === 3);
+  assert.equal(tier3Entries.length, 20);
+  assert.equal(
+    tier3Entries.every((e) => e.deployedInOverworld),
+    true
+  );
+
+  const recallTier3 = executeOmniverseSuperAdminCommand({
+    actorEmail: PRIMARY_ADMIN_EMAIL,
+    roster: deployTier3.updatedRoster,
+    command: {
+      type: 'project_tier_to_overworld',
+      targetTier: 3,
+      deploy: false,
+    },
+  });
+  assert.equal(recallTier3.allowed, true);
+  assert.equal(
+    recallTier3.updatedRoster.filter((e) => e.tier === 3).every((e) => !e.deployedInOverworld),
+    true
+  );
+});
+
+test('projectOmniverseNpcToWorldNPC maps all 5 cosmic tiers to distinct 3D roles, titles, and Super Admin status', () => {
+  const tierSamples = [1, 21, 41, 61, 81].map((rank, idx) => {
+    const entry = TOP_100_OMNIVERSE_SPECIES_NPCS.find((e) => e.rank === rank)!;
+    return projectOmniverseNpcToWorldNPC(entry, idx);
+  });
+
+  assert.equal(tierSamples.length, 5);
+  for (const npc of tierSamples) {
+    assert.equal(npc.level, 1000);
+    assert.equal(npc.dialogue.length, 3);
+    assert.ok(npc.title.includes('OMNI-'));
+    assert.ok(npc.statusActionText?.includes(PRIMARY_ADMIN_EMAIL));
+    assert.ok(npc.specialtyBuffDesc?.includes(PRIMARY_ADMIN_EMAIL));
+  }
+});
+
+test('SIX_LAYER_COSMIC_HIERARCHY and resolveSpeciesSixLayerCosmology define all 6 canonical cosmological layers culminating in The White Page / The House of Ideas (creatergame31@gmail.com)', () => {
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY.length, 6);
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[0].name, '1. Universe');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[1].name, '2. Multiverse');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[2].name, '3. Megaverse / Hyperverse');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[3].name, '4. Omniverse');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[4].name, '5. The Overvoid / Exoverse');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[5].name, '6. The White Page / The House of Ideas');
+  assert.equal(SIX_LAYER_COSMIC_HIERARCHY[5].sovereignController, PRIMARY_ADMIN_EMAIL);
+  assert.ok(SIX_LAYER_COSMIC_HIERARCHY[5].canonicalDefinition.includes('Oblivion'));
+
+  const outerGodsCosmology = resolveSpeciesSixLayerCosmology(TOP_100_OMNIVERSE_SPECIES_NPCS[0]);
+  assert.equal(outerGodsCosmology.supremeAuthorEmail, PRIMARY_ADMIN_EMAIL);
+  assert.ok(outerGodsCosmology.layer1Universe.includes('Universe'));
+  assert.ok(outerGodsCosmology.layer2Multiverse.includes('Multiverse'));
+  assert.ok(outerGodsCosmology.layer3MegaverseHyperverse.includes('Megaverse / Hyperverse'));
+  assert.ok(outerGodsCosmology.layer4Omniverse.includes('OMNI-001'));
+  assert.ok(outerGodsCosmology.layer5OvervoidExoverse.includes('Overvoid / Exoverse'));
+  assert.ok(
+    outerGodsCosmology.layer6WhitePageHouseOfIdeas.includes('The White Page / The House of Ideas')
+  );
+  assert.ok(outerGodsCosmology.layer6WhitePageHouseOfIdeas.includes(PRIMARY_ADMIN_EMAIL));
+});
+
+test('executeWhitePageAuthorDecree strictly enforces Supreme Author creatergame31@gmail.com across Layer-6 decrees including Oblivion and House of Ideas harvest', () => {
+  const unauthorized = executeWhitePageAuthorDecree({
+    actorEmail: 'mortal@example.com',
+    roster: TOP_100_OMNIVERSE_SPECIES_NPCS,
+    decreeType: 'inscribe_creation',
+  });
+  assert.equal(unauthorized.allowed, false);
+  assert.ok(unauthorized.reason.includes(PRIMARY_ADMIN_EMAIL));
+
+  const genesis = executeWhitePageAuthorDecree({
+    actorEmail: PRIMARY_ADMIN_EMAIL,
+    roster: TOP_100_OMNIVERSE_SPECIES_NPCS,
+    decreeType: 'inscribe_creation',
+  });
+  assert.equal(genesis.allowed, true);
+  assert.equal(genesis.tributeDiamondsGranted, 50_000_000n);
+  assert.equal(
+    genesis.updatedRoster.every((e) => e.superAdminDirective === 'channel_tribute'),
+    true
+  );
+
+  const oblivion = executeWhitePageAuthorDecree({
+    actorEmail: PRIMARY_ADMIN_EMAIL,
+    roster: genesis.updatedRoster,
+    decreeType: 'invoke_oblivion_reset',
+  });
+  assert.equal(oblivion.allowed, true);
+  assert.equal(oblivion.tributeDiamondsGranted, 77_777_777n);
+  assert.equal(oblivion.updatedRoster.filter((e) => e.deployedInOverworld).length, 5);
 });

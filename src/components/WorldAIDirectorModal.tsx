@@ -21,7 +21,6 @@ import {
   CheckCircle2,
   Globe,
   Crown,
-  ExternalLink,
   Search,
 } from 'lucide-react';
 import {
@@ -42,11 +41,14 @@ import {
 import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
   OMNIVERSE_TIER_METADATA,
-  TOP_100_SPECIES_PDF_ASSET_PATH,
+  OMNIVERSE_CODEX_SPEC_VERSION,
+  SIX_LAYER_COSMIC_HIERARCHY,
   OmniverseSpeciesNpcEntry,
   OmniverseTierNumber,
   OmniverseSuperAdminDirective,
+  WhitePageAuthorDecreeType,
   resolveInfiniteOmniverseByIndex,
+  resolveSpeciesSixLayerCosmology,
   executeOmniverseSuperAdminCommand,
 } from '../game/omniverse';
 import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from '../game/adminModeration';
@@ -76,6 +78,7 @@ interface WorldAIDirectorModalProps {
   onExecuteOmniverseCommand?: (
     command: Parameters<typeof executeOmniverseSuperAdminCommand>[0]['command']
   ) => void;
+  onExecuteWhitePageDecree?: (decreeType: WhitePageAuthorDecreeType) => void;
   onOpenAdminConsole?: () => void;
   onClose: () => void;
 }
@@ -99,6 +102,7 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   onEngageMonster,
   onStepWorldAI,
   onExecuteOmniverseCommand,
+  onExecuteWhitePageDecree,
   onOpenAdminConsole,
   onClose,
 }) => {
@@ -113,6 +117,9 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   const [omniTierFilter, setOmniTierFilter] = useState<OmniverseTierNumber | 'all'>('all');
   const [omniSearch, setOmniSearch] = useState<string>('');
   const [infiniteSectorQuery, setInfiniteSectorQuery] = useState<string>('1');
+  const [expandedCosmologyRanks, setExpandedCosmologyRanks] = useState<Record<number, boolean>>({
+    1: true,
+  });
 
   const isSuperAdmin = isPrimaryAdminAccount(activeAccountEmail);
   const parsedInfiniteIndex = (() => {
@@ -911,14 +918,9 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                       <span className="px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-200 text-[11px] font-mono font-bold">
                         100 Canonical Species + ∞ Infinite Omniverses
                       </span>
-                      <a
-                        href={TOP_100_SPECIES_PDF_ASSET_PATH}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-[11px] font-mono font-bold inline-flex items-center gap-1 transition-all"
-                      >
-                        <ExternalLink className="w-3 h-3" /> Top 100 Species PDF Spec
-                      </a>
+                      <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-[11px] font-mono font-bold inline-flex items-center gap-1">
+                        📜 {OMNIVERSE_CODEX_SPEC_VERSION}
+                      </span>
                     </div>
                     <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
                       Infinite Omniverse Matrix & 100 Species Background NPCs
@@ -957,6 +959,132 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                         🔒 Switch to Super Admin ({PRIMARY_ADMIN_EMAIL})
                       </button>
                     )}
+                  </div>
+                </div>
+
+                {/* 6-Layer Cosmic Ontology & Cosmological Hierarchy Matrix (1. Universe -> 6. The White Page / The House of Ideas) */}
+                <div
+                  data-testid="six-layer-cosmic-hierarchy-panel"
+                  className="p-3.5 rounded-xl bg-slate-950/95 border border-white/25 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold font-cinzel text-white flex items-center gap-2">
+                        <span>📜 6-Layer Cosmic Ontology & Cosmological Hierarchy</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/15 border border-white/40 text-amber-200 font-mono">
+                          Origin & Apex: 6. The White Page / The House of Ideas (
+                          {PRIMARY_ADMIN_EMAIL})
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 mt-0.5">
+                        From a single spacetime <strong className="text-sky-300">Universe</strong>{' '}
+                        up to{' '}
+                        <strong className="text-amber-200">
+                          The White Page / The House of Ideas
+                        </strong>{' '}
+                        where everything — even{' '}
+                        <strong className="text-fuchsia-300">Nothingness (Oblivion)</strong> —
+                        originates under{' '}
+                        <span className="font-mono text-amber-300">{PRIMARY_ADMIN_EMAIL}</span>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {SIX_LAYER_COSMIC_HIERARCHY.map((layer) => (
+                      <div
+                        key={layer.id}
+                        data-testid={`cosmic-hierarchy-layer-${layer.layerNumber}`}
+                        className={`p-3 rounded-xl bg-gradient-to-br ${layer.accentGradient} border ${layer.borderClass} flex flex-col justify-between gap-1.5`}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <span>{layer.icon}</span>
+                              <span>{layer.name}</span>
+                            </span>
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-950/80 text-amber-300 border border-amber-500/30">
+                              {formatBigInt(layer.tributeMultiplier)}x Scale
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-semibold text-amber-100 leading-snug">
+                            “{layer.canonicalDefinition}”
+                          </p>
+                          <p className="text-[10px] text-slate-300 leading-relaxed">
+                            {layer.ontologicalScope}
+                          </p>
+                        </div>
+                        <div className="pt-1.5 border-t border-white/10 text-[10px] font-mono text-cyan-200 flex items-center justify-between gap-1 flex-wrap">
+                          <span className="truncate">Contains: {layer.containsLayerLabel}</span>
+                          <span className="text-amber-300 font-bold shrink-0">
+                            {layer.sovereignController}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Layer 6: The White Page / The House of Ideas Supreme Author Command Bar */}
+                  <div
+                    data-testid="white-page-house-of-ideas-panel"
+                    className="p-3 rounded-xl bg-gradient-to-r from-white/10 via-amber-500/15 to-fuchsia-500/15 border border-white/50 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold font-mono text-white flex items-center gap-1.5 flex-wrap">
+                        <span>📜 Layer 6: The White Page / The House of Ideas</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-bold">
+                          SUPREME AUTHOR: {PRIMARY_ADMIN_EMAIL}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-200">
+                        Everything comes from here — even nothingness (Oblivion). Issue Layer-6
+                        Authorial Decrees across the Overvoid/Exoverse and all 100 Omniverses:
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {(
+                        [
+                          {
+                            id: 'inscribe_creation',
+                            label: '📜 Inscribe Genesis (+50M 💎)',
+                            testId: 'white-page-decree-inscribe',
+                          },
+                          {
+                            id: 'realign_overvoid_logic',
+                            label: '🕳️ Realign Overvoid Logic (+25M 💎)',
+                            testId: 'white-page-decree-overvoid',
+                          },
+                          {
+                            id: 'invoke_oblivion_reset',
+                            label: '🌑 Invoke Oblivion Anchor (+77.7M 💎)',
+                            testId: 'white-page-decree-oblivion',
+                          },
+                          {
+                            id: 'channel_house_of_ideas_harvest',
+                            label: '🏛️ House of Ideas 10x Omni-Harvest',
+                            testId: 'white-page-decree-harvest',
+                          },
+                        ] as { id: WhitePageAuthorDecreeType; label: string; testId: string }[]
+                      ).map((btn) => (
+                        <button
+                          key={btn.id}
+                          type="button"
+                          disabled={!isSuperAdmin}
+                          data-testid={btn.testId}
+                          onClick={() => {
+                            onExecuteWhitePageDecree?.(btn.id);
+                            sound.playUpgradeFanfare();
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold transition-all ${
+                            isSuperAdmin
+                              ? 'bg-white text-slate-950 hover:bg-amber-200 shadow-sm'
+                              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1177,6 +1305,52 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                             </span>
                           </div>
                         </div>
+
+                        {/* Expandable 6-Layer Cosmology Breakdown for this Species */}
+                        {expandedCosmologyRanks[entry.rank] &&
+                          (() => {
+                            const cosmo = resolveSpeciesSixLayerCosmology(entry);
+                            return (
+                              <div
+                                data-testid={`species-6layer-cosmology-${entry.rank}`}
+                                className="p-2.5 rounded-lg bg-slate-950 border border-white/25 text-[10px] font-mono space-y-1 text-slate-200"
+                              >
+                                <div className="font-bold text-amber-200 border-b border-slate-800 pb-0.5">
+                                  📜 6-Layer Cosmic Hierarchy Lineage ({entry.speciesName})
+                                </div>
+                                <div>
+                                  <strong className="text-sky-300">1. Universe:</strong>{' '}
+                                  {cosmo.layer1Universe}
+                                </div>
+                                <div>
+                                  <strong className="text-cyan-300">2. Multiverse:</strong>{' '}
+                                  {cosmo.layer2Multiverse}
+                                </div>
+                                <div>
+                                  <strong className="text-violet-300">
+                                    3. Megaverse/Hyperverse:
+                                  </strong>{' '}
+                                  {cosmo.layer3MegaverseHyperverse}
+                                </div>
+                                <div>
+                                  <strong className="text-fuchsia-300">4. Omniverse:</strong>{' '}
+                                  {cosmo.layer4Omniverse}
+                                </div>
+                                <div>
+                                  <strong className="text-amber-300">
+                                    5. The Overvoid/Exoverse:
+                                  </strong>{' '}
+                                  {cosmo.layer5OvervoidExoverse}
+                                </div>
+                                <div className="text-white font-semibold">
+                                  <strong className="text-amber-200">
+                                    6. The White Page / The House of Ideas:
+                                  </strong>{' '}
+                                  {cosmo.layer6WhitePageHouseOfIdeas}
+                                </div>
+                              </div>
+                            );
+                          })()}
                       </div>
 
                       {/* Super Admin Per-NPC Controls */}
@@ -1207,27 +1381,43 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           <option value="observe_omniverse">Directive: Observe Multiverse</option>
                         </select>
 
-                        <button
-                          disabled={!isSuperAdmin}
-                          onClick={() => {
-                            onExecuteOmniverseCommand?.({
-                              type: 'toggle_overworld_projection',
-                              targetRank: entry.rank,
-                            });
-                            sound.playSwing();
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all ${
-                            !isSuperAdmin
-                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                              : entry.deployedInOverworld
-                                ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40'
-                                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
-                          }`}
-                        >
-                          {entry.deployedInOverworld
-                            ? 'Recall to Omniverse'
-                            : 'Project to 3D Overworld'}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExpandedCosmologyRanks((prev) => ({
+                                ...prev,
+                                [entry.rank]: !prev[entry.rank],
+                              }));
+                              sound.playSwing();
+                            }}
+                            className="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-white/25 text-[10px] font-mono font-bold text-amber-200"
+                          >
+                            {expandedCosmologyRanks[entry.rank] ? 'Hide 6-Layer' : '📜 6-Layer'}
+                          </button>
+
+                          <button
+                            disabled={!isSuperAdmin}
+                            onClick={() => {
+                              onExecuteOmniverseCommand?.({
+                                type: 'toggle_overworld_projection',
+                                targetRank: entry.rank,
+                              });
+                              sound.playSwing();
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all ${
+                              !isSuperAdmin
+                                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                : entry.deployedInOverworld
+                                  ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40'
+                                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+                            }`}
+                          >
+                            {entry.deployedInOverworld
+                              ? 'Recall to Omniverse'
+                              : 'Project to 3D Overworld'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

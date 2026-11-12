@@ -38,7 +38,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **98 unit and regression tests across 15 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **100 unit and regression tests across 15 suites** in ~1.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -131,11 +131,12 @@ Players cultivate four complementary paths simultaneously:
 - **3D Scene-Graph Attachments**: `createPlayerMesh` constructs a dedicated `SpeciesTraitGroup` with procedural horns, ears, wings, tails, tusks, runic beards, orbiting void shards, and golem core reactors while applying per-species stature scaling (`bodyScale`).
 - **Admin Permission Gate (`evaluateSpeciesSwitchPermission`)**: Once a character's initial species is locked (`speciesLocked: true`), switching to a different species requires authorization from **`creatergame31@gmail.com`** (via active Admin/GM privileges or an approved `adminSpeciesSwitchApproved` decree).
 
-### H. Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+### H. 6-Layer Cosmic Hierarchy, Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
 
+- **6-Layer Cosmic Ontology & Cosmological Hierarchy (`SIX_LAYER_COSMIC_HIERARCHY`)**: Models **1. Universe** (_single reality with its own space, time, and matter_), **2. Multiverse** (_collection of parallel/series universes_), **3. Megaverse / Hyperverse** (_cluster of multiple multiverses_), **4. Omniverse** (_every universe, multiverse, and reality that has ever existed or could exist_), **5. The Overvoid / Exoverse** (_collection of multiple distinct omniverses operating under completely different laws of logic and cosmic hierarchy_), and **6. The White Page / The House of Ideas** (_everything comes from here, even nothingness / Oblivion, authored by `creatergame31@gmail.com`_).
 - **100 Canonical Fictional Species (`TOP_100_OMNIVERSE_SPECIES_NPCS`)**: Catalogs all 100 species across 5 Tiers (`1–20` Omniversal Entities, `21–40` Type IV+ Sci-Fi Civilizations, `41–60` Divine & Xianxia Pantheons, `61–80` Planet-Busting Warriors, `81–100` Galactic Empires & Fantasy Archetypes).
-- **Sovereign Omniverse Per Race + Infinite Transfinite Generator (`resolveInfiniteOmniverseByIndex`)**: Assigns each race a dedicated Sovereign Omniverse (`OMNI-001`..`OMNI-100`) and deterministically resolves any omniverse coordinate from `1` to `∞`.
-- **Super Admin Background NPC Command (`executeOmniverseSuperAdminCommand`)**: Enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs, projects them into the 3D Overworld (`projectOmniverseNpcToWorldNPC`), sets their directives, and harvests their cosmic tributes.
+- **Sovereign Omniverse Per Race + Infinite Transfinite Generator (`resolveInfiniteOmniverseByIndex` & `resolveSpeciesSixLayerCosmology`)**: Assigns each race a dedicated Sovereign Omniverse (`OMNI-001`..`OMNI-100`), resolves its full 6-Layer Cosmological Lineage, and deterministically resolves any omniverse coordinate from `1` to `∞`.
+- **Super Admin Background NPC Command & Layer-6 White Page Decrees (`executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs, projects them into the 3D Overworld (`projectOmniverseNpcToWorldNPC`), sets their directives, and issues Layer-6 White Page / House of Ideas Authorial Decrees.
 
 ---
 
@@ -144,7 +145,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 98 deterministic unit tests across 15 suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 100 deterministic unit tests across 15 suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

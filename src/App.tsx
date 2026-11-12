@@ -128,7 +128,9 @@ import { getSpeciesSpec } from './game/species';
 import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
   OmniverseSpeciesNpcEntry,
+  WhitePageAuthorDecreeType,
   executeOmniverseSuperAdminCommand,
+  executeWhitePageAuthorDecree,
   projectOmniverseNpcToWorldNPC,
 } from './game/omniverse';
 
@@ -363,6 +365,42 @@ export default function App() {
     }
 
     setToastMessage(`🌌 ${res.reason}`);
+  };
+
+  const handleExecuteWhitePageDecree = (decreeType: WhitePageAuthorDecreeType) => {
+    const res = executeWhitePageAuthorDecree({
+      actorEmail: activeAccountEmail,
+      roster: omniverseRoster,
+      decreeType,
+    });
+    if (!res.allowed) {
+      setToastMessage(`🔒 ${res.reason}`);
+      return;
+    }
+
+    setOmniverseRoster(res.updatedRoster);
+
+    const projectedOmniNpcs = res.updatedRoster
+      .filter((e) => e.deployedInOverworld)
+      .map((e, idx) => projectOmniverseNpcToWorldNPC(e, idx));
+    setNpcs((prev) => {
+      const coreNpcs = prev.filter((n) => !n.id.startsWith('omni_npc_'));
+      return [...coreNpcs, ...projectedOmniNpcs];
+    });
+
+    if (res.tributeDiamondsGranted > 0n) {
+      setResources((prev) => ({
+        ...prev,
+        diamond: prev.diamond + res.tributeDiamondsGranted,
+        wood: prev.wood + res.tributeWoodGranted,
+        grain: prev.grain + res.tributeGrainGranted,
+      }));
+      confetti({ particleCount: 110, spread: 100 });
+      setToastMessage(`📜 ${res.reason} (+${formatBigInt(res.tributeDiamondsGranted)} 💎)`);
+      return;
+    }
+
+    setToastMessage(`📜 ${res.reason}`);
   };
 
   // Dynamic Weather System State (Clear, Rain, Snow, Storm)
@@ -2043,6 +2081,7 @@ export default function App() {
           }}
           omniverseRoster={omniverseRoster}
           onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+          onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
           onOpenOmniverseDirector={() => {
             setWorldAiInitialTab('omniverse');
             setActiveModal('world_ai');
@@ -2100,6 +2139,7 @@ export default function App() {
           }}
           onStepWorldAI={handleStepWorldAI}
           onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+          onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onClose={() => {
             setWorldAiInitialTab('npcs');
