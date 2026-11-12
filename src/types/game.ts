@@ -27,9 +27,24 @@ export interface TroopTierInfo {
   description: string;
 }
 
+export type CharacterSpeciesId =
+  | 'human'
+  | 'sylvan_elf'
+  | 'ironforge_dwarf'
+  | 'warborn_orc'
+  | 'azure_dragonkin'
+  | 'celestial_kitsune'
+  | 'asura_demon'
+  | 'empyrean_angelic'
+  | 'void_walker'
+  | 'crystalline_golem';
+
 export interface CharacterAppearance {
   name: string;
   title: string;
+  species?: CharacterSpeciesId;
+  speciesLocked?: boolean;
+  adminSpeciesSwitchApproved?: boolean;
   gender: 'male' | 'female' | 'warlord';
   skinColor: string;
   hairStyle: 'spiky' | 'knight' | 'mohawk' | 'dreadlocks' | 'sorcerer' | 'braided';

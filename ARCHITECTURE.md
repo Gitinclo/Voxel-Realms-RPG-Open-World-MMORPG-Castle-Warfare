@@ -29,6 +29,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/vipSubscription.ts   (VIP Tiers 0-3, stipends, feature gates)  │
 │  • src/game/adminModeration.ts   (RBAC for creatergame31@gmail.com & mods) │
 │  • src/game/architectOptimization.ts (CPU ISA, GPU, TDP, SoA & Job DAG)    │
+│  • src/game/species.ts           (10 Species catalog, 3D specs & Admin gate)│
+│  • src/game/omniverse.ts         (100 Species NPCs & Infinite Omniverse)   │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -36,7 +38,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **92 unit and regression tests across 13 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **98 unit and regression tests across 15 suites** in ~1.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -53,17 +55,18 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   ├── GameCanvas.tsx           # Three.js viewport, raycasting, WASD/touch movement, EffectComposer
 │   │   ├── GameHUD.tsx              # Consolidated top bar, virtual joystick, 5-tab bottom command dock
 │   │   ├── TitleScreen.tsx          # Entry screen (?autostart=1 bypass supported for automated testing)
-│   │   ├── AdminConsoleModal.tsx    # GM cheats, T20 spawner, RBAC moderation & official contact hub
+│   │   ├── AdminConsoleModal.tsx    # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
+│   │   ├── CharacterCreationModal.tsx # 10-Species selector, 3D turntable & Admin permission gate
 │   │   ├── CastleModal.tsx          # Citadel Lv 0-100 upgrade & 10-Era visualization
 │   │   ├── TroopBarracksModal.tsx   # T1-T20 recruitment, real-time training queue & counter matrix
 │   │   ├── CultivationModal.tsx     # Four-Path Dantian, manuals, alchemy pills, Heavenly Tribulations
-│   │   ├── WorldAIDirectorModal.tsx # Lv 1-1000 monster telemetry, A* waypoints & NPC directives
+│   │   ├── WorldAIDirectorModal.tsx # Lv 1-1000 monster telemetry, A* waypoints & 100-Omniverse Matrix
 │   │   ├── ClanModal.tsx            # Alliance vault, 9-sector war map, co-op boss, emblem studio
 │   │   ├── VipSubscriptionModal.tsx # VIP Covenant tiers, daily stipends & loyalty progression
 │   │   └── ...                      # HeroModal, DailyLoginModal, WeatherModal, LeaderboardModal, etc.
 │   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites
 │   ├── types/
-│   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, clans)
+│   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, species)
 │   │   └── cultivation.ts           # Four-Path realms, manuals, disciples, karma types
 │   └── App.tsx                      # Root state container & simulation timers
 ```
@@ -122,6 +125,18 @@ Players cultivate four complementary paths simultaneously:
 - **GPU Compute & Thermal TDP Envelopes**: Evaluates `Vulkan 1.3`, `DirectX 12 Ultimate`, `Apple Metal 3`, `WebGPU`, `WebGL 2.0`, and `CPU Software Rasterizer (SwiftShader)` alongside thermal governors (`350W Desktop`, `200W Console`, `25W Handheld`, `8W Mobile Passive`).
 - **Software Architect DOD (`SoA` vs `AoS`) & Lock-Free Job DAG**: Benchmarks contiguous Structure-of-Arrays (`SoA`, `32B` hot-loop stride, `<2.5%` L1/L2 cache miss rate, `4.75x` speedup) against legacy Array-of-Structures (`AoS`), schedules 5 engine stages across a zero-mutex Chase-Lev work-stealing thread pool, and drives a deterministic Frame-Budget Auto-Scaler (`60Hz` / `120Hz` / `240Hz`).
 
+### G. 10-Species / Race System & Admin Rebirth Gate (`src/game/species.ts`)
+
+- **10 Playable Species across 3 Lineages**: Defines `CHARACTER_SPECIES_CATALOG` across Classic Fantasy (`human`, `sylvan_elf`, `ironforge_dwarf`, `warborn_orc`), Xianxia Immortal (`azure_dragonkin`, `celestial_kitsune`, `asura_demon`, `empyrean_angelic`), and Cosmic / Astral (`void_walker`, `crystalline_golem`).
+- **3D Scene-Graph Attachments**: `createPlayerMesh` constructs a dedicated `SpeciesTraitGroup` with procedural horns, ears, wings, tails, tusks, runic beards, orbiting void shards, and golem core reactors while applying per-species stature scaling (`bodyScale`).
+- **Admin Permission Gate (`evaluateSpeciesSwitchPermission`)**: Once a character's initial species is locked (`speciesLocked: true`), switching to a different species requires authorization from **`creatergame31@gmail.com`** (via active Admin/GM privileges or an approved `adminSpeciesSwitchApproved` decree).
+
+### H. Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+
+- **100 Canonical Fictional Species (`TOP_100_OMNIVERSE_SPECIES_NPCS`)**: Catalogs all 100 species across 5 Tiers (`1–20` Omniversal Entities, `21–40` Type IV+ Sci-Fi Civilizations, `41–60` Divine & Xianxia Pantheons, `61–80` Planet-Busting Warriors, `81–100` Galactic Empires & Fantasy Archetypes).
+- **Sovereign Omniverse Per Race + Infinite Transfinite Generator (`resolveInfiniteOmniverseByIndex`)**: Assigns each race a dedicated Sovereign Omniverse (`OMNI-001`..`OMNI-100`) and deterministically resolves any omniverse coordinate from `1` to `∞`.
+- **Super Admin Background NPC Command (`executeOmniverseSuperAdminCommand`)**: Enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs, projects them into the 3D Overworld (`projectOmniverseNpcToWorldNPC`), sets their directives, and harvests their cosmic tributes.
+
 ---
 
 ## 4. Anti-Spaghetti Engineering Guardrails
@@ -129,7 +144,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 92 deterministic unit tests across 13 suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 98 deterministic unit tests across 15 suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

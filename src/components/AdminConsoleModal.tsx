@@ -24,9 +24,17 @@ import {
   Send,
   Gavel,
 } from 'lucide-react';
-import { GameResources, TroopType } from '../types/game';
+import { CharacterAppearance, CharacterSpeciesId, GameResources, TroopType } from '../types/game';
 import { WeatherType } from '../game/weather';
 import { sound } from '../game/audio';
+import { CHARACTER_SPECIES_CATALOG, getSpeciesSpec } from '../game/species';
+import {
+  TOP_100_OMNIVERSE_SPECIES_NPCS,
+  TOP_100_SPECIES_PDF_ASSET_PATH,
+  OmniverseSpeciesNpcEntry,
+  OmniverseTierNumber,
+  executeOmniverseSuperAdminCommand,
+} from '../game/omniverse';
 import {
   PRIMARY_ADMIN_EMAIL,
   OFFICIAL_CONTACT_DIRECTORY,
@@ -62,6 +70,13 @@ interface AdminConsoleModalProps {
   supportTickets?: SupportTicket[];
   onUpdateSupportTickets?: (tickets: SupportTicket[]) => void;
   onBroadcastSystemMessage?: (message: string, tag: string) => void;
+  playerAppearance?: CharacterAppearance;
+  onUpdatePlayerAppearance?: (updated: CharacterAppearance) => void;
+  omniverseRoster?: OmniverseSpeciesNpcEntry[];
+  onExecuteOmniverseCommand?: (
+    command: Parameters<typeof executeOmniverseSuperAdminCommand>[0]['command']
+  ) => void;
+  onOpenOmniverseDirector?: () => void;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
 }
@@ -87,6 +102,11 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   supportTickets = [],
   onUpdateSupportTickets,
   onBroadcastSystemMessage,
+  playerAppearance,
+  onUpdatePlayerAppearance,
+  omniverseRoster = TOP_100_OMNIVERSE_SPECIES_NPCS,
+  onExecuteOmniverseCommand,
+  onOpenOmniverseDirector,
   initialTab = 'cheats',
   onClose,
 }) => {
@@ -95,6 +115,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   >(initialTab);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
     `[AdminAuth] Root account ${PRIMARY_ADMIN_EMAIL} authenticated with Administration, GM, Admin & Moderator control (Clearance Lv.999).`,
+    `[OmniverseMatrix] 100 Fictional Species Background NPCs & 100+∞ Sovereign Omniverses bound to Super Admin ${PRIMARY_ADMIN_EMAIL}.`,
     '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
     '[AdminConsole] Causality tick & RBAC moderation guardrails hooked into Game::update(float dt).',
   ]);
@@ -528,6 +549,188 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                   }}
                   className="w-full accent-amber-400"
                 />
+              </div>
+
+              {/* Admin Species / Race Rebirth Authorization Control (creatergame31@gmail.com) */}
+              {playerAppearance && onUpdatePlayerAppearance && (
+                <div
+                  data-testid="admin-species-authorization-card"
+                  className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/40 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-cyan-200 flex items-center gap-2">
+                        <span>Species / Race Rebirth Governance ({PRIMARY_ADMIN_EMAIL})</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono">
+                          {getSpeciesSpec(playerAppearance.species).icon}{' '}
+                          {getSpeciesSpec(playerAppearance.species).name}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Grant or revoke Admin Permission for switching Species / Race after initial
+                        character creation, or force-assign any of the 10 lineages.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="admin-toggle-species-permission-btn"
+                      onClick={() => {
+                        const nextApproved = !playerAppearance.adminSpeciesSwitchApproved;
+                        onUpdatePlayerAppearance({
+                          ...playerAppearance,
+                          adminSpeciesSwitchApproved: nextApproved,
+                        });
+                        sound.playUpgradeFanfare();
+                        addLog(
+                          `[SPECIES GOVERNANCE] ${PRIMARY_ADMIN_EMAIL} set Admin Species Switch Permission = ${nextApproved ? 'APPROVED' : 'REVOKED'}.`
+                        );
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
+                        playerAppearance.adminSpeciesSwitchApproved
+                          ? 'bg-emerald-600 text-white border-emerald-400'
+                          : 'bg-amber-500/20 text-amber-200 border-amber-400 hover:bg-amber-500/30'
+                      }`}
+                    >
+                      {playerAppearance.adminSpeciesSwitchApproved
+                        ? '✓ Species Switch Permission: APPROVED'
+                        : 'Grant Species Switch Permission'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+                    {CHARACTER_SPECIES_CATALOG.map((spec) => {
+                      const active = (playerAppearance.species || 'human') === spec.id;
+                      return (
+                        <button
+                          key={spec.id}
+                          type="button"
+                          onClick={() => {
+                            onUpdatePlayerAppearance({
+                              ...playerAppearance,
+                              species: spec.id as CharacterSpeciesId,
+                              speciesLocked: true,
+                              adminSpeciesSwitchApproved: true,
+                            });
+                            sound.playButton();
+                            addLog(
+                              `[SPECIES OVERRIDE] ${PRIMARY_ADMIN_EMAIL} assigned Lord Species -> ${spec.name} (${spec.chineseName}).`
+                            );
+                          }}
+                          className={`px-2 py-1.5 rounded-lg border text-[10px] font-mono font-bold flex items-center gap-1.5 truncate cursor-pointer ${
+                            active
+                              ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200'
+                              : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <span>{spec.icon}</span>
+                          <span className="truncate">{spec.name.split(' (')[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Super Admin Infinite Omniverse & 100 Species Background NPCs Control (creatergame31@gmail.com) */}
+              <div
+                data-testid="admin-omniverse-100-npc-card"
+                className="p-4 rounded-xl bg-gradient-to-r from-fuchsia-950/60 via-slate-900 to-amber-950/40 border border-fuchsia-500/40 space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-fuchsia-200">
+                        🌌 Infinite Omniverse & 100 Fictional Species Background NPCs
+                      </h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono font-bold">
+                        SUPER ADMIN: {PRIMARY_ADMIN_EMAIL}
+                      </span>
+                      <a
+                        href={TOP_100_SPECIES_PDF_ASSET_PATH}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-mono hover:bg-cyan-500/30"
+                      >
+                        📄 Top 100 Species PDF
+                      </a>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Command all 100 Species Background NPCs (Outer Gods, Beyonders, Endless,
+                      Monitors, Xeelee, Time Lords, Fiendcelestials, Saiyans, Kryptonians, Eldar,
+                      etc.) and their 100+∞ Sovereign Omniverses. Currently Projected in 3D
+                      Overworld:{' '}
+                      <strong className="text-emerald-300 font-mono">
+                        {omniverseRoster.filter((e) => e.deployedInOverworld).length} / 100
+                      </strong>
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {onOpenOmniverseDirector && (
+                      <button
+                        type="button"
+                        data-testid="admin-open-omniverse-matrix-btn"
+                        onClick={() => {
+                          sound.playButton();
+                          onOpenOmniverseDirector();
+                        }}
+                        className="px-3 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-mono font-bold cursor-pointer"
+                      >
+                        Open Full 100-Omniverse Matrix
+                      </button>
+                    )}
+                    {onExecuteOmniverseCommand && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onExecuteOmniverseCommand({ type: 'harvest_all_omniverse_tribute' });
+                          sound.playUpgradeFanfare();
+                          addLog(
+                            `[OMNIVERSE TRIBUTE] ${PRIMARY_ADMIN_EMAIL} harvested cosmic tribute across all 100 Sovereign Omniverses.`
+                          );
+                        }}
+                        className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-mono font-bold cursor-pointer"
+                      >
+                        Harvest 100-Omniverse Tribute
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {onExecuteOmniverseCommand && (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+                    {([1, 2, 3, 4, 5] as OmniverseTierNumber[]).map((t) => {
+                      const tierEntries = omniverseRoster.filter((e) => e.tier === t);
+                      const deployedCount = tierEntries.filter((e) => e.deployedInOverworld).length;
+                      const allDeployed = deployedCount === tierEntries.length;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => {
+                            onExecuteOmniverseCommand({
+                              type: 'project_tier_to_overworld',
+                              targetTier: t,
+                              deploy: !allDeployed,
+                            });
+                            sound.playButton();
+                            addLog(
+                              `[OMNIVERSE TIER ${t}] ${PRIMARY_ADMIN_EMAIL} ${!allDeployed ? 'projected' : 'recalled'} all 20 Tier ${t} Background NPCs.`
+                            );
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-mono font-bold flex items-center justify-between cursor-pointer ${
+                            deployedCount > 0
+                              ? 'bg-fuchsia-500/20 border-fuchsia-400 text-fuchsia-200'
+                              : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          <span>Tier {t} NPCs</span>
+                          <span>{deployedCount}/20</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}

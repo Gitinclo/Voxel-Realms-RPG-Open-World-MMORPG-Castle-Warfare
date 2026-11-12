@@ -21,10 +21,14 @@ import {
   PlayerTroopRoster,
   ResourceNode,
 } from '../types/game';
+import { TOP_100_OMNIVERSE_SPECIES_NPCS, projectOmniverseNpcToWorldNPC } from './omniverse';
 
 export const INITIAL_APPEARANCE: CharacterAppearance = {
   name: 'Aiden Skyrender',
   title: 'Vanguard Commander',
+  species: 'human',
+  speciesLocked: false,
+  adminSpeciesSwitchApproved: false,
   gender: 'warlord',
   skinColor: '#f1c27d',
   hairStyle: 'knight',
@@ -600,6 +604,9 @@ export const INITIAL_NPCS: NPC[] = [
     combatPower: 92_000_000n,
     specialtyBuffDesc: 'Autonomous Multi-Node Spirit Harvesting (+132K Resources/cycle)',
   },
+  ...TOP_100_OMNIVERSE_SPECIES_NPCS.filter((e) => e.deployedInOverworld).map((e, i) =>
+    projectOmniverseNpcToWorldNPC(e, i)
+  ),
 ];
 
 export const INITIAL_CLAN_EMBLEM: ClanEmblem = {

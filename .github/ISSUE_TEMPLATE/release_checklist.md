@@ -23,12 +23,12 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 92 unit tests across all 13 test suites
+- [ ] `npm test` passes all 98 unit tests across all 15 test suites
 - [ ] `npm run build` succeeds and generates output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
 
-- [ ] Title screen loads and save slot / character creation works
+- [ ] Title screen loads and save slot / 10-Species Character Creation & Admin Rebirth (`creatergame31@gmail.com`) work
 - [ ] 3D Voxel world, HDR lighting, and dynamic weather render smoothly
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work

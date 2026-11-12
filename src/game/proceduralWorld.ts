@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { CharacterAppearance, MonsterTarget, NPC, ResourceNode } from '../types/game';
+import { getSpeciesSpec } from './species';
 
 /**
  * Graphics Quality Preset Type
@@ -2585,6 +2586,177 @@ export function createPlayerMesh(
     cape.castShadow = true;
     player.add(cape);
   }
+
+  // ==========================================================================
+  // SPECIES / RACE 3D PROCEDURAL TRAITS (Horns, Ears, Wings, Tails, Reactor, Stature)
+  // ==========================================================================
+  const speciesSpec = getSpeciesSpec(appearance.species);
+  const { meshTraits } = speciesSpec;
+  player.scale.set(meshTraits.bodyScale[0], meshTraits.bodyScale[1], meshTraits.bodyScale[2]);
+
+  const speciesGroup = new THREE.Group();
+  speciesGroup.name = 'SpeciesTraitGroup';
+  speciesGroup.userData = { speciesId: speciesSpec.id };
+
+  const speciesAccentMat = new THREE.MeshStandardMaterial({
+    color: meshTraits.accentColorHex,
+    emissive: meshTraits.accentColorHex,
+    emissiveIntensity: 0.55,
+    metalness: 0.75,
+    roughness: 0.2,
+  });
+
+  if (meshTraits.hasPointedElfEars) {
+    const earGeo = new THREE.ConeGeometry(0.09, 0.36, 10);
+    const earL = new THREE.Mesh(earGeo, skinMat);
+    earL.position.set(-0.46, 2.15, 0.02);
+    earL.rotation.set(0, 0, Math.PI * 0.38);
+    const earR = new THREE.Mesh(earGeo, skinMat);
+    earR.position.set(0.46, 2.15, 0.02);
+    earR.rotation.set(0, 0, -Math.PI * 0.38);
+    earL.name = 'SpeciesElfEarL';
+    earR.name = 'SpeciesElfEarR';
+    speciesGroup.add(earL, earR);
+  }
+
+  if (meshTraits.hasKitsuneFoxEars) {
+    const foxEarGeo = new THREE.ConeGeometry(0.12, 0.34, 12);
+    const earL = new THREE.Mesh(foxEarGeo, hairMat);
+    earL.position.set(-0.24, 2.58, 0.04);
+    earL.rotation.z = 0.22;
+    const earR = new THREE.Mesh(foxEarGeo, hairMat);
+    earR.position.set(0.24, 2.58, 0.04);
+    earR.rotation.z = -0.22;
+    earL.name = 'SpeciesKitsuneEarL';
+    earR.name = 'SpeciesKitsuneEarR';
+    speciesGroup.add(earL, earR);
+  }
+
+  if (meshTraits.hasRunicBeard) {
+    const beardGeo = createChamferedBlockGeometry(0.46, 0.54, 0.26, 0.04, 2);
+    const beard = new THREE.Mesh(beardGeo, hairMat);
+    beard.position.set(0, 1.72, 0.34);
+    beard.name = 'SpeciesRunicBeard';
+    const clasp = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.08, 12),
+      voxelMaterials.goldAccent
+    );
+    clasp.position.set(0, 1.54, 0.38);
+    speciesGroup.add(beard, clasp);
+  }
+
+  if (meshTraits.hasOrcTusks) {
+    const tuskMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.3 });
+    const tuskGeo = new THREE.ConeGeometry(0.045, 0.2, 10);
+    const tuskL = new THREE.Mesh(tuskGeo, tuskMat);
+    tuskL.position.set(-0.15, 1.96, 0.42);
+    tuskL.rotation.x = 0.25;
+    const tuskR = new THREE.Mesh(tuskGeo, tuskMat);
+    tuskR.position.set(0.15, 1.96, 0.42);
+    tuskR.rotation.x = 0.25;
+    tuskL.name = 'SpeciesOrcTuskL';
+    tuskR.name = 'SpeciesOrcTuskR';
+    speciesGroup.add(tuskL, tuskR);
+  }
+
+  if (meshTraits.hasDragonHorns || meshTraits.hasAsuraHorns) {
+    const hornGeo = new THREE.ConeGeometry(0.085, 0.48, 12);
+    const hornMat = meshTraits.hasDragonHorns
+      ? speciesAccentMat
+      : new THREE.MeshStandardMaterial({
+          color: 0x1e1b4b,
+          emissive: 0xe11d48,
+          emissiveIntensity: 0.45,
+          roughness: 0.25,
+        });
+    const hornL = new THREE.Mesh(hornGeo, hornMat);
+    hornL.position.set(-0.26, 2.58, -0.05);
+    hornL.rotation.set(-0.35, 0, 0.32);
+    const hornR = new THREE.Mesh(hornGeo, hornMat);
+    hornR.position.set(0.26, 2.58, -0.05);
+    hornR.rotation.set(-0.35, 0, -0.32);
+    hornL.name = 'SpeciesHornL';
+    hornR.name = 'SpeciesHornR';
+    speciesGroup.add(hornL, hornR);
+  }
+
+  if (meshTraits.hasCelestialWings) {
+    const wingGroup = new THREE.Group();
+    wingGroup.name = 'SpeciesCelestialWings';
+    const wingMat = new THREE.MeshPhysicalMaterial({
+      color: 0xfffbeb,
+      emissive: 0xfbbf24,
+      emissiveIntensity: 0.45,
+      roughness: 0.2,
+      clearcoat: 0.9,
+    });
+    for (let side = -1; side <= 1; side += 2) {
+      for (let featherIdx = 0; featherIdx < 3; featherIdx++) {
+        const featherGeo = createChamferedBlockGeometry(
+          0.75 - featherIdx * 0.14,
+          0.22,
+          0.06,
+          0.02,
+          2
+        );
+        const feather = new THREE.Mesh(featherGeo, wingMat);
+        feather.position.set(
+          side * (0.58 + featherIdx * 0.12),
+          1.62 - featherIdx * 0.22,
+          -0.28 - featherIdx * 0.03
+        );
+        feather.rotation.z = side * (0.28 - featherIdx * 0.12);
+        feather.rotation.y = side * -0.22;
+        wingGroup.add(feather);
+      }
+    }
+    speciesGroup.add(wingGroup);
+  }
+
+  if (meshTraits.hasDraconicTail) {
+    const tailGeo = new THREE.ConeGeometry(0.11, 0.95, 12);
+    const tail = new THREE.Mesh(tailGeo, speciesAccentMat);
+    tail.position.set(0, 0.68, -0.58);
+    tail.rotation.x = -Math.PI * 0.36;
+    tail.name = 'SpeciesDraconicTail';
+    speciesGroup.add(tail);
+  }
+
+  if (meshTraits.hasKitsuneTails) {
+    const tailsGroup = new THREE.Group();
+    tailsGroup.name = 'SpeciesKitsuneTails';
+    for (let t = -1; t <= 1; t++) {
+      const foxTailGeo = new THREE.ConeGeometry(0.13, 0.92, 12);
+      const foxTail = new THREE.Mesh(foxTailGeo, speciesAccentMat);
+      foxTail.position.set(t * 0.26, 0.82, -0.55);
+      foxTail.rotation.set(-Math.PI * 0.32, 0, t * -0.35);
+      tailsGroup.add(foxTail);
+    }
+    speciesGroup.add(tailsGroup);
+  }
+
+  if (meshTraits.hasVoidOrbitCrystals) {
+    const crystalGroup = new THREE.Group();
+    crystalGroup.name = 'SpeciesVoidCrystals';
+    const crystalGeo = new THREE.OctahedronGeometry(0.14, 0);
+    for (let c = 0; c < 3; c++) {
+      const angle = (c / 3) * Math.PI * 2;
+      const crystal = new THREE.Mesh(crystalGeo, speciesAccentMat);
+      crystal.position.set(Math.cos(angle) * 0.85, 1.95 + (c % 2) * 0.18, Math.sin(angle) * 0.85);
+      crystalGroup.add(crystal);
+    }
+    speciesGroup.add(crystalGroup);
+  }
+
+  if (meshTraits.hasGolemChestReactor) {
+    const reactorGeo = new THREE.OctahedronGeometry(0.2, 1);
+    const reactor = new THREE.Mesh(reactorGeo, speciesAccentMat);
+    reactor.position.set(0, 1.32, 0.38);
+    reactor.name = 'SpeciesGolemReactor';
+    speciesGroup.add(reactor);
+  }
+
+  player.add(speciesGroup);
 
   // ==========================================================================
   // CULTIVATION POWER VISUAL CUES ("THE AURA" — Replaces Overhead Level Numbers)

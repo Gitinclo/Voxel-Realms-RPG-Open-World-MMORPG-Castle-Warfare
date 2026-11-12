@@ -5,28 +5,73 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { X, User, Check, RefreshCw } from 'lucide-react';
-import { CharacterAppearance } from '../types/game';
+import {
+  X,
+  User,
+  Check,
+  RefreshCw,
+  ShieldAlert,
+  Lock,
+  Unlock,
+  Sparkles,
+  Gavel,
+} from 'lucide-react';
+import { CharacterAppearance, CharacterSpeciesId } from '../types/game';
 import { createPlayerMesh } from '../game/proceduralWorld';
+import {
+  CHARACTER_SPECIES_CATALOG,
+  evaluateSpeciesSwitchPermission,
+  getSpeciesSpec,
+} from '../game/species';
+import { PRIMARY_ADMIN_EMAIL, verifyAccountPrivileges } from '../game/adminModeration';
 import { sound } from '../game/audio';
 
 interface CharacterCreationModalProps {
   currentAppearance: CharacterAppearance;
+  activeAccountEmail?: string;
   onSaveAppearance: (updated: CharacterAppearance) => void;
+  onRequestSpeciesPermissionTicket?: (requestedSpecies: CharacterSpeciesId) => void;
+  onOpenAdminConsole?: () => void;
   onClose: () => void;
 }
 
 export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
   currentAppearance,
+  activeAccountEmail = PRIMARY_ADMIN_EMAIL,
   onSaveAppearance,
+  onRequestSpeciesPermissionTicket,
+  onOpenAdminConsole,
   onClose,
 }) => {
-  const [appearance, setAppearance] = useState<CharacterAppearance>({ ...currentAppearance });
+  const [appearance, setAppearance] = useState<CharacterAppearance>({
+    ...currentAppearance,
+    species: currentAppearance.species || 'human',
+  });
+  const [permissionNotice, setPermissionNotice] = useState<string | null>(null);
+
   const previewMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const characterGroupRef = useRef<THREE.Group | null>(null);
   const animFrameIdRef = useRef<number>(0);
+
+  const activeSpec = getSpeciesSpec(appearance.species);
+  const accountPrivs = verifyAccountPrivileges(activeAccountEmail);
+  const isAdminSession =
+    accountPrivs.permissions.canManageRoles || accountPrivs.permissions.canUseGodmodeAndCheats;
+
+  // Check if switching away from currentAppearance.species is permitted
+  const switchEval = evaluateSpeciesSwitchPermission({
+    currentAppearance,
+    targetSpeciesId: appearance.species || 'human',
+    activeAccountEmail,
+  });
+
+  const canSwitchToAnySpecies =
+    !currentAppearance.speciesLocked ||
+    Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
+    Boolean(appearance.adminSpeciesSwitchApproved) ||
+    isAdminSession;
 
   // 3D Canvas setup for character preview
   useEffect(() => {
@@ -43,15 +88,19 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
     camera.position.set(0, 1.8, 5.2);
     camera.lookAt(0, 1.4, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    rendererRef.current = renderer;
-
-    container.replaceChildren(renderer.domElement);
+    let renderer: THREE.WebGLRenderer | null = null;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      rendererRef.current = renderer;
+      container.replaceChildren(renderer.domElement);
+    } catch {
+      return;
+    }
 
     // Studio lighting rig
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 1.2);
@@ -90,14 +139,14 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
         characterGroupRef.current.rotation.y = Math.sin(time * 0.4) * 0.4 + 0.1;
         characterGroupRef.current.position.y = Math.sin(time * 2.5) * 0.03;
       }
-      renderer.render(scene, camera);
+      renderer?.render(scene, camera);
       animFrameIdRef.current = requestAnimationFrame(tick);
     };
     tick();
 
     return () => {
       cancelAnimationFrame(animFrameIdRef.current);
-      renderer.dispose();
+      renderer?.dispose();
       container.replaceChildren();
     };
   }, []);
@@ -114,9 +163,57 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
     characterGroupRef.current = newMesh;
   }, [appearance]);
 
-  const handleSave = () => {
+  const handleSelectSpecies = (speciesId: CharacterSpeciesId) => {
+    const currentLockedSpecies = currentAppearance.species || 'human';
+    if (
+      currentAppearance.speciesLocked &&
+      speciesId !== currentLockedSpecies &&
+      !canSwitchToAnySpecies
+    ) {
+      sound.playSwing();
+      setPermissionNotice(
+        `Species is locked to ${getSpeciesSpec(currentLockedSpecies).name}. Switching to ${getSpeciesSpec(speciesId).name} requires permission from Admin (${PRIMARY_ADMIN_EMAIL}).`
+      );
+      return;
+    }
+
+    const spec = getSpeciesSpec(speciesId);
+    sound.playButton();
+    setPermissionNotice(null);
+    setAppearance((prev) => ({
+      ...prev,
+      species: speciesId,
+      skinColor: spec.meshTraits.recommendedSkinColor,
+      eyeColor: spec.meshTraits.recommendedEyeColor,
+      hairColor: spec.meshTraits.recommendedHairColor,
+    }));
+  };
+
+  const handleGrantAdminPermissionInModal = () => {
     sound.playUpgradeFanfare();
-    onSaveAppearance(appearance);
+    setAppearance((prev) => ({
+      ...prev,
+      adminSpeciesSwitchApproved: true,
+    }));
+    setPermissionNotice(
+      `Admin Permission (${PRIMARY_ADMIN_EMAIL}) granted! You may now freely switch to any of the 10 Species / Races.`
+    );
+  };
+
+  const handleSave = () => {
+    if (!switchEval.allowed && !appearance.adminSpeciesSwitchApproved) {
+      setPermissionNotice(switchEval.reason);
+      return;
+    }
+    sound.playUpgradeFanfare();
+    onSaveAppearance({
+      ...appearance,
+      species: appearance.species || 'human',
+      speciesLocked: true,
+      adminSpeciesSwitchApproved: isAdminSession
+        ? Boolean(appearance.adminSpeciesSwitchApproved)
+        : false,
+    });
     onClose();
   };
 
@@ -138,9 +235,13 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
       'siege_mortar',
       'arcane_halberd',
     ];
+    const randomSpecies = canSwitchToAnySpecies
+      ? CHARACTER_SPECIES_CATALOG[Math.floor(Math.random() * CHARACTER_SPECIES_CATALOG.length)].id
+      : appearance.species || 'human';
 
     setAppearance((prev) => ({
       ...prev,
+      species: randomSpecies,
       title: titles[Math.floor(Math.random() * titles.length)],
       skinColor: skins[Math.floor(Math.random() * skins.length)],
       hairColor: hairs[Math.floor(Math.random() * hairs.length)],
@@ -152,37 +253,43 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-slate-900 border-2 border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+      <div
+        data-testid="character-creation-modal"
+        className="relative w-full max-w-5xl bg-slate-900 border-2 border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]"
+      >
         {/* Header */}
-        <div className="relative px-6 py-5 bg-gradient-to-r from-cyan-950/80 via-slate-900 to-cyan-950/80 border-b border-cyan-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-400">
-              <User className="w-7 h-7" />
+        <div className="relative px-4 sm:px-6 py-4 bg-gradient-to-r from-cyan-950/80 via-slate-900 to-cyan-950/80 border-b border-cyan-500/30 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 shrink-0">
+              <User className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div>
-              <h2 className="text-xl font-bold font-cinzel text-cyan-100 flex items-center gap-2">
-                Character Creation Centre
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono">
-                  3D Voxel Customizer
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-bold font-cinzel text-cyan-100 flex items-center gap-2 flex-wrap">
+                <span>Character Creation Centre</span>
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono">
+                  10 Species / Races · 3D Voxel Customizer
                 </span>
               </h2>
-              <p className="text-xs text-cyan-200/70">
-                Customize your Lord's Appearance, Weapon Mastery, Armor Tier, and Title
+              <p className="text-xs text-cyan-200/70 truncate">
+                Choose from 10 Fantasy, Xianxia &amp; Cosmic Species with 3D Meshes, Innate Passives
+                &amp; Admin Rebirth Governance
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={handleRandomize}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 font-semibold flex items-center gap-1.5 border border-slate-700"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-cyan-300 font-semibold flex items-center gap-1.5 border border-slate-700 cursor-pointer"
               title="Randomize appearance"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Randomize
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X className="w-6 h-6" />
@@ -190,26 +297,223 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
           </div>
         </div>
 
-        {/* Content Body: Left 3D Viewport, Right Controls */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 text-slate-200">
-          {/* 3D Preview Column */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-slate-950/80 rounded-2xl border border-slate-800">
-            <div
-              className="relative w-full h-[320px] rounded-xl overflow-hidden"
-              ref={previewMountRef}
-            />
-            <div className="text-center mt-3">
-              <div className="text-base font-bold font-cinzel text-white">
-                [{appearance.clanTag}] {appearance.name}
+        {/* Content Body: Left 3D Viewport + Active Species Lore/Buffs, Right Controls */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 text-slate-200">
+          {/* 3D Preview & Active Species Telemetry Column */}
+          <div className="lg:col-span-5 flex flex-col gap-3">
+            <div className="flex flex-col items-center justify-center p-4 bg-slate-950/85 rounded-2xl border border-slate-800">
+              <div
+                className="relative w-full h-[270px] sm:h-[300px] rounded-xl overflow-hidden"
+                ref={previewMountRef}
+              />
+              <div className="text-center mt-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-bold mb-1">
+                  <span>{activeSpec.icon}</span>
+                  <span>{activeSpec.name}</span>
+                  <span className="text-amber-400/80">({activeSpec.chineseName})</span>
+                </div>
+                <div className="text-base font-bold font-cinzel text-white">
+                  [{appearance.clanTag}] {appearance.name}
+                </div>
+                <div className="text-xs font-semibold text-cyan-400 font-mono mt-0.5">
+                  {appearance.title} · Rank T{appearance.armorTier}
+                </div>
               </div>
-              <div className="text-xs font-semibold text-cyan-400 font-mono mt-0.5">
-                {appearance.title} · Rank T{appearance.armorTier}
+            </div>
+
+            {/* Active Species 3D Traits & Innate Racial Passives Card */}
+            <div
+              data-testid="active-species-passives-card"
+              className="p-3.5 rounded-2xl bg-slate-950/90 border border-cyan-500/30 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  {activeSpec.lineageLabel}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-emerald-300">
+                  Scale {activeSpec.meshTraits.bodyScale[0]}× / {activeSpec.meshTraits.bodyScale[1]}
+                  ×
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">{activeSpec.loreSummary}</p>
+              <div className="text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-500/30 rounded-lg px-2.5 py-1.5">
+                3D Mesh: <span className="text-white">{activeSpec.visualTraitsDescription}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 pt-1 text-[10px] font-mono">
+                <div className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-emerald-300">
+                  Shield Def: +{activeSpec.passives.shieldbearerDefensePct}% · Shooter: +
+                  {activeSpec.passives.shooterAttackPct}%
+                </div>
+                <div className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-cyan-300">
+                  Bomber: +{activeSpec.passives.bomberSiegeAttackPct}% · Rally: +
+                  {activeSpec.passives.rallyCapacityPct}%
+                </div>
+                <div className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-amber-300">
+                  Qi/Body: +{activeSpec.passives.qiCultivationSpeedPct}% / +
+                  {activeSpec.passives.bodyCultivationSpeedPct}%
+                </div>
+                <div className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-purple-300">
+                  Soul/Mind: +{activeSpec.passives.soulCultivationSpeedPct}% / +
+                  {activeSpec.passives.mindCultivationSpeedPct}%
+                </div>
               </div>
             </div>
           </div>
 
           {/* Customization Controls Column */}
-          <div className="md:col-span-7 space-y-4">
+          <div className="lg:col-span-7 space-y-4">
+            {/* 10-Species / Race Selection Matrix & Admin Permission Gate */}
+            <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div>
+                  <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    Choose Species / Race (10 Lineages)
+                  </label>
+                  <p className="text-[11px] text-slate-400">
+                    Initial creation is free. Switching species after locking requires Admin
+                    Permission ({PRIMARY_ADMIN_EMAIL}).
+                  </p>
+                </div>
+
+                {/* Lock / Admin Authorization Status Pill */}
+                {!currentAppearance.speciesLocked ? (
+                  <span
+                    data-testid="species-lock-status"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1"
+                  >
+                    <Unlock className="w-3 h-3" /> Initial Creation Unlocked
+                  </span>
+                ) : canSwitchToAnySpecies ? (
+                  <span
+                    data-testid="species-lock-status"
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-200 text-[10px] font-mono font-bold flex items-center gap-1"
+                  >
+                    <Gavel className="w-3 h-3 text-amber-400" /> Admin Authorized (
+                    {PRIMARY_ADMIN_EMAIL})
+                  </span>
+                ) : (
+                  <span
+                    data-testid="species-lock-status"
+                    className="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/50 text-rose-200 text-[10px] font-mono font-bold flex items-center gap-1"
+                  >
+                    <Lock className="w-3 h-3 text-rose-400" /> Locked (Requires Admin Permission)
+                  </span>
+                )}
+              </div>
+
+              {/* Admin Permission Action Bar when species is locked */}
+              {currentAppearance.speciesLocked && !canSwitchToAnySpecies && (
+                <div
+                  data-testid="species-admin-permission-banner"
+                  className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-500/40 flex flex-wrap items-center justify-between gap-2 text-xs"
+                >
+                  <div className="flex items-center gap-2 text-rose-200">
+                    <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>
+                      Species is locked to{' '}
+                      <strong>{getSpeciesSpec(currentAppearance.species).name}</strong>. Request or
+                      grant Admin approval from <strong>{PRIMARY_ADMIN_EMAIL}</strong> to switch.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {onRequestSpeciesPermissionTicket && (
+                      <button
+                        type="button"
+                        data-testid="request-admin-species-ticket-btn"
+                        onClick={() => {
+                          sound.playButton();
+                          onRequestSpeciesPermissionTicket(appearance.species || 'azure_dragonkin');
+                          setPermissionNotice(
+                            `Official Species Rebirth Request dispatched to Admin (${PRIMARY_ADMIN_EMAIL}).`
+                          );
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400 text-amber-200 text-[11px] font-mono font-bold cursor-pointer"
+                      >
+                        Request Admin Permission
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      data-testid="grant-admin-species-override-btn"
+                      onClick={handleGrantAdminPermissionInModal}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/45 border border-emerald-400 text-emerald-200 text-[11px] font-mono font-bold cursor-pointer"
+                    >
+                      Approve as Admin ({PRIMARY_ADMIN_EMAIL})
+                    </button>
+                    {onOpenAdminConsole && (
+                      <button
+                        type="button"
+                        onClick={onOpenAdminConsole}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-[11px] font-mono cursor-pointer"
+                      >
+                        Open GM Console
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {permissionNotice && (
+                <div
+                  data-testid="species-permission-notice"
+                  className="p-2.5 rounded-xl bg-amber-950/70 border border-amber-500/40 text-[11px] font-mono text-amber-200"
+                >
+                  {permissionNotice}
+                </div>
+              )}
+
+              {/* 10 Species Cards Grid */}
+              <div
+                data-testid="species-selection-grid"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[230px] overflow-y-auto pr-1"
+              >
+                {CHARACTER_SPECIES_CATALOG.map((spec) => {
+                  const isSelected = (appearance.species || 'human') === spec.id;
+                  const isLockedOption =
+                    Boolean(currentAppearance.speciesLocked) &&
+                    !canSwitchToAnySpecies &&
+                    spec.id !== (currentAppearance.species || 'human');
+
+                  return (
+                    <button
+                      key={spec.id}
+                      type="button"
+                      data-testid={`species-option-${spec.id}`}
+                      onClick={() => handleSelectSpecies(spec.id)}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex items-start gap-2.5 cursor-pointer ${
+                        isSelected
+                          ? 'bg-cyan-950/85 border-cyan-400 text-cyan-100 shadow-md shadow-cyan-500/10'
+                          : isLockedOption
+                            ? 'bg-slate-900/50 border-slate-800 text-slate-500 hover:border-rose-500/40'
+                            : 'bg-slate-900/90 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="text-xl shrink-0 mt-0.5">{spec.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold truncate">{spec.name}</span>
+                          {isLockedOption ? (
+                            <Lock className="w-3 h-3 text-rose-400 shrink-0" />
+                          ) : (
+                            <span className="text-[10px] font-mono text-amber-400 shrink-0">
+                              {spec.chineseName}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-emerald-300 font-mono truncate mt-0.5">
+                          {spec.primaryBuffSummary}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {spec.visualTraitsDescription}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Name & Title */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -250,13 +554,14 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 ].map((w) => (
                   <button
                     key={w.id}
+                    type="button"
                     onClick={() =>
                       setAppearance({
                         ...appearance,
                         weaponType: w.id as CharacterAppearance['weaponType'],
                       })
                     }
-                    className={`p-2.5 rounded-lg border text-left transition-all ${
+                    className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                       appearance.weaponType === w.id
                         ? 'bg-cyan-950/80 border-cyan-400 text-cyan-200'
                         : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800'
@@ -302,9 +607,10 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                     (color) => (
                       <button
                         key={color}
+                        type="button"
                         onClick={() => setAppearance({ ...appearance, hairColor: color })}
                         style={{ backgroundColor: color }}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                        className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
                           appearance.hairColor === color
                             ? 'border-white scale-110'
                             : 'border-transparent'
@@ -319,15 +625,24 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
               {/* Skin Tone */}
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                  Skin Tone
+                  Skin / Construct Tone
                 </label>
                 <div className="flex gap-1.5 flex-wrap">
-                  {['#f1c27d', '#ffdbac', '#e0ac69', '#8d5524', '#c68642'].map((color) => (
+                  {[
+                    '#f1c27d',
+                    '#ffdbac',
+                    '#e0ac69',
+                    '#8d5524',
+                    '#65a30d',
+                    '#818cf8',
+                    '#38bdf8',
+                  ].map((color) => (
                     <button
                       key={color}
+                      type="button"
                       onClick={() => setAppearance({ ...appearance, skinColor: color })}
                       style={{ backgroundColor: color }}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${
+                      className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
                         appearance.skinColor === color
                           ? 'border-white scale-110'
                           : 'border-transparent'
@@ -348,9 +663,10 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                     (color) => (
                       <button
                         key={color}
+                        type="button"
                         onClick={() => setAppearance({ ...appearance, armorColor: color })}
                         style={{ backgroundColor: color }}
-                        className={`w-6 h-6 rounded-full border-2 transition-all ${
+                        className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
                           appearance.armorColor === color
                             ? 'border-white scale-110'
                             : 'border-transparent'
@@ -364,7 +680,7 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
             </div>
 
             {/* Cape & Clan Tag */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700">
                 <input
                   type="checkbox"
@@ -398,16 +714,23 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-5 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-slate-950/90 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs text-slate-400">
-            Changes apply in real time to your in-world 3D hero.
+            Active Lineage:{' '}
+            <span className="text-amber-300 font-semibold">
+              {activeSpec.icon} {activeSpec.name}
+            </span>{' '}
+            · Locks species after initial confirmation unless authorized by Admin (
+            {PRIMARY_ADMIN_EMAIL}).
           </div>
           <button
+            type="button"
+            data-testid="confirm-save-avatar-btn"
             onClick={handleSave}
-            className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/25 active:scale-95 transition-all"
+            className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/25 active:scale-95 transition-all cursor-pointer"
           >
             <Check className="w-5 h-5" />
-            Confirm & Save Avatar
+            Confirm &amp; Lock Species Avatar
           </button>
         </div>
       </div>

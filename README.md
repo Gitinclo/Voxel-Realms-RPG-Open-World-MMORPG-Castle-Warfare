@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-92_Passing_(13_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-98_Passing_(15_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
@@ -10,7 +10,7 @@
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with support for Studio PBR materials, `UnrealBloomPass` HDR10+ tone-mapped post-processing, adaptive PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) rendering pipelines, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026` — `x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` DOD memory, Lock-Free Job DAG)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with support for Studio PBR materials, `UnrealBloomPass` HDR10+ tone-mapped post-processing, adaptive PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) rendering pipelines, **10-Species / Race Character Creation & 3D Procedural Meshes**, **Infinite Omniverse & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026` — `x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` DOD memory, Lock-Free Job DAG)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -97,6 +97,26 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Hardware Architect Matrix (`src/game/architectOptimization.ts`)**: Full CPU ISA vector & cache-line profiles for **`x86_64 AVX-512F/BW`** (512-bit, 64B cache line), **`ARMv9-A NEON + SVE2`** (heterogeneous core pinning), **`Apple Silicon M-Series`** (128B cache line + zero-copy Unified Memory Architecture), and **`RISC-V RV64GC + RVV 1.0`**, paired with GPU tiers (`Vulkan 1.3`, `DX12 Ultimate`, `Metal 3`, `WebGPU`, `WebGL 2.0`, `Software Rasterizer`) and Thermal TDP envelopes (`350W Desktop` down to `8W Mobile Passive`).
 - **Software Architect Engine Optimization**: Interactive **Structure-of-Arrays (`SoA`) vs Array-of-Structures (`AoS`)** memory layout profiler (`4.75x` hot-loop speedup), zero-mutex **Lock-Free Work-Stealing Job Scheduler** across 2–64 logical cores, and a deterministic **Frame-Budget Auto-Scaler (`60Hz` / `120Hz` / `240Hz`)**.
 
+### 12. 🧬 10-Species / Race Character Creation & Admin-Authorized Rebirth (`src/game/species.ts`)
+
+- **All 10 Playable Species across 3 Lineages**:
+  - **Classic Fantasy**: `human` (_Terran Sovereign / 人族皇裔_), `sylvan_elf` (_Sylvan High Elf / 森罗灵族_), `ironforge_dwarf` (_Ironforge Runic Dwarf / 矮人神匠_), `warborn_orc` (_Warborn Goliath / 蛮荒巨灵_).
+  - **Xianxia Immortal**: `azure_dragonkin` (_Azure Dragonkin / 太古龙族_), `celestial_kitsune` (_Celestial Nine-Tailed Kitsune / 九尾天狐_), `asura_demon` (_Asura Blood Fiend / 修罗魔族_), `empyrean_angelic` (_Empyrean Winged Celestial / 九天羽族_).
+  - **Cosmic / Astral**: `void_walker` (_Void Walker / 虚空神族_), `crystalline_golem` (_Crystalline Ancient Automaton / 古神机关族_).
+- **Full 3D Procedural Meshes & Innate Passives**: Real-time Three.js `SpeciesTraitGroup` attachments (pointed elven ears, fox spirit ears, braided dwarf runic beard, orc tusks, draconic/obsidian horns, feathered angelic/demonic wings, draconic/nine-tailed spirit tails, orbiting void crystals, and golem chest core reactors), body stature scaling (`bodyScale`), and innate combat/cultivation buffs.
+- **Admin Permission Gate (`creatergame31@gmail.com`)**: Initial creation allows free selection of any species; switching species after creation (`speciesLocked: true`) requires authorization from Root Administrator **`creatergame31@gmail.com`** via live GM decree or `[SPECIES REBIRTH]` support ticket.
+
+### 13. 🌌 Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+
+- **All 100 Iconic Species & Races Across 5 Tiers (Ranks 1–100)**:
+  - **Tier 1 (1–20)**: _Omniversal, Cosmic & Reality-Warping Entities_ (Outer Gods, Beyonders, The Endless, Monitors, The Gentry, Celestialsapiens, Zeno's Race, Q Continuum, Downstreamers, Fifth-Dimensional Imps, Celestials, Angels, Chronovores, Naljians, Great Old Ones, Spiral Races, Eternals, Watchers, Guardians of the Universe, Chaos Gods).
+  - **Tier 2 (21–40)**: _Type IV+ Civilizations & Hyper-Advanced Sci-Fi Races_ (Xeelee, Photino Birds, Time Lords, Daleks, Culture Minds, Precursors, Forerunners, The Qu, Necrons, C'tan, Old Ones, The Vex, The Hive, The Ancients / Alterans, The Ori, Reapers, Protheans, Cybertronians, Coluans, Firstborn).
+  - **Tier 3 (41–60)**: _Divine, Mythic & Metaphysical Pantheons_ (Gods / Deities, Old Gods, New Gods, Asgardians, Olympians, Ainur, Fiendcelestials, Otsutsuki Clan, Soul Reapers / Shinigami, Dragons, Demons / Archfiends, Phoenix, Qilin / Kirin, Anodites, Glind / Core People, Titans, Daedra, Witchers, Vampires, True Fae / Fair Folk).
+  - **Tier 4 (61–80)**: _Planet-Busting Warriors & Biological Powerhouses_ (Saiyans, Kryptonians, Viltrumites, Rognarrs, Martians, Frieza's Race, Namekians, Majins, Atomix's Species, To'kustars, Chronosapiens, Eternals, Symbiotes / Klyntar, Daxamites, Czarnians, Tamaraneans, Strontians, Eleos, Gourmet Cell Demons, Gems).
+  - **Tier 5 (81–100)**: _Iconic Galactic Empires, Hives & Fantasy Archetypes_ (Humans, Mutants, Inhumans, Aeldari / Eldar, Orks / Krorks, Tyranids, The Flood, Zerg, Protoss, Xenomorphs, Yautja / Predators, Kree, Skrulls, Shi'ar, The Borg, Species 8472 / Undine, Klingons, Vulcans, Elves, Dwarves).
+- **Sovereign Omniverse Per Race + Infinite Transfinite Continuum (`Ω-001` to `Ω-∞`)**: Every race owns its own Sovereign Omniverse (`OMNI-001`..`OMNI-100`), and `resolveInfiniteOmniverseByIndex` resolves any arbitrary omniverse coordinate from `1` to `∞`.
+- **Background Characters (NPCs) Under Exclusive Control of Super Admin `creatergame31@gmail.com`**: All 100 Level-1000 Background NPC Envoys are bound to `creatergame31@gmail.com`, who can project/recall them into the 3D Voxel Overworld, set their directives (`channel_tribute`, `patrol_citadel`, `hunt_realm_threats`, `guard_dimensional_gate`, `enforce_admin_decree`), and harvest cosmic tribute across all 100 Omniverses.
+
 ---
 
 ## 🚀 Getting Started
@@ -128,7 +148,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit & Regression Tests
 
-Execute all **92 unit and regression tests across 13 decoupled test suites**:
+Execute all **98 unit and regression tests across 15 decoupled test suites**:
 
 ```bash
 npm test
@@ -162,9 +182,9 @@ npm run preview       # Preview production build locally
 │   └── engine_guardrail_test.cpp      # C++20 CTest static_assert & RAII verification unit test
 ├── src/
 │   ├── components/                    # React 19 UI Modals & HUD Overlays
-│   │   ├── AdminConsoleModal.tsx      # GM cheats, T20 spawner, RBAC moderation & contact hub
+│   │   ├── AdminConsoleModal.tsx      # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
 │   │   ├── CastleModal.tsx            # Citadel Lv 0-100 upgrade & 10-Era progression UI
-│   │   ├── CharacterCreationModal.tsx # Lord appearance, armor tier & weapon customization
+│   │   ├── CharacterCreationModal.tsx # 10-Species selector, 3D turntable & Admin permission gate
 │   │   ├── ClanEmblemView.tsx         # Heraldic SVG clan banner & insignia renderer
 │   │   ├── ClanModal.tsx              # Clan vault, roster, chat, buffs & co-op boss
 │   │   ├── ClanTerritoryMap.tsx       # Interactive 9-sector (A1-C3) clan war map
@@ -175,12 +195,12 @@ npm run preview       # Preview production build locally
 │   │   ├── GameHUD.tsx                # Consolidated top bar, D-pad & 5-tab command dock
 │   │   ├── HeroModal.tsx              # Hero ascension, tavern summons & aesthetic skins
 │   │   ├── LeaderboardModal.tsx       # Global lord & clan power rankings
-│   │   ├── ResourceGatherModal.tsx    #Lv 1-10 resource node extraction & march queues
+│   │   ├── ResourceGatherModal.tsx    # Lv 1-10 resource node extraction & march queues
 │   │   ├── TitleScreen.tsx            # Game startup overlay & quick access triggers
 │   │   ├── TroopBarracksModal.tsx     # T1-T20 troop recruitment & live training queue
 │   │   ├── VipSubscriptionModal.tsx   # VIP Tiers 0-3, daily stipends & loyalty perks
 │   │   ├── WeatherModal.tsx           # Atmospheric observatory & weather ritual controls
-│   │   ├── WorldAIDirectorModal.tsx   # Lv 1-1000 monster telemetry & NPC AI directives
+│   │   ├── WorldAIDirectorModal.tsx   # Lv 1-1000 monster AI, NPC roles & 100-Omniverse Matrix
 │   │   └── WorldBossRallyModal.tsx    # 1T troop world boss rally coordination
 │   ├── game/                          # Pure Decoupled Game Engine & Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
@@ -202,8 +222,12 @@ npm run preview       # Preview production build locally
 │   │   ├── initialData.ts             # Deterministic seed data for heroes, clans, AI & nodes
 │   │   ├── math.ts                    # Castle eras, 1000T cap & T1-T20 troop combat math
 │   │   ├── math.test.ts               # Castle & combat math unit tests
-│   │   ├── proceduralWorld.ts         # Voxel PBR terrain, castle, NPC, monster & aura meshes
+│   │   ├── omniverse.ts               # Top 100 Species Background NPCs & Infinite Omniverse Engine
+│   │   ├── omniverse.test.ts          # 100-Species Omniverse & Super Admin control unit tests
+│   │   ├── proceduralWorld.ts         # Voxel PBR terrain, castle, NPC, monster, species & aura meshes
 │   │   ├── proceduralWorld.test.ts    # 3D scene-graph, aura & engine telemetry regression tests
+│   │   ├── species.ts                 # 10-Species catalog, 3D mesh specs & Admin switch permission gate
+│   │   ├── species.test.ts            # 10-Species catalog, 3D attachments & Admin permission unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
 │   │   ├── vipSubscription.ts         # VIP membership tiers, discounts & feature access gates
@@ -257,7 +281,7 @@ Every push and Pull Request automatically runs four strict Web/TypeScript qualit
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **92 unit and regression tests across 13 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Runs all **98 unit and regression tests across 15 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -267,7 +291,7 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
 3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
 
-### Automated Test Suites (`92/92 Passing` across 13 TypeScript Suites + `CTest C++20 Passing`)
+### Automated Test Suites (`98/98 Passing` across 15 TypeScript Suites + `CTest C++20 Passing`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
@@ -277,7 +301,9 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) texture compression, shadow culling, and addressable HD pack mounting.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
+- **`omniverse.test.ts`**: Verifies all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`) across Tiers 1–5, their 100 Sovereign Omniverses, infinite transfinite Omniverse coordinate resolution (`resolveInfiniteOmniverseByIndex`), 3D Overworld NPC projection, and strict Super Admin (`creatergame31@gmail.com`) command enforcement.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, and C++20 engine telemetry.
+- **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
@@ -290,7 +316,7 @@ Run all Guardrail checks locally:
 npm run lint                  # 1. Check TypeScript for messy code & unused variables
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 92 TypeScript unit & regression tests
+npm test                      # 4. Run all 98 TypeScript unit & regression tests
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -309,7 +335,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`) | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                           | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)         | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 92 automated unit tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 98 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -331,7 +357,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 92 unit & regression tests across 13 test suites
+- [x] `npm test` passes all 98 unit & regression tests across 15 test suites
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
 - [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) is green

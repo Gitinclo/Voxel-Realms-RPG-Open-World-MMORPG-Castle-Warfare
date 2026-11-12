@@ -32,6 +32,7 @@ import {
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
+import { getSpeciesSpec } from '../game/species';
 import { sound } from '../game/audio';
 
 interface GameHUDProps {
@@ -140,6 +141,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   const timeString = `${String(formattedHours).padStart(2, '0')}:${String(formattedMinutes).padStart(2, '0')}`;
   const isNight = timeOfDayHours < 6 || timeOfDayHours >= 18;
   const weatherConfig = WEATHER_CONFIGS[weather] || WEATHER_CONFIGS.clear;
+  const activeSpeciesSpec = getSpeciesSpec(playerAppearance.species);
 
   const handleJoystickTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
     setIsDraggingJoystick(true);
@@ -213,6 +215,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 <span className="text-xs sm:text-sm font-bold text-white font-cinzel truncate max-w-[130px] sm:max-w-none">
                   {playerAppearance.name}
                 </span>
+                <button
+                  type="button"
+                  data-testid="hud-species-badge-btn"
+                  onClick={() => {
+                    sound.playSwing();
+                    onOpenCharacterCreation();
+                  }}
+                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-cyan-200 border border-cyan-500/40 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                  title={`Species / Race: ${activeSpeciesSpec.name} (${activeSpeciesSpec.primaryBuffSummary})`}
+                >
+                  <span>{activeSpeciesSpec.icon}</span>
+                  <span>{activeSpeciesSpec.name.split(' (')[0]}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {

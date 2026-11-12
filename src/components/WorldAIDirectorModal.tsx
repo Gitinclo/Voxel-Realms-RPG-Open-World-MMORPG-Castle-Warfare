@@ -19,6 +19,10 @@ import {
   Navigation,
   Flame,
   CheckCircle2,
+  Globe,
+  Crown,
+  ExternalLink,
+  Search,
 } from 'lucide-react';
 import {
   GameResources,
@@ -35,6 +39,17 @@ import {
   getMonsterComplexityByLevel,
   createScaledMonsterByLevel,
 } from '../game/worldAI';
+import {
+  TOP_100_OMNIVERSE_SPECIES_NPCS,
+  OMNIVERSE_TIER_METADATA,
+  TOP_100_SPECIES_PDF_ASSET_PATH,
+  OmniverseSpeciesNpcEntry,
+  OmniverseTierNumber,
+  OmniverseSuperAdminDirective,
+  resolveInfiniteOmniverseByIndex,
+  executeOmniverseSuperAdminCommand,
+} from '../game/omniverse';
+import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from '../game/adminModeration';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
@@ -47,7 +62,9 @@ interface WorldAIDirectorModalProps {
   weather: WeatherType;
   timeOfDayHours: number;
   aiLogs: WorldAIEventLog[];
-  initialTab?: 'npcs' | 'monsters' | 'telemetry';
+  omniverseRoster?: OmniverseSpeciesNpcEntry[];
+  activeAccountEmail?: string;
+  initialTab?: 'npcs' | 'monsters' | 'telemetry' | 'omniverse';
   initialSelectedNpcId?: string;
   onSetNPCDirective: (npcId: string, directive: NPCDirective) => void;
   onClaimNPCStash: (npcId: string) => void;
@@ -56,6 +73,10 @@ interface WorldAIDirectorModalProps {
   onSpawnScaledMonster: (monster: MonsterTarget) => void;
   onEngageMonster: (monster: MonsterTarget) => void;
   onStepWorldAI: () => void;
+  onExecuteOmniverseCommand?: (
+    command: Parameters<typeof executeOmniverseSuperAdminCommand>[0]['command']
+  ) => void;
+  onOpenAdminConsole?: () => void;
   onClose: () => void;
 }
 
@@ -66,6 +87,8 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   weather,
   timeOfDayHours,
   aiLogs,
+  omniverseRoster = TOP_100_OMNIVERSE_SPECIES_NPCS,
+  activeAccountEmail = PRIMARY_ADMIN_EMAIL,
   initialTab = 'npcs',
   initialSelectedNpcId,
   onSetNPCDirective,
@@ -75,14 +98,44 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   onSpawnScaledMonster,
   onEngageMonster,
   onStepWorldAI,
+  onExecuteOmniverseCommand,
+  onOpenAdminConsole,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'npcs' | 'monsters' | 'telemetry'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'npcs' | 'monsters' | 'telemetry' | 'omniverse'>(
+    initialTab
+  );
   const [selectedNpcId, setSelectedNpcId] = useState<string>(
     initialSelectedNpcId || npcs[0]?.id || 'npc_elder'
   );
   const [simLevel, setSimLevel] = useState<number>(350);
   const [customMonsterName, setCustomMonsterName] = useState<string>('');
+  const [omniTierFilter, setOmniTierFilter] = useState<OmniverseTierNumber | 'all'>('all');
+  const [omniSearch, setOmniSearch] = useState<string>('');
+  const [infiniteSectorQuery, setInfiniteSectorQuery] = useState<string>('1');
+
+  const isSuperAdmin = isPrimaryAdminAccount(activeAccountEmail);
+  const parsedInfiniteIndex = (() => {
+    try {
+      const cleaned = infiniteSectorQuery.replace(/[^0-9]/g, '');
+      return cleaned ? BigInt(cleaned) : 1n;
+    } catch {
+      return 1n;
+    }
+  })();
+  const resolvedInfiniteOmniverse = resolveInfiniteOmniverseByIndex(parsedInfiniteIndex);
+  const filteredOmniverseRoster = omniverseRoster.filter((entry) => {
+    if (omniTierFilter !== 'all' && entry.tier !== omniTierFilter) return false;
+    if (!omniSearch.trim()) return true;
+    const q = omniSearch.toLowerCase();
+    return (
+      entry.speciesName.toLowerCase().includes(q) ||
+      entry.originCanon.toLowerCase().includes(q) ||
+      entry.envoyName.toLowerCase().includes(q) ||
+      entry.omniverse.omniverseId.toLowerCase().includes(q) ||
+      String(entry.rank) === q
+    );
+  });
 
   const selectedNpc = npcs.find((n) => n.id === selectedNpcId) || npcs[0];
   const simProfile = getMonsterComplexityByLevel(simLevel);
@@ -192,6 +245,11 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
               icon: Swords,
             },
             {
+              id: 'omniverse',
+              label: `🌌 Infinite Omniverse & 100 Species NPCs (100)`,
+              icon: Globe,
+            },
+            {
               id: 'telemetry',
               label: `World AI Activity & Pathfinding Log (${aiLogs.length})`,
               icon: Activity,
@@ -202,8 +260,9 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
             return (
               <button
                 key={tab.id}
+                data-testid={`world-ai-tab-${tab.id}`}
                 onClick={() => {
-                  setActiveTab(tab.id as 'npcs' | 'monsters' | 'telemetry');
+                  setActiveTab(tab.id as 'npcs' | 'monsters' | 'telemetry' | 'omniverse');
                   sound.playSwing();
                 }}
                 className={`px-3.5 py-2 text-xs font-bold rounded-t-xl flex items-center gap-1.5 border-t-2 shrink-0 transition-all ${
@@ -833,6 +892,346 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: INFINITE OMNIVERSE & 100 FICTIONAL SPECIES BACKGROUND NPCS (SUPER ADMIN CONTROL) */}
+          {activeTab === 'omniverse' && (
+            <div className="space-y-5" data-testid="omniverse-100-species-panel">
+              {/* Super Admin Command Header & PDF Reference Banner */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-fuchsia-950/60 via-slate-950 to-amber-950/50 border border-fuchsia-500/40 space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[11px] font-mono font-bold flex items-center gap-1">
+                        <Crown className="w-3.5 h-3.5" /> SUPER ADMIN CONTROLLER:{' '}
+                        {PRIMARY_ADMIN_EMAIL}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-200 text-[11px] font-mono font-bold">
+                        100 Canonical Species + ∞ Infinite Omniverses
+                      </span>
+                      <a
+                        href={TOP_100_SPECIES_PDF_ASSET_PATH}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-[11px] font-mono font-bold inline-flex items-center gap-1 transition-all"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Top 100 Species PDF Spec
+                      </a>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
+                      Infinite Omniverse Matrix & 100 Species Background NPCs
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      Every species/race across all 5 Tiers (1–100) possesses its own dedicated{' '}
+                      <strong className="text-fuchsia-300">
+                        Sovereign Omniverse (Ω-001 to Ω-∞)
+                      </strong>{' '}
+                      and an autonomous Level 1000{' '}
+                      <strong className="text-amber-300">Background Character (NPC Envoy)</strong>{' '}
+                      under the exclusive command of Super Admin{' '}
+                      <span className="font-mono text-amber-300">{PRIMARY_ADMIN_EMAIL}</span>.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {isSuperAdmin ? (
+                      <button
+                        data-testid="harvest-all-omniverse-tribute-btn"
+                        onClick={() => {
+                          onExecuteOmniverseCommand?.({
+                            type: 'harvest_all_omniverse_tribute',
+                          });
+                          sound.playUpgradeFanfare();
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-fuchsia-500 hover:from-amber-400 hover:to-fuchsia-400 text-slate-950 font-mono font-bold text-xs shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                      >
+                        🌌 Harvest All 100 Omniverse Tributes
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onOpenAdminConsole?.()}
+                        className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 font-mono font-bold text-xs"
+                      >
+                        🔒 Switch to Super Admin ({PRIMARY_ADMIN_EMAIL})
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Infinite Omniverse Coordinate Explorer (1 to ∞) */}
+                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-fuchsia-500/30 grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+                  <div className="lg:col-span-5 space-y-1">
+                    <label className="block text-[11px] font-mono font-bold text-fuchsia-300 uppercase">
+                      ♾️ Infinite Omniverse Coordinate Dial (1 → ∞)
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        data-testid="infinite-omniverse-index-input"
+                        value={infiniteSectorQuery}
+                        onChange={(e) => setInfiniteSectorQuery(e.target.value)}
+                        placeholder="Enter any Omniverse # (1 to ∞)..."
+                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-hidden focus:border-fuchsia-400"
+                      />
+                      {[
+                        { label: 'Ω-1', val: '1' },
+                        { label: 'Ω-21', val: '21' },
+                        { label: 'Ω-61', val: '61' },
+                        { label: 'Ω-100', val: '100' },
+                        { label: 'Ω-777T', val: '777000000000000' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => {
+                            setInfiniteSectorQuery(preset.val);
+                            sound.playSwing();
+                          }}
+                          className="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] font-mono font-bold text-fuchsia-200 shrink-0"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-7 p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs font-mono space-y-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="font-bold text-fuchsia-300">
+                        {resolvedInfiniteOmniverse.omniverse.omniverseName}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        +{formatBigInt(resolvedInfiniteOmniverse.omniverse.hourlyDiamondTribute)}{' '}
+                        💎/hr Tribute
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-cyan-300 truncate">
+                      Coordinate: {resolvedInfiniteOmniverse.omniverse.infiniteCoordinate} ·{' '}
+                      {resolvedInfiniteOmniverse.omniverse.universeCountLabel}
+                    </div>
+                    <div className="text-[11px] text-slate-300 flex items-center justify-between flex-wrap gap-1">
+                      <span>
+                        Background NPC Envoy:{' '}
+                        <strong className="text-white">
+                          {resolvedInfiniteOmniverse.linkedSpecies.icon}{' '}
+                          {resolvedInfiniteOmniverse.linkedSpecies.envoyName}
+                        </strong>{' '}
+                        ({resolvedInfiniteOmniverse.linkedSpecies.speciesName})
+                      </span>
+                      <span className="text-amber-300">
+                        Controller: {resolvedInfiniteOmniverse.linkedSpecies.controlledBySuperAdmin}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tier Filter Tabs + Search + Global Super Admin Directive Bar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setOmniTierFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+                        omniTierFilter === 'all'
+                          ? 'bg-fuchsia-500 text-slate-950'
+                          : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                      }`}
+                    >
+                      All 100 Races ({omniverseRoster.length})
+                    </button>
+                    {([1, 2, 3, 4, 5] as OmniverseTierNumber[]).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setOmniTierFilter(t)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+                          omniTierFilter === t
+                            ? 'bg-cyan-500 text-slate-950'
+                            : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                        }`}
+                      >
+                        Tier {t} ({(t - 1) * 20 + 1}–{t * 20})
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative w-full md:w-64">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={omniSearch}
+                      onChange={(e) => setOmniSearch(e.target.value)}
+                      placeholder="Search 100 species, canon, envoy..."
+                      className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white focus:outline-hidden focus:border-cyan-400"
+                    />
+                  </div>
+                </div>
+
+                {/* Super Admin Global / Tier Batch Command Bar */}
+                {isSuperAdmin && (
+                  <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-mono font-bold text-amber-300">
+                      ⚡ Super Admin ({PRIMARY_ADMIN_EMAIL}) Mass Directive (
+                      {omniTierFilter === 'all' ? 'All 100 NPCs' : `Tier ${omniTierFilter} NPCs`}):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(
+                        [
+                          { id: 'channel_tribute', label: 'Channel Tribute' },
+                          { id: 'patrol_citadel', label: 'Patrol Citadel' },
+                          { id: 'hunt_realm_threats', label: 'Hunt Threats' },
+                          { id: 'guard_dimensional_gate', label: 'Guard Omni-Gate' },
+                          { id: 'enforce_admin_decree', label: 'Enforce Admin Decree' },
+                        ] as { id: OmniverseSuperAdminDirective; label: string }[]
+                      ).map((dir) => (
+                        <button
+                          key={dir.id}
+                          onClick={() => {
+                            onExecuteOmniverseCommand?.({
+                              type: 'set_directive',
+                              targetTier: omniTierFilter === 'all' ? undefined : omniTierFilter,
+                              directive: dir.id,
+                            });
+                            sound.playSwing();
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-amber-200 border border-amber-500/40 text-[11px] font-mono font-bold transition-all"
+                        >
+                          {dir.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 100 Species Background NPC & Sovereign Omniverse Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[52vh] overflow-y-auto pr-1">
+                {filteredOmniverseRoster.map((entry) => {
+                  const tierMeta = OMNIVERSE_TIER_METADATA[entry.tier];
+                  return (
+                    <div
+                      key={entry.id}
+                      data-testid={`omniverse-species-card-${entry.rank}`}
+                      className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-2.5 ${
+                        entry.deployedInOverworld
+                          ? 'bg-slate-950/95 border-cyan-400/60 shadow-md shadow-cyan-500/10'
+                          : 'bg-slate-950/80 border-slate-800'
+                      }`}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-2xl p-1.5 rounded-xl bg-slate-900 border border-slate-700 shrink-0">
+                              {entry.icon}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40">
+                                  #{entry.rank} · Tier {entry.tier}
+                                </span>
+                                <span className="text-xs font-bold text-white truncate">
+                                  {entry.speciesName}
+                                </span>
+                                <span className="text-[10px] font-mono text-cyan-300 truncate">
+                                  ({entry.originCanon})
+                                </span>
+                              </div>
+                              <div className="text-[11px] font-mono text-amber-300 truncate mt-0.5">
+                                NPC Envoy: <strong>{entry.envoyName}</strong> · Lv.{entry.npcLevel}{' '}
+                                {NPC_ROLE_PROFILES[entry.overworldRole].roleLabel}
+                              </div>
+                            </div>
+                          </div>
+
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold shrink-0 ${
+                              entry.deployedInOverworld
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : 'bg-slate-800 text-slate-400 border border-slate-700'
+                            }`}
+                          >
+                            {entry.deployedInOverworld ? '3D OVERWORLD ACTIVE' : 'IN OMNIVERSE'}
+                          </span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-300 leading-relaxed">
+                          {entry.loreSummary}
+                        </p>
+
+                        {/* Dedicated Sovereign Omniverse Box */}
+                        <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-mono space-y-0.5">
+                          <div className="flex items-center justify-between text-fuchsia-300 font-bold">
+                            <span>🌌 {entry.omniverse.omniverseName}</span>
+                            <span className="text-emerald-300">
+                              +{formatBigInt(entry.omniverse.hourlyDiamondTribute)} 💎/hr
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate">
+                            Coord: {entry.omniverse.infiniteCoordinate} · Scale:{' '}
+                            {tierMeta.dimensionalScale}
+                          </div>
+                          <div className="text-[10px] text-amber-300/90 flex items-center justify-between pt-0.5">
+                            <span>Super Admin: {entry.controlledBySuperAdmin}</span>
+                            <span>
+                              Power: {formatBigInt(entry.combatPower)} · Directive:{' '}
+                              {entry.superAdminDirective.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Super Admin Per-NPC Controls */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-800/80">
+                        <select
+                          aria-label={`Directive for ${entry.speciesName}`}
+                          disabled={!isSuperAdmin}
+                          value={entry.superAdminDirective}
+                          onChange={(e) => {
+                            onExecuteOmniverseCommand?.({
+                              type: 'set_directive',
+                              targetRank: entry.rank,
+                              directive: e.target.value as OmniverseSuperAdminDirective,
+                            });
+                            sound.playSwing();
+                          }}
+                          className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[11px] font-mono text-cyan-200 disabled:opacity-50"
+                        >
+                          <option value="channel_tribute">Directive: Channel Omni-Tribute</option>
+                          <option value="patrol_citadel">Directive: Patrol Solara Citadel</option>
+                          <option value="hunt_realm_threats">Directive: Hunt Realm Threats</option>
+                          <option value="guard_dimensional_gate">
+                            Directive: Guard Dimensional Gate
+                          </option>
+                          <option value="enforce_admin_decree">
+                            Directive: Enforce Super Admin Decree
+                          </option>
+                          <option value="observe_omniverse">Directive: Observe Multiverse</option>
+                        </select>
+
+                        <button
+                          disabled={!isSuperAdmin}
+                          onClick={() => {
+                            onExecuteOmniverseCommand?.({
+                              type: 'toggle_overworld_projection',
+                              targetRank: entry.rank,
+                            });
+                            sound.playSwing();
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all ${
+                            !isSuperAdmin
+                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              : entry.deployedInOverworld
+                                ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40'
+                                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+                          }`}
+                        >
+                          {entry.deployedInOverworld
+                            ? 'Recall to Omniverse'
+                            : 'Project to 3D Overworld'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -22,15 +22,15 @@ This document outlines the high-level vision, engineering milestones, and upcomi
 
 ### ✅ Completed Milestones (`v1.0.0` – `v1.5.0` · `06/11/2026`)
 
-| Version    | Milestone                        | Key Deliverables                                                                                                                     |   Status   |
-| :--------- | :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :--------: |
-| **v1.0.0** | Core Voxel RPG Foundation        | 3D Voxel terrain, Castle Levels 0–100, T1–T20 Tri-Branch Troops (`Shieldbearer`, `Shooter`, `Bomber`)                                | ✅ Shipped |
-| **v1.1.0** | Studio PBR + HDR & WebAudio      | Procedural 2D canvas normal/bump textures, `UnrealBloomPass` HDR pipeline, procedural WebAudio synthesizer                           | ✅ Shipped |
-| **v1.2.0** | Autonomous World AI (Lv 1–1000)  | 5 monster complexity brackets, A\* grid pathfinding around keep walls, 6 autonomous NPC roles & caravan barter                       | ✅ Shipped |
-| **v1.3.0** | Clan Territory Warfare & Rallies | 9-sector (`A1`–`C3`) clan war map, heraldic SVG emblem editor, 600M HP Void Leviathan co-op boss                                     | ✅ Shipped |
-| **v1.4.0** | Four-Path Cultivation & VIP Pass | 23 Xianxia realms, Karma & Tribulation lightning, 7-day Daily Login Decrees, Veteran Scrolls, VIP Tiers 0–3                          | ✅ Shipped |
-| **v1.4.1** | Admin / GM / Moderator RBAC      | Root account binding (`creatergame31@gmail.com`), player moderation roster, global GM decrees, live support ticket queue             | ✅ Shipped |
-| **v1.5.0** | Software & Hardware Architect    | `06/11/2026` CPU ISA (`x86_64`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V`), `SoA` DOD memory, Lock-Free Job DAG & Auto-Scaler | ✅ Shipped |
+| Version    | Milestone                        | Key Deliverables                                                                                                                                            |   Status   |
+| :--------- | :------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------: |
+| **v1.0.0** | Core Voxel RPG Foundation        | 3D Voxel terrain, Castle Levels 0–100, T1–T20 Tri-Branch Troops (`Shieldbearer`, `Shooter`, `Bomber`)                                                       | ✅ Shipped |
+| **v1.1.0** | Studio PBR + HDR & WebAudio      | Procedural 2D canvas normal/bump textures, `UnrealBloomPass` HDR pipeline, procedural WebAudio synthesizer                                                  | ✅ Shipped |
+| **v1.2.0** | Autonomous World AI (Lv 1–1000)  | 5 monster complexity brackets, A\* grid pathfinding around keep walls, 6 autonomous NPC roles & caravan barter                                              | ✅ Shipped |
+| **v1.3.0** | Clan Territory Warfare & Rallies | 9-sector (`A1`–`C3`) clan war map, heraldic SVG emblem editor, 600M HP Void Leviathan co-op boss                                                            | ✅ Shipped |
+| **v1.4.0** | Four-Path Cultivation & VIP Pass | 23 Xianxia realms, Karma & Tribulation lightning, 7-day Daily Login Decrees, Veteran Scrolls, VIP Tiers 0–3                                                 | ✅ Shipped |
+| **v1.4.1** | Admin / GM / Moderator RBAC      | Root account binding (`creatergame31@gmail.com`), player moderation roster, global GM decrees, live support ticket queue                                    | ✅ Shipped |
+| **v1.5.0** | Architect & 10-Species System    | `06/11/2026` CPU ISA (`x86_64`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V`), `SoA` DOD memory, Lock-Free Job DAG, 10 Playable Species & Admin Rebirth | ✅ Shipped |
 
 ---
 

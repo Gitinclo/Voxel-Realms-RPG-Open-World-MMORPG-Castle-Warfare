@@ -122,7 +122,15 @@ import {
   INITIAL_SUPPORT_TICKETS,
   ModeratedPlayerRecord,
   SupportTicket,
+  createContactTicket,
 } from './game/adminModeration';
+import { getSpeciesSpec } from './game/species';
+import {
+  TOP_100_OMNIVERSE_SPECIES_NPCS,
+  OmniverseSpeciesNpcEntry,
+  executeOmniverseSuperAdminCommand,
+  projectOmniverseNpcToWorldNPC,
+} from './game/omniverse';
 
 type ActiveModal =
   | 'none'
@@ -309,6 +317,53 @@ export default function App() {
   const [moderatedPlayers, setModeratedPlayers] =
     useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
+  const [omniverseRoster, setOmniverseRoster] = useState<OmniverseSpeciesNpcEntry[]>(
+    TOP_100_OMNIVERSE_SPECIES_NPCS
+  );
+  const [worldAiInitialTab, setWorldAiInitialTab] = useState<
+    'npcs' | 'monsters' | 'telemetry' | 'omniverse'
+  >('npcs');
+
+  const handleExecuteOmniverseCommand = (
+    command: Parameters<typeof executeOmniverseSuperAdminCommand>[0]['command']
+  ) => {
+    const res = executeOmniverseSuperAdminCommand({
+      actorEmail: activeAccountEmail,
+      roster: omniverseRoster,
+      command,
+    });
+    if (!res.allowed) {
+      setToastMessage(`🔒 ${res.reason}`);
+      return;
+    }
+
+    setOmniverseRoster(res.updatedRoster);
+
+    // Sync projected 3D Overworld NPCs while preserving core Citadel NPCs
+    const projectedOmniNpcs = res.updatedRoster
+      .filter((e) => e.deployedInOverworld)
+      .map((e, idx) => projectOmniverseNpcToWorldNPC(e, idx));
+    setNpcs((prev) => {
+      const coreNpcs = prev.filter((n) => !n.id.startsWith('omni_npc_'));
+      return [...coreNpcs, ...projectedOmniNpcs];
+    });
+
+    if (res.tributeDiamondsGranted > 0n) {
+      setResources((prev) => ({
+        ...prev,
+        diamond: prev.diamond + res.tributeDiamondsGranted,
+        wood: prev.wood + res.tributeWoodGranted,
+        grain: prev.grain + res.tributeGrainGranted,
+      }));
+      confetti({ particleCount: 90, spread: 95 });
+      setToastMessage(
+        `🌌 ${res.reason} (+${formatBigInt(res.tributeDiamondsGranted)} 💎, +${formatBigInt(res.tributeWoodGranted)} Wood, +${formatBigInt(res.tributeGrainGranted)} Grain)`
+      );
+      return;
+    }
+
+    setToastMessage(`🌌 ${res.reason}`);
+  };
 
   // Dynamic Weather System State (Clear, Rain, Snow, Storm)
   const [weather, setWeather] = useState<WeatherType>('clear');
@@ -1782,10 +1837,33 @@ export default function App() {
       {activeModal === 'character' && (
         <CharacterCreationModal
           currentAppearance={playerAppearance}
+          activeAccountEmail={activeAccountEmail}
           onSaveAppearance={(app) => {
             setPlayerAppearance(app);
-            setToastMessage(`👤 Lord styling saved: [${app.clanTag}] ${app.name}`);
+            const spec = getSpeciesSpec(app.species);
+            setToastMessage(
+              `${spec.icon} Lord Avatar Locked: [${app.clanTag}] ${app.name} (${spec.name})`
+            );
           }}
+          onRequestSpeciesPermissionTicket={(requestedSpecies) => {
+            const spec = getSpeciesSpec(requestedSpecies);
+            const res = createContactTicket({
+              tickets: supportTickets,
+              category: 'administration',
+              senderName: playerAppearance.name,
+              senderEmail: activeAccountEmail,
+              subject: `[SPECIES REBIRTH] Request to switch to ${spec.name}`,
+              message: `Lord ${playerAppearance.name} requests Admin Permission (${PRIMARY_ADMIN_EMAIL}) to switch species from ${getSpeciesSpec(playerAppearance.species).name} to ${spec.name} (${spec.chineseName}).`,
+              priority: 'high',
+            });
+            if (res.success) {
+              setSupportTickets(res.updatedTickets);
+              setToastMessage(
+                `📩 Species Rebirth Permission Request sent to Admin (${PRIMARY_ADMIN_EMAIL})`
+              );
+            }
+          }}
+          onOpenAdminConsole={() => setActiveModal('admin_console')}
           onClose={() => setActiveModal('none')}
         />
       )}
@@ -1955,6 +2033,20 @@ export default function App() {
             handleSendClanChat(msg, true, tag);
             setToastMessage(`📢 ${msg}`);
           }}
+          playerAppearance={playerAppearance}
+          onUpdatePlayerAppearance={(updated) => {
+            setPlayerAppearance(updated);
+            const spec = getSpeciesSpec(updated.species);
+            setToastMessage(
+              `⚖️ [Admin Species Governance] ${spec.icon} ${spec.name} · Switch Approved: ${updated.adminSpeciesSwitchApproved ? 'YES' : 'NO'}`
+            );
+          }}
+          omniverseRoster={omniverseRoster}
+          onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+          onOpenOmniverseDirector={() => {
+            setWorldAiInitialTab('omniverse');
+            setActiveModal('world_ai');
+          }}
           onClose={() => setActiveModal('none')}
         />
       )}
@@ -1993,6 +2085,9 @@ export default function App() {
           weather={weather}
           timeOfDayHours={timeOfDayHours}
           aiLogs={aiLogs}
+          omniverseRoster={omniverseRoster}
+          activeAccountEmail={activeAccountEmail}
+          initialTab={worldAiInitialTab}
           initialSelectedNpcId={selectedNpcId}
           onSetNPCDirective={handleSetNPCDirective}
           onClaimNPCStash={handleClaimNPCStash}
@@ -2004,7 +2099,12 @@ export default function App() {
             setActiveModal('world_boss');
           }}
           onStepWorldAI={handleStepWorldAI}
-          onClose={() => setActiveModal('none')}
+          onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+          onOpenAdminConsole={() => setActiveModal('admin_console')}
+          onClose={() => {
+            setWorldAiInitialTab('npcs');
+            setActiveModal('none');
+          }}
         />
       )}
 
