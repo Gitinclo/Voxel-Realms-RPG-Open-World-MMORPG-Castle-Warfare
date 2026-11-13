@@ -32,7 +32,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/species.ts           (10 Species catalog, 3D specs & Admin gate)│
 │  • src/game/omniverse.ts         (100 Species NPCs & Infinite Omniverse)   │
 │  • src/game/loreHistory.ts       (7 Historical Epochs & 6 Lore Codices)     │
-│  • src/game/systemValidation.ts  (8-Pillar Cross-System Validation Engine)  │
+│  • src/game/graphicsEngine.ts    (Cross-Platform Pipeline & Transparency)   │
+│  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -40,7 +41,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **106 unit and regression tests across 17 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **108 unit and regression tests across 17 suites** in ~1.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -133,12 +134,17 @@ Players cultivate four complementary paths simultaneously:
 - **3D Scene-Graph Attachments**: `createPlayerMesh` constructs a dedicated `SpeciesTraitGroup` with procedural horns, ears, wings, tails, tusks, runic beards, orbiting void shards, and golem core reactors while applying per-species stature scaling (`bodyScale`).
 - **Admin Permission Gate (`evaluateSpeciesSwitchPermission`)**: Once a character's initial species is locked (`speciesLocked: true`), switching to a different species requires authorization from **`creatergame31@gmail.com`** (via active Admin/GM privileges or an approved `adminSpeciesSwitchApproved` decree).
 
-### H. 6-Layer Cosmic Hierarchy, Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+### H. 6-Tier Nested Cosmological Hierarchy, `WhitePageRoot` Singleton & 100 Fictional Species Background NPCs (`src/types/game.ts` & `src/game/omniverse.ts`)
 
-- **6-Layer Cosmic Ontology & Cosmological Hierarchy (`SIX_LAYER_COSMIC_HIERARCHY`)**: Models **1. Universe** (_single reality with its own space, time, and matter_), **2. Multiverse** (_collection of parallel/series universes_), **3. Megaverse / Hyperverse** (_cluster of multiple multiverses_), **4. Omniverse** (_every universe, multiverse, and reality that has ever existed or could exist_), **5. The Overvoid / Exoverse** (_collection of multiple distinct omniverses operating under completely different laws of logic and cosmic hierarchy_), and **6. The White Page / The House of Ideas** (_everything comes from here, even nothingness / Oblivion, authored by `creatergame31@gmail.com`_).
-- **100 Canonical Fictional Species (`TOP_100_OMNIVERSE_SPECIES_NPCS`)**: Catalogs all 100 species across 5 Tiers (`1–20` Omniversal Entities, `21–40` Type IV+ Sci-Fi Civilizations, `41–60` Divine & Xianxia Pantheons, `61–80` Planet-Busting Warriors, `81–100` Galactic Empires & Fantasy Archetypes).
-- **Sovereign Omniverse Per Race + Infinite Transfinite Generator (`resolveInfiniteOmniverseByIndex` & `resolveSpeciesSixLayerCosmology`)**: Assigns each race a dedicated Sovereign Omniverse (`OMNI-001`..`OMNI-100`), resolves its full 6-Layer Cosmological Lineage, and deterministically resolves any omniverse coordinate from `1` to `∞`.
-- **Super Admin Background NPC Command & Layer-6 White Page Decrees (`executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs, projects them into the 3D Overworld (`projectOmniverseNpcToWorldNPC`), sets their directives, and issues Layer-6 White Page / House of Ideas Authorial Decrees.
+- **Strict 6-Tier Nested Tree Schema (`WhitePageRoot` → `Overvoid` → `Omniverse` → `Megaverse` → `Multiverse` → `Universe`)**:
+  - **Tier 6 (`WhitePageRoot` Singleton)**: `id: 'THE_WHITE_PAGE'`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`, `includesOblivion: true`. Spawns both existence (`exonverses: Overvoid[]`) and non-existence (`oblivionState: OblivionDomainState`) via `getWhitePageSingletonRoot()`.
+  - **Tier 5 (`Overvoid`, alias `'The Overvoid' | 'Exonverse'`)**: Meta-container housing distinct `Omniverse[]` instances under independent `logicSystem` and `cosmicHierarchyRules`.
+  - **Tier 4 (`Omniverse`)**: Complete aggregate of `Megaverse[]` instances across `'past' | 'present' | 'potential' | 'all'` temporal scopes.
+  - **Tier 3 (`Megaverse`, alias `'Megaverse' | 'Hyperverse'`)**: Higher-dimensional cluster grouping `Multiverse[]` instances.
+  - **Tier 2 (`Multiverse`)**: Parent container organizing `Universe[]` instances in `'parallel' | 'series' | 'hybrid'` topologies.
+  - **Tier 1 (`Universe`)**: Base leaf reality unit with independent `spacetimeConfig` and `matterConstants`.
+- **Custom Logic & Physics Override Engine (`overrideOvervoidLogicRules`, `overrideUniversePhysicsConstants` & `evaluateEffectiveUniversePhysicsAndLogic`)**: Cascades baseline physical constants through Tier 5 `Overvoid` custom logic/hierarchy overrides and Tier 1 `Universe` custom spacetime/matter overrides, validated by `validateCosmologicalTreeHierarchy` and `resolveEntityCosmologicalPath`.
+- **100 Canonical Fictional Species & Super Admin Command (`TOP_100_OMNIVERSE_SPECIES_NPCS`, `executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Catalogs all 100 species across 5 Tiers (`OMNI-001`..`OMNI-100` + transfinite `Ω-∞`) and enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs and Layer-6 White Page / House of Ideas Decrees.
 
 ### I. Imperial Lore & Cosmological History Codex (`src/game/loreHistory.ts`)
 

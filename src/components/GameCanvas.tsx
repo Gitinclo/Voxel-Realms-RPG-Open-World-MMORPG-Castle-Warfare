@@ -30,6 +30,7 @@ import {
   computeLightingStrategy,
   computeLodChainPolicy,
   computeMasterTextureImportOverride,
+  computeMeshAndTextureBudget,
   computeSurfaceWetnessParams,
   computeUberShaderKeywords,
   getPostProcessProfile,
@@ -690,17 +691,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const wetness = computeSurfaceWetnessParams(activeWeather);
       const lightingStrategy = computeLightingStrategy(platform, quality);
 
-      // Sync Cross-Platform Pipeline (Master Asset Overrides, LOD Bias, Small-Prop Shadow Culling, Uber Shader Keywords)
+      // Sync Cross-Platform Pipeline (Procedural CanvasTexture Resizing, LOD Bias, InstancedMesh Count, Small-Prop Shadow Culling, Uber Shader Uniforms & Material Channels)
       const pipelineSig = `${platform}_${quality}_${hdPack}`;
       if (pipelineSig !== lastPipelineSignature) {
         lastPipelineSignature = pipelineSig;
         const texOverride = computeMasterTextureImportOverride(platform, quality, hdPack);
+        const meshBudget = computeMeshAndTextureBudget(quality);
         const lodPolicy = computeLodChainPolicy(platform, quality, hdPack);
         const uberKeywords = computeUberShaderKeywords(platform, quality, hdPack);
 
         applyCrossPlatformPipeline(scene, {
           anisotropySamples: texOverride.anisotropySamples,
           compressionFormat: texOverride.compressionFormat,
+          runtimeCanvasResolutionPx: texOverride.runtimeCanvasResolutionPx,
+          grassTuftInstanceCount:
+            platform === 'mobile' && !hdPack
+              ? Math.min(320, meshBudget.grassTuftInstanceCount)
+              : meshBudget.grassTuftInstanceCount,
+          normalMapIntensity: meshBudget.normalMapIntensity,
           lodBias: lodPolicy.lodBias,
           skipLod0InMemory: lodPolicy.skipLod0InMemory,
           smallPropCastShadows: lightingStrategy.smallPropCastShadows,
@@ -712,6 +720,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
 
         sunLight.castShadow = !isSoftwareGl && lightingStrategy.enableDynamicSoftShadows;
+        if (
+          !isSoftwareGl &&
+          sunLight.castShadow &&
+          sunLight.shadow.mapSize.width !== postProfile.shadowMapSize
+        ) {
+          sunLight.shadow.mapSize.set(postProfile.shadowMapSize, postProfile.shadowMapSize);
+          sunLight.shadow.map?.dispose();
+          sunLight.shadow.map = null;
+        }
+        renderer.setPixelRatio(
+          isSoftwareGl
+            ? 1
+            : platform === 'mobile' && !hdPack
+              ? 1
+              : Math.min(window.devicePixelRatio, quality === 'ultra' ? 2 : 1.5)
+        );
         rimLight.visible = lightingStrategy.enableRealtimeGI;
       }
 

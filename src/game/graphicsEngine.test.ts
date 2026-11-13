@@ -186,3 +186,20 @@ test('5. Deployment & Build Size: Mobile base build stays under 2GB with optiona
     mobileBaseBuild.baseBuildSizeMb + mobileWithHdPack.hdAddressablePack.sizeMb
   );
 });
+
+test('6. Engineering Transparency Matrix clearly separates Implemented, Simulated, and Planned features', async () => {
+  const { getImplementationTransparencySummary } = await import('./graphicsEngine');
+  const summary = getImplementationTransparencySummary();
+
+  assert.equal(summary.totalEntries, 8);
+  assert.equal(summary.implementedCount, 5);
+  assert.equal(summary.simulatedCount, 2);
+  assert.equal(summary.plannedCount, 1);
+
+  for (const entry of summary.entries) {
+    assert.ok(entry.whatRunsInBrowserNow.length > 20);
+    assert.ok(entry.whatIsSimulatedOrModeled.length > 20);
+    assert.ok(entry.plannedNativeTarget.length > 15);
+    assert.ok(entry.sourceFiles.length >= 1);
+  }
+});

@@ -20,6 +20,57 @@ Every entity, realm, law of causality, and void in **Sovereign Realms** exists w
 | **5** | **The Overvoid / Exoverse** (`🕳️`)             | _"A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy."_ | The meta-existential abyss where all `100 + ∞` Sovereign Omniverses float under completely independent laws of logic, physics, and cosmic hierarchy.                                                                                                    |
 | **6** | **The White Page / The House of Ideas** (`📄`) | _"Everything comes from here — even nothingness (Oblivion). `creatergame31@gmail.com`."_                                     | The supreme pre-existential canvas and Authorial Sanctuary. Everything — creation, causality, the 3,000 Great Daos, the Overvoid, and even Nothingness (`Oblivion`) itself — originates here under the sole authority of **`creatergame31@gmail.com`**. |
 
+### Strict 6-Tier Nested Data Architecture (`src/types/game.ts` & `src/game/omniverse.ts`)
+
+Every entity exists within a strict 6-tier parent-child tree rooted in the Tier 6 `WhitePageRoot` singleton (`getWhitePageSingletonRoot()`), which spawns both existence (`exonverses: Overvoid[]`) and non-existence (`includesOblivion: true` + `oblivionState`), while allowing custom logic and physics overrides at **Tier 5 (`Overvoid`)** and **Tier 1 (`Universe`)**:
+
+```typescript
+interface Universe {
+  id: string;
+  name: string;
+  spacetimeConfig: Record<string, unknown>;
+  matterConstants: Record<string, unknown>;
+}
+
+interface Multiverse {
+  id: string;
+  name: string;
+  topology: 'parallel' | 'series' | 'hybrid';
+  universes: Universe[];
+}
+
+interface Megaverse {
+  id: string;
+  name: string;
+  alias: 'Megaverse' | 'Hyperverse';
+  multiverses: Multiverse[];
+}
+
+interface Omniverse {
+  id: string;
+  name: string;
+  temporalScope: 'past' | 'present' | 'potential' | 'all';
+  megaverses: Megaverse[];
+}
+
+interface Overvoid {
+  id: string;
+  name: string;
+  alias: 'The Overvoid' | 'Exonverse';
+  logicSystem: string;
+  cosmicHierarchyRules: Record<string, unknown>;
+  omniverses: Omniverse[];
+}
+
+interface WhitePageRoot {
+  id: 'THE_WHITE_PAGE';
+  alias: 'The House of Ideas';
+  creatorEmail: 'creatergame31@gmail.com';
+  includesOblivion: true;
+  exonverses: Overvoid[];
+}
+```
+
 ---
 
 ## ⏳ The 7 Grand Historical Epochs

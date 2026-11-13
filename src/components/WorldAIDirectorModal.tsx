@@ -43,13 +43,23 @@ import {
   OMNIVERSE_TIER_METADATA,
   OMNIVERSE_CODEX_SPEC_VERSION,
   SIX_LAYER_COSMIC_HIERARCHY,
+  SOLARA_PRIME_UNIVERSE_ID,
   OmniverseSpeciesNpcEntry,
   OmniverseTierNumber,
   OmniverseSuperAdminDirective,
   WhitePageAuthorDecreeType,
+  WhitePageRoot,
   resolveInfiniteOmniverseByIndex,
   resolveSpeciesSixLayerCosmology,
   executeOmniverseSuperAdminCommand,
+  getWhitePageSingletonRoot,
+  resetWhitePageSingletonRoot,
+  validateCosmologicalTreeHierarchy,
+  resolveEntityCosmologicalPath,
+  evaluateEffectiveUniversePhysicsAndLogic,
+  overrideOvervoidLogicRules,
+  overrideUniversePhysicsConstants,
+  spawnNestedUniverseInMultiverse,
 } from '../game/omniverse';
 import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from '../game/adminModeration';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -120,6 +130,17 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   const [expandedCosmologyRanks, setExpandedCosmologyRanks] = useState<Record<number, boolean>>({
     1: true,
   });
+  const [cosmologicalTree, setCosmologicalTree] = useState<WhitePageRoot>(() =>
+    getWhitePageSingletonRoot()
+  );
+  const [selectedUniverseId, setSelectedUniverseId] = useState<string>(SOLARA_PRIME_UNIVERSE_ID);
+
+  const treeValidation = validateCosmologicalTreeHierarchy(cosmologicalTree);
+  const selectedEntityPath = resolveEntityCosmologicalPath(cosmologicalTree, selectedUniverseId);
+  const effectivePhysics = evaluateEffectiveUniversePhysicsAndLogic(
+    cosmologicalTree,
+    selectedUniverseId
+  );
 
   const isSuperAdmin = isPrimaryAdminAccount(activeAccountEmail);
   const parsedInfiniteIndex = (() => {
@@ -1084,6 +1105,257 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           {btn.label}
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Strict 6-Tier Nested Cosmological Tree & Tier 5 / Tier 1 Physics Override Explorer */}
+                  <div
+                    data-testid="nested-cosmological-tree-explorer"
+                    className="p-3.5 rounded-xl bg-slate-900/95 border border-cyan-500/40 space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-bold font-cinzel text-cyan-200 flex items-center gap-2 flex-wrap">
+                          <span>
+                            🌳 Strict 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton →
+                            `Universe` Leaf)
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono">
+                            {treeValidation.valid ? 'NESTING VALIDATED' : 'INVALID'} ·{' '}
+                            {treeValidation.tierCounts.tier6WhitePageRoot} Root →{' '}
+                            {treeValidation.tierCounts.tier5Overvoids} Overvoids →{' '}
+                            {treeValidation.tierCounts.tier4Omniverses} Omniverses →{' '}
+                            {treeValidation.tierCounts.tier3Megaverses} Megaverses →{' '}
+                            {treeValidation.tierCounts.tier2Multiverses} Multiverses →{' '}
+                            {treeValidation.tierCounts.tier1Universes} Universes
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 mt-0.5">
+                          Singleton Root:{' '}
+                          <code className="text-amber-300 font-mono">{cosmologicalTree.id}</code> (
+                          <code className="text-white font-mono">{cosmologicalTree.alias}</code>) ·
+                          Creator:{' '}
+                          <code className="text-amber-300 font-mono">
+                            {cosmologicalTree.creatorEmail}
+                          </code>{' '}
+                          · Oblivion Included:{' '}
+                          <code className="text-fuchsia-300 font-mono">
+                            {String(cosmologicalTree.includesOblivion)} (
+                            {cosmologicalTree.oblivionState?.id})
+                          </code>
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {[
+                          { label: 'Solara Prime (U-081.1)', id: SOLARA_PRIME_UNIVERSE_ID },
+                          { label: 'Outer Gods (U-001.1)', id: 'U-001.1' },
+                          { label: 'Xeelee (U-021.1)', id: 'U-021.1' },
+                          { label: 'Deities (U-041.1)', id: 'U-041.1' },
+                          { label: 'Rognarr 35G (U-064.1)', id: 'U-064.1' },
+                        ].map((uPreset) => (
+                          <button
+                            key={uPreset.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedUniverseId(uPreset.id);
+                              sound.playSwing();
+                            }}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
+                              selectedUniverseId === uPreset.id
+                                ? 'bg-cyan-400 text-slate-950'
+                                : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                            }`}
+                          >
+                            {uPreset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 6-Tier Nested Breadcrumb Path */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px] font-mono">
+                      {[
+                        {
+                          tier: 'Tier 6 (Root)',
+                          id: selectedEntityPath.tier6WhitePage.id,
+                          sub: selectedEntityPath.tier6WhitePage.alias,
+                          badge: 'Singleton + Oblivion',
+                        },
+                        {
+                          tier: 'Tier 5 (Overvoid)',
+                          id: selectedEntityPath.tier5Overvoid.id,
+                          sub: selectedEntityPath.tier5Overvoid.alias,
+                          badge: selectedEntityPath.tier5Overvoid.logicSystem,
+                        },
+                        {
+                          tier: 'Tier 4 (Omniverse)',
+                          id: selectedEntityPath.tier4Omniverse.id,
+                          sub: selectedEntityPath.tier4Omniverse.name,
+                          badge: `Scope: ${selectedEntityPath.tier4Omniverse.temporalScope}`,
+                        },
+                        {
+                          tier: 'Tier 3 (Megaverse)',
+                          id: selectedEntityPath.tier3Megaverse.id,
+                          sub: selectedEntityPath.tier3Megaverse.name,
+                          badge: `Alias: ${selectedEntityPath.tier3Megaverse.alias}`,
+                        },
+                        {
+                          tier: 'Tier 2 (Multiverse)',
+                          id: selectedEntityPath.tier2Multiverse.id,
+                          sub: selectedEntityPath.tier2Multiverse.name,
+                          badge: `Topology: ${selectedEntityPath.tier2Multiverse.topology}`,
+                        },
+                        {
+                          tier: 'Tier 1 (Universe)',
+                          id: selectedEntityPath.tier1Universe.id,
+                          sub: selectedEntityPath.tier1Universe.name,
+                          badge: `${effectivePhysics.effectiveQiMultiplier}x Qi · ${effectivePhysics.effectiveGravityMultiplier}G`,
+                        },
+                      ].map((node) => (
+                        <div
+                          key={node.tier}
+                          className="p-2 rounded-lg bg-slate-950/90 border border-slate-800 flex flex-col justify-between gap-1"
+                        >
+                          <div>
+                            <div className="text-cyan-400 font-bold">{node.tier}</div>
+                            <div className="text-white font-bold truncate">{node.id}</div>
+                            <div className="text-slate-400 truncate text-[9px]">{node.sub}</div>
+                          </div>
+                          <div className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-amber-300 border border-amber-500/20 truncate">
+                            {node.badge}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Rule 3: Custom Logic Rules (Tier 5 Overvoid) & Custom Physics Constants (Tier 1 Universe) */}
+                    <div className="p-2.5 rounded-lg bg-slate-950/90 border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-[11px] font-mono">
+                      <div className="space-y-0.5">
+                        <div className="text-amber-300 font-bold">
+                          ⚡ Effective Cascaded Physics & Logic ({effectivePhysics.universeId}):
+                        </div>
+                        <div className="text-slate-300 flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
+                          <span>
+                            Logic:{' '}
+                            <strong className="text-white">
+                              {effectivePhysics.effectiveLogicSystem}
+                            </strong>
+                          </span>
+                          <span>
+                            Suppression Base:{' '}
+                            <strong className="text-fuchsia-300">
+                              {effectivePhysics.effectiveRealmSuppressionBase}x
+                            </strong>
+                          </span>
+                          <span>
+                            Time Dilation:{' '}
+                            <strong className="text-cyan-300">
+                              {effectivePhysics.effectiveTimeDilationFactor}x
+                            </strong>
+                          </span>
+                          <span>
+                            Gravity:{' '}
+                            <strong className="text-emerald-300">
+                              {effectivePhysics.effectiveGravityMultiplier}G
+                            </strong>
+                          </span>
+                          <span>
+                            Effective Qi Yield:{' '}
+                            <strong className="text-amber-300">
+                              {effectivePhysics.effectiveQiMultiplier}x
+                            </strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          data-testid="override-tier5-overvoid-logic-btn"
+                          onClick={() => {
+                            const updated = overrideOvervoidLogicRules({
+                              root: cosmologicalTree,
+                              overvoidId: selectedEntityPath.tier5Overvoid.id,
+                              logicSystem:
+                                'Acausal Paraconsistent White-Page Hyper-Logic (Custom Tier-5 Override)',
+                              cosmicHierarchyRulesPatch: {
+                                realmSuppressionBase: 100,
+                                qiMultiplierBonus: 6.0,
+                              },
+                            });
+                            setCosmologicalTree(updated);
+                            sound.playUpgradeFanfare();
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-fuchsia-500/20 hover:bg-fuchsia-500/30 border border-fuchsia-400/50 text-fuchsia-200 text-[10px] font-bold"
+                        >
+                          Override Tier 5 Overvoid Logic
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="override-tier1-universe-physics-btn"
+                          onClick={() => {
+                            const updated = overrideUniversePhysicsConstants({
+                              root: cosmologicalTree,
+                              universeId: selectedEntityPath.tier1Universe.id,
+                              spacetimeConfigPatch: {
+                                timeDilationFactor: 12.0,
+                                speedOfLightMps: 999_999_999,
+                              },
+                              matterConstantsPatch: {
+                                gravityMultiplier: 2.5,
+                                qiSpiritDensityMultiplier: 9.0,
+                              },
+                            });
+                            setCosmologicalTree(updated);
+                            sound.playUpgradeFanfare();
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 text-[10px] font-bold"
+                        >
+                          Override Tier 1 Universe Physics
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="spawn-nested-universe-btn"
+                          onClick={() => {
+                            const newId = `${selectedEntityPath.tier2Multiverse.id}-U${selectedEntityPath.tier2Multiverse.universes.length + 1}`;
+                            const updated = spawnNestedUniverseInMultiverse({
+                              root: cosmologicalTree,
+                              multiverseId: selectedEntityPath.tier2Multiverse.id,
+                              newUniverse: {
+                                id: newId,
+                                name: `Spawned Continuum ${newId}`,
+                                spacetimeConfig: {
+                                  timeDilationFactor: 5.0,
+                                  speedOfLightMps: 500_000_000,
+                                },
+                                matterConstants: {
+                                  gravityMultiplier: 1.5,
+                                  qiSpiritDensityMultiplier: 4.5,
+                                },
+                              },
+                            });
+                            setCosmologicalTree(updated);
+                            setSelectedUniverseId(newId);
+                            sound.playUpgradeFanfare();
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 text-[10px] font-bold"
+                        >
+                          + Spawn Child Universe
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const reset = resetWhitePageSingletonRoot(omniverseRoster);
+                            setCosmologicalTree(reset);
+                            setSelectedUniverseId(SOLARA_PRIME_UNIVERSE_ID);
+                            sound.playSwing();
+                          }}
+                          className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]"
+                        >
+                          Reset Tree
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -39,6 +39,7 @@ import {
   computeLodChainPolicy,
   computeMasterTextureImportOverride,
   computeUberShaderKeywords,
+  getImplementationTransparencySummary,
 } from '../game/graphicsEngine';
 import {
   ARCHITECT_RELEASE_DATE_DISPLAY,
@@ -96,6 +97,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
 
   const stats = getSimulatedEngineStats();
   const validationReport = runFullSystemValidationReport();
+  const transparencySummary = getImplementationTransparencySummary();
   const activeModule =
     CPP_CODE_MODULES.find((m) => m.id === selectedModuleId) || CPP_CODE_MODULES[0];
 
@@ -490,13 +492,18 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Master Source: <span className="text-white font-bold">4096×4096 (4K)</span>{' '}
-                  (Single File Maintained)
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  Override: <span className="text-emerald-300">{texOverride.compressionLabel}</span>{' '}
+                  Live WebGL2 Canvas:{' '}
+                  <span className="text-emerald-300 font-bold">
+                    {texOverride.runtimeCanvasResolutionPx}×{texOverride.runtimeCanvasResolutionPx}
+                    px
+                  </span>{' '}
                   · Anisotropy:{' '}
                   <span className="text-amber-300">{texOverride.anisotropySamples}×</span>
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Modeled Import Target:{' '}
+                  <span className="text-cyan-300">{texOverride.compressionLabel}</span> (from 4096px
+                  Master Spec)
                 </div>
               </div>
 
@@ -512,16 +519,17 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Chain: LOD 0 (75k) → LOD 1 (25k) → LOD 2 (10k) → LOD 3 (2k)
+                  Live THREE.LOD Chain + InstancedMesh Foliage Scaling
                 </div>
                 <div className="text-[11px] text-slate-400">
                   {lodPolicy.skipLod0InMemory ? (
                     <span className="text-amber-300">
-                      Mobile Skips LOD 0 in Memory (-{lodPolicy.memorySavedMb} MB RAM saved)
+                      Mobile Skips LOD 0 at Dist 0m (Modeled -{lodPolicy.memorySavedMb} MB RAM
+                      saved)
                     </span>
                   ) : (
                     <span className="text-emerald-300">
-                      PC/Console Loads Full LOD 0 Hero Close-Up Mesh
+                      PC/Console Enables Full LOD 0 Close-Up Mesh &amp; 800 Grass Tufts
                     </span>
                   )}
                 </div>
@@ -541,15 +549,15 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Real-Time GI:{' '}
+                  Hybrid Probe/Rim:{' '}
                   <span className="text-white">{lightingSpec.enableRealtimeGI ? 'ON' : 'OFF'}</span>{' '}
-                  · Vol. Fog:{' '}
+                  · FogExp2:{' '}
                   <span className="text-white">
-                    {lightingSpec.enableVolumetricFog ? 'ON' : 'OFF'}
+                    {lightingSpec.enableVolumetricFog ? 'FULL' : 'REDUCED'}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  Small Debris/Prop Shadows:{' '}
+                  Live Small-Prop <code className="text-slate-300">castShadow</code>:{' '}
                   <span
                     className={
                       lightingSpec.smallPropCastShadows ? 'text-emerald-300' : 'text-amber-300'
@@ -557,7 +565,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   >
                     {lightingSpec.smallPropCastShadows
                       ? 'ENABLED (PC/Console)'
-                      : 'DISABLED (Mobile Perf Culling)'}
+                      : 'CULLED (Mobile Perf Culling)'}
                   </span>
                 </div>
               </div>
@@ -576,12 +584,12 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-300 font-mono">
-                  Rim: {uberKeywords.USE_RIM_LIGHT ? 'ON' : 'OFF'} · Detail Normals:{' '}
-                  {uberKeywords.USE_DETAIL_NORMALS ? 'ON' : 'OFF'}
+                  Rim Uniform: {uberKeywords.USE_RIM_LIGHT ? 'ON' : 'OFF'} · normalScale:{' '}
+                  {uberKeywords.USE_DETAIL_NORMALS ? 'ACTIVE' : '0.0 (OFF)'}
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono">
-                  Parallax: {uberKeywords.USE_PARALLAX_OCCLUSION ? 'ON' : 'OFF'} · Subsurface SSS:{' '}
-                  {uberKeywords.USE_SUBSURFACE_SCATTERING ? 'ON' : 'OFF'}
+                  bumpScale: {uberKeywords.USE_PARALLAX_OCCLUSION ? 'ACTIVE' : '0.0 (OFF)'} · SSS
+                  Wrap: {uberKeywords.USE_SUBSURFACE_SCATTERING ? 'ON' : 'OFF'}
                 </div>
               </div>
 
@@ -590,7 +598,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="text-xs font-bold text-cyan-200 flex items-center gap-1.5">
                     <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>5. Deployment & Addressable Asset Bundles</span>
+                    <span>5. Deployment &amp; Addressable Asset Bundles (Modeled Manifest)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
@@ -626,19 +634,21 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                 <div className="text-[11px] text-slate-300">
                   {targetPlatform === 'mobile' ? (
                     <>
-                      Base Mobile Build: <span className="text-emerald-300 font-mono">640 MB</span>{' '}
-                      (Strictly &lt; 2GB Store Limit). 4K Textures &amp; LOD 0 Hero Meshes are
-                      isolated in the optional{' '}
+                      Modeled Base Mobile Build:{' '}
+                      <span className="text-emerald-300 font-mono">640 MB</span> (&lt; 2GB Store
+                      Limit). Toggling the optional{' '}
                       <span className="text-amber-300 font-mono">
                         {bundleManifest.hdAddressablePack.packId}
                       </span>{' '}
-                      addressable bundle.
+                      immediately promotes live WebGL2 CanvasTextures to 1024px and unlocks LOD 0 in
+                      the 3D viewport.
                     </>
                   ) : (
                     <>
-                      Console / PC Build: <span className="text-cyan-300 font-mono">68.40 GB</span>{' '}
-                      (Pre-bundles all 4K BC7 Master Textures, uncompressed audio, and LOD 0
-                      75k–100k Hero Meshes).
+                      Modeled Console / PC Build:{' '}
+                      <span className="text-cyan-300 font-mono">68.40 GB</span> (Simulates full 4K
+                      BC7 Master Texture &amp; LOD 0 packaging while running live 1024px WebGL2
+                      procedural PBR textures in-browser).
                     </>
                   )}
                 </div>
@@ -863,7 +873,76 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
             </ul>
           </div>
 
-          {/* 8-Pillar Cross-System Validation & Integrity Audit */}
+          {/* Engineering Transparency Matrix: Implemented vs. Simulated vs. Planned */}
+          <div
+            data-testid="engineering-transparency-panel"
+            className="p-4 rounded-xl bg-slate-950/95 border border-cyan-500/40 space-y-3"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+              <div>
+                <h3 className="text-xs font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>
+                    🔍 Engineering Transparency Matrix: Implemented vs. Simulated vs. Planned
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Explicit engineering separation between live browser WebGL2/TypeScript execution,
+                  deterministic analytical/metadata models, and planned native engine targets.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-[11px] font-mono">
+                <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-bold">
+                  Implemented: {transparencySummary.implementedCount}
+                </span>
+                <span className="px-2.5 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 text-amber-300 font-bold">
+                  Simulated Model: {transparencySummary.simulatedCount}
+                </span>
+                <span className="px-2.5 py-0.5 rounded bg-purple-500/20 border border-purple-400/50 text-purple-300 font-bold">
+                  Planned Native: {transparencySummary.plannedCount}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {transparencySummary.entries.map((entry) => {
+                const badgeClass =
+                  entry.status === 'implemented'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : entry.status === 'simulated'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+                return (
+                  <div
+                    key={entry.id}
+                    className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-bold text-white">{entry.featureName}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded border font-mono text-[9px] font-bold shrink-0 ${badgeClass}`}
+                      >
+                        {entry.statusBadgeLabel}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">
+                      <strong className="text-emerald-300">Runs Live in Browser:</strong>{' '}
+                      {entry.whatRunsInBrowserNow}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      <strong className="text-amber-300">Simulated / Modeled:</strong>{' '}
+                      {entry.whatIsSimulatedOrModeled}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-mono">
+                      <strong className="text-purple-300">Planned Native Target:</strong>{' '}
+                      {entry.plannedNativeTarget}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 9-Pillar Cross-System Validation & Integrity Audit */}
           <div
             data-testid="system-validation-audit-panel"
             className="p-4 rounded-xl bg-emerald-950/25 border border-emerald-500/40 space-y-3"
@@ -872,8 +951,9 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
               <div>
                 <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
                   <span>
-                    🛡️ 8-Pillar Cross-System Validation &amp; Integrity Audit (
-                    {validationReport.releaseVersion} · {validationReport.releaseDate})
+                    🛡️ {validationReport.totalPillars}-Pillar Cross-System Validation &amp;
+                    Integrity Audit ({validationReport.releaseVersion} ·{' '}
+                    {validationReport.releaseDate})
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-300">

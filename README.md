@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-106_Passing_(17_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-108_Passing_(17_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
@@ -10,7 +10,7 @@
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with support for Studio PBR materials, `UnrealBloomPass` HDR10+ tone-mapped post-processing, adaptive PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) rendering pipelines, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy (1. Universe → 2. Multiverse → 3. Megaverse/Hyperverse → 4. Omniverse → 5. The Overvoid/Exoverse → 6. The White Page / The House of Ideas) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026` — `x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` DOD memory, Lock-Free Job DAG)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy (1. Universe → 2. Multiverse → 3. Megaverse/Hyperverse → 4. Omniverse → 5. The Overvoid/Exoverse → 6. The White Page / The House of Ideas) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -18,8 +18,8 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 
 ### 1. 🌍 3D Procedural Voxel World & Studio PBR + HDR Engine
 
-- **Studio PBR Materials & Procedural Maps**: `MeshPhysicalMaterial` with clearcoat, IOR refraction, metallic reflections, and runtime-synthesized 2D canvas Albedo & Bump/Roughness maps for grass, masonry stone, timber bark, and crystalline water ripples.
-- **Real-Time HDR Post-Processing & Platform Overrides**: Multi-pass `EffectComposer` with `RenderPass`, `UnrealBloomPass`, and `OutputPass` (ACES Filmic Tone Mapping + 2048×2048 `PCFSoftShadowMap` cascades), plus in-HUD **Graphics Quality (`NEXT-GEN ULTRA` / `HIGH` / `BALANCED`)** and **Platform Override (`PC/PS5 [BC7 · LOD 0]` / `MOBILE [ASTC · LOD BIAS +1]`)** toggles.
+- **Live WebGL2 Procedural PBR Materials & Dynamic CanvasTextures**: `MeshPhysicalMaterial` with clearcoat, IOR refraction, metallic reflections, and runtime-synthesized HTML5 `CanvasTexture` Albedo, Normal, Bump & AO maps (`256×256`, `512×512`, or `1024×1024`) for grass, masonry stone, timber bark, Damascus armor, and crystalline water ripples. Switching presets or platforms dynamically resizes canvas textures, updates anisotropy (`4x` / `8x` / `16x`), and mutates `normalScale` and `bumpScale` on active Three.js materials.
+- **Real-Time HDR Post-Processing, `THREE.LOD` Chains & Platform Pipeline**: Multi-pass `EffectComposer` with `RenderPass`, `UnrealBloomPass`, custom `NextGenColorGradeShader`, and `OutputPass` (ACES Filmic Tone Mapping + dynamic `2048×2048` / `1024×1024` `PCFSoftShadowMap`), 4-tier `THREE.LOD` distance switching, dynamic `InstancedMesh` foliage scaling (`800` / `520` / `320` grass tufts), and small-prop shadow culling, paired with modeled cross-platform import overrides (`BC7` vs `ASTC`) and bundle size manifests (`src/game/graphicsEngine.ts`).
 - **Cross-Platform Input**: Full keyboard/mouse controls for PC/Mac, and responsive virtual on-screen D-pad and action buttons for Android and touchscreen devices.
 
 ### 2. 🏰 Castle Progression & 10 Eras (Lv. 0 – 100)
@@ -144,9 +144,9 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
   - **Epoch VI — The `06/11/2026` Software & Hardware Architect Convergence (`v1.5.0`)**: Chronicles the unification of the Three.js PBR renderer with the C++20 SIMD/SoA Architect Engine.
 - **6 Sacred Compendium Codices & Interactive Chronicle Comprehension (`LoreHistoryModal.tsx`)**: Full-text searchable lore archive (`searchLoreHistory`) and interactive epoch comprehension (`comprehendLoreEpoch`) granting Kingdom Diamonds (`💎`) and Scripture Fragments.
 
-### 15. 🛡️ 8-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
+### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 8-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates 59+ cross-module invariants across:
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates 67+ cross-module invariants across:
   1. **Root RBAC & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Layer Cosmic Ontology (`1x` → `100,000x` Layer 6 White Page) & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore & 7 Grand Historical Epochs (`Epoch Ω-0` through `Epoch VI` `06/11/2026`)**
@@ -155,7 +155,25 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
   6. **Castle Lv. 0–100 (`1,000T` Cap), `1T` World Boss Rally & T1–T20 Tri-Branch Counter Matrix (`1.5x`)**
   7. **Four-Path Cultivation (`23` Realms × `9` Layers) & `100.0x` Realm Suppression**
   8. **Autonomous World AI (Lv. 1–1000), A\* Keep Avoidance, Dynamic Weather & VIP Covenant**
+  9. **Engineering Transparency Matrix (`Implemented` / `Simulated` / `Planned`) & Live WebGL2 Pipeline Mutations**
 - **Live In-App Validation Diagnostics**: Viewable in real time inside the **C++20 / Software & Hardware Architect Studio (`CppArchitectureModal.tsx`)** alongside C++20 `static_assert` compile-time checks (`cpp/VoxelRealmsGuardrails.hpp`).
+
+---
+
+## 🔍 Engineering Transparency Matrix: Implemented vs. Simulated vs. Planned Scope
+
+To ensure complete engineering clarity and prevent over-claiming what runs inside a browser WebGL2 sandbox versus what is modeled for cross-platform/native builds, **Voxel Realms RPG** maintains a first-class, unit-tested **Engineering Transparency Matrix** (`ENGINEERING_TRANSPARENCY_MATRIX` in `src/game/graphicsEngine.ts`, viewable in-app inside `CppArchitectureModal.tsx`):
+
+| Domain                                                                                                            |                    Classification                    | What Runs Live in Browser Now (Implemented)                                                                                                                                                                                                                                                                                                                                         | What Is Analytically / Metadata Modeled (Simulated)                                                                                                                                                                                                                     | Planned Native / Cloud Target (Planned)                                                                                                             |
+| :---------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Procedural PBR Textures & Materials** (`src/game/proceduralWorld.ts`)                                        |           **🟢 IMPLEMENTED (Live WebGL2)**           | Dynamically generates & resizes HTML5 `CanvasTexture` maps (`256×256`, `512×512`, `1024×1024`) for grass, stone masonry, wood bark, armor, water, and AO lightmaps; mutates `anisotropy` (`4x`/`8x`/`16x`), `minFilter`, `normalScale`, `bumpScale`, and `clearcoat` on Three.js `MeshPhysicalMaterial`s.                                                                           | GPU hardware block compression formats (`BC7 8bpp` vs `ASTC 6×6`) and `4096px` offline Master Source asset import overrides are modeled as cross-platform build metadata because browser `CanvasTexture` uploads RGBA8 buffers to WebGL2.                               | Basis Universal (`.ktx2`) supercompressed texture streaming transcoded to native `BC7` (Desktop) or `ASTC` (Mobile) GPU memory.                     |
+| **2. Geometry, 4-Tier `THREE.LOD` & `InstancedMesh` Foliage** (`src/game/proceduralWorld.ts`)                     |           **🟢 IMPLEMENTED (Live WebGL2)**           | Builds real 4-level `THREE.LOD` hierarchies (`Icosahedron` detail `2 → 1 → 0` → `Octahedron` proxy), chamfered `ExtrudeGeometry` terrain tiles, and `LatheGeometry` torsos; dynamically mutates `THREE.LOD` distance tables, visibility, and `InstancedMesh.count` (`800 → 520 → 320` grass tufts) on preset/platform switch.                                                       | The `75k–245k` scene polygon budget figures and MB of RAM saved on Mobile (`-68 MB` / `-92.4 MB`) are deterministic analytical estimates derived from the active preset and LOD bias.                                                                                   | GPU-driven meshlet / cluster culling via WebGPU compute shaders and `glTF meshopt` decompression.                                                   |
+| **3. Atmospheric Sky, Dynamic Shadows & AO Lightmaps** (`src/components/GameCanvas.tsx`)                          |           **🟢 IMPLEMENTED (Live WebGL2)**           | Runs Three.js Preetham `Sky` shader (Rayleigh/Mie scattering across 24h cycle & 4 weather states), `DirectionalLight` `PCFSoftShadowMap` (resized between `2048×2048` and `1024×1024` or disabled on Mobile), `HemisphereLight`, `FogExp2`, canvas AO lightmap intensity, and per-mesh small-prop `castShadow` culling.                                                             | The `realtime_gi_hybrid` mode uses a Three.js `PMREMGenerator` `RoomEnvironment` probe + `HemisphereLight` + directional rim light + canvas AO map rather than hardware ray-traced global illumination (RTGI).                                                          | Voxel cone tracing / screen-space global illumination (SSGI) and cascaded shadow maps (CSM) in WebGPU.                                              |
+| **4. Custom GLSL Shaders & HDR Post-Processing** (`src/game/proceduralWorld.ts`, `GameCanvas.tsx`)                |           **🟢 IMPLEMENTED (Live WebGL2)**           | Injects custom GLSL vertex/fragment code via `Material.onBeforeCompile` (wind foliage sway, Fresnel rim light, wrap subsurface approximation, Gerstner water waves); runs `EffectComposer` (`RenderPass → UnrealBloomPass → NextGenColorGradeShader → OutputPass`) and toggles shader uniforms (`uUseRimLight`, `uUseDetailNormals`, `uUseParallax`, `uUseSubsurface`) live.        | Platform shader macro defines (`USE_RIM_LIGHT`, `USE_PARALLAX_OCCLUSION`) are evaluated via uniform branches (`uUseRimLight > 0.5`) in WebGL2 GLSL rather than offline HLSL/SPIR-V preprocessor variant stripping.                                                      | WGSL pipeline-overridable constants (`override`) in WebGPU for zero-branch hardware shader specialization.                                          |
+| **5. Cross-Platform Bundle & Install Size Manifest** (`src/game/graphicsEngine.ts`)                               |       **🟡 SIMULATED (Build Metadata Model)**        | Interactive cross-platform configuration selector in the Architect Studio & HUD that couples platform selection (`PC/Console` vs `Mobile` + `Optional HD Pack`) to live WebGL2 `THREE.LOD` bias, shadow culling, canvas texture resolution (`256px`–`1024px`), and shader uniform switches.                                                                                         | The `68.4 GB` PC/Console install size, `640 MB` Mobile base build size, and `3.85 GB` `HighDefinition_4K_LOD0_Pack` download toggle are simulated deployment manifests for architectural planning; no multi-gigabyte binary pack is downloaded over the network.        | Cloud CDN chunked asset streaming with Service Worker cache quotas and native iOS/Android On-Demand Resources (ODR).                                |
+| **6. C++20 SIMD ISA, SoA Memory & Lock-Free Job DAG** (`src/game/architectOptimization.ts`, `cpp/`)               |  **🟡 SIMULATED (Analytical Model + C++20 Header)**  | Executes deterministic TypeScript hardware/memory analytical models (`x86_64 AVX-512`, `ARMv9 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup over `AoS`, Chase-Lev work-stealing frame budgets) and provides a standalone C++20 header & CTest suite in `cpp/VoxelRealmsGuardrails.hpp` and `cpp/engine_guardrail_test.cpp`.                              | The browser runtime executes the game loop in TypeScript/JavaScript on the main thread; the C++20 files in `cpp/` are reference native guardrails verified by C++20 `static_assert` / CTest and are not compiled into a live WebAssembly module in the Vite dev server. | Compile `cpp/VoxelRealmsGuardrails.hpp` via Emscripten (`-msimd128 -pthread`) into a WebAssembly SIMD128 worker pool backed by `SharedArrayBuffer`. |
+| **7. Trillion-Scale Warfare, 23 Realms, 6-Layer Cosmology & 100 Omniverses** (`src/game/math.ts`, `omniverse.ts`) | **🟢 IMPLEMENTED (`BigInt` Engine + 3D Projection)** | All castle capacities (up to `1,000T`), T1–T20 Tri-Branch battles, 23 cultivation realms (`100.0x` suppression), A\* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, and 6-Layer Cosmology / 100 Omniverse NPCs under `creatergame31@gmail.com` are fully implemented in TypeScript using exact 64-bit `BigInt` math and projected as 3D entities in the overworld. | Trillion-unit troop clashes and 100-Omniverse tributes are resolved analytically via deterministic `BigInt` combat/economy equations while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.                                    | GPU instanced crowd impostor rendering for visualizing `100,000+` simultaneous march units during siege replays.                                    |
+| **8. Multi-Region Persistence & Multiplayer Sync** (`src/game/adminModeration.ts`, `clanMath.ts`)                 |       **🟣 PLANNED (Native / Cloud Roadmap)**        | Persists VIP covenants, Daily Login Decrees, character customization, and Admin Moderation audit logs locally in browser `localStorage` with full deterministic unit test coverage.                                                                                                                                                                                                 | Clan territory raids, leaderboard rankings, and moderation roster sanctions operate against deterministic local state and seeded alliance rosters within the single-player/local sandbox.                                                                               | Authoritative WebSocket/gRPC realm cluster with cloud relational/document persistence and cross-player real-time siege synchronization.             |
 
 ---
 
@@ -188,7 +206,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit & Regression Tests
 
-Execute all **106 unit and regression tests across 17 decoupled test suites**:
+Execute all **108 unit and regression tests across 17 decoupled test suites**:
 
 ```bash
 npm test
@@ -328,7 +346,7 @@ Every push and Pull Request automatically runs four strict Web/TypeScript qualit
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **106 unit and regression tests across 17 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Runs all **108 unit and regression tests across 17 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -338,21 +356,21 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
 3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
 
-### Automated Test Suites (`106/106 Passing` across 17 TypeScript Suites + `CTest C++20 Passing`)
+### Automated Test Suites (`108/108 Passing` across 17 TypeScript Suites + `CTest C++20 Passing`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
 - **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
-- **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) texture compression, shadow culling, and addressable HD pack mounting.
+- **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`Implemented` / `Simulated` / `Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`Epoch Ω-0: Pre-Genesis: The White Page & The House of Ideas` under `creatergame31@gmail.com` through `Epoch VI: 06/11/2026 Architect Convergence`), 6 Sacred Compendium Codices, one-time epoch comprehension rewards (`comprehendLoreEpoch`), and full-text lore search (`searchLoreHistory`).
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
 - **`omniverse.test.ts`**: Verifies the 6-Layer Cosmic Hierarchy (`1. Universe` → `2. Multiverse` → `3. Megaverse / Hyperverse` → `4. Omniverse` → `5. The Overvoid / Exoverse` → `6. The White Page / The House of Ideas` under `creatergame31@gmail.com`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), infinite transfinite Omniverse coordinate resolution, 3D Overworld NPC projection, and Layer-6 White Page / House of Ideas authorial decrees.
-- **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, and C++20 engine telemetry.
+- **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, live `applyCrossPlatformPipeline` mutations (`THREE.LOD`, `InstancedMesh.count`, `normalScale`/`bumpScale`, small-prop shadow culling), and C++20 engine telemetry.
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 8-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying 59+ invariants across Root RBAC (`creatergame31@gmail.com`), 6-Layer Cosmology, 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, and Lv. 1–1000 World AI.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying 67+ invariants across Root RBAC (`creatergame31@gmail.com`), 6-Layer Cosmology, 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
@@ -366,7 +384,7 @@ npm run validate              # Unified 4-stage check (lint + format:check + tes
 npm run lint                  # 1. Check TypeScript for messy code & unused variables
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 106 TypeScript unit & regression tests
+npm test                      # 4. Run all 108 TypeScript unit & regression tests
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -385,7 +403,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)  | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                            | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)          | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 106 automated unit tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 108 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -407,7 +425,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 106 unit & regression tests across 17 test suites
+- [x] `npm test` passes all 108 unit & regression tests across 17 test suites
 - [x] `npm run validate` passes the full 4-stage validation gate cleanly
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile

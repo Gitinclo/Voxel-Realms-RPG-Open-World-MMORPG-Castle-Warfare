@@ -33,7 +33,7 @@ The governance structure mirrors the deterministic Role-Based Access Control (RB
 ### A. Routine Bug Fixes, UI Polish & Test Additions
 
 - May be submitted directly via a Pull Request following [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md).
-- Requires all automated CI checks (`106` unit tests across 17 suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
+- Requires all automated CI checks (`108` unit tests across 17 suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
 
 ### B. Major Gameplay, Mathematical or Engine Changes ("Architect-First" RFCs)
 
@@ -44,7 +44,8 @@ Any change that alters:
 - 10-Species / Race catalog, 3D procedural traits, or Admin species rebirth rules (`src/game/species.ts`),
 - 6-Layer Cosmic Hierarchy (`1. Universe` → `6. The White Page / The House of Ideas`), Infinite Omniverse & 100 Species Background NPCs (`src/game/omniverse.ts`),
 - Imperial Lore & 7 Grand Historical Epochs (`src/game/loreHistory.ts`),
-- 8-Pillar Cross-System Validation & Integrity Audit (`src/game/systemValidation.ts`),
+- 9-Pillar Cross-System Validation & Integrity Audit (`src/game/systemValidation.ts`),
+- Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`) & live WebGL2 pipeline (`src/game/graphicsEngine.ts` & `src/game/proceduralWorld.ts`),
 - Software & Hardware Architect ISA/GPU/TDP/SoA optimization (`src/game/architectOptimization.ts`),
 - Network wire schemas (`CHANGELOG.md` / `v1.5.0` Siege Protocol), or
 - C++20 RAII / SIMD headers (`cpp/VoxelRealmsGuardrails.hpp`),

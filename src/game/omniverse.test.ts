@@ -9,11 +9,21 @@ import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
   OMNIVERSE_TIER_METADATA,
   SIX_LAYER_COSMIC_HIERARCHY,
+  SOLARA_PRIME_UNIVERSE_ID,
   resolveInfiniteOmniverseByIndex,
   resolveSpeciesSixLayerCosmology,
   projectOmniverseNpcToWorldNPC,
   executeOmniverseSuperAdminCommand,
   executeWhitePageAuthorDecree,
+  buildCanonicalWhitePageHierarchyTree,
+  getWhitePageSingletonRoot,
+  resetWhitePageSingletonRoot,
+  validateCosmologicalTreeHierarchy,
+  resolveEntityCosmologicalPath,
+  evaluateEffectiveUniversePhysicsAndLogic,
+  overrideOvervoidLogicRules,
+  overrideUniversePhysicsConstants,
+  spawnNestedUniverseInMultiverse,
 } from './omniverse';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 
@@ -232,4 +242,102 @@ test('executeWhitePageAuthorDecree strictly enforces Supreme Author creatergame3
   assert.equal(oblivion.allowed, true);
   assert.equal(oblivion.tributeDiamondsGranted, 77_777_777n);
   assert.equal(oblivion.updatedRoster.filter((e) => e.deployedInOverworld).length, 5);
+});
+
+test('6-Tier Nested Cosmological Tree enforces WhitePageRoot singleton, Oblivion + Overvoid spawning, and strict Tier 6 -> Tier 1 nesting', () => {
+  const root = resetWhitePageSingletonRoot();
+  assert.equal(getWhitePageSingletonRoot(), root);
+  assert.equal(root.id, 'THE_WHITE_PAGE');
+  assert.equal(root.alias, 'The House of Ideas');
+  assert.equal(root.creatorEmail, 'creatergame31@gmail.com');
+  assert.equal(root.includesOblivion, true);
+  assert.equal(root.oblivionState?.spawnedFrom, 'THE_WHITE_PAGE');
+
+  const summary = validateCosmologicalTreeHierarchy(root);
+  assert.equal(summary.valid, true);
+  assert.equal(summary.violations.length, 0);
+  assert.equal(summary.tierCounts.tier6WhitePageRoot, 1);
+  assert.equal(summary.tierCounts.tier5Overvoids, 5);
+  assert.equal(summary.tierCounts.tier4Omniverses, 100);
+  assert.equal(summary.tierCounts.tier3Megaverses, 100);
+  assert.equal(summary.tierCounts.tier2Multiverses, 100);
+  assert.equal(summary.tierCounts.tier1Universes, 200);
+
+  const solaraPath = resolveEntityCosmologicalPath(root, SOLARA_PRIME_UNIVERSE_ID);
+  assert.equal(solaraPath.found, true);
+  assert.deepEqual(solaraPath.breadcrumbIdentifiers, [
+    'THE_WHITE_PAGE',
+    'EXO-T5-SOLARA-PRIME',
+    'OMNI-081',
+    'HV-081',
+    'MV-081',
+    SOLARA_PRIME_UNIVERSE_ID,
+  ]);
+});
+
+test('Custom logic rules at Tier 5 (Overvoid) and custom physics at Tier 1 (Universe) override standard baseline physics', () => {
+  const tree = buildCanonicalWhitePageHierarchyTree();
+  const baseProfile = evaluateEffectiveUniversePhysicsAndLogic(tree, SOLARA_PRIME_UNIVERSE_ID);
+  assert.equal(baseProfile.universeId, SOLARA_PRIME_UNIVERSE_ID);
+  assert.equal(baseProfile.overvoidId, 'EXO-T5-SOLARA-PRIME');
+  assert.equal(baseProfile.effectiveSpeedOfLightMps, 299_792_458);
+
+  // Override Tier 5 Overvoid logicSystem and cosmicHierarchyRules
+  const afterTier5Override = overrideOvervoidLogicRules({
+    root: tree,
+    overvoidId: 'EXO-T5-SOLARA-PRIME',
+    logicSystem: 'Non-Euclidean Acausal Dao-Tensor Logic',
+    alias: 'The Overvoid',
+    cosmicHierarchyRulesPatch: {
+      realmSuppressionBase: 50,
+      qiMultiplierBonus: 4.0,
+      spacetimeOverrides: {
+        speedOfLightMps: 599_584_916,
+      },
+    },
+    syncSingleton: false,
+  });
+
+  // Override Tier 1 Universe spacetimeConfig and matterConstants
+  const afterTier1Override = overrideUniversePhysicsConstants({
+    root: afterTier5Override,
+    universeId: SOLARA_PRIME_UNIVERSE_ID,
+    spacetimeConfigPatch: {
+      timeDilationFactor: 7.5,
+      causalStructure: 'retrocausal_loop_allowed',
+    },
+    matterConstantsPatch: {
+      gravityMultiplier: 3.25,
+      qiSpiritDensityMultiplier: 5.0,
+    },
+    syncSingleton: false,
+  });
+
+  const updatedProfile = evaluateEffectiveUniversePhysicsAndLogic(
+    afterTier1Override,
+    SOLARA_PRIME_UNIVERSE_ID
+  );
+  assert.equal(updatedProfile.overvoidAlias, 'The Overvoid');
+  assert.equal(updatedProfile.effectiveLogicSystem, 'Non-Euclidean Acausal Dao-Tensor Logic');
+  assert.equal(updatedProfile.effectiveRealmSuppressionBase, 50);
+  assert.equal(updatedProfile.effectiveSpeedOfLightMps, 599_584_916);
+  assert.equal(updatedProfile.effectiveTimeDilationFactor, 7.5);
+  assert.equal(updatedProfile.effectiveGravityMultiplier, 3.25);
+  assert.equal(updatedProfile.effectiveQiMultiplier, 20.0); // 5.0 (Tier 1) * 4.0 (Tier 5)
+
+  // Spawn a new child Universe inside Multiverse MV-081
+  const afterSpawn = spawnNestedUniverseInMultiverse({
+    root: afterTier1Override,
+    multiverseId: 'MV-081',
+    newUniverse: {
+      id: 'U-081.3-POCKET-REALM',
+      name: 'Solara Immortal Pocket Universe U-081.3',
+      spacetimeConfig: { speedOfLightMps: 1_000_000_000, timeDilationFactor: 100.0 },
+      matterConstants: { gravityMultiplier: 0.5, qiSpiritDensityMultiplier: 25.0 },
+    },
+    syncSingleton: false,
+  });
+  const spawnedCheck = validateCosmologicalTreeHierarchy(afterSpawn);
+  assert.equal(spawnedCheck.valid, true);
+  assert.equal(spawnedCheck.tierCounts.tier1Universes, 201);
 });

@@ -45,6 +45,8 @@ function getOrCreateCanvasTexture(
   tex.anisotropy = 16;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
+  tex.userData.drawFn = drawFn;
+  tex.userData.activeResolutionPx = size;
   tex.needsUpdate = true;
   textureCache.set(key, tex);
   return tex;
@@ -896,18 +898,33 @@ export function updateWorldShaderUniforms(
   voxelMaterials.stoneDark.clearcoat = Math.min(1.0, stoneClearcoat + 0.08);
 }
 
+export interface AppliedPipelineExecutionSummary {
+  texturesUpdatedCount: number;
+  activeCanvasResolutionPx: number;
+  lodObjectsReconfiguredCount: number;
+  smallPropsShadowCulledCount: number;
+  instancedFoliageActiveCount: number;
+  materialsMutatedCount: number;
+  detailNormalsActive: boolean;
+  parallaxBumpActive: boolean;
+}
+
 /**
  * Applies the 5-pillar Cross-Platform Pipeline to the active Three.js scene:
- * 1. Master Asset Texture Override (BC7 16x Anisotropy vs ASTC 4x/8x Anisotropy)
- * 2. Geometry & LOD Scaling (Applies Mobile LOD Bias to skip LOD 0 in memory)
- * 3. Lighting Strategy (Baked Lightmap intensity + Disables "Cast Shadows" on small props for Mobile)
- * 4. Unified Uber Shader Keyword Switches (Toggles Rim Light, Detail Normals, Parallax, and SSS)
+ * 1. Procedural CanvasTexture Resolution Scaling (256px / 512px / 1024px), Mipmap Filter & Anisotropy
+ *    + Simulated Cross-Platform Import Metadata (BC7 vs ASTC)
+ * 2. Geometry & LOD Scaling (Applies Mobile LOD Bias to skip LOD 0 + scales InstancedMesh foliage count)
+ * 3. Lighting Strategy (Baked AO Lightmap intensity + Disables "Cast Shadows" on small props for Mobile)
+ * 4. Unified Uber Shader Uniforms & Material Normal/Bump Scale Mutation (Toggles Rim Light, Detail Normals, Parallax, and SSS)
  */
 export function applyCrossPlatformPipeline(
   scene: THREE.Scene,
   options: {
     anisotropySamples: number;
     compressionFormat: 'BC7' | 'ASTC';
+    runtimeCanvasResolutionPx?: 1024 | 512 | 256;
+    grassTuftInstanceCount?: number;
+    normalMapIntensity?: number;
     lodBias: number;
     skipLod0InMemory: boolean;
     smallPropCastShadows: boolean;
@@ -917,15 +934,51 @@ export function applyCrossPlatformPipeline(
     useParallax: boolean;
     useSubsurface: boolean;
   }
-): void {
-  // 1. Update Master Asset Texture Override metadata & anisotropy without redundant canvas pixel re-uploads
+): AppliedPipelineExecutionSummary {
+  const targetCanvasRes =
+    options.runtimeCanvasResolutionPx ??
+    (options.compressionFormat === 'ASTC'
+      ? options.anisotropySamples >= 8
+        ? 512
+        : 256
+      : options.anisotropySamples >= 16
+        ? 1024
+        : 512);
+  const targetGrassCount =
+    options.grassTuftInstanceCount ??
+    (targetCanvasRes >= 1024 ? 800 : targetCanvasRes >= 512 ? 520 : 320);
+  const normalScaleFactor = options.useDetailNormals ? (options.normalMapIntensity ?? 1.0) : 0.0;
+
+  let texturesUpdatedCount = 0;
+
+  // 1. Dynamically resize/redraw procedural CanvasTextures when resolution changes + update anisotropy & mipmaps
   textureCache.forEach((tex) => {
+    const canvas = tex.image as HTMLCanvasElement | undefined;
+    const drawFn = tex.userData.drawFn as
+      ((ctx: CanvasRenderingContext2D, size: number) => void) | undefined;
+    if (
+      canvas &&
+      typeof canvas.getContext === 'function' &&
+      drawFn &&
+      canvas.width !== targetCanvasRes
+    ) {
+      canvas.width = targetCanvasRes;
+      canvas.height = targetCanvasRes;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        drawFn(ctx, targetCanvasRes);
+      }
+      tex.needsUpdate = true;
+    }
     tex.anisotropy = options.anisotropySamples;
+    tex.minFilter = targetCanvasRes >= 512 ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
+    tex.userData.activeResolutionPx = targetCanvasRes;
     tex.userData.compressionFormat = options.compressionFormat;
     tex.userData.masterSourceResolutionPx = 4096;
+    texturesUpdatedCount++;
   });
 
-  // 4. Update Unified Uber Shader Keyword Switches
+  // 4. Update Unified Uber Shader Uniforms & Mutate Material Normal/Bump Channels
   worldShaderUniforms.uUseRimLight.value = options.useRimLight ? 1.0 : 0.0;
   worldShaderUniforms.uUseDetailNormals.value = options.useDetailNormals ? 1.0 : 0.0;
   worldShaderUniforms.uUseParallax.value = options.useParallax ? 1.0 : 0.0;
@@ -933,11 +986,43 @@ export function applyCrossPlatformPipeline(
   worldShaderUniforms.uBakedLightIntensity.value = options.bakedLightmapIntensity;
 
   voxelMaterials.grass.aoMapIntensity = options.bakedLightmapIntensity * 0.55;
+  voxelMaterials.grass.normalScale.setScalar(0.85 * normalScaleFactor);
+  voxelMaterials.grass.bumpScale = options.useParallax ? 0.06 : 0.0;
 
-  // 2 & 3. Traverse Scene for THREE.LOD Bias & Small-Prop Shadow Culling
+  voxelMaterials.dirt.bumpScale = options.useParallax ? 0.05 : 0.0;
+
+  voxelMaterials.stone.normalScale.setScalar(1.05 * normalScaleFactor);
+  voxelMaterials.stone.bumpScale = options.useParallax ? 0.1 : 0.0;
+
+  voxelMaterials.stoneDark.normalScale.setScalar(1.15 * normalScaleFactor);
+  voxelMaterials.stoneDark.bumpScale = options.useParallax ? 0.12 : 0.0;
+
+  voxelMaterials.cobblestone.normalScale.setScalar(1.1 * normalScaleFactor);
+  voxelMaterials.cobblestone.bumpScale = options.useParallax ? 0.11 : 0.0;
+
+  voxelMaterials.woodTrunk.normalScale.setScalar(0.9 * normalScaleFactor);
+  voxelMaterials.woodTrunk.bumpScale = options.useParallax ? 0.08 : 0.0;
+
+  voxelMaterials.leaves.normalScale.setScalar(0.55 * normalScaleFactor);
+  voxelMaterials.leavesLight.normalScale.setScalar(0.55 * normalScaleFactor);
+  voxelMaterials.sakuraBlossom.normalScale.setScalar(0.45 * normalScaleFactor);
+  voxelMaterials.ginkgoGold.normalScale.setScalar(0.45 * normalScaleFactor);
+  voxelMaterials.water.normalScale.setScalar(0.75 * normalScaleFactor);
+  voxelMaterials.steelOre.normalScale.setScalar(0.65 * normalScaleFactor);
+  voxelMaterials.copperOre.normalScale.setScalar(0.6 * normalScaleFactor);
+  voxelMaterials.goldAccent.normalScale.setScalar(0.5 * normalScaleFactor);
+  voxelMaterials.celestialJade.normalScale.setScalar(0.6 * normalScaleFactor);
+
+  const materialsMutatedCount = Object.keys(voxelMaterials).length;
+
+  let lodObjectsReconfiguredCount = 0;
+  let smallPropsShadowCulledCount = 0;
+  let instancedFoliageActiveCount = targetGrassCount;
+
+  // 2 & 3. Traverse Scene for THREE.LOD Bias, InstancedMesh Foliage Count & Small-Prop Shadow Culling
   scene.traverse((obj) => {
     if (obj instanceof THREE.LOD) {
-      // Apply LOD Bias: on Mobile, skip LOD 0 so the phone uses LOD 1 or LOD 2 at distance 0
+      lodObjectsReconfiguredCount++;
       obj.levels.forEach((levelEntry, idx) => {
         if (options.skipLod0InMemory && idx < options.lodBias) {
           levelEntry.distance = 99999; // Never select skipped high-poly LOD tier
@@ -946,8 +1031,17 @@ export function applyCrossPlatformPipeline(
           const effectiveIdx = Math.max(0, idx - (options.skipLod0InMemory ? options.lodBias : 0));
           levelEntry.distance =
             effectiveIdx === 0 ? 0 : effectiveIdx === 1 ? 18 : effectiveIdx === 2 ? 38 : 68;
+          if (effectiveIdx === 0) {
+            levelEntry.object.visible = true;
+          }
         }
       });
+    }
+
+    if (obj instanceof THREE.InstancedMesh && obj.name === 'VoxelGrassTuftsInstanced') {
+      const maxPopulated = (obj.userData.populatedInstanceCount as number | undefined) || 800;
+      obj.count = Math.min(maxPopulated, targetGrassCount);
+      instancedFoliageActiveCount = obj.count;
     }
 
     if (obj instanceof THREE.Mesh) {
@@ -957,9 +1051,21 @@ export function applyCrossPlatformPipeline(
         obj.parent?.name?.startsWith('TeleportWaypoint_');
       if (isSmallDebrisOrProp && obj.userData.lodTier !== 2 && obj.userData.lodTier !== 3) {
         obj.castShadow = options.smallPropCastShadows;
+        smallPropsShadowCulledCount++;
       }
     }
   });
+
+  return {
+    texturesUpdatedCount,
+    activeCanvasResolutionPx: targetCanvasRes,
+    lodObjectsReconfiguredCount,
+    smallPropsShadowCulledCount,
+    instancedFoliageActiveCount,
+    materialsMutatedCount,
+    detailNormalsActive: options.useDetailNormals,
+    parallaxBumpActive: options.useParallax,
+  };
 }
 
 /**
@@ -1159,6 +1265,9 @@ export function createVoxelTerrain(): THREE.Group {
   if (stoneInstanced.instanceColor) stoneInstanced.instanceColor.needsUpdate = true;
   stoneInstanced.computeBoundingSphere();
 
+  grassTuftInstanced.name = 'VoxelGrassTuftsInstanced';
+  grassTuftInstanced.userData.populatedInstanceCount = tIdx;
+  grassTuftInstanced.count = tIdx;
   grassTuftInstanced.instanceMatrix.needsUpdate = true;
   if (grassTuftInstanced.instanceColor) grassTuftInstanced.instanceColor.needsUpdate = true;
   grassTuftInstanced.computeBoundingSphere();

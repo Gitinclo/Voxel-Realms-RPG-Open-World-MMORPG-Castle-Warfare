@@ -147,3 +147,59 @@ test('C++20 engine telemetry and initial world data remain consistent and non-em
   assert.ok(INITIAL_NPCS.length >= 5);
   assert.ok(INITIAL_MONSTERS.length >= 4);
 });
+
+test('applyCrossPlatformPipeline mutates real Three.js LOD chains, InstancedMesh counts, small-prop shadows, and shader uniforms', async () => {
+  const THREE = await import('three');
+  const { applyCrossPlatformPipeline } = await import('./proceduralWorld');
+  const scene = new THREE.Scene();
+  const terrain = createVoxelTerrain();
+  scene.add(terrain);
+
+  const mobileSummary = applyCrossPlatformPipeline(scene, {
+    anisotropySamples: 4,
+    compressionFormat: 'ASTC',
+    runtimeCanvasResolutionPx: 256,
+    grassTuftInstanceCount: 320,
+    normalMapIntensity: 0.5,
+    lodBias: 2,
+    skipLod0InMemory: true,
+    smallPropCastShadows: false,
+    bakedLightmapIntensity: 1.15,
+    useRimLight: false,
+    useDetailNormals: false,
+    useParallax: false,
+    useSubsurface: false,
+  });
+
+  assert.equal(mobileSummary.activeCanvasResolutionPx, 256);
+  assert.ok(mobileSummary.lodObjectsReconfiguredCount > 0);
+  assert.ok(mobileSummary.smallPropsShadowCulledCount > 0);
+  assert.equal(mobileSummary.instancedFoliageActiveCount, 320);
+  assert.equal(mobileSummary.detailNormalsActive, false);
+  assert.equal(mobileSummary.parallaxBumpActive, false);
+  assert.equal(worldShaderUniforms.uUseRimLight.value, 0.0);
+  assert.equal(worldShaderUniforms.uUseDetailNormals.value, 0.0);
+
+  const pcUltraSummary = applyCrossPlatformPipeline(scene, {
+    anisotropySamples: 16,
+    compressionFormat: 'BC7',
+    runtimeCanvasResolutionPx: 1024,
+    grassTuftInstanceCount: 800,
+    normalMapIntensity: 1.15,
+    lodBias: 0,
+    skipLod0InMemory: false,
+    smallPropCastShadows: true,
+    bakedLightmapIntensity: 0.75,
+    useRimLight: true,
+    useDetailNormals: true,
+    useParallax: true,
+    useSubsurface: true,
+  });
+
+  assert.equal(pcUltraSummary.activeCanvasResolutionPx, 1024);
+  assert.ok(pcUltraSummary.instancedFoliageActiveCount > mobileSummary.instancedFoliageActiveCount);
+  assert.equal(pcUltraSummary.detailNormalsActive, true);
+  assert.equal(pcUltraSummary.parallaxBumpActive, true);
+  assert.equal(worldShaderUniforms.uUseRimLight.value, 1.0);
+  assert.equal(worldShaderUniforms.uUseDetailNormals.value, 1.0);
+});

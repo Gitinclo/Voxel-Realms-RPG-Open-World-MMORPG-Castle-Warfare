@@ -460,3 +460,64 @@ export interface GameResources {
 export interface PlayerTroopRoster {
   [key: string]: bigint; // e.g. "shieldbearer_t1": 10000n
 }
+
+// ============================================================================
+// 6-TIER NESTED COSMOLOGICAL HIERARCHY & DATA ARCHITECTURE SCHEMA
+// Tier 6 (Root: WhitePageRoot) -> Tier 5 (Overvoid / Exonverse) -> Tier 4 (Omniverse)
+// -> Tier 3 (Megaverse / Hyperverse) -> Tier 2 (Multiverse) -> Tier 1 (Leaf: Universe)
+// ============================================================================
+
+export interface Universe {
+  id: string;
+  name: string;
+  spacetimeConfig: Record<string, unknown>;
+  matterConstants: Record<string, unknown>;
+}
+
+export interface Multiverse {
+  id: string;
+  name: string;
+  topology: 'parallel' | 'series' | 'hybrid';
+  universes: Universe[];
+}
+
+export interface Megaverse {
+  id: string;
+  name: string;
+  alias: 'Megaverse' | 'Hyperverse';
+  multiverses: Multiverse[];
+}
+
+export interface Omniverse {
+  id: string;
+  name: string;
+  temporalScope: 'past' | 'present' | 'potential' | 'all';
+  megaverses: Megaverse[];
+}
+
+export interface Overvoid {
+  id: string;
+  name: string;
+  alias: 'The Overvoid' | 'Exonverse';
+  logicSystem: string;
+  cosmicHierarchyRules: Record<string, unknown>;
+  omniverses: Omniverse[];
+}
+
+export interface OblivionDomainState {
+  id: 'OBLIVION_NOTHINGNESS';
+  name: string;
+  spawnedFrom: 'THE_WHITE_PAGE';
+  entropyVoidRatio: number;
+  active: boolean;
+  description: string;
+}
+
+export interface WhitePageRoot {
+  id: 'THE_WHITE_PAGE';
+  alias: 'The House of Ideas';
+  creatorEmail: 'creatergame31@gmail.com';
+  includesOblivion: true;
+  exonverses: Overvoid[];
+  oblivionState?: OblivionDomainState;
+}

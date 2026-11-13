@@ -672,23 +672,203 @@ export function getGraphicsPresetMetadata(
       return {
         shortBadge: 'NEXT-GEN ULTRA (BC7 4K · LOD 0 · 245K POLY)',
         title:
-          'Next-Gen Ultra (PC/PS5/Xbox): 4K BC7 Master Textures + LOD 0 Hero Meshes + Hybrid GI & Uber Shader',
+          'Next-Gen Ultra (PC/PS5/Xbox): 1024px WebGL2 Procedural PBR (4K BC7 Target Model) + LOD 0 Hero Meshes + HDR Bloom & Uber Shader',
         toastDescription:
-          '✨ Graphics: NEXT-GEN ULTRA (4K BC7 Master Override + LOD 0 Hero Meshes + Hybrid Real-Time GI + Full Uber Shader)',
+          '✨ Graphics: NEXT-GEN ULTRA (1024px Procedural PBR [4K BC7 Target] + LOD 0 Hero Meshes + Dynamic Soft Shadows + Full Uber Shader)',
       };
     case 'high':
       return {
         shortBadge: 'HIGH (BC7 2K · LOD 0/1 · 142K POLY)',
-        title: 'High Quality (PC/Console): 2K BC7 Textures + LOD 0/1 Chain + Hybrid Shadows',
+        title:
+          'High Quality (PC/Console): 512px WebGL2 Procedural PBR (2K BC7 Target Model) + LOD 0/1 Chain + Soft Shadows',
         toastDescription:
-          '🎨 Graphics: HIGH (2K BC7 Master Override + LOD 0/1 Chain + Teyvat Stylized PBR + Soft Shadows)',
+          '🎨 Graphics: HIGH (512px Procedural PBR [2K BC7 Target] + LOD 0/1 Chain + Teyvat Stylized PBR + Soft Shadows)',
       };
     case 'balanced':
     default:
       return {
         shortBadge: 'BALANCED (60 FPS · 78K POLY)',
-        title: 'Balanced Mode: 60 FPS Direct Render Pipeline',
-        toastDescription: '⚡ Graphics: BALANCED (60 FPS Direct Hardware Pipeline)',
+        title: 'Balanced Mode: 256px WebGL2 Procedural PBR + 60 FPS Direct Render Pipeline',
+        toastDescription: '⚡ Graphics: BALANCED (256px Procedural PBR · 60 FPS Direct Render)',
       };
   }
+}
+
+// ============================================================================
+// ENGINEERING TRANSPARENCY MATRIX: IMPLEMENTED vs. SIMULATED vs. PLANNED
+// ============================================================================
+
+export type FeatureImplementationStatus = 'implemented' | 'simulated' | 'planned';
+
+export type TransparencyDomainCategory =
+  | 'textures_materials'
+  | 'geometry_lod'
+  | 'lighting_shadows'
+  | 'shaders_postfx'
+  | 'packaging_platform'
+  | 'cpu_ecs_architecture'
+  | 'gameplay_simulation'
+  | 'persistence_networking';
+
+export interface EngineeringTransparencyEntry {
+  id: string;
+  category: TransparencyDomainCategory;
+  featureName: string;
+  status: FeatureImplementationStatus;
+  statusBadgeLabel: string;
+  whatRunsInBrowserNow: string;
+  whatIsSimulatedOrModeled: string;
+  plannedNativeTarget: string;
+  sourceFiles: string[];
+}
+
+export const ENGINEERING_TRANSPARENCY_MATRIX: EngineeringTransparencyEntry[] = [
+  {
+    id: 'webgl2_procedural_pbr_textures',
+    category: 'textures_materials',
+    featureName: 'Multi-Channel Procedural PBR CanvasTextures (256px / 512px / 1024px)',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE WEBGL2',
+    whatRunsInBrowserNow:
+      'Dynamically generates & resizes HTML5 CanvasTextures (256x256, 512x512, or 1024x1024) for grass albedo/normal, stone masonry/normal/bump, wood bark/normal, Damascus armor normal, water ripples, and baked AO lightmaps; mutates anisotropy (4x/8x/16x), mipmap filters, normalScale, bumpScale, and clearcoat directly on Three.js MeshPhysicalMaterials.',
+    whatIsSimulatedOrModeled:
+      'Hardware-specific GPU block compression formats (BC7 8bpp vs ASTC 6x6) and 4096px offline Master Source asset import overrides are modeled as cross-platform build metadata because browser CanvasTexture uploads uncompressed RGBA8 buffers to WebGL2.',
+    plannedNativeTarget:
+      'Serve pre-transcoded Basis Universal (.ktx2) supercompressed textures that transcode at runtime to native BC7 (Desktop) or ASTC (Mobile) GPU memory.',
+    sourceFiles: ['src/game/proceduralWorld.ts', 'src/game/graphicsEngine.ts'],
+  },
+  {
+    id: 'three_lod_and_instanced_foliage',
+    category: 'geometry_lod',
+    featureName: '4-Tier THREE.LOD Distance Chains & InstancedMesh Foliage Scaling',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE WEBGL2',
+    whatRunsInBrowserNow:
+      'Builds real 4-level THREE.LOD hierarchies (Icosahedron detail 2 -> 1 -> 0 -> Octahedron proxy), chamfered ExtrudeGeometry terrain blocks, LatheGeometry torsos, and dynamically mutates LOD distance thresholds, visibility, and InstancedMesh.count (800 -> 520 -> 320 grass tufts) when switching presets or Mobile LOD Bias.',
+    whatIsSimulatedOrModeled:
+      'The 75k–245k scene polygon budget figures and MB of RAM saved on Mobile (-68MB / -92.4MB) are deterministic analytical estimates computed from the active preset and LOD bias.',
+    plannedNativeTarget:
+      'GPU-driven meshlet / cluster culling via WebGPU compute shaders and glTF meshopt decompression.',
+    sourceFiles: ['src/game/proceduralWorld.ts', 'src/components/GameCanvas.tsx'],
+  },
+  {
+    id: 'atmospheric_sky_and_shadow_pipeline',
+    category: 'lighting_shadows',
+    featureName: 'Preetham Physical Sky, Dynamic Shadow Maps & Baked AO Lightmaps',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE WEBGL2',
+    whatRunsInBrowserNow:
+      'Runs Three.js Preetham Sky shader (Rayleigh/Mie scattering across 24h cycle & 4 weather states), DirectionalLight PCFSoftShadowMap (dynamically resized between 2048x2048 and 1024x1024 or disabled on Mobile), HemisphereLight, FogExp2, canvas AO lightmap intensity, and per-mesh small-prop shadow culling.',
+    whatIsSimulatedOrModeled:
+      'The "realtime_gi_hybrid" mode uses a Three.js PMREM RoomEnvironment probe + HemisphereLight + directional rim light + canvas AO map rather than hardware ray-traced global illumination (RTGI).',
+    plannedNativeTarget:
+      'Voxel cone tracing / screen-space global illumination (SSGI) and cascaded shadow maps (CSM) in WebGPU.',
+    sourceFiles: ['src/components/GameCanvas.tsx', 'src/game/graphicsEngine.ts'],
+  },
+  {
+    id: 'custom_glsl_uber_shaders_and_postfx',
+    category: 'shaders_postfx',
+    featureName: 'Custom GLSL onBeforeCompile Shaders & EffectComposer HDR Bloom',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE WEBGL2',
+    whatRunsInBrowserNow:
+      'Injects custom GLSL vertex/fragment code via Material.onBeforeCompile for foliage wind sway, Fresnel rim lighting, wrap subsurface approximation, and Gerstner water waves; runs EffectComposer (RenderPass -> UnrealBloomPass -> custom NextGenColorGradeShader with 3-tap sharpen, vibrance, split-toning & vignette) and toggles shader uniforms (uUseRimLight, uUseDetailNormals, uUseParallax, uUseSubsurface) live.',
+    whatIsSimulatedOrModeled:
+      'Platform shader macro defines (USE_RIM_LIGHT, USE_PARALLAX_OCCLUSION, etc.) are toggled at runtime via uniform branches (uUseRimLight > 0.5) inside the compiled WebGL2 shader rather than offline HLSL/SPIR-V preprocessor variant stripping.',
+    plannedNativeTarget:
+      'WGSL pipeline-overridable constants (`override`) in WebGPU for zero-branch hardware shader specialization.',
+    sourceFiles: ['src/game/proceduralWorld.ts', 'src/components/GameCanvas.tsx'],
+  },
+  {
+    id: 'cross_platform_bundle_manifest',
+    category: 'packaging_platform',
+    featureName: 'BC7/ASTC Platform Import Overrides & Addressable Install Size Manifest',
+    status: 'simulated',
+    statusBadgeLabel: 'SIMULATED · BUILD METADATA MODEL',
+    whatRunsInBrowserNow:
+      'Interactive cross-platform configuration calculator in the Architect Studio & HUD that couples platform selection (PC/Console vs Mobile + Optional HD Pack) to the live WebGL2 LOD bias, shadow culling, canvas texture resolution, and shader uniform switches.',
+    whatIsSimulatedOrModeled:
+      'The 68.4 GB PC/Console install size, 640 MB Mobile base build size, and 3.85 GB HighDefinition Addressable Content Pack download state are simulated deployment manifests for architectural planning; no multi-gigabyte binary pack is downloaded over the network.',
+    plannedNativeTarget:
+      'Cloud CDN chunked asset streaming with Service Worker cache quotas and native iOS/Android On-Demand Resources (ODR).',
+    sourceFiles: ['src/game/graphicsEngine.ts', 'src/components/CppArchitectureModal.tsx'],
+  },
+  {
+    id: 'cpp20_simd_soa_and_job_dag',
+    category: 'cpu_ecs_architecture',
+    featureName: 'C++20 SIMD ISA Profiles, SoA Memory Layout & Lock-Free Job DAG',
+    status: 'simulated',
+    statusBadgeLabel: 'SIMULATED · ANALYTICAL MODEL + C++20 HEADER',
+    whatRunsInBrowserNow:
+      'Executes deterministic TypeScript performance and hardware compatibility models (x86_64 AVX-512, ARMv9 SVE2, Apple Silicon 128B UMA, RISC-V RVV 1.0, SoA 4.75x speedup vs AoS, Chase-Lev work-stealing frame budgets) and ships a real, standalone C++20 header & test suite in cpp/VoxelRealmsGuardrails.hpp.',
+    whatIsSimulatedOrModeled:
+      'The browser runtime executes the game loop in TypeScript/JavaScript on the main thread; the C++20 files in cpp/ are reference native guardrails and are not compiled into a live WebAssembly module in the Vite dev server.',
+    plannedNativeTarget:
+      'Compile cpp/VoxelRealmsGuardrails.hpp via Emscripten (-msimd128 -pthread) into a WebAssembly SIMD128 worker pool backed by SharedArrayBuffer.',
+    sourceFiles: [
+      'src/game/architectOptimization.ts',
+      'src/game/cppEngine.ts',
+      'cpp/VoxelRealmsGuardrails.hpp',
+    ],
+  },
+  {
+    id: 'trillion_scale_warfare_and_cosmology',
+    category: 'gameplay_simulation',
+    featureName:
+      '1,000-Trillion Castle Garrison, 23 Cultivation Realms, 6-Layer Cosmology & 100 Omniverses',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · BIGINT ENGINE + 3D PROJECTION',
+    whatRunsInBrowserNow:
+      'All castle capacities (up to 1,000T), T1–T20 Tri-Branch battles, 23 cultivation realms (100x suppression), A* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, and 6-Layer Cosmology / 100 Omniverse NPCs under creatergame31@gmail.com are fully implemented in TypeScript using exact 64-bit BigInt math and projected as representative 3D entities in the overworld.',
+    whatIsSimulatedOrModeled:
+      'Trillion-unit troop clashes and 100-Omniverse tributes are resolved analytically via deterministic BigInt combat/economy equations while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.',
+    plannedNativeTarget:
+      'GPU instanced crowd impostor rendering for visualizing 100,000+ simultaneous march units during siege replays.',
+    sourceFiles: [
+      'src/game/math.ts',
+      'src/game/cultivationMath.ts',
+      'src/game/omniverse.ts',
+      'src/game/loreHistory.ts',
+    ],
+  },
+  {
+    id: 'multiplayer_persistence_and_cloud_sync',
+    category: 'persistence_networking',
+    featureName: 'Authoritative Multi-Region Server Sync & Cloud Database Persistence',
+    status: 'planned',
+    statusBadgeLabel: 'PLANNED · NATIVE ROADMAP',
+    whatRunsInBrowserNow:
+      'Persists VIP covenants, Daily Login Decrees, character customization, and Admin Moderation audit logs locally in browser localStorage with full deterministic unit test coverage.',
+    whatIsSimulatedOrModeled:
+      'Clan territory raids, leaderboard rankings, and moderation roster sanctions operate against deterministic local state and seeded alliance rosters within the single-player/local sandbox.',
+    plannedNativeTarget:
+      'Authoritative WebSocket/gRPC realm cluster with cloud relational/document persistence and cross-player real-time siege synchronization.',
+    sourceFiles: ['src/game/adminModeration.ts', 'src/game/clanMath.ts'],
+  },
+];
+
+export interface ImplementationTransparencySummary {
+  totalEntries: number;
+  implementedCount: number;
+  simulatedCount: number;
+  plannedCount: number;
+  entries: EngineeringTransparencyEntry[];
+}
+
+export function getImplementationTransparencySummary(): ImplementationTransparencySummary {
+  const implementedCount = ENGINEERING_TRANSPARENCY_MATRIX.filter(
+    (e) => e.status === 'implemented'
+  ).length;
+  const simulatedCount = ENGINEERING_TRANSPARENCY_MATRIX.filter(
+    (e) => e.status === 'simulated'
+  ).length;
+  const plannedCount = ENGINEERING_TRANSPARENCY_MATRIX.filter((e) => e.status === 'planned').length;
+
+  return {
+    totalEntries: ENGINEERING_TRANSPARENCY_MATRIX.length,
+    implementedCount,
+    simulatedCount,
+    plannedCount,
+    entries: ENGINEERING_TRANSPARENCY_MATRIX,
+  };
 }
