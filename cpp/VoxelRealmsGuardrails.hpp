@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// VoxelRealmsGuardrails.hpp — C++20 RAII Smart-Pointer, Hardware/Software Architect & Concept Guardrail Header
+// VoxelRealmsGuardrails.hpp - C++20 RAII, Architect & Concept Guardrail Header
 // Synchronized Release: v1.5.0 (06/11/2026 / 2026-11-06)
 
 #pragma once
@@ -52,8 +52,7 @@ static_assert(computeRealmSuppressionMultiplier(CultivationRealm::GoldenCore,
                                                 CultivationRealm::QiRefinement) == 100.0,
               "Golden Core (2) vs Qi Refinement (0) must deal 100.0x damage");
 
-[[nodiscard]] constexpr std::size_t
-computeCacheLineBytesForIsa(HardwareIsaTier isa) noexcept {
+[[nodiscard]] constexpr std::size_t computeCacheLineBytesForIsa(HardwareIsaTier isa) noexcept {
     return isa == HardwareIsaTier::AppleSilicon_UMA128 ? kAppleSiliconCacheLineBytes
                                                        : kX86CacheLineBytes;
 }
@@ -119,7 +118,7 @@ static_assert(WhitePageRootSpec{}.creatorEmail == "creatergame31@gmail.com",
 static_assert(computeCascadedUniverseQiMultiplier(5.0, 4.0) == 20.0,
               "Tier 1 Universe and Tier 5 Overvoid custom physics/logic overrides must cascade");
 
-// Software & Hardware Architect: 64-byte cache-line aligned Structure-of-Arrays (SoA) hot transform chunk
+// Software & Hardware Architect: 64-byte cache-line aligned SoA hot transform chunk
 struct alignas(kX86CacheLineBytes) SoaEntityKinematicChunk final {
     std::array<float, kSoaSimdChunkCapacity> posX{};
     std::array<float, kSoaSimdChunkCapacity> posY{};

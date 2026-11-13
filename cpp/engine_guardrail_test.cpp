@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// engine_guardrail_test.cpp — C++20 Guardrail & Hardware/Software Architect Verification Entrypoint
+// engine_guardrail_test.cpp - C++20 Guardrail & Architect Verification Entrypoint
 
 #include "VoxelRealmsGuardrails.hpp"
 
