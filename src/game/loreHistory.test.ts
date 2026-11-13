@@ -8,10 +8,22 @@ import assert from 'node:assert/strict';
 import {
   LORE_HISTORICAL_EPOCHS,
   LORE_COMPENDIUM_CHAPTERS,
+  OPEN_WORLD_BIOME_CODEX_CATALOG,
+  OPEN_WORLD_MONSTER_CODEX_CATALOG,
+  GOOGOL_LORE_ARCHIVE_SPEC,
+  GOOGOL_LORE_WORD_EXPONENT,
+  INITIAL_LORE_CODEX_STATE,
   comprehendLoreEpoch,
   searchLoreHistory,
+  resolveBiomeAtWorldPosition,
+  evaluateOpenWorldLoreDiscovery,
+  unlockLoreCodexEntry,
+  claimLoreCodexReward,
+  generateGoogolScaleLoreScrollSlice,
+  buildDynamicMonsterCodexEntry,
 } from './loreHistory';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
+import { INITIAL_MONSTERS } from './initialData';
 
 test('LORE_HISTORICAL_EPOCHS defines all 7 chronological epochs from Pre-Genesis White Page (creatergame31@gmail.com) to 06/11/2026 Architect Convergence', () => {
   assert.equal(LORE_HISTORICAL_EPOCHS.length, 7);
@@ -26,7 +38,7 @@ test('LORE_HISTORICAL_EPOCHS defines all 7 chronological epochs from Pre-Genesis
   for (const epoch of LORE_HISTORICAL_EPOCHS) {
     assert.ok(epoch.comprehensionRewardDiamonds > 0n);
     assert.ok(epoch.comprehensionRewardFragments > 0);
-    assert.ok(epoch.chronicleScrollText.length >= 3);
+    assert.ok(epoch.chronicleScrollText.length >= 4);
   }
 });
 
@@ -64,15 +76,109 @@ test('comprehendLoreEpoch grants one-time Diamond and Scripture Fragment rewards
   assert.equal(duplicateClaim.rewardFragments, 0);
 });
 
-test('searchLoreHistory filters epochs and compendium chapters by keyword or Supreme Author email', () => {
-  const oblivionSearch = searchLoreHistory('Oblivion');
-  assert.ok(oblivionSearch.matchingEpochs.length >= 1);
-  assert.ok(oblivionSearch.matchingChapters.length >= 1);
+test('Lore Codex auto-populates entries when discovering monsters or visiting biomes in the open world', () => {
+  assert.equal(OPEN_WORLD_BIOME_CODEX_CATALOG.length, 8);
+  assert.equal(OPEN_WORLD_MONSTER_CODEX_CATALOG.length, 6);
 
-  const authorSearch = searchLoreHistory(PRIMARY_ADMIN_EMAIL);
+  // Origin (0,0) resolves to Solara Imperial Citadel Sanctum
+  const originBiome = resolveBiomeAtWorldPosition(0, 0);
+  assert.equal(originBiome.id, 'codex_biome_solara_citadel_sanctum');
+
+  // Moving to (20, 18) enters Scorched Magma Caldera and approaches Infernal Magma Drake (28, 22)
+  const discovery = evaluateOpenWorldLoreDiscovery({
+    currentState: INITIAL_LORE_CODEX_STATE,
+    playerX: 20,
+    playerZ: 18,
+    monsters: INITIAL_MONSTERS,
+    monsterProximityRadius: 16,
+  });
+
+  const discoveredIds = discovery.newlyDiscoveredEntries.map((e) => e.id);
+  assert.ok(discoveredIds.includes('codex_biome_scorched_magma_caldera'));
+  assert.ok(discoveredIds.includes('codex_monster_m_drake_240'));
+  assert.equal(discovery.updatedState.lastVisitedBiomeId, 'codex_biome_scorched_magma_caldera');
+
+  // Claiming a discovered codex entry grants Diamonds and Scripture Fragments once
+  const claim1 = claimLoreCodexReward({
+    currentState: discovery.updatedState,
+    entryId: 'codex_biome_scorched_magma_caldera',
+    monsters: INITIAL_MONSTERS,
+  });
+  assert.equal(claim1.claimed, true);
+  assert.ok(claim1.rewardDiamonds > 0n);
+  assert.ok(claim1.rewardFragments > 0);
+
+  const claim2 = claimLoreCodexReward({
+    currentState: claim1.updatedState,
+    entryId: 'codex_biome_scorched_magma_caldera',
+    monsters: INITIAL_MONSTERS,
+  });
+  assert.equal(claim2.claimed, false);
+  assert.equal(claim2.rewardDiamonds, 0n);
+
+  // Dynamic spawned monster builds and unlocks cleanly
+  const dynamicEntry = buildDynamicMonsterCodexEntry({
+    id: 'm_custom_999',
+    name: 'Void Star Behemoth',
+    level: 850,
+    hp: 5_000_000n,
+    maxHp: 5_000_000n,
+    attack: 120_000n,
+    defense: 90_000n,
+    tier: 'boss',
+    complexityBracket: 'bracket_4_abyssal',
+    x: 20,
+    z: 20,
+    homeX: 20,
+    homeZ: 20,
+    expReward: 500_000n,
+    dropResources: { wood: 1000n, steel: 1000n, diamond: 5000n },
+    aggroRadius: 18,
+    movementPolicy: 'flanking_orbiter',
+    aiState: 'patrolling',
+    activeAttackPatternId: 'atk_void_implosion',
+    telegraphProgress: 0,
+    pathWaypoints: [],
+    activeEnvInteraction: 'Leyline Singularity',
+  });
+  const unlockedDynamic = unlockLoreCodexEntry({
+    currentState: claim1.updatedState,
+    entry: dynamicEntry,
+    discoveredVia: 'monster_encounter',
+  });
+  assert.equal(unlockedDynamic.newlyDiscovered, true);
+  assert.ok(Boolean(unlockedDynamic.updatedState.discoveredRecords['codex_monster_m_custom_999']));
+});
+
+test('Googol-Scale (10^100 Words Minimum) Procedural Akashic Lore Archive synthesizes deterministic multi-paragraph volumes across exponent tiers 0..100', () => {
+  assert.equal(GOOGOL_LORE_WORD_EXPONENT, 100);
+  assert.equal(GOOGOL_LORE_ARCHIVE_SPEC.minimumWordCountScientific, '10^100');
+  assert.equal(GOOGOL_LORE_ARCHIVE_SPEC.authorEmail, PRIMARY_ADMIN_EMAIL);
+
+  const slice100 = generateGoogolScaleLoreScrollSlice({
+    exponentTier: 100,
+    scrollOffset: 1,
+    sliceCount: 3,
+  });
+  assert.equal(slice100.length, 3);
+  for (const scroll of slice100) {
+    assert.equal(scroll.exponentTier, 100);
+    assert.equal(scroll.paragraphs.length, 3);
+    assert.equal(scroll.modeledVolumeWordCount, 1000);
+    assert.ok(scroll.volumeCoordinateLabel.includes('10^100'));
+  }
+});
+
+test('searchLoreHistory filters epochs, compendium chapters, and Lore Codex entries by keyword or Supreme Author email', () => {
+  const dragonSearch = searchLoreHistory('Drake', INITIAL_MONSTERS);
+  assert.ok(dragonSearch.matchingCodexEntries.length >= 1);
+
+  const authorSearch = searchLoreHistory(PRIMARY_ADMIN_EMAIL, INITIAL_MONSTERS);
   assert.ok(authorSearch.matchingEpochs.length >= 4);
+  assert.ok(authorSearch.matchingCodexEntries.length >= 1);
 
-  const emptySearch = searchLoreHistory('   ');
+  const emptySearch = searchLoreHistory('   ', INITIAL_MONSTERS);
   assert.equal(emptySearch.matchingEpochs.length, 7);
   assert.equal(emptySearch.matchingChapters.length, 6);
+  assert.equal(emptySearch.matchingCodexEntries.length, 14);
 });

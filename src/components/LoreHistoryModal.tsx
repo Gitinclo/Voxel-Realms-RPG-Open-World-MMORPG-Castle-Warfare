@@ -14,17 +14,36 @@ import {
   CheckCircle2,
   Search,
   Crown,
+  Compass,
+  Infinity as InfinityIcon,
+  MapPin,
+  ShieldAlert,
 } from 'lucide-react';
-import { LORE_HISTORICAL_EPOCHS, searchLoreHistory } from '../game/loreHistory';
+import {
+  LORE_HISTORICAL_EPOCHS,
+  GOOGOL_LORE_ARCHIVE_SPEC,
+  OPEN_WORLD_BIOME_CODEX_CATALOG,
+  LoreCodexEntry,
+  PersistedLoreCodexState,
+  INITIAL_LORE_CODEX_STATE,
+  getCompleteLoreCodexCatalog,
+  generateGoogolScaleLoreScrollSlice,
+  searchLoreHistory,
+} from '../game/loreHistory';
 import { SIX_LAYER_COSMIC_HIERARCHY, OMNIVERSE_TIER_METADATA } from '../game/omniverse';
 import { CHARACTER_SPECIES_CATALOG } from '../game/species';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
+import { MonsterTarget } from '../types/game';
 import { formatBigInt } from '../game/math';
 import { sound } from '../game/audio';
 
 interface LoreHistoryModalProps {
   comprehendedEpochIds: string[];
   onComprehendEpoch: (epochId: string) => void;
+  loreCodexState?: PersistedLoreCodexState;
+  monsters?: MonsterTarget[];
+  onScoutDiscoverCodexEntry?: (entry: LoreCodexEntry) => void;
+  onClaimCodexBounty?: (entryId: string) => void;
   onOpenOmniverseMatrix?: () => void;
   onClose: () => void;
 }
@@ -32,16 +51,65 @@ interface LoreHistoryModalProps {
 export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
   comprehendedEpochIds,
   onComprehendEpoch,
+  loreCodexState = INITIAL_LORE_CODEX_STATE,
+  monsters = [],
+  onScoutDiscoverCodexEntry,
+  onClaimCodexBounty,
   onOpenOmniverseMatrix,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'timeline' | 'cosmology' | 'compendium'>('timeline');
+  const [activeTab, setActiveTab] = useState<
+    'timeline' | 'codex' | 'googol' | 'cosmology' | 'compendium'
+  >('timeline');
   const [selectedEpochId, setSelectedEpochId] = useState<string>(LORE_HISTORICAL_EPOCHS[0].id);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Lore Codex Filter & Selection State
+  const allCodexEntries = getCompleteLoreCodexCatalog(monsters);
+  const [codexFilter, setCodexFilter] = useState<'all' | 'biome' | 'monster' | 'discovered'>('all');
+  const [selectedCodexId, setSelectedCodexId] = useState<string>(
+    loreCodexState.lastVisitedBiomeId || OPEN_WORLD_BIOME_CODEX_CATALOG[0].id
+  );
+
+  // 10^100 Googol Akashic Archive State
+  const [googolExponent, setGoogolExponent] = useState<number>(100);
+  const [googolScrollCount, setGoogolScrollCount] = useState<number>(3);
+
   const selectedEpoch =
     LORE_HISTORICAL_EPOCHS.find((e) => e.id === selectedEpochId) || LORE_HISTORICAL_EPOCHS[0];
-  const { matchingEpochs, matchingChapters } = searchLoreHistory(searchQuery);
+  const { matchingEpochs, matchingChapters, matchingCodexEntries } = searchLoreHistory(
+    searchQuery,
+    monsters
+  );
+
+  const filteredCodexEntries = allCodexEntries.filter((entry) => {
+    if (codexFilter === 'biome') return entry.kind === 'biome';
+    if (codexFilter === 'monster') return entry.kind === 'monster';
+    if (codexFilter === 'discovered') return Boolean(loreCodexState.discoveredRecords[entry.id]);
+    return true;
+  });
+
+  const selectedCodexEntry =
+    allCodexEntries.find((e) => e.id === selectedCodexId) ||
+    filteredCodexEntries[0] ||
+    allCodexEntries[0];
+  const selectedCodexRecord = loreCodexState.discoveredRecords[selectedCodexEntry.id];
+
+  const discoveredBiomeCount = allCodexEntries.filter(
+    (e) => e.kind === 'biome' && Boolean(loreCodexState.discoveredRecords[e.id])
+  ).length;
+  const totalBiomeCount = allCodexEntries.filter((e) => e.kind === 'biome').length;
+
+  const discoveredMonsterCount = allCodexEntries.filter(
+    (e) => e.kind === 'monster' && Boolean(loreCodexState.discoveredRecords[e.id])
+  ).length;
+  const totalMonsterCount = allCodexEntries.filter((e) => e.kind === 'monster').length;
+
+  const googolScrolls = generateGoogolScaleLoreScrollSlice({
+    exponentTier: googolExponent,
+    scrollOffset: 1,
+    sliceCount: googolScrollCount,
+  });
 
   const totalPossibleDiamonds = LORE_HISTORICAL_EPOCHS.reduce(
     (acc, e) => acc + e.comprehensionRewardDiamonds,
@@ -50,6 +118,10 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
   const claimedDiamonds = LORE_HISTORICAL_EPOCHS.filter((e) =>
     comprehendedEpochIds.includes(e.id)
   ).reduce((acc, e) => acc + e.comprehensionRewardDiamonds, 0n);
+
+  const nextUndiscoveredEntry = allCodexEntries.find(
+    (e) => !loreCodexState.discoveredRecords[e.id]
+  );
 
   return (
     <div
@@ -71,11 +143,18 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 <span className="px-2 py-0.5 rounded-full bg-white/15 border border-white/40 text-amber-200 text-[10px] font-mono font-bold">
                   Origin: 6. The White Page / House of Ideas ({PRIMARY_ADMIN_EMAIL})
                 </span>
+                <span
+                  data-testid="lore-googol-capacity-badge"
+                  className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[10px] font-mono font-bold"
+                >
+                  ♾️ Akashic Corpus: {GOOGOL_LORE_ARCHIVE_SPEC.minimumWordCountScientific} Words Min
+                  (1 Googol)
+                </span>
               </div>
               <p className="text-xs text-slate-300">
                 Chronicles from Pre-Genesis on The White Page through the 100 Sovereign Omniverses,
-                10 Ancestral Bloodlines, Four-Path Immortal Dao, and the 06/11/2026 Architect
-                Convergence.
+                Auto-Populating Open-World Biome &amp; Monster Lore Codex, and the 10^100-Word
+                Akashic History Stream.
               </p>
             </div>
           </div>
@@ -94,7 +173,7 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
         </div>
 
         {/* Navigation Tabs & Comprehension Progress Bar */}
-        <div className="px-4 sm:px-6 py-3 bg-slate-950/90 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="px-4 sm:px-6 py-3 bg-slate-950/90 border-b border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -103,14 +182,51 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 sound.playButton();
                 setActiveTab('timeline');
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'timeline'
                   ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/25'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
               }`}
             >
               <Clock className="w-4 h-4" />
-              <span>⏳ 7 Grand Historical Epochs ({comprehendedEpochIds.length}/7)</span>
+              <span>⏳ 7 Epochs ({comprehendedEpochIds.length}/7)</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="lore-tab-codex"
+              onClick={() => {
+                sound.playButton();
+                setActiveTab('codex');
+              }}
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'codex'
+                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+              <span>
+                🧭 Lore Codex ({discoveredBiomeCount + discoveredMonsterCount}/
+                {allCodexEntries.length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="lore-tab-googol"
+              onClick={() => {
+                sound.playButton();
+                setActiveTab('googol');
+              }}
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'googol'
+                  ? 'bg-indigo-400 text-slate-950 shadow-lg shadow-indigo-500/25'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+              }`}
+            >
+              <InfinityIcon className="w-4 h-4" />
+              <span>♾️ 10^100 Words Akashic Stream</span>
             </button>
 
             <button
@@ -120,14 +236,14 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 sound.playButton();
                 setActiveTab('cosmology');
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'cosmology'
                   ? 'bg-fuchsia-500 text-slate-950 shadow-lg shadow-fuchsia-500/25'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
               }`}
             >
               <Globe className="w-4 h-4" />
-              <span>🌌 6-Layer Cosmology &amp; 100 Omniverses Lore</span>
+              <span>🌌 6-Layer Cosmology</span>
             </button>
 
             <button
@@ -137,20 +253,24 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 sound.playButton();
                 setActiveTab('compendium');
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'compendium'
                   ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/25'
                   : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
               }`}
             >
               <ScrollText className="w-4 h-4" />
-              <span>📚 Sacred Compendium &amp; Search (6 Codices)</span>
+              <span>📚 Compendium &amp; Search</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
+            <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/30 text-emerald-300">
+              Biomes: <strong>{discoveredBiomeCount}</strong>/{totalBiomeCount} · Monsters:{' '}
+              <strong>{discoveredMonsterCount}</strong>/{totalMonsterCount}
+            </span>
             <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-amber-500/30 text-amber-300">
-              Chronicle Rewards Claimed: <strong>{formatBigInt(claimedDiamonds)}</strong> /{' '}
+              Epoch Rewards: <strong>{formatBigInt(claimedDiamonds)}</strong> /{' '}
               {formatBigInt(totalPossibleDiamonds)} 💎
             </span>
           </div>
@@ -313,7 +433,430 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: 6-LAYER COSMOLOGY & 100 OMNIVERSES LORE */}
+          {/* TAB 2: OPEN-WORLD AUTO-POPULATING LORE CODEX (BIOMES & MONSTER BESTIARY) */}
+          {activeTab === 'codex' && (
+            <div data-testid="lore-codex-section" className="space-y-4">
+              {/* Top Discovery Banner & Quick Expedition Controls */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-cyan-950/70 border border-emerald-500/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[11px] font-mono font-black">
+                      🧭 AUTO-POPULATING OPEN-WORLD LORE CODEX
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-emerald-400/40 text-emerald-300 text-[11px] font-mono">
+                      Biomes Visited: {discoveredBiomeCount}/{totalBiomeCount} · Monsters Sighted:{' '}
+                      {discoveredMonsterCount}/{totalMonsterCount}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
+                    Solara Field Gazetteer &amp; Autonomous Bestiary Chronicles
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Entries automatically unlock as you traverse different biomes in the 3D open
+                    world or encounter/spawn Level 1–1000 monsters. You can also dispatch a field
+                    scout below to chart any unexplored region or monster lair.
+                  </p>
+                </div>
+
+                {nextUndiscoveredEntry && onScoutDiscoverCodexEntry && (
+                  <button
+                    type="button"
+                    data-testid="auto-scout-next-codex-btn"
+                    onClick={() => {
+                      sound.playUpgradeFanfare();
+                      onScoutDiscoverCodexEntry(nextUndiscoveredEntry);
+                      setSelectedCodexId(nextUndiscoveredEntry.id);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 font-mono font-black text-xs shrink-0 cursor-pointer shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
+                  >
+                    <Compass className="w-4 h-4" />
+                    <span>Scout Next Uncharted: {nextUndiscoveredEntry.title.split(' (')[0]}</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { id: 'all', label: `All Codex Entries (${allCodexEntries.length})` },
+                    { id: 'biome', label: `🗺️ Open-World Biomes (${totalBiomeCount})` },
+                    { id: 'monster', label: `🐉 Monster Bestiary (${totalMonsterCount})` },
+                    {
+                      id: 'discovered',
+                      label: `✓ Unlocked (${discoveredBiomeCount + discoveredMonsterCount})`,
+                    },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      data-testid={`codex-filter-${tab.id}`}
+                      onClick={() => {
+                        sound.playButton();
+                        setCodexFilter(tab.id as typeof codexFilter);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                        codexFilter === tab.id
+                          ? 'bg-emerald-500 text-slate-950'
+                          : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="text-xs font-mono text-slate-400">
+                  Total Discovery Events Logged:{' '}
+                  <strong className="text-emerald-300">
+                    {loreCodexState.totalDiscoveryEvents}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Master-Detail Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                {/* Left Column: Biome & Monster Entry List */}
+                <div className="lg:col-span-5 space-y-2 max-h-[540px] overflow-y-auto pr-1">
+                  {filteredCodexEntries.map((entry) => {
+                    const record = loreCodexState.discoveredRecords[entry.id];
+                    const isDiscovered = Boolean(record);
+                    const isSelected = entry.id === selectedCodexEntry.id;
+
+                    return (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        data-testid={`lore-codex-item-${entry.id}`}
+                        onClick={() => {
+                          sound.playSwing();
+                          setSelectedCodexId(entry.id);
+                        }}
+                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-start justify-between gap-3 cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-r from-emerald-500/20 via-slate-900 to-cyan-500/15 border-emerald-400 shadow-lg'
+                            : isDiscovered
+                              ? 'bg-slate-950/90 border-slate-800 hover:border-emerald-500/40'
+                              : 'bg-slate-950/50 border-slate-800/60 opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span className="text-2xl p-1.5 rounded-xl bg-slate-900 border border-slate-700 shrink-0">
+                            {entry.icon}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded uppercase ${
+                                  entry.kind === 'biome'
+                                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                }`}
+                              >
+                                {entry.kind}
+                              </span>
+                              <span className="text-[10px] font-mono text-amber-200 truncate">
+                                {entry.chineseTitle}
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold text-white mt-1 line-clamp-1">
+                              {entry.title}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                              {entry.regionCoordinatesLabel}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded shrink-0 ${
+                            !isDiscovered
+                              ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                              : record.rewardClaimed
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : 'bg-amber-500/25 text-amber-300 border border-amber-400/50'
+                          }`}
+                        >
+                          {!isDiscovered
+                            ? '🔒 UNCHARTED'
+                            : record.rewardClaimed
+                              ? '✓ CATALOGED'
+                              : `+${formatBigInt(entry.discoveryRewardDiamonds)} 💎`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right Column: Selected Lore Codex Entry Detail */}
+                <div className="lg:col-span-7">
+                  <div className="p-5 rounded-2xl bg-slate-950/90 border border-emerald-500/40 space-y-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-mono font-bold uppercase">
+                            {selectedCodexEntry.kind === 'biome'
+                              ? '🗺️ Open-World Biome Chronicle'
+                              : '🐉 Autonomous Monster Bestiary'}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-amber-400/40 text-amber-200 text-xs font-mono">
+                            {selectedCodexEntry.chineseTitle}
+                          </span>
+                        </div>
+                        <h3
+                          data-testid="selected-codex-entry-title"
+                          className="text-lg sm:text-xl font-black font-cinzel text-white pt-1"
+                        >
+                          {selectedCodexEntry.icon} {selectedCodexEntry.title}
+                        </h3>
+                        <div className="text-xs font-mono text-cyan-300">
+                          {selectedCodexEntry.subtitle}
+                        </div>
+                      </div>
+
+                      {/* Discovery / Bounty Action Button */}
+                      {!selectedCodexRecord ? (
+                        <button
+                          type="button"
+                          data-testid="scout-discover-codex-btn"
+                          onClick={() => {
+                            if (onScoutDiscoverCodexEntry) {
+                              sound.playUpgradeFanfare();
+                              onScoutDiscoverCodexEntry(selectedCodexEntry);
+                            }
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 hover:from-emerald-300 hover:to-cyan-300 text-slate-950 text-xs font-mono font-black shadow-lg cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Compass className="w-4 h-4" />
+                          <span>
+                            Scout &amp; Auto-Populate Entry (+
+                            {formatBigInt(selectedCodexEntry.discoveryRewardDiamonds)} 💎 Bounty)
+                          </span>
+                        </button>
+                      ) : !selectedCodexRecord.rewardClaimed ? (
+                        <button
+                          type="button"
+                          data-testid="claim-codex-bounty-btn"
+                          onClick={() => {
+                            if (onClaimCodexBounty) {
+                              sound.playUpgradeFanfare();
+                              onClaimCodexBounty(selectedCodexEntry.id);
+                            }
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 hover:from-amber-300 hover:to-emerald-300 text-slate-950 text-xs font-mono font-black shadow-lg cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>
+                            Claim Codex Bounty (+
+                            {formatBigInt(selectedCodexEntry.discoveryRewardDiamonds)} 💎 &amp; +
+                            {selectedCodexEntry.discoveryRewardFragments} Scrolls)
+                          </span>
+                        </button>
+                      ) : (
+                        <div className="px-3.5 py-2 rounded-xl bg-emerald-950/80 border border-emerald-400/50 text-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Discovered &amp; Bounty Claimed</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metadata Telemetry Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="text-[10px] font-mono text-slate-400 uppercase flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-cyan-400" /> World Coordinates &amp;
+                          Danger
+                        </div>
+                        <div className="text-xs font-mono text-white font-bold">
+                          {selectedCodexEntry.regionCoordinatesLabel}
+                        </div>
+                        <div className="text-[11px] font-mono text-amber-300">
+                          {selectedCodexEntry.dangerLevelLabel}
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <div className="text-[10px] font-mono text-slate-400 uppercase flex items-center gap-1">
+                          <ShieldAlert className="w-3.5 h-3.5 text-fuchsia-400" /> Elemental Leyline
+                          &amp; Status
+                        </div>
+                        <div className="text-xs font-mono text-fuchsia-200 font-bold">
+                          {selectedCodexEntry.elementalLeyline}
+                        </div>
+                        <div className="text-[11px] font-mono text-emerald-300">
+                          {selectedCodexRecord
+                            ? `✓ Auto-Populated via ${selectedCodexRecord.discoveredVia.replace(/_/g, ' ').toUpperCase()}`
+                            : '⏳ Awaiting Open-World Traversal or Field Scout'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tactical Counter-Matrix Notes */}
+                    <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-100 leading-relaxed">
+                      <strong className="text-amber-300 font-mono uppercase mr-1.5">
+                        ⚔️ Tactical &amp; Ecological Intelligence:
+                      </strong>
+                      {selectedCodexEntry.tacticalNotes}
+                    </div>
+
+                    {/* Lore Paragraphs */}
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-mono font-bold text-emerald-300 uppercase">
+                        📜 Field Archive &amp; Historical Lore Inscription
+                      </div>
+                      {selectedCodexEntry.loreParagraphs.map((para, idx) => (
+                        <p
+                          key={idx}
+                          className="p-3.5 rounded-xl bg-slate-900/95 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed"
+                        >
+                          <span className="text-emerald-400 font-mono font-bold mr-2">
+                            ¶{idx + 1}
+                          </span>
+                          {para}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: 10^100 GOOGOL-SCALE AKASHIC LORE & HISTORY STREAM */}
+          {activeTab === 'googol' && (
+            <div data-testid="googol-lore-archive-section" className="space-y-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-fuchsia-950/80 border border-indigo-400/50 space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-indigo-400 text-slate-950 text-xs font-mono font-black">
+                        ♾️ 10^100 WORDS MINIMUM (ONE GOOGOL WORDS) AKASHIC ARCHIVE
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-amber-400/50 text-amber-300 text-xs font-mono">
+                        Seed: {GOOGOL_LORE_ARCHIVE_SPEC.generatorSeed}
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
+                      Layer 6 White Page Procedural Lore Stream (
+                      {GOOGOL_LORE_ARCHIVE_SPEC.totalVolumesScientific} Volumes ×{' '}
+                      {GOOGOL_LORE_ARCHIVE_SPEC.wordsPerVolume.toLocaleString()} Words = 10^100
+                      Words)
+                    </h3>
+                    <p className="text-xs text-slate-300">
+                      Because <strong className="text-amber-300">10^100 (1 Googol) words</strong>{' '}
+                      exceeds the ~10^80 atoms in the observable universe, the Akashic Archive uses
+                      deterministic seed pagination to synthesize canonical historical volumes at
+                      any exponent coordinate from <span className="font-mono">10^0</span> to{' '}
+                      <span className="font-mono">10^100</span> on demand without memory overflow.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    data-testid="googol-load-more-btn"
+                    onClick={() => {
+                      sound.playButton();
+                      setGoogolScrollCount((prev) => Math.min(12, prev + 3));
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-indigo-400 hover:bg-indigo-300 text-slate-950 font-mono font-black text-xs shrink-0 cursor-pointer"
+                  >
+                    + Synthesize Next 3 Googol Volumes ({googolScrollCount}/12 Loaded)
+                  </button>
+                </div>
+
+                {/* Exponent Coordinate Dial (10^0 to 10^100) */}
+                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <label
+                      htmlFor="googol-exponent-range"
+                      className="text-xs font-mono font-bold text-indigo-300 flex items-center justify-between"
+                    >
+                      <span>Akashic Word Coordinate Horizon: 10^{googolExponent} Words</span>
+                      <span className="text-amber-300">
+                        Minimum Corpus Bound: 10^100 Words (1 Googol)
+                      </span>
+                    </label>
+                    <input
+                      id="googol-exponent-range"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={googolExponent}
+                      onChange={(e) => setGoogolExponent(Number(e.target.value))}
+                      className="w-full accent-indigo-400 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[10, 25, 50, 80, 100].map((exp) => (
+                      <button
+                        key={exp}
+                        type="button"
+                        data-testid={`googol-exp-btn-${exp}`}
+                        onClick={() => {
+                          sound.playButton();
+                          setGoogolExponent(exp);
+                        }}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer ${
+                          googolExponent === exp
+                            ? 'bg-amber-400 text-slate-950'
+                            : 'bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800'
+                        }`}
+                      >
+                        10^{exp}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Synthesized Googol Lore Scroll Volumes */}
+              <div className="grid grid-cols-1 gap-4">
+                {googolScrolls.map((scroll) => (
+                  <div
+                    key={scroll.scrollId}
+                    data-testid={`googol-scroll-card-${scroll.scrollId}`}
+                    className="p-4 rounded-2xl bg-slate-950/90 border border-indigo-500/30 space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-[11px] font-mono font-bold">
+                            {scroll.volumeCoordinateLabel}
+                          </span>
+                          <span className="text-xs font-mono text-fuchsia-300">
+                            {scroll.chineseSubtitle}
+                          </span>
+                          <span className="text-[11px] font-mono text-cyan-300">
+                            Anchor: {scroll.cosmicLayerAnchor}
+                          </span>
+                        </div>
+                        <h4 className="text-sm sm:text-base font-bold font-cinzel text-amber-300 mt-1">
+                          📜 {scroll.title}
+                        </h4>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono font-bold">
+                        {scroll.cumulativeWordHorizonScientific} · Author: {scroll.authorEmail}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {scroll.paragraphs.map((p, idx) => (
+                        <p
+                          key={idx}
+                          className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed"
+                        >
+                          {p}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: 6-LAYER COSMOLOGY & 100 OMNIVERSES LORE */}
           {activeTab === 'cosmology' && (
             <div className="space-y-5">
               <div className="p-4 rounded-2xl bg-gradient-to-r from-white/10 via-fuchsia-950/60 to-amber-950/50 border border-white/40 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -456,7 +999,7 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: SACRED COMPENDIUM & SEARCHABLE CODEX */}
+          {/* TAB 5: SACRED COMPENDIUM & SEARCHABLE CODEX */}
           {activeTab === 'compendium' && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -467,14 +1010,16 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                     data-testid="lore-compendium-search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search epochs, White Page, Oblivion, Overvoid, Han Jue, species, creatergame31@gmail.com..."
+                    placeholder="Search epochs, biomes, monsters, White Page, Oblivion, Overvoid, Han Jue, creatergame31@gmail.com..."
                     className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-hidden focus:border-cyan-400"
                   />
                 </div>
                 <div className="text-xs font-mono text-slate-400 shrink-0">
                   Showing <strong className="text-cyan-300">{matchingChapters.length}</strong>{' '}
-                  Codices &amp; <strong className="text-amber-300">{matchingEpochs.length}</strong>{' '}
-                  Epochs
+                  Codices, <strong className="text-amber-300">{matchingEpochs.length}</strong>{' '}
+                  Epochs &amp;{' '}
+                  <strong className="text-emerald-300">{matchingCodexEntries.length}</strong> Field
+                  Entries
                 </div>
               </div>
 

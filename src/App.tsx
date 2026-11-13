@@ -137,7 +137,17 @@ import {
   getWhitePageSingletonRoot,
   projectOmniverseNpcToWorldNPC,
 } from './game/omniverse';
-import { comprehendLoreEpoch } from './game/loreHistory';
+import {
+  comprehendLoreEpoch,
+  LORE_CODEX_STORAGE_KEY,
+  INITIAL_LORE_CODEX_STATE,
+  PersistedLoreCodexState,
+  LoreCodexEntry,
+  evaluateOpenWorldLoreDiscovery,
+  unlockLoreCodexEntry,
+  claimLoreCodexReward,
+  buildDynamicMonsterCodexEntry,
+} from './game/loreHistory';
 
 type ActiveModal =
   | 'none'
@@ -1503,6 +1513,14 @@ export default function App() {
   const handleSpawnScaledMonster = (newMonster: MonsterTarget) => {
     setMonsters((prev) => [newMonster, ...prev]);
     setSelectedMonster(newMonster);
+    setLoreCodexState((prev) => {
+      const entry = buildDynamicMonsterCodexEntry(newMonster);
+      return unlockLoreCodexEntry({
+        currentState: prev,
+        entry,
+        discoveredVia: 'monster_encounter',
+      }).updatedState;
+    });
     setAiLogs((prev) => [
       {
         id: `ai_spawn_${Date.now()}`,
@@ -1515,7 +1533,9 @@ export default function App() {
       },
       ...prev,
     ]);
-    setToastMessage(`🐉 Spawned Level ${newMonster.level} ${newMonster.name} into the Open World!`);
+    setToastMessage(
+      `🐉 Spawned Level ${newMonster.level} ${newMonster.name} & auto-recorded in Lore Codex!`
+    );
   };
 
   // Action Click from HUD
@@ -1703,8 +1723,39 @@ export default function App() {
     );
   };
 
-  // Lore & Cosmological History Comprehension State
+  // Lore & Cosmological History Comprehension State + Open-World Auto-Populating Lore Codex
   const [comprehendedEpochIds, setComprehendedEpochIds] = useState<string[]>([]);
+  const [loreCodexState, setLoreCodexState] = useState<PersistedLoreCodexState>(() => {
+    try {
+      const saved = localStorage.getItem(LORE_CODEX_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.discoveredRecords === 'object' && parsed.discoveredRecords) {
+          return {
+            discoveredRecords: parsed.discoveredRecords,
+            lastVisitedBiomeId:
+              parsed.lastVisitedBiomeId ?? INITIAL_LORE_CODEX_STATE.lastVisitedBiomeId,
+            totalDiscoveryEvents:
+              typeof parsed.totalDiscoveryEvents === 'number'
+                ? parsed.totalDiscoveryEvents
+                : Object.keys(parsed.discoveredRecords).length,
+          };
+        }
+      }
+    } catch {
+      // Fallback to initial state
+    }
+    return INITIAL_LORE_CODEX_STATE;
+  });
+  const lastCodexEvalPosRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LORE_CODEX_STORAGE_KEY, JSON.stringify(loreCodexState));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }, [loreCodexState]);
 
   const handleComprehendLoreEpoch = (epochId: string) => {
     const res = comprehendLoreEpoch({ epochId, comprehendedEpochIds });
@@ -1724,6 +1775,47 @@ export default function App() {
     }));
     confetti({ particleCount: 55, spread: 70, origin: { y: 0.6 } });
     setToastMessage(`📜 ${res.message}`);
+  };
+
+  const handleScoutDiscoverCodexEntry = (entry: LoreCodexEntry) => {
+    const result = unlockLoreCodexEntry({
+      currentState: loreCodexState,
+      entry,
+      discoveredVia: 'expedition_scout',
+    });
+    setLoreCodexState(result.updatedState);
+    if (result.newlyDiscovered) {
+      sound.playLevelUp();
+      setToastMessage(
+        `🧭 Lore Codex Auto-Populated: ${entry.icon} ${entry.title} (${entry.kind === 'biome' ? 'Biome Surveyed' : 'Monster Bestiary Recorded'})!`
+      );
+    } else {
+      setToastMessage(`🧭 ${entry.title} is already inscribed in your Lore Codex.`);
+    }
+  };
+
+  const handleClaimCodexBounty = (entryId: string) => {
+    const res = claimLoreCodexReward({
+      currentState: loreCodexState,
+      entryId,
+      monsters,
+    });
+    if (!res.claimed) {
+      setToastMessage(`📜 ${res.message}`);
+      return;
+    }
+    sound.playLevelUp();
+    setLoreCodexState(res.updatedState);
+    setResources((prev) => ({
+      ...prev,
+      diamond: prev.diamond + res.rewardDiamonds,
+    }));
+    setCultivation((prev) => ({
+      ...prev,
+      scriptureFragments: prev.scriptureFragments + res.rewardFragments,
+    }));
+    confetti({ particleCount: 50, spread: 65, origin: { y: 0.6 } });
+    setToastMessage(res.message);
   };
 
   return (
@@ -1750,6 +1842,14 @@ export default function App() {
         hdPackMounted={hdPackMounted}
         onSelectMonster={(m) => {
           setSelectedMonster(m);
+          setLoreCodexState((prev) => {
+            const entry = buildDynamicMonsterCodexEntry(m);
+            return unlockLoreCodexEntry({
+              currentState: prev,
+              entry,
+              discoveredVia: 'monster_encounter',
+            }).updatedState;
+          });
           setActiveModal('world_boss');
         }}
         onSelectResourceNode={() => {
@@ -1765,6 +1865,28 @@ export default function App() {
         }}
         onPlayerPositionChange={(x, z) => {
           playerWorldPosRef.current = { x, z };
+          const dx = x - lastCodexEvalPosRef.current.x;
+          const dz = z - lastCodexEvalPosRef.current.z;
+          if (dx * dx + dz * dz >= 4) {
+            lastCodexEvalPosRef.current = { x, z };
+            const discovery = evaluateOpenWorldLoreDiscovery({
+              currentState: loreCodexState,
+              playerX: x,
+              playerZ: z,
+              monsters,
+            });
+            if (discovery.newlyDiscoveredEntries.length > 0) {
+              setLoreCodexState(discovery.updatedState);
+              const firstNew = discovery.newlyDiscoveredEntries[0];
+              setToastMessage(
+                `🧭 Lore Codex Auto-Populated: ${firstNew.icon} ${firstNew.title} (${firstNew.kind === 'biome' ? 'New Biome Visited' : 'New Monster Discovered'})!`
+              );
+            } else if (
+              discovery.updatedState.lastVisitedBiomeId !== loreCodexState.lastVisitedBiomeId
+            ) {
+              setLoreCodexState(discovery.updatedState);
+            }
+          }
           setCultivation((prev) => {
             if (prev.karma && prev.karma.stationarySeconds > 0) {
               return {
@@ -2221,6 +2343,10 @@ export default function App() {
         <LoreHistoryModal
           comprehendedEpochIds={comprehendedEpochIds}
           onComprehendEpoch={handleComprehendLoreEpoch}
+          loreCodexState={loreCodexState}
+          monsters={monsters}
+          onScoutDiscoverCodexEntry={handleScoutDiscoverCodexEntry}
+          onClaimCodexBounty={handleClaimCodexBounty}
           onOpenOmniverseMatrix={() => {
             setWorldAiInitialTab('omniverse');
             setActiveModal('world_ai');
