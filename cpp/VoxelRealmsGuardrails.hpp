@@ -63,6 +63,36 @@ static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::X86_64_AVX512) == 64U
 static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::AppleSilicon_UMA128) == 128U,
               "Apple Silicon M-Series must align hot SoA streams to 128-byte cache lines");
 
+// 6-Layer Cosmic Ontology & Cosmological Hierarchy (Supreme Author: creatergame31@gmail.com)
+enum class CosmicOntologyLayer : uint8_t {
+    Universe = 1,
+    Multiverse = 2,
+    Megaverse_Hyperverse = 3,
+    Omniverse = 4,
+    TheOvervoid_Exoverse = 5,
+    TheWhitePage_HouseOfIdeas = 6,
+};
+
+inline constexpr std::string_view kSupremeAuthorEmail = "creatergame31@gmail.com";
+inline constexpr std::size_t kCanonicalLoreEpochCount = 7U;
+inline constexpr std::size_t kOmniverseSpeciesNpcCount = 100U;
+
+[[nodiscard]] constexpr uint64_t
+computeCosmicLayerScaleMultiplier(CosmicOntologyLayer layer) noexcept {
+    uint64_t scale = 1ULL;
+    const auto layerIdx = static_cast<uint8_t>(layer);
+    for (uint8_t step = 1U; step < layerIdx; ++step) {
+        scale *= 10ULL;
+    }
+    return scale;
+}
+
+static_assert(
+    computeCosmicLayerScaleMultiplier(CosmicOntologyLayer::TheWhitePage_HouseOfIdeas) == 100000ULL,
+    "Layer 6 (The White Page / The House of Ideas) must hold 100,000x Cosmological Scale");
+static_assert(kCanonicalLoreEpochCount == 7U,
+              "Imperial Lore & Cosmological History Codex must define 7 Grand Historical Epochs");
+
 // Software & Hardware Architect: 64-byte cache-line aligned Structure-of-Arrays (SoA) hot transform chunk
 struct alignas(kX86CacheLineBytes) SoaEntityKinematicChunk final {
     std::array<float, kSoaSimdChunkCapacity> posX{};

@@ -53,6 +53,7 @@ import {
   ThermalTdpEnvelopeId,
   generateArchitectCompatibilityDiagnostic,
 } from '../game/architectOptimization';
+import { runFullSystemValidationReport } from '../game/systemValidation';
 import { sound } from '../game/audio';
 
 interface CppArchitectureModalProps {
@@ -94,6 +95,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
   const [simGreatDaos, setSimGreatDaos] = useState<number>(5);
 
   const stats = getSimulatedEngineStats();
+  const validationReport = runFullSystemValidationReport();
   const activeModule =
     CPP_CODE_MODULES.find((m) => m.id === selectedModuleId) || CPP_CODE_MODULES[0];
 
@@ -859,6 +861,50 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* 8-Pillar Cross-System Validation & Integrity Audit */}
+          <div
+            data-testid="system-validation-audit-panel"
+            className="p-4 rounded-xl bg-emerald-950/25 border border-emerald-500/40 space-y-3"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                  <span>
+                    🛡️ 8-Pillar Cross-System Validation &amp; Integrity Audit (
+                    {validationReport.releaseVersion} · {validationReport.releaseDate})
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-300">
+                  Supreme Author &amp; Root Governance Authority:{' '}
+                  <span className="font-mono text-amber-300">
+                    {validationReport.supremeAuthorEmail}
+                  </span>
+                </p>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-xs font-mono font-bold">
+                {validationReport.passedPillars}/{validationReport.totalPillars} PILLARS PASSING ·{' '}
+                {validationReport.validationScore}% VALIDATED (
+                {validationReport.totalAssertionsPassed} Invariants)
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {validationReport.pillars.map((pillar) => (
+                <div
+                  key={pillar.id}
+                  className="p-2.5 rounded-lg bg-slate-900/90 border border-emerald-500/25 space-y-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-white">{pillar.title}</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">
+                      {pillar.passed ? 'PASS' : 'FAIL'} ({pillar.assertionsPassed} checks)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">{pillar.summary}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -31,6 +31,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/architectOptimization.ts (CPU ISA, GPU, TDP, SoA & Job DAG)    │
 │  • src/game/species.ts           (10 Species catalog, 3D specs & Admin gate)│
 │  • src/game/omniverse.ts         (100 Species NPCs & Infinite Omniverse)   │
+│  • src/game/loreHistory.ts       (7 Historical Epochs & 6 Lore Codices)     │
+│  • src/game/systemValidation.ts  (8-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
@@ -38,7 +40,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **100 unit and regression tests across 15 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **106 unit and regression tests across 17 suites** in ~1.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -138,6 +140,15 @@ Players cultivate four complementary paths simultaneously:
 - **Sovereign Omniverse Per Race + Infinite Transfinite Generator (`resolveInfiniteOmniverseByIndex` & `resolveSpeciesSixLayerCosmology`)**: Assigns each race a dedicated Sovereign Omniverse (`OMNI-001`..`OMNI-100`), resolves its full 6-Layer Cosmological Lineage, and deterministically resolves any omniverse coordinate from `1` to `∞`.
 - **Super Admin Background NPC Command & Layer-6 White Page Decrees (`executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs, projects them into the 3D Overworld (`projectOmniverseNpcToWorldNPC`), sets their directives, and issues Layer-6 White Page / House of Ideas Authorial Decrees.
 
+### I. Imperial Lore & Cosmological History Codex (`src/game/loreHistory.ts`)
+
+- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 06/11/2026 Software & Hardware Architect Convergence_).
+- **6 Sacred Compendium Codices (`LORE_COMPENDIUM_CHAPTERS`), Comprehension & Search**: Provides pure functions for one-time epoch comprehension (`comprehendLoreEpoch`, awarding Diamonds and Scripture Fragments) and full-text lore search (`searchLoreHistory`).
+
+### J. 8-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
+
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates 59+ invariants across all 8 foundational pillars (Root RBAC `creatergame31@gmail.com`, 6-Layer Cosmology & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, and Lv. 1–1000 World AI) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+
 ---
 
 ## 4. Anti-Spaghetti Engineering Guardrails
@@ -145,7 +156,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 100 deterministic unit tests across 15 suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 106 deterministic unit tests across 17 suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

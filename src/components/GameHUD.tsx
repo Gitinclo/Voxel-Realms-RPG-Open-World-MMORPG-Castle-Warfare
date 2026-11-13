@@ -28,6 +28,7 @@ import {
   Settings,
   LayoutGrid,
   Gavel,
+  BookOpen,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -63,6 +64,7 @@ interface GameHUDProps {
   onOpenLeaderboard: () => void;
   onOpenCppCore: () => void;
   onOpenAdminConsole: () => void;
+  onOpenLoreHistory?: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
@@ -109,6 +111,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenLeaderboard,
   onOpenCppCore,
   onOpenAdminConsole,
+  onOpenLoreHistory,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
@@ -855,6 +858,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               <span className="text-[10px] font-bold font-mono whitespace-nowrap">GM / Mod</span>
               <span className="text-[9px] font-mono text-amber-300">Admin</span>
             </button>
+
+            {onOpenLoreHistory && (
+              <button
+                type="button"
+                data-testid="dock-lore-history-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  onOpenLoreHistory();
+                }}
+                className="p-2 rounded-xl bg-fuchsia-950/70 hover:bg-fuchsia-900/70 border border-fuchsia-500/50 text-fuchsia-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              >
+                <BookOpen className="w-5 h-5 text-fuchsia-400" />
+                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                  Lore &amp; History
+                </span>
+                <span className="text-[9px] font-mono text-amber-300">7 Epochs</span>
+              </button>
+            )}
           </div>
         )}
 

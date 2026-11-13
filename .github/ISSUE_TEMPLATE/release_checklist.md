@@ -23,8 +23,8 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 100 unit tests across all 15 test suites
-- [ ] `npm run build` succeeds and generates output under `dist/`
+- [ ] `npm test` passes all 106 unit tests across all 17 test suites
+- [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
 
@@ -33,7 +33,7 @@ labels: ['release']
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
 - [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
-- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles) and C++20 Software & Hardware Architect Studio (`06/11/2026`) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles), Imperial Lore & Cosmological History Codex, and C++20 Software & Hardware Architect Studio (`06/11/2026`) work
 - [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 
@@ -48,7 +48,7 @@ labels: ['release']
 
 - [ ] `README.md` reflects actual setup, features, and project structure
 - [ ] `CHANGELOG.md` and `ROADMAP.md` are updated with release notes and upcoming milestones
-- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
+- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `LORE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
 
 ## 6. ⚙️ CI/CD & Final Signoff Gate
 

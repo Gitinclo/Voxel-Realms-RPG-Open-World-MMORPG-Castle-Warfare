@@ -5,7 +5,9 @@
 
 int main() {
     using voxel::guardrails::computeCacheLineBytesForIsa;
+    using voxel::guardrails::computeCosmicLayerScaleMultiplier;
     using voxel::guardrails::computeRealmSuppressionMultiplier;
+    using voxel::guardrails::CosmicOntologyLayer;
     using voxel::guardrails::CultivationRealm;
     using voxel::guardrails::CultivatorNode;
     using voxel::guardrails::HardwareIsaTier;
@@ -14,7 +16,10 @@ int main() {
 
     constexpr double suppression = computeRealmSuppressionMultiplier(
         CultivationRealm::GoldenCore, CultivationRealm::QiRefinement);
+    constexpr uint64_t whitePageScale =
+        computeCosmicLayerScaleMultiplier(CosmicOntologyLayer::TheWhitePage_HouseOfIdeas);
     static_assert(suppression > 99.9);
+    static_assert(whitePageScale == 100000ULL);
     static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::AppleSilicon_UMA128) == 128U);
     static_assert(alignof(SoaEntityKinematicChunk) == 64U);
 

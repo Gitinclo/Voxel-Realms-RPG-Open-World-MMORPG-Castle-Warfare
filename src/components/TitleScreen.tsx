@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Play, Shield, Sparkles, Gift, Crown, Gavel } from 'lucide-react';
+import { Play, Shield, Sparkles, Gift, Crown, Gavel, BookOpen } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
 
@@ -17,6 +17,7 @@ interface TitleScreenProps {
   vipBadgeLabel?: string;
   canClaimVipStipend?: boolean;
   onOpenAdminConsole?: () => void;
+  onOpenLoreHistory?: () => void;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -28,6 +29,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   vipBadgeLabel = 'VIP 0',
   canClaimVipStipend = false,
   onOpenAdminConsole,
+  onOpenLoreHistory,
 }) => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -96,6 +98,18 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             </button>
           )}
 
+          {onOpenLoreHistory && (
+            <button
+              type="button"
+              data-testid="title-lore-history-btn"
+              onClick={onOpenLoreHistory}
+              className="px-3.5 py-2 rounded-xl bg-fuchsia-950/85 hover:bg-fuchsia-900/85 border border-fuchsia-500/50 text-xs font-bold text-fuchsia-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4 text-fuchsia-400" />
+              <span>Lore &amp; History Codex</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onOpenCharacterCreation}
@@ -128,16 +142,16 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             🏰 Castle Lv 0 - 100
           </span>
           <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-800">
-            ⚔️ T1 - T20 Troops (Shield, Shooter, Bomber)
+            ⚔️ T1 - T20 Troops (1,000T Cap)
           </span>
           <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-800">
-            📯 1 Trillion Rally Cap
+            🧬 10 Playable Species (3D Meshes)
           </span>
-          <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-800">
-            🐲 Lv 1 - 1000 Monsters
+          <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-fuchsia-500/40 text-fuchsia-200">
+            🌌 6-Layer Cosmology &amp; 100 Omniverse NPCs
           </span>
-          <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-slate-800">
-            📜 Daily Veteran Scrolls
+          <span className="px-2.5 py-1 rounded-md bg-slate-900/80 border border-amber-500/40 text-amber-200">
+            📜 The White Page / House of Ideas ({PRIMARY_ADMIN_EMAIL})
           </span>
         </div>
 

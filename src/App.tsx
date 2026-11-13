@@ -71,6 +71,7 @@ import { CultivationModal } from './components/CultivationModal';
 import { WorldAIDirectorModal } from './components/WorldAIDirectorModal';
 import { DailyLoginModal } from './components/DailyLoginModal';
 import { VipSubscriptionModal } from './components/VipSubscriptionModal';
+import { LoreHistoryModal } from './components/LoreHistoryModal';
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -133,6 +134,7 @@ import {
   executeWhitePageAuthorDecree,
   projectOmniverseNpcToWorldNPC,
 } from './game/omniverse';
+import { comprehendLoreEpoch } from './game/loreHistory';
 
 type ActiveModal =
   | 'none'
@@ -150,7 +152,8 @@ type ActiveModal =
   | 'cultivation'
   | 'world_ai'
   | 'daily_login'
-  | 'vip_subscription';
+  | 'vip_subscription'
+  | 'lore_history';
 
 export default function App() {
   // Query param check for ?autostart=1
@@ -1693,6 +1696,29 @@ export default function App() {
     );
   };
 
+  // Lore & Cosmological History Comprehension State
+  const [comprehendedEpochIds, setComprehendedEpochIds] = useState<string[]>([]);
+
+  const handleComprehendLoreEpoch = (epochId: string) => {
+    const res = comprehendLoreEpoch({ epochId, comprehendedEpochIds });
+    if (!res.newlyComprehended) {
+      setToastMessage(`📜 ${res.message}`);
+      return;
+    }
+    sound.playLevelUp();
+    setComprehendedEpochIds(res.updatedComprehendedIds);
+    setResources((prev) => ({
+      ...prev,
+      diamond: prev.diamond + res.rewardDiamonds,
+    }));
+    setCultivation((prev) => ({
+      ...prev,
+      scriptureFragments: prev.scriptureFragments + res.rewardFragments,
+    }));
+    confetti({ particleCount: 55, spread: 70, origin: { y: 0.6 } });
+    setToastMessage(`📜 ${res.message}`);
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">
       {/* 3D WebGL Canvas Viewport */}
@@ -1766,6 +1792,7 @@ export default function App() {
           vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
           canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
+          onOpenLoreHistory={() => setActiveModal('lore_history')}
         />
       )}
 
@@ -1806,6 +1833,7 @@ export default function App() {
           onOpenLeaderboard={() => setActiveModal('leaderboard')}
           onOpenCppCore={() => setActiveModal('cpp_core')}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
+          onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
@@ -2172,6 +2200,18 @@ export default function App() {
           onAdvanceSimulatedVipDay={handleAdvanceSimulatedVipDay}
           onToggleAutoRenew={handleToggleVipAutoRenew}
           onCancelSubscription={handleCancelVipSubscription}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {activeModal === 'lore_history' && (
+        <LoreHistoryModal
+          comprehendedEpochIds={comprehendedEpochIds}
+          onComprehendEpoch={handleComprehendLoreEpoch}
+          onOpenOmniverseMatrix={() => {
+            setWorldAiInitialTab('omniverse');
+            setActiveModal('world_ai');
+          }}
           onClose={() => setActiveModal('none')}
         />
       )}

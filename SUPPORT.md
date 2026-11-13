@@ -57,6 +57,11 @@ Game state is persisted in your browser's `localStorage` under deterministic key
 
 - **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts`) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
 
+### Q4: How do I switch my character's Species after initial creation or command the 100 Omniverse Background NPCs?
+
+- **Species Rebirth:** Switching among the 10 playable species after character creation requires authorization from Root Administrator **`creatergame31@gmail.com`** via the **GM / Admin Console (`Godmode & Cheats` → `10-Species / Race Rebirth Governance`)** or by dispatching a `[SPECIES REBIRTH]` ticket.
+- **6-Layer Cosmology & 100 Omniverse NPCs:** Open the **World AI Director (`🌌 Infinite Omniverse & 100 Species NPCs`)** or **GM / Admin Console** while authenticated as **`creatergame31@gmail.com`** to inspect all 6 Cosmic Layers (**1. Universe** → **6. The White Page / The House of Ideas**), project/recall any of the 100 Species Background NPCs in the 3D Overworld, or issue Layer-6 White Page Authorial Decrees.
+
 ---
 
 ## 🐛 4. Filing Bug Reports & Feature Requests on GitHub

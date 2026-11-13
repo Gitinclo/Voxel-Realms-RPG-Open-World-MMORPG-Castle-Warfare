@@ -2,7 +2,7 @@
   "name": "voxel-realms-rpg",
   "private": true,
   "version": "1.5.0",
-  "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with React 19, Three.js, TypeScript, and C++20 Software & Hardware Architect SIMD optimization (06/11/2026).",
+  "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, Four-Path Immortal Cultivation, 6-Layer Cosmic Ontology & Imperial Lore Codex built with React 19, Three.js, TypeScript, and C++20 Software & Hardware Architect SIMD optimization (06/11/2026).",
   "author": "Voxel Realms RPG Team <creatergame31@gmail.com>",
   "license": "Apache-2.0",
   "engines": {
@@ -17,7 +17,8 @@
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "tsx --test src/game/*.test.ts"
+    "test": "tsx --test src/game/*.test.ts",
+    "validate": "npm run lint && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
