@@ -64,7 +64,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 | `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                 |
 | `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                               |
 | `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                |
-| `npm test`                     | Runs the Node.js test runner against all 17 pure game logic & 3D scene-graph test suites (`108` tests)                           |
+| `npm test`                     | Runs the Node.js test runner against all 17 pure game logic & 3D scene-graph test suites (`110` tests)                           |
 | `npm run validate`             | Runs the full 4-stage validation gate (`lint` + `format:check` + `test` + `build`)                                               |
 | `npm run clean`                | Cleans build artifacts (`dist/`, `server.js`)                                                                                    |
 
@@ -214,7 +214,7 @@ Every push and Pull Request must pass both our **Web/TypeScript Guardrails** and
 1. **The Linter (`npm run lint`)**: Enforces strict TypeScript compilation with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`. Any unused variable, dead import, or type mismatch immediately fails the build.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Blocks outdated or vulnerable third-party packages.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting (`.prettierrc`) so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Executes all 108 unit and regression tests across 17 suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Executes all 110 unit and regression tests across 17 suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 #### B. C++20 Engine Guardrail Stack (`cpp20-guardrails` job)
 
@@ -245,7 +245,7 @@ Tools catch syntax and formatting issues, while disciplined prompting preserves 
    npm run lint                  # 1. Catch messy code & unused variables
    npm audit --audit-level=high  # 2. Check for vulnerable/deprecated packages
    npx prettier --check .        # 3. Verify consistent code formatting (or run `npm run format`)
-   npm test                      # 4. Run all 108 unit & regression tests across 17 suites
+   npm test                      # 4. Run all 110 unit & regression tests across 17 suites
    npm run build                 # 5. Verify production bundle compiles cleanly
    ```
 

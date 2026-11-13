@@ -11,23 +11,39 @@ This document chronicles the canonical **Lore, Origin Mythos, and 7 Grand Histor
 
 Every entity, realm, law of causality, and void in **Sovereign Realms** exists within a strict 6-layer ontological architecture:
 
-| Layer | Cosmic Tier                                    | Canonical Definition                                                                                                         | Historical & Ontological Role                                                                                                                                                                                                                           |
-| :---: | :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **1** | **Universe** (`🌀`)                            | _"A single reality with its own space, time, and matter, etc."_                                                              | The foundational mortal and immortal battleground where the Sovereign Citadel, 3D Overworld, and regional resource nodes manifest.                                                                                                                      |
-| **2** | **Multiverse** (`🪐`)                          | _"A collection of parallel/series universes."_                                                                               | Infinite parallel and sequential timeline branches (`2^64` Timeline Nodes) woven around each Sovereign Universe.                                                                                                                                        |
-| **3** | **Megaverse / Hyperverse** (`🌌`)              | _"A cluster of multiple multiverses."_                                                                                       | High-dimensional brane super-clusters (`11D – ∞D`) binding distinct multiverses and elemental tribulation weather fronts.                                                                                                                               |
-| **4** | **Omniverse** (`♾️`)                           | _"Every universe, multiverse, and reality that has ever existed or could exist."_                                            | Each of the **100 Fictional Species** rules its own dedicated **Sovereign Omniverse (`OMNIVERSE-001` through `OMNIVERSE-100` + `∞`)**, containing every reality that has ever existed or could exist for that lineage.                                  |
-| **5** | **The Overvoid / Exoverse** (`🕳️`)             | _"A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy."_ | The meta-existential abyss where all `100 + ∞` Sovereign Omniverses float under completely independent laws of logic, physics, and cosmic hierarchy.                                                                                                    |
-| **6** | **The White Page / The House of Ideas** (`📄`) | _"Everything comes from here — even nothingness (Oblivion). `creatergame31@gmail.com`."_                                     | The supreme pre-existential canvas and Authorial Sanctuary. Everything — creation, causality, the 3,000 Great Daos, the Overvoid, and even Nothingness (`Oblivion`) itself — originates here under the sole authority of **`creatergame31@gmail.com`**. |
+| Layer | Cosmic Tier                                    | Cardinality (`COSMIC_LIMITS`) | Canonical Definition                                                                                                         | Historical & Ontological Role                                                                                                                                                                                                                  |
+| :---: | :--------------------------------------------- | :---------------------------: | :--------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Universe** (`🌀`)                            |       `Infinity` (`∞`)        | _"A single reality with its own space, time, and matter, etc."_                                                              | The foundational mortal and immortal battleground where the Sovereign Citadel, 3D Overworld, and regional resource nodes manifest (`InfiniteCollection<Universe>`).                                                                            |
+| **2** | **Multiverse** (`🪐`)                          |       `Infinity` (`∞`)        | _"A collection of parallel/series universes."_                                                                               | Infinite parallel and sequential timeline branches (`2^64` Timeline Nodes) woven around each Sovereign Universe (`InfiniteCollection<Multiverse>`).                                                                                            |
+| **3** | **Megaverse / Hyperverse** (`🌌`)              |       `Infinity` (`∞`)        | _"A cluster of multiple multiverses."_                                                                                       | High-dimensional brane super-clusters (`11D – ∞D`) binding distinct multiverses and elemental tribulation weather fronts (`InfiniteCollection<Megaverse>`).                                                                                    |
+| **4** | **Omniverse** (`♾️`)                           |       `Infinity` (`∞`)        | _"Every universe, multiverse, and reality that has ever existed or could exist."_                                            | Each of the **100 Fictional Species** rules its own dedicated **Sovereign Omniverse (`OMNIVERSE-001` through `OMNIVERSE-100` + `∞`)**, containing every reality that has ever existed or could exist (`InfiniteCollection<Omniverse>`).        |
+| **5** | **The Overvoid / Exonverse** (`🕳️`)            |   `100` (Fixed Bounded Cap)   | _"A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy."_ | Strictly bounded to **100** meta-containers (`index: 1..100`, `OVERVOID-001`..`OVERVOID-100`) where each Sovereign Omniverse floats under completely independent laws of logic, physics, and cosmic hierarchy.                                 |
+| **6** | **The White Page / The House of Ideas** (`📄`) |    `1` (Strict Singleton)     | _"Only one — everything comes from here, even nothingness (Oblivion). `creatergame31@gmail.com`."_                           | The supreme pre-existential singleton canvas (`isSingleton: true`). Everything — creation, causality, the 3,000 Great Daos, all 100 Overvoids, and even Nothingness (`Oblivion`) itself — originates here under **`creatergame31@gmail.com`**. |
 
-### Strict 6-Tier Nested Data Architecture (`src/types/game.ts` & `src/game/omniverse.ts`)
+### Strict 6-Tier Nested Data Architecture & Cardinality (`src/types/game.ts`, `src/game/omniverse.ts`, `src/components/CosmologicalAdminModal.tsx`)
 
-Every entity exists within a strict 6-tier parent-child tree rooted in the Tier 6 `WhitePageRoot` singleton (`getWhitePageSingletonRoot()`), which spawns both existence (`exonverses: Overvoid[]`) and non-existence (`includesOblivion: true` + `oblivionState`), while allowing custom logic and physics overrides at **Tier 5 (`Overvoid`)** and **Tier 1 (`Universe`)**:
+Every entity exists within a strict 6-tier parent-child tree rooted in the Tier 6 `WhitePageRoot` singleton (`getWhitePageSingletonRoot()`), which spawns both all `100` bounded `Overvoid` instances (`overvoids: Overvoid[]`, `index: 1..100`) and non-existence (`oblivionState: { exists: true, description: 'Absolute nothingness originating from The White Page' }`), while modeling infinite Tiers 1–4 via `InfiniteCollection<T>` (`lazilyGenerateInfiniteTierSlice()`) and allowing custom logic and physics overrides at **Tier 5 (`Overvoid`)** and **Tier 1 (`Universe`)**:
 
 ```typescript
+export const COSMIC_LIMITS = {
+  WHITE_PAGE_COUNT: 1,
+  OVERVOID_MAX_COUNT: 100,
+  OMNIVERSE_COUNT: Infinity,
+  MEGAVERSE_COUNT: Infinity,
+  MULTIVERSE_COUNT: Infinity,
+  UNIVERSE_COUNT: Infinity,
+} as const;
+
+interface InfiniteCollection<T> {
+  totalCount: typeof Infinity;
+  generatorSeed: string;
+  loadedNodes: T[]; // Dynamically fetched or procedurally generated slice
+}
+
 interface Universe {
   id: string;
   name: string;
+  tier: 1;
   spacetimeConfig: Record<string, unknown>;
   matterConstants: Record<string, unknown>;
 }
@@ -35,39 +51,49 @@ interface Universe {
 interface Multiverse {
   id: string;
   name: string;
+  tier: 2;
   topology: 'parallel' | 'series' | 'hybrid';
-  universes: Universe[];
+  universes: InfiniteCollection<Universe>;
 }
 
 interface Megaverse {
   id: string;
   name: string;
+  tier: 3;
   alias: 'Megaverse' | 'Hyperverse';
-  multiverses: Multiverse[];
+  multiverses: InfiniteCollection<Multiverse>;
 }
 
 interface Omniverse {
   id: string;
   name: string;
+  tier: 4;
   temporalScope: 'past' | 'present' | 'potential' | 'all';
-  megaverses: Megaverse[];
+  megaverses: InfiniteCollection<Megaverse>;
 }
 
 interface Overvoid {
   id: string;
+  index: number; // Strictly bounded: 1 to 100
   name: string;
+  tier: 5;
   alias: 'The Overvoid' | 'Exonverse';
   logicSystem: string;
   cosmicHierarchyRules: Record<string, unknown>;
-  omniverses: Omniverse[];
+  omniverses: InfiniteCollection<Omniverse>;
 }
 
 interface WhitePageRoot {
   id: 'THE_WHITE_PAGE';
+  tier: 6;
+  isSingleton: true;
   alias: 'The House of Ideas';
   creatorEmail: 'creatergame31@gmail.com';
-  includesOblivion: true;
-  exonverses: Overvoid[];
+  oblivionState: {
+    exists: true;
+    description: 'Absolute nothingness originating from The White Page';
+  };
+  overvoids: Overvoid[]; // Validation rule: length must equal exactly 100
 }
 ```
 

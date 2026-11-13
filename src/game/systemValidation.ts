@@ -165,27 +165,31 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     transfiniteOmni.omniverse.hourlyDiamondTribute > 0n &&
     treeValidation.valid &&
     singletonTree.id === 'THE_WHITE_PAGE' &&
+    singletonTree.tier === 6 &&
+    singletonTree.isSingleton === true &&
     singletonTree.alias === 'The House of Ideas' &&
     singletonTree.creatorEmail === PRIMARY_ADMIN_EMAIL &&
-    singletonTree.includesOblivion === true &&
-    treeValidation.tierCounts.tier5Overvoids === 5 &&
-    treeValidation.tierCounts.tier4Omniverses === 100 &&
+    singletonTree.oblivionState.exists === true &&
+    treeValidation.tierCounts.tier5Overvoids === 100 &&
+    treeValidation.cardinalities.tier4Omniverses === Infinity &&
+    treeValidation.cardinalities.tier1Universes === Infinity &&
+    treeValidation.tierCounts.tier4Omniverses >= 100 &&
     treeValidation.tierCounts.tier1Universes >= 200 &&
     solaraPath.found &&
     solaraPhysics.effectiveQiMultiplier > 1.0;
 
   pillars.push({
     id: 'six_layer_cosmology_and_100_omniverses',
-    title: '2. 6-Tier Nested Cosmological Tree (WhitePageRoot -> Universe) & 100+∞ Omniverses',
+    title: '2. 6-Tier Nested Cosmological Tree (1 Singleton -> 100 Overvoids -> ∞ Realities)',
     passed: p2Passed,
-    assertionsPassed: 14,
+    assertionsPassed: 16,
     summary:
-      'Verified strict 6-tier nested tree (THE_WHITE_PAGE -> Overvoid -> Omniverse -> Megaverse -> Multiverse -> Universe), Oblivion spawning, Tier 5/Tier 1 physics overrides & 100 Species NPCs.',
+      'Verified strict 6-tier nested tree (1 WhitePageRoot Singleton -> 100 Overvoids -> ∞ Omniverses -> ∞ Megaverses -> ∞ Multiverses -> ∞ Universes), Oblivion origin, and lazy InfiniteCollection pagination.',
     verifiedInvariants: [
-      `Tier 6 Singleton Root: WhitePageRoot (id: 'THE_WHITE_PAGE', alias: 'The White Page / The House of Ideas', creatorEmail: '${PRIMARY_ADMIN_EMAIL}', includesOblivion: true)`,
-      'Strict Parent-Child Nesting: 1 WhitePageRoot -> 5 Overvoids/Exonverses -> 100 Omniverses -> 100 Megaverses/Hyperverses -> 100 Multiverses -> 200+ Universes',
+      `Tier 6 Singleton Root: WhitePageRoot (id: 'THE_WHITE_PAGE', tier: 6, isSingleton: true, alias: 'The White Page / The House of Ideas', creatorEmail: '${PRIMARY_ADMIN_EMAIL}', oblivionState.exists: true)`,
+      'Cardinality Limits (COSMIC_LIMITS): WhitePage=1, Overvoid=100 (Bounded Cap), Omniverse=∞, Megaverse=∞, Multiverse=∞, Universe=∞ via InfiniteCollection<T>',
       'Rule 3 Physics & Logic Overrides: Tier 5 Overvoid logicSystem/cosmicHierarchyRules + Tier 1 Universe spacetimeConfig/matterConstants cascade cleanly',
-      '100 Unique Fictional Species Background NPCs (Ranks #1–#100) + Transfinite Ω-∞ Resolver',
+      '100 Unique Fictional Species Background NPCs (Ranks #1–#100) + Transfinite Ω-∞ Lazy Procedural Generator',
     ],
   });
 

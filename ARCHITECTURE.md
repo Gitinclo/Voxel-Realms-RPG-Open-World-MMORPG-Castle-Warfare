@@ -30,7 +30,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/adminModeration.ts   (RBAC for creatergame31@gmail.com & mods) │
 │  • src/game/architectOptimization.ts (CPU ISA, GPU, TDP, SoA & Job DAG)    │
 │  • src/game/species.ts           (10 Species catalog, 3D specs & Admin gate)│
-│  • src/game/omniverse.ts         (100 Species NPCs & Infinite Omniverse)   │
+│  • src/game/omniverse.ts         (COSMIC_LIMITS, 100 Overvoids & Omniverses)│
+│  • src/game/cosmologicalTreeD3.ts (D3 6-tier hierarchy layout & projection) │
 │  • src/game/loreHistory.ts       (7 Historical Epochs & 6 Lore Codices)     │
 │  • src/game/graphicsEngine.ts    (Cross-Platform Pipeline & Transparency)   │
 │  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
@@ -41,7 +42,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **108 unit and regression tests across 17 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **113 unit and regression tests across 18 suites** in ~1.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -64,6 +65,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   ├── TroopBarracksModal.tsx   # T1-T20 recruitment, real-time training queue & counter matrix
 │   │   ├── CultivationModal.tsx     # Four-Path Dantian, manuals, alchemy pills, Heavenly Tribulations
 │   │   ├── WorldAIDirectorModal.tsx # Lv 1-1000 monster telemetry, A* waypoints & 100-Omniverse Matrix
+│   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── ClanModal.tsx            # Alliance vault, 9-sector war map, co-op boss, emblem studio
 │   │   ├── VipSubscriptionModal.tsx # VIP Covenant tiers, daily stipends & loyalty progression
 │   │   └── ...                      # HeroModal, DailyLoginModal, WeatherModal, LeaderboardModal, etc.
@@ -134,15 +136,17 @@ Players cultivate four complementary paths simultaneously:
 - **3D Scene-Graph Attachments**: `createPlayerMesh` constructs a dedicated `SpeciesTraitGroup` with procedural horns, ears, wings, tails, tusks, runic beards, orbiting void shards, and golem core reactors while applying per-species stature scaling (`bodyScale`).
 - **Admin Permission Gate (`evaluateSpeciesSwitchPermission`)**: Once a character's initial species is locked (`speciesLocked: true`), switching to a different species requires authorization from **`creatergame31@gmail.com`** (via active Admin/GM privileges or an approved `adminSpeciesSwitchApproved` decree).
 
-### H. 6-Tier Nested Cosmological Hierarchy, `WhitePageRoot` Singleton & 100 Fictional Species Background NPCs (`src/types/game.ts` & `src/game/omniverse.ts`)
+### H. 6-Tier Nested Cosmological Hierarchy, `COSMIC_LIMITS` Cardinality, D3 Tree Visualizer & 100 Fictional Species Background NPCs (`src/types/game.ts`, `src/game/omniverse.ts`, `src/game/cosmologicalTreeD3.ts`, `src/components/CosmologicalAdminModal.tsx`)
 
-- **Strict 6-Tier Nested Tree Schema (`WhitePageRoot` → `Overvoid` → `Omniverse` → `Megaverse` → `Multiverse` → `Universe`)**:
-  - **Tier 6 (`WhitePageRoot` Singleton)**: `id: 'THE_WHITE_PAGE'`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`, `includesOblivion: true`. Spawns both existence (`exonverses: Overvoid[]`) and non-existence (`oblivionState: OblivionDomainState`) via `getWhitePageSingletonRoot()`.
-  - **Tier 5 (`Overvoid`, alias `'The Overvoid' | 'Exonverse'`)**: Meta-container housing distinct `Omniverse[]` instances under independent `logicSystem` and `cosmicHierarchyRules`.
-  - **Tier 4 (`Omniverse`)**: Complete aggregate of `Megaverse[]` instances across `'past' | 'present' | 'potential' | 'all'` temporal scopes.
-  - **Tier 3 (`Megaverse`, alias `'Megaverse' | 'Hyperverse'`)**: Higher-dimensional cluster grouping `Multiverse[]` instances.
-  - **Tier 2 (`Multiverse`)**: Parent container organizing `Universe[]` instances in `'parallel' | 'series' | 'hybrid'` topologies.
-  - **Tier 1 (`Universe`)**: Base leaf reality unit with independent `spacetimeConfig` and `matterConstants`.
+- **Strict 6-Tier Nested Tree Schema & Cardinality (`COSMIC_LIMITS` & `InfiniteCollection<T>`)**:
+  - **Tier 6 (`WhitePageRoot` Singleton, Cardinality = `1`)**: `id: 'THE_WHITE_PAGE'`, `tier: 6`, `isSingleton: true`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`. Spawns both all `100` `Overvoid` instances (`overvoids: Overvoid[]`) and absolute nothingness (`oblivionState: { exists: true, description: 'Absolute nothingness originating from The White Page' }`) via `getWhitePageSingletonRoot()`.
+  - **Tier 5 (`Overvoid`, alias `'The Overvoid' | 'Exonverse'`, Cardinality = `100`)**: Strictly bounded meta-container (`index: 1..100`, `OVERVOID-001`..`OVERVOID-100`) housing `InfiniteCollection<Omniverse>` under independent `logicSystem` and `cosmicHierarchyRules`. Guarded by `attemptCreateOvervoid()` and `setWhitePageSingletonRoot()` which reject any request exceeding `100` Overvoids.
+  - **Tier 4 (`Omniverse`, Cardinality = `Infinity`)**: Complete aggregate of `InfiniteCollection<Megaverse>` across `'past' | 'present' | 'potential' | 'all'` temporal scopes.
+  - **Tier 3 (`Megaverse`, alias `'Megaverse' | 'Hyperverse'`, Cardinality = `Infinity`)**: Higher-dimensional cluster grouping `InfiniteCollection<Multiverse>`.
+  - **Tier 2 (`Multiverse`, Cardinality = `Infinity`)**: Parent container organizing `InfiniteCollection<Universe>` in `'parallel' | 'series' | 'hybrid'` topologies.
+  - **Tier 1 (`Universe`, Cardinality = `Infinity`)**: Base leaf reality unit (`tier: 1`) with independent `spacetimeConfig` and `matterConstants`.
+- **On-Demand Lazy Procedural Pagination (`lazilyGenerateInfiniteTierSlice`)**: Rather than pre-allocating infinite arrays in memory, Tiers 1–4 store `{ totalCount: Infinity, generatorSeed, loadedNodes }` and procedurally synthesize child slices on demand.
+- **Interactive D3 Tree Visualizer (`cosmologicalTreeD3.ts` & `CosmologicalAdminModal.tsx`)**: Computes deterministic `d3.hierarchy` + `d3.tree` node coordinates and cubic Bézier links across both Horizontal (`Left → Right`) and Radial (`360° Mandala`) layouts with interactive pan/zoom (`d3-zoom`), live Tier 5 logic / Tier 1 physics override controls, and lazy slice pagination triggers.
 - **Custom Logic & Physics Override Engine (`overrideOvervoidLogicRules`, `overrideUniversePhysicsConstants` & `evaluateEffectiveUniversePhysicsAndLogic`)**: Cascades baseline physical constants through Tier 5 `Overvoid` custom logic/hierarchy overrides and Tier 1 `Universe` custom spacetime/matter overrides, validated by `validateCosmologicalTreeHierarchy` and `resolveEntityCosmologicalPath`.
 - **100 Canonical Fictional Species & Super Admin Command (`TOP_100_OMNIVERSE_SPECIES_NPCS`, `executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Catalogs all 100 species across 5 Tiers (`OMNI-001`..`OMNI-100` + transfinite `Ω-∞`) and enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs and Layer-6 White Page / House of Ideas Decrees.
 
@@ -151,9 +155,9 @@ Players cultivate four complementary paths simultaneously:
 - **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 06/11/2026 Software & Hardware Architect Convergence_).
 - **6 Sacred Compendium Codices (`LORE_COMPENDIUM_CHAPTERS`), Comprehension & Search**: Provides pure functions for one-time epoch comprehension (`comprehendLoreEpoch`, awarding Diamonds and Scripture Fragments) and full-text lore search (`searchLoreHistory`).
 
-### J. 8-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
+### J. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates 59+ invariants across all 8 foundational pillars (Root RBAC `creatergame31@gmail.com`, 6-Layer Cosmology & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, and Lv. 1–1000 World AI) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **72+ invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency Matrix & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ---
 
@@ -162,7 +166,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 106 deterministic unit tests across 17 suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 113 deterministic unit tests across 18 suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

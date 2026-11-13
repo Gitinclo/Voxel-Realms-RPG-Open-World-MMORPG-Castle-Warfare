@@ -80,6 +80,7 @@ interface AdminConsoleModalProps {
   ) => void;
   onExecuteWhitePageDecree?: (decreeType: WhitePageAuthorDecreeType) => void;
   onOpenOmniverseDirector?: () => void;
+  onOpenCosmologicalAdmin?: () => void;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
 }
@@ -111,6 +112,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onExecuteOmniverseCommand,
   onExecuteWhitePageDecree,
   onOpenOmniverseDirector,
+  onOpenCosmologicalAdmin,
   initialTab = 'cheats',
   onClose,
 }) => {
@@ -666,6 +668,19 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1.5">
+                    {onOpenCosmologicalAdmin && (
+                      <button
+                        type="button"
+                        data-testid="admin-open-cosmological-d3-btn"
+                        onClick={() => {
+                          sound.playButton();
+                          onOpenCosmologicalAdmin();
+                        }}
+                        className="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-mono font-bold cursor-pointer"
+                      >
+                        Open 6-Tier Cosmology D3 Tree
+                      </button>
+                    )}
                     {onOpenOmniverseDirector && (
                       <button
                         type="button"

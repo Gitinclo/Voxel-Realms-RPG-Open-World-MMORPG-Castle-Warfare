@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   Gavel,
   BookOpen,
+  GitBranch,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -65,6 +66,7 @@ interface GameHUDProps {
   onOpenCppCore: () => void;
   onOpenAdminConsole: () => void;
   onOpenLoreHistory?: () => void;
+  onOpenCosmologicalAdmin?: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
@@ -112,6 +114,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenCppCore,
   onOpenAdminConsole,
   onOpenLoreHistory,
+  onOpenCosmologicalAdmin,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
@@ -273,6 +276,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   <Gavel className="w-2.5 h-2.5 text-red-400" />
                   <span>GM · MOD</span>
                 </button>
+                {onOpenCosmologicalAdmin && (
+                  <button
+                    type="button"
+                    data-testid="hud-cosmology-admin-btn"
+                    onClick={() => {
+                      sound.playSwing();
+                      onOpenCosmologicalAdmin();
+                    }}
+                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                    title="Open 6-Tier Cosmological Hierarchy D3 Interactive Tree Visualizer"
+                  >
+                    <GitBranch className="w-2.5 h-2.5 text-cyan-400" />
+                    <span>6-Tier D3</span>
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-mono">
                 <span
@@ -875,6 +893,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   Lore &amp; History
                 </span>
                 <span className="text-[9px] font-mono text-amber-300">7 Epochs</span>
+              </button>
+            )}
+
+            {onOpenCosmologicalAdmin && (
+              <button
+                type="button"
+                data-testid="dock-cosmology-admin-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  onOpenCosmologicalAdmin();
+                }}
+                className="p-2 rounded-xl bg-cyan-950/70 hover:bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              >
+                <GitBranch className="w-5 h-5 text-cyan-400" />
+                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                  Cosmology D3
+                </span>
+                <span className="text-[9px] font-mono text-amber-300">6-Tier Tree</span>
               </button>
             )}
           </div>

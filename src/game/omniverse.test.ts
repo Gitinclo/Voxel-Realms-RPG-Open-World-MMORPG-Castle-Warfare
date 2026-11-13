@@ -24,6 +24,9 @@ import {
   overrideOvervoidLogicRules,
   overrideUniversePhysicsConstants,
   spawnNestedUniverseInMultiverse,
+  attemptCreateOvervoid,
+  lazilyGenerateInfiniteTierSlice,
+  COSMIC_LIMITS,
 } from './omniverse';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 
@@ -244,30 +247,58 @@ test('executeWhitePageAuthorDecree strictly enforces Supreme Author creatergame3
   assert.equal(oblivion.updatedRoster.filter((e) => e.deployedInOverworld).length, 5);
 });
 
-test('6-Tier Nested Cosmological Tree enforces WhitePageRoot singleton, Oblivion + Overvoid spawning, and strict Tier 6 -> Tier 1 nesting', () => {
+test('6-Tier Nested Cosmological Tree enforces WhitePageRoot singleton (1), 100 bounded Overvoids, InfiniteCollection<T> (Infinity), and Oblivion origin', () => {
+  assert.equal(COSMIC_LIMITS.WHITE_PAGE_COUNT, 1);
+  assert.equal(COSMIC_LIMITS.OVERVOID_MAX_COUNT, 100);
+  assert.equal(COSMIC_LIMITS.OMNIVERSE_COUNT, Infinity);
+  assert.equal(COSMIC_LIMITS.MEGAVERSE_COUNT, Infinity);
+  assert.equal(COSMIC_LIMITS.MULTIVERSE_COUNT, Infinity);
+  assert.equal(COSMIC_LIMITS.UNIVERSE_COUNT, Infinity);
+
   const root = resetWhitePageSingletonRoot();
   assert.equal(getWhitePageSingletonRoot(), root);
   assert.equal(root.id, 'THE_WHITE_PAGE');
+  assert.equal(root.tier, 6);
+  assert.equal(root.isSingleton, true);
   assert.equal(root.alias, 'The House of Ideas');
   assert.equal(root.creatorEmail, 'creatergame31@gmail.com');
-  assert.equal(root.includesOblivion, true);
-  assert.equal(root.oblivionState?.spawnedFrom, 'THE_WHITE_PAGE');
+  assert.equal(root.oblivionState.exists, true);
+  assert.equal(
+    root.oblivionState.description,
+    'Absolute nothingness originating from The White Page'
+  );
+  assert.equal(root.overvoids.length, 100);
 
   const summary = validateCosmologicalTreeHierarchy(root);
   assert.equal(summary.valid, true);
   assert.equal(summary.violations.length, 0);
   assert.equal(summary.tierCounts.tier6WhitePageRoot, 1);
-  assert.equal(summary.tierCounts.tier5Overvoids, 5);
+  assert.equal(summary.tierCounts.tier5Overvoids, 100);
   assert.equal(summary.tierCounts.tier4Omniverses, 100);
   assert.equal(summary.tierCounts.tier3Megaverses, 100);
   assert.equal(summary.tierCounts.tier2Multiverses, 100);
   assert.equal(summary.tierCounts.tier1Universes, 200);
+  assert.equal(summary.cardinalities.tier4Omniverses, Infinity);
+  assert.equal(summary.cardinalities.tier1Universes, Infinity);
+
+  // Rule 2: Reject any creation request exceeding 100 Overvoids
+  const rejectedOvervoid = attemptCreateOvervoid({
+    root,
+    candidateOvervoid: {
+      id: 'OVERVOID-101',
+      index: 101,
+      name: 'Overflow Overvoid #101',
+    },
+  });
+  assert.equal(rejectedOvervoid.allowed, false);
+  assert.equal(rejectedOvervoid.currentCount, 100);
+  assert.ok(rejectedOvervoid.reason.includes('100'));
 
   const solaraPath = resolveEntityCosmologicalPath(root, SOLARA_PRIME_UNIVERSE_ID);
   assert.equal(solaraPath.found, true);
   assert.deepEqual(solaraPath.breadcrumbIdentifiers, [
     'THE_WHITE_PAGE',
-    'EXO-T5-SOLARA-PRIME',
+    'OVERVOID-081',
     'OMNI-081',
     'HV-081',
     'MV-081',
@@ -275,17 +306,18 @@ test('6-Tier Nested Cosmological Tree enforces WhitePageRoot singleton, Oblivion
   ]);
 });
 
-test('Custom logic rules at Tier 5 (Overvoid) and custom physics at Tier 1 (Universe) override standard baseline physics', () => {
+test('Custom logic rules at Tier 5 (Overvoid), custom physics at Tier 1 (Universe), and lazy InfiniteCollection pagination work cleanly', () => {
   const tree = buildCanonicalWhitePageHierarchyTree();
   const baseProfile = evaluateEffectiveUniversePhysicsAndLogic(tree, SOLARA_PRIME_UNIVERSE_ID);
   assert.equal(baseProfile.universeId, SOLARA_PRIME_UNIVERSE_ID);
-  assert.equal(baseProfile.overvoidId, 'EXO-T5-SOLARA-PRIME');
+  assert.equal(baseProfile.overvoidId, 'OVERVOID-081');
+  assert.equal(baseProfile.overvoidIndex, 81);
   assert.equal(baseProfile.effectiveSpeedOfLightMps, 299_792_458);
 
   // Override Tier 5 Overvoid logicSystem and cosmicHierarchyRules
   const afterTier5Override = overrideOvervoidLogicRules({
     root: tree,
-    overvoidId: 'EXO-T5-SOLARA-PRIME',
+    overvoidId: 'OVERVOID-081',
     logicSystem: 'Non-Euclidean Acausal Dao-Tensor Logic',
     alias: 'The Overvoid',
     cosmicHierarchyRulesPatch: {
@@ -325,19 +357,31 @@ test('Custom logic rules at Tier 5 (Overvoid) and custom physics at Tier 1 (Univ
   assert.equal(updatedProfile.effectiveGravityMultiplier, 3.25);
   assert.equal(updatedProfile.effectiveQiMultiplier, 20.0); // 5.0 (Tier 1) * 4.0 (Tier 5)
 
-  // Spawn a new child Universe inside Multiverse MV-081
+  // Spawn a new child Universe inside Multiverse MV-081's InfiniteCollection
   const afterSpawn = spawnNestedUniverseInMultiverse({
     root: afterTier1Override,
     multiverseId: 'MV-081',
     newUniverse: {
       id: 'U-081.3-POCKET-REALM',
       name: 'Solara Immortal Pocket Universe U-081.3',
+      tier: 1,
       spacetimeConfig: { speedOfLightMps: 1_000_000_000, timeDilationFactor: 100.0 },
       matterConstants: { gravityMultiplier: 0.5, qiSpiritDensityMultiplier: 25.0 },
     },
     syncSingleton: false,
   });
-  const spawnedCheck = validateCosmologicalTreeHierarchy(afterSpawn);
+
+  // Lazily generate 2 more procedural Universes under MV-081 via deterministic seed pagination
+  const afterLazyPage = lazilyGenerateInfiniteTierSlice({
+    root: afterSpawn,
+    parentTier: 2,
+    parentId: 'MV-081',
+    pageSize: 2,
+    syncSingleton: false,
+  });
+
+  const spawnedCheck = validateCosmologicalTreeHierarchy(afterLazyPage);
   assert.equal(spawnedCheck.valid, true);
-  assert.equal(spawnedCheck.tierCounts.tier1Universes, 201);
+  assert.equal(spawnedCheck.tierCounts.tier5Overvoids, 100);
+  assert.equal(spawnedCheck.tierCounts.tier1Universes, 203);
 });

@@ -90,6 +90,9 @@ interface WorldAIDirectorModalProps {
   ) => void;
   onExecuteWhitePageDecree?: (decreeType: WhitePageAuthorDecreeType) => void;
   onOpenAdminConsole?: () => void;
+  cosmologicalTree?: WhitePageRoot;
+  onUpdateCosmologicalTree?: (nextTree: WhitePageRoot) => void;
+  onOpenCosmologicalAdmin?: () => void;
   onClose: () => void;
 }
 
@@ -114,6 +117,9 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   onExecuteOmniverseCommand,
   onExecuteWhitePageDecree,
   onOpenAdminConsole,
+  cosmologicalTree: externalTree,
+  onUpdateCosmologicalTree,
+  onOpenCosmologicalAdmin,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'npcs' | 'monsters' | 'telemetry' | 'omniverse'>(
@@ -130,9 +136,14 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
   const [expandedCosmologyRanks, setExpandedCosmologyRanks] = useState<Record<number, boolean>>({
     1: true,
   });
-  const [cosmologicalTree, setCosmologicalTree] = useState<WhitePageRoot>(() =>
+  const [internalCosmologicalTree, setInternalCosmologicalTree] = useState<WhitePageRoot>(() =>
     getWhitePageSingletonRoot()
   );
+  const cosmologicalTree = externalTree ?? internalCosmologicalTree;
+  const setCosmologicalTree = (nextTree: WhitePageRoot) => {
+    setInternalCosmologicalTree(nextTree);
+    onUpdateCosmologicalTree?.(nextTree);
+  };
   const [selectedUniverseId, setSelectedUniverseId] = useState<string>(SOLARA_PRIME_UNIVERSE_ID);
 
   const treeValidation = validateCosmologicalTreeHierarchy(cosmologicalTree);
@@ -1122,12 +1133,12 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           </span>
                           <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono">
                             {treeValidation.valid ? 'NESTING VALIDATED' : 'INVALID'} ·{' '}
-                            {treeValidation.tierCounts.tier6WhitePageRoot} Root →{' '}
-                            {treeValidation.tierCounts.tier5Overvoids} Overvoids →{' '}
-                            {treeValidation.tierCounts.tier4Omniverses} Omniverses →{' '}
-                            {treeValidation.tierCounts.tier3Megaverses} Megaverses →{' '}
-                            {treeValidation.tierCounts.tier2Multiverses} Multiverses →{' '}
-                            {treeValidation.tierCounts.tier1Universes} Universes
+                            {treeValidation.tierCounts.tier6WhitePageRoot} Singleton Root →{' '}
+                            {treeValidation.tierCounts.tier5Overvoids}/100 Overvoids →{' '}
+                            {treeValidation.tierCounts.tier4Omniverses}/∞ Omniverses →{' '}
+                            {treeValidation.tierCounts.tier3Megaverses}/∞ Megaverses →{' '}
+                            {treeValidation.tierCounts.tier2Multiverses}/∞ Multiverses →{' '}
+                            {treeValidation.tierCounts.tier1Universes}/∞ Universes
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-300 mt-0.5">
@@ -1140,13 +1151,26 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           </code>{' '}
                           · Oblivion Included:{' '}
                           <code className="text-fuchsia-300 font-mono">
-                            {String(cosmologicalTree.includesOblivion)} (
-                            {cosmologicalTree.oblivionState?.id})
+                            {String(cosmologicalTree.oblivionState.exists)} (
+                            {cosmologicalTree.oblivionState.id})
                           </code>
                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5">
+                        {onOpenCosmologicalAdmin && (
+                          <button
+                            type="button"
+                            data-testid="world-ai-open-cosmological-d3-btn"
+                            onClick={() => {
+                              sound.playSwing();
+                              onOpenCosmologicalAdmin();
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-mono font-bold transition-all cursor-pointer"
+                          >
+                            Open Interactive D3 Tree Visualizer
+                          </button>
+                        )}
                         {[
                           { label: 'Solara Prime (U-081.1)', id: SOLARA_PRIME_UNIVERSE_ID },
                           { label: 'Outer Gods (U-001.1)', id: 'U-001.1' },
@@ -1177,37 +1201,37 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px] font-mono">
                       {[
                         {
-                          tier: 'Tier 6 (Root)',
+                          tier: 'Tier 6 (Root = 1)',
                           id: selectedEntityPath.tier6WhitePage.id,
                           sub: selectedEntityPath.tier6WhitePage.alias,
                           badge: 'Singleton + Oblivion',
                         },
                         {
-                          tier: 'Tier 5 (Overvoid)',
+                          tier: 'Tier 5 (Overvoid = 100)',
                           id: selectedEntityPath.tier5Overvoid.id,
-                          sub: selectedEntityPath.tier5Overvoid.alias,
+                          sub: `${selectedEntityPath.tier5Overvoid.alias} #${selectedEntityPath.tier5Overvoid.index}/100`,
                           badge: selectedEntityPath.tier5Overvoid.logicSystem,
                         },
                         {
-                          tier: 'Tier 4 (Omniverse)',
+                          tier: 'Tier 4 (Omniverse = ∞)',
                           id: selectedEntityPath.tier4Omniverse.id,
                           sub: selectedEntityPath.tier4Omniverse.name,
                           badge: `Scope: ${selectedEntityPath.tier4Omniverse.temporalScope}`,
                         },
                         {
-                          tier: 'Tier 3 (Megaverse)',
+                          tier: 'Tier 3 (Megaverse = ∞)',
                           id: selectedEntityPath.tier3Megaverse.id,
                           sub: selectedEntityPath.tier3Megaverse.name,
                           badge: `Alias: ${selectedEntityPath.tier3Megaverse.alias}`,
                         },
                         {
-                          tier: 'Tier 2 (Multiverse)',
+                          tier: 'Tier 2 (Multiverse = ∞)',
                           id: selectedEntityPath.tier2Multiverse.id,
                           sub: selectedEntityPath.tier2Multiverse.name,
-                          badge: `Topology: ${selectedEntityPath.tier2Multiverse.topology}`,
+                          badge: `Topology: ${selectedEntityPath.tier2Multiverse.topology} (${selectedEntityPath.tier2Multiverse.universes.loadedNodes.length}/∞)`,
                         },
                         {
-                          tier: 'Tier 1 (Universe)',
+                          tier: 'Tier 1 (Universe = ∞)',
                           id: selectedEntityPath.tier1Universe.id,
                           sub: selectedEntityPath.tier1Universe.name,
                           badge: `${effectivePhysics.effectiveQiMultiplier}x Qi · ${effectivePhysics.effectiveGravityMultiplier}G`,
@@ -1318,13 +1342,14 @@ export const WorldAIDirectorModal: React.FC<WorldAIDirectorModalProps> = ({
                           type="button"
                           data-testid="spawn-nested-universe-btn"
                           onClick={() => {
-                            const newId = `${selectedEntityPath.tier2Multiverse.id}-U${selectedEntityPath.tier2Multiverse.universes.length + 1}`;
+                            const newId = `${selectedEntityPath.tier2Multiverse.id}-U${selectedEntityPath.tier2Multiverse.universes.loadedNodes.length + 1}`;
                             const updated = spawnNestedUniverseInMultiverse({
                               root: cosmologicalTree,
                               multiverseId: selectedEntityPath.tier2Multiverse.id,
                               newUniverse: {
                                 id: newId,
                                 name: `Spawned Continuum ${newId}`,
+                                tier: 1,
                                 spacetimeConfig: {
                                   timeDilationFactor: 5.0,
                                   speedOfLightMps: 500_000_000,

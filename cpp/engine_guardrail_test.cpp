@@ -5,6 +5,7 @@
 
 int main() {
     using voxel::guardrails::computeCacheLineBytesForIsa;
+    using voxel::guardrails::computeCascadedUniverseQiMultiplier;
     using voxel::guardrails::computeCosmicLayerScaleMultiplier;
     using voxel::guardrails::computeRealmSuppressionMultiplier;
     using voxel::guardrails::CosmicOntologyLayer;
@@ -13,13 +14,17 @@ int main() {
     using voxel::guardrails::HardwareIsaTier;
     using voxel::guardrails::SectHierarchyManager;
     using voxel::guardrails::SoaEntityKinematicChunk;
+    using voxel::guardrails::WhitePageRootSpec;
 
     constexpr double suppression = computeRealmSuppressionMultiplier(
         CultivationRealm::GoldenCore, CultivationRealm::QiRefinement);
     constexpr uint64_t whitePageScale =
         computeCosmicLayerScaleMultiplier(CosmicOntologyLayer::TheWhitePage_HouseOfIdeas);
+    constexpr WhitePageRootSpec rootSpec{};
     static_assert(suppression > 99.9);
     static_assert(whitePageScale == 100000ULL);
+    static_assert(rootSpec.includesOblivion && rootSpec.tier4OmniverseCount == 100U);
+    static_assert(computeCascadedUniverseQiMultiplier(5.0, 4.0) == 20.0);
     static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::AppleSilicon_UMA128) == 128U);
     static_assert(alignof(SoaEntityKinematicChunk) == 64U);
 

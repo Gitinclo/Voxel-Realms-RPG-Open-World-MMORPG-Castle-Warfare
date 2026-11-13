@@ -24,7 +24,7 @@ Please confirm all items below before requesting a review or merging:
 
 - [ ] `npm install` completes cleanly with no dependency conflicts
 - [ ] `npm run lint` (`tsc --noEmit`) passes with zero TypeScript errors
-- [ ] `npm test` passes all 108+ unit tests across all 17 suites (`adminModeration`, `architectOptimization`, `species`, `omniverse`, `loreHistory`, `systemValidation`, `cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`, `vipSubscription`, `troopTraining`, `heroSkins`, `graphicsEngine`, `proceduralWorld`)
+- [ ] `npm test` passes all 110+ unit tests across all 17 suites (`adminModeration`, `architectOptimization`, `species`, `omniverse`, `loreHistory`, `systemValidation`, `cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`, `vipSubscription`, `troopTraining`, `heroSkins`, `graphicsEngine`, `proceduralWorld`)
 - [ ] `npm run validate` & `npm run build` generate the production bundle under `dist/` without errors
 
 ### 2. Runtime Smoke Test

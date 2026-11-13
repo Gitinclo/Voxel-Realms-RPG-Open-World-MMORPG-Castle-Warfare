@@ -93,6 +93,32 @@ static_assert(
 static_assert(kCanonicalLoreEpochCount == 7U,
               "Imperial Lore & Cosmological History Codex must define 7 Grand Historical Epochs");
 
+// Strict 6-Tier Nested Cosmological Tree & Custom Physics/Logic Override Guardrail
+struct WhitePageRootSpec final {
+    std::string_view id{"THE_WHITE_PAGE"};
+    std::string_view alias{"The House of Ideas"};
+    std::string_view creatorEmail{kSupremeAuthorEmail};
+    bool includesOblivion{true};
+    std::size_t tier5OvervoidCount{5U};
+    std::size_t tier4OmniverseCount{100U};
+    std::size_t tier3MegaverseCount{100U};
+    std::size_t tier2MultiverseCount{100U};
+    std::size_t tier1UniverseCount{200U};
+};
+
+[[nodiscard]] constexpr double
+computeCascadedUniverseQiMultiplier(double tier1UniverseQiMultiplier,
+                                    double tier5OvervoidQiBonus) noexcept {
+    return tier1UniverseQiMultiplier * tier5OvervoidQiBonus;
+}
+
+static_assert(WhitePageRootSpec{}.includesOblivion,
+              "Tier 6 WhitePageRoot singleton must spawn both existence (Overvoid[]) and Oblivion");
+static_assert(WhitePageRootSpec{}.creatorEmail == "creatergame31@gmail.com",
+              "Tier 6 WhitePageRoot creatorEmail must be creatergame31@gmail.com");
+static_assert(computeCascadedUniverseQiMultiplier(5.0, 4.0) == 20.0,
+              "Tier 1 Universe and Tier 5 Overvoid custom physics/logic overrides must cascade");
+
 // Software & Hardware Architect: 64-byte cache-line aligned Structure-of-Arrays (SoA) hot transform chunk
 struct alignas(kX86CacheLineBytes) SoaEntityKinematicChunk final {
     std::array<float, kSoaSimdChunkCapacity> posX{};

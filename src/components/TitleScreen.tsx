@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Play, Shield, Sparkles, Gift, Crown, Gavel, BookOpen } from 'lucide-react';
+import { Play, Shield, Sparkles, Gift, Crown, Gavel, BookOpen, GitBranch } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
 
@@ -18,6 +18,7 @@ interface TitleScreenProps {
   canClaimVipStipend?: boolean;
   onOpenAdminConsole?: () => void;
   onOpenLoreHistory?: () => void;
+  onOpenCosmologicalAdmin?: () => void;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
@@ -30,6 +31,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   canClaimVipStipend = false,
   onOpenAdminConsole,
   onOpenLoreHistory,
+  onOpenCosmologicalAdmin,
 }) => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -52,6 +54,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {onOpenCosmologicalAdmin && (
+            <button
+              type="button"
+              data-testid="title-cosmology-d3-btn"
+              onClick={onOpenCosmologicalAdmin}
+              className="px-3.5 py-2 rounded-xl bg-cyan-950/85 hover:bg-cyan-900/85 border border-cyan-500/60 text-xs font-mono font-bold text-cyan-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title="Open 6-Tier Cosmological Hierarchy D3 Interactive Tree Visualizer"
+            >
+              <GitBranch className="w-4 h-4 text-cyan-400" />
+              <span>6-Tier Cosmology D3</span>
+            </button>
+          )}
+
           {onOpenAdminConsole && (
             <button
               type="button"

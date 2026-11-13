@@ -462,14 +462,35 @@ export interface PlayerTroopRoster {
 }
 
 // ============================================================================
-// 6-TIER NESTED COSMOLOGICAL HIERARCHY & DATA ARCHITECTURE SCHEMA
-// Tier 6 (Root: WhitePageRoot) -> Tier 5 (Overvoid / Exonverse) -> Tier 4 (Omniverse)
-// -> Tier 3 (Megaverse / Hyperverse) -> Tier 2 (Multiverse) -> Tier 1 (Leaf: Universe)
+// 6-TIER NESTED COSMOLOGICAL HIERARCHY, CARDINALITY & DATA ARCHITECTURE SCHEMA
+// Tier 6 (Root: WhitePageRoot, Cardinality = 1 Singleton)
+// -> Tier 5 (Overvoid / Exonverse, Cardinality = 100 Fixed Cap)
+// -> Tier 4 (Omniverse, Cardinality = Infinity)
+// -> Tier 3 (Megaverse / Hyperverse, Cardinality = Infinity)
+// -> Tier 2 (Multiverse, Cardinality = Infinity)
+// -> Tier 1 (Leaf: Universe, Cardinality = Infinity)
 // ============================================================================
+
+export const COSMIC_LIMITS = {
+  WHITE_PAGE_COUNT: 1,
+  OVERVOID_MAX_COUNT: 100,
+  OMNIVERSE_COUNT: Infinity,
+  MEGAVERSE_COUNT: Infinity,
+  MULTIVERSE_COUNT: Infinity,
+  UNIVERSE_COUNT: Infinity,
+} as const;
+
+// Infinite tiers use procedural seeds and paginated/lazy streams to prevent memory overflow
+export interface InfiniteCollection<T> {
+  totalCount: typeof Infinity;
+  generatorSeed: string;
+  loadedNodes: T[]; // Dynamically fetched or procedurally generated slice
+}
 
 export interface Universe {
   id: string;
   name: string;
+  tier: 1;
   spacetimeConfig: Record<string, unknown>;
   matterConstants: Record<string, unknown>;
 }
@@ -477,31 +498,36 @@ export interface Universe {
 export interface Multiverse {
   id: string;
   name: string;
+  tier: 2;
   topology: 'parallel' | 'series' | 'hybrid';
-  universes: Universe[];
+  universes: InfiniteCollection<Universe>;
 }
 
 export interface Megaverse {
   id: string;
   name: string;
+  tier: 3;
   alias: 'Megaverse' | 'Hyperverse';
-  multiverses: Multiverse[];
+  multiverses: InfiniteCollection<Multiverse>;
 }
 
 export interface Omniverse {
   id: string;
   name: string;
+  tier: 4;
   temporalScope: 'past' | 'present' | 'potential' | 'all';
-  megaverses: Megaverse[];
+  megaverses: InfiniteCollection<Megaverse>;
 }
 
 export interface Overvoid {
   id: string;
+  index: number; // Strictly bounded: 1 to 100
   name: string;
+  tier: 5;
   alias: 'The Overvoid' | 'Exonverse';
   logicSystem: string;
   cosmicHierarchyRules: Record<string, unknown>;
-  omniverses: Omniverse[];
+  omniverses: InfiniteCollection<Omniverse>;
 }
 
 export interface OblivionDomainState {
@@ -510,14 +536,18 @@ export interface OblivionDomainState {
   spawnedFrom: 'THE_WHITE_PAGE';
   entropyVoidRatio: number;
   active: boolean;
-  description: string;
+  exists: true;
+  description: 'Absolute nothingness originating from The White Page';
 }
 
 export interface WhitePageRoot {
   id: 'THE_WHITE_PAGE';
+  tier: 6;
+  isSingleton: true;
   alias: 'The House of Ideas';
   creatorEmail: 'creatergame31@gmail.com';
   includesOblivion: true;
-  exonverses: Overvoid[];
-  oblivionState?: OblivionDomainState;
+  oblivionState: OblivionDomainState;
+  overvoids: Overvoid[]; // Validation rule: length must equal exactly 100
+  exonverses: Overvoid[]; // Synchronized alias for the 100 Overvoids/Exonverses
 }

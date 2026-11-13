@@ -4,6 +4,8 @@
  */
 
 import {
+  COSMIC_LIMITS,
+  InfiniteCollection,
   Megaverse,
   Multiverse,
   NPC,
@@ -16,7 +18,9 @@ import {
 } from '../types/game';
 import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from './adminModeration';
 
+export { COSMIC_LIMITS };
 export type {
+  InfiniteCollection,
   Universe,
   Multiverse,
   Megaverse,
@@ -1855,10 +1859,13 @@ export function executeWhitePageAuthorDecree(params: {
 }
 
 // ============================================================================
-// STRICT 6-TIER NESTED COSMOLOGICAL HIERARCHY & DATA ARCHITECTURE ENGINE
-// Tier 6 (WhitePageRoot Singleton) -> Tier 5 (Overvoid / Exonverse)
-// -> Tier 4 (Omniverse) -> Tier 3 (Megaverse / Hyperverse)
-// -> Tier 2 (Multiverse) -> Tier 1 (Leaf: Universe)
+// STRICT 6-TIER NESTED COSMOLOGICAL HIERARCHY, CARDINALITY & DATA ARCHITECTURE
+// Tier 6 (WhitePageRoot Singleton, Cardinality = 1)
+// -> Tier 5 (Overvoid / Exonverse, Cardinality = 100 Fixed Cap, index 1..100)
+// -> Tier 4 (Omniverse, Cardinality = Infinity via InfiniteCollection<Omniverse>)
+// -> Tier 3 (Megaverse / Hyperverse, Cardinality = Infinity via InfiniteCollection<Megaverse>)
+// -> Tier 2 (Multiverse, Cardinality = Infinity via InfiniteCollection<Multiverse>)
+// -> Tier 1 (Leaf: Universe, Cardinality = Infinity via InfiniteCollection<Universe>)
 // ============================================================================
 
 export const STANDARD_UNIVERSE_SPACETIME_CONFIG: Readonly<Record<string, unknown>> = Object.freeze({
@@ -1890,7 +1897,7 @@ export const STANDARD_OVERVOID_COSMIC_RULES: Readonly<Record<string, unknown>> =
   qiMultiplierBonus: 1.0,
 });
 
-const OVERVOID_SECTOR_PRESETS: ReadonlyArray<{
+export const OVERVOID_SECTOR_PRESETS: ReadonlyArray<{
   tier: OmniverseTierNumber;
   id: string;
   name: string;
@@ -1973,23 +1980,71 @@ const OVERVOID_SECTOR_PRESETS: ReadonlyArray<{
 ];
 
 export const SOLARA_PRIME_UNIVERSE_ID = 'U-081.1-SOLARA-PRIME';
+export const SOLARA_PRIME_OVERVOID_ID = 'OVERVOID-081';
+
+/**
+ * Helper to create an `InfiniteCollection<T>` wrapper for unbounded cosmic tiers (Tiers 1–4)
+ * without pre-allocating infinite arrays in memory.
+ */
+export function createInfiniteCollection<T>(
+  generatorSeed: string,
+  loadedNodes: T[]
+): InfiniteCollection<T> {
+  return {
+    totalCount: COSMIC_LIMITS.UNIVERSE_COUNT, // Infinity
+    generatorSeed,
+    loadedNodes,
+  };
+}
+
+/**
+ * Deterministically hashes a seed string + cursor index into a non-negative integer
+ * for lazy procedural generation of infinite cosmic nodes.
+ */
+function deterministicSeedHash(seed: string, cursorIndex: number): number {
+  const input = `${seed}::cursor=${cursorIndex}`;
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/**
+ * Checks whether an Overvoid matches a target ID (supporting both individual `OVERVOID-001..100`
+ * IDs and sector group IDs like `EXO-T5-SOLARA-PRIME`).
+ */
+export function overvoidMatchesIdentifier(overvoid: Overvoid, targetId: string): boolean {
+  if (overvoid.id === targetId) return true;
+  if (overvoid.cosmicHierarchyRules?.sectorGroupId === targetId) return true;
+  return false;
+}
 
 /**
  * Builds the canonical, strictly nested 6-tier cosmological tree where:
- * - Tier 6 (`WhitePageRoot`) is the singleton root (`id: 'THE_WHITE_PAGE'`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`, `includesOblivion: true`).
- * - Tier 5 (`Overvoid` / `Exonverse`) groups distinct Omniverses under custom `logicSystem` and `cosmicHierarchyRules`.
- * - Tier 4 (`Omniverse`) aggregates Megaverses across `'past' | 'present' | 'potential' | 'all'` temporal scopes.
- * - Tier 3 (`Megaverse` / `Hyperverse`) clusters Multiverses.
- * - Tier 2 (`Multiverse`) organizes Universes in `'parallel' | 'series' | 'hybrid'` topologies.
- * - Tier 1 (`Universe`) defines leaf realities with independent `spacetimeConfig` and `matterConstants`.
+ * - Tier 6 (`WhitePageRoot`) is the singleton root (`id: 'THE_WHITE_PAGE'`, `tier: 6`, `isSingleton: true`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`, `oblivionState.exists: true`).
+ * - Tier 5 (`Overvoid` / `Exonverse`) has a fixed bounded cardinality of exactly `100` (`index: 1..100`), each operating under distinct `logicSystem` and `cosmicHierarchyRules` and housing `omniverses: InfiniteCollection<Omniverse>`.
+ * - Tier 4 (`Omniverse`) has `Infinity` cardinality and houses `megaverses: InfiniteCollection<Megaverse>`.
+ * - Tier 3 (`Megaverse` / `Hyperverse`) has `Infinity` cardinality and houses `multiverses: InfiniteCollection<Multiverse>`.
+ * - Tier 2 (`Multiverse`) has `Infinity` cardinality and houses `universes: InfiniteCollection<Universe>`.
+ * - Tier 1 (`Universe`) has `Infinity` cardinality and defines leaf realities with independent `spacetimeConfig` and `matterConstants`.
  */
 export function buildCanonicalWhitePageHierarchyTree(
   roster: OmniverseSpeciesNpcEntry[] = TOP_100_OMNIVERSE_SPECIES_NPCS
 ): WhitePageRoot {
-  const exonverses: Overvoid[] = OVERVOID_SECTOR_PRESETS.map((sector) => {
-    const tierEntries = roster.filter((entry) => entry.tier === sector.tier);
-    const omniverses: Omniverse[] = tierEntries.map((entry) => {
-      const padded = String(entry.rank).padStart(3, '0');
+  // Ensure we always construct the exact 100 bounded Overvoids (index 1..100)
+  const sourceEntries =
+    roster.length === COSMIC_LIMITS.OVERVOID_MAX_COUNT ? roster : TOP_100_OMNIVERSE_SPECIES_NPCS;
+
+  const overvoids: Overvoid[] = sourceEntries
+    .slice(0, COSMIC_LIMITS.OVERVOID_MAX_COUNT)
+    .map((entry, idx) => {
+      const overvoidIndex = idx + 1; // Strictly bounded: 1 to 100
+      const padded = String(overvoidIndex).padStart(3, '0');
+      const sector =
+        OVERVOID_SECTOR_PRESETS.find((s) => s.tier === entry.tier) ?? OVERVOID_SECTOR_PRESETS[4];
+
       const temporalScopes: Array<'past' | 'present' | 'potential' | 'all'> = [
         'all',
         'present',
@@ -1997,13 +2052,15 @@ export function buildCanonicalWhitePageHierarchyTree(
         'past',
       ];
       const temporalScope =
-        entry.tier === 1 ? 'all' : temporalScopes[(entry.rank - 1) % temporalScopes.length];
+        entry.tier === 1 ? 'all' : temporalScopes[(overvoidIndex - 1) % temporalScopes.length];
       const megaverseAlias: 'Megaverse' | 'Hyperverse' =
-        entry.rank % 2 === 1 ? 'Hyperverse' : 'Megaverse';
+        overvoidIndex % 2 === 1 ? 'Hyperverse' : 'Megaverse';
       const topologies: Array<'parallel' | 'series' | 'hybrid'> = ['parallel', 'series', 'hybrid'];
-      const topology = topologies[(entry.rank - 1) % topologies.length];
+      const topology = topologies[(overvoidIndex - 1) % topologies.length];
+      const overvoidAlias: 'The Overvoid' | 'Exonverse' =
+        overvoidIndex % 2 === 1 ? 'Exonverse' : 'The Overvoid';
 
-      const isHumanSolara = entry.rank === 81;
+      const isHumanSolara = overvoidIndex === 81;
       const primaryUniverseId = isHumanSolara ? SOLARA_PRIME_UNIVERSE_ID : `U-${padded}.1`;
 
       const primaryUniverse: Universe = {
@@ -2011,6 +2068,7 @@ export function buildCanonicalWhitePageHierarchyTree(
         name: isHumanSolara
           ? 'Solara Citadel Prime Universe (Humanity & 10 Sovereign Species Core Reality)'
           : `Prime ${entry.speciesName} Universe U-${padded}.1 (${entry.originCanon})`,
+        tier: 1,
         spacetimeConfig: {
           ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
           spacetimeDimensions: entry.omniverse.dimensionalCardinality,
@@ -2024,13 +2082,14 @@ export function buildCanonicalWhitePageHierarchyTree(
           speciesRank: entry.rank,
           qiSpiritDensityMultiplier:
             entry.tier === 1 ? 8.0 : entry.tier === 2 ? 4.0 : entry.tier === 3 ? 3.0 : 1.5,
-          gravityMultiplier: entry.rank === 64 ? 35.0 : 1.0, // Rognarr hyper-gravity planet law
+          gravityMultiplier: overvoidIndex === 64 ? 35.0 : 1.0, // Rognarr hyper-gravity planet law
         },
       };
 
       const secondaryUniverse: Universe = {
         id: `U-${padded}.2`,
         name: `${entry.speciesName} Branching Mirror Continuum U-${padded}.2`,
+        tier: 1,
         spacetimeConfig: {
           ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
           spacetimeDimensions: entry.omniverse.dimensionalCardinality,
@@ -2048,50 +2107,71 @@ export function buildCanonicalWhitePageHierarchyTree(
       const primaryMultiverse: Multiverse = {
         id: `MV-${padded}`,
         name: `${entry.speciesName} ${topology.toUpperCase()} Multiverse MV-${padded}`,
+        tier: 2,
         topology,
-        universes: [primaryUniverse, secondaryUniverse],
+        universes: createInfiniteCollection(`SEED-MV-${padded}-UNIVERSE`, [
+          primaryUniverse,
+          secondaryUniverse,
+        ]),
       };
 
       const primaryMegaverse: Megaverse = {
         id: `HV-${padded}`,
         name: `${entry.speciesName} ${megaverseAlias} Cluster HV-${padded}`,
+        tier: 3,
         alias: megaverseAlias,
-        multiverses: [primaryMultiverse],
+        multiverses: createInfiniteCollection(`SEED-HV-${padded}-MULTIVERSE`, [primaryMultiverse]),
       };
 
-      return {
+      const primaryOmniverse: Omniverse = {
         id: entry.omniverse.omniverseId,
         name: entry.omniverse.omniverseName,
+        tier: 4,
         temporalScope,
-        megaverses: [primaryMegaverse],
+        megaverses: createInfiniteCollection(`SEED-${entry.omniverse.omniverseId}-MEGAVERSE`, [
+          primaryMegaverse,
+        ]),
+      };
+
+      const overvoidId = `OVERVOID-${padded}`;
+
+      return {
+        id: overvoidId,
+        index: overvoidIndex,
+        name: `${overvoidAlias} #${padded}: ${entry.speciesName} Meta-Continuum (${entry.originCanon})`,
+        tier: 5,
+        alias: overvoidAlias,
+        logicSystem: `${sector.logicSystem} · ${entry.omniverse.sovereignCosmicLaw}`,
+        cosmicHierarchyRules: {
+          ...sector.cosmicHierarchyRules,
+          sectorGroupId: sector.id,
+          sectorGroupName: sector.name,
+          overvoidIndex,
+          speciesRank: entry.rank,
+          speciesName: entry.speciesName,
+        },
+        omniverses: createInfiniteCollection(`SEED-${overvoidId}-OMNIVERSE`, [primaryOmniverse]),
       };
     });
 
-    return {
-      id: sector.id,
-      name: sector.name,
-      alias: sector.alias,
-      logicSystem: sector.logicSystem,
-      cosmicHierarchyRules: { ...sector.cosmicHierarchyRules },
-      omniverses,
-    };
-  });
-
   return {
     id: 'THE_WHITE_PAGE',
+    tier: 6,
+    isSingleton: true,
     alias: 'The House of Ideas',
     creatorEmail: PRIMARY_ADMIN_EMAIL,
     includesOblivion: true,
-    exonverses,
     oblivionState: {
       id: 'OBLIVION_NOTHINGNESS',
       name: 'Absolute Nothingness (Oblivion / Pre-Existential Void)',
       spawnedFrom: 'THE_WHITE_PAGE',
       entropyVoidRatio: 0.12,
       active: true,
-      description:
-        'Even absolute nothingness (Oblivion) originates from and remains subordinate to The White Page / The House of Ideas (creatergame31@gmail.com).',
+      exists: true,
+      description: 'Absolute nothingness originating from The White Page',
     },
+    overvoids,
+    exonverses: overvoids,
   };
 }
 
@@ -2099,8 +2179,9 @@ export function buildCanonicalWhitePageHierarchyTree(
 let whitePageSingletonInstance: WhitePageRoot | null = null;
 
 /**
- * Returns the Tier 6 `WhitePageRoot` singleton state that spawns both
- * existence (`exonverses: Overvoid[]`) and non-existence (`Oblivion`).
+ * Rule 1: Singleton Enforcement (Tier 6).
+ * Returns the single Tier 6 `WhitePageRoot` instance (`COSMIC_LIMITS.WHITE_PAGE_COUNT === 1`)
+ * tagged with `creatergame31@gmail.com` and housing both `Oblivion` and the 100 bounded `Overvoid`s.
  */
 export function getWhitePageSingletonRoot(): WhitePageRoot {
   if (!whitePageSingletonInstance) {
@@ -2110,31 +2191,380 @@ export function getWhitePageSingletonRoot(): WhitePageRoot {
 }
 
 /**
- * Updates the Tier 6 `WhitePageRoot` singleton state after validating root invariants.
+ * Updates the Tier 6 `WhitePageRoot` singleton state after strictly validating:
+ * - Rule 1: Tier 6 Singleton invariants (`id: 'THE_WHITE_PAGE'`, `tier: 6`, `isSingleton: true`, `creatorEmail: 'creatergame31@gmail.com'`, `oblivionState.exists: true`).
+ * - Rule 2: Bounded Tier 5 Overvoid count (`overvoids.length === COSMIC_LIMITS.OVERVOID_MAX_COUNT` = 100).
  */
 export function setWhitePageSingletonRoot(nextRoot: WhitePageRoot): WhitePageRoot {
+  const overvoidList = nextRoot.overvoids ?? nextRoot.exonverses ?? [];
   if (
     nextRoot.id !== 'THE_WHITE_PAGE' ||
+    nextRoot.tier !== 6 ||
+    nextRoot.isSingleton !== true ||
     nextRoot.alias !== 'The House of Ideas' ||
     nextRoot.creatorEmail !== PRIMARY_ADMIN_EMAIL ||
-    nextRoot.includesOblivion !== true
+    nextRoot.oblivionState?.exists !== true
   ) {
     throw new Error(
-      `Invalid WhitePageRoot singleton invariant: Tier 6 root must remain THE_WHITE_PAGE ("The House of Ideas") authored by ${PRIMARY_ADMIN_EMAIL} with includesOblivion: true.`
+      `Invalid WhitePageRoot singleton invariant: Tier 6 root must remain a singleton THE_WHITE_PAGE ("The House of Ideas") authored by ${PRIMARY_ADMIN_EMAIL} with oblivionState.exists: true.`
     );
   }
-  whitePageSingletonInstance = nextRoot;
+  if (overvoidList.length !== COSMIC_LIMITS.OVERVOID_MAX_COUNT) {
+    throw new Error(
+      `Invalid Tier 5 Overvoid cardinality: expected exactly ${COSMIC_LIMITS.OVERVOID_MAX_COUNT} Overvoids, got ${overvoidList.length}.`
+    );
+  }
+  whitePageSingletonInstance = {
+    ...nextRoot,
+    overvoids: overvoidList,
+    exonverses: overvoidList,
+  };
   return whitePageSingletonInstance;
 }
 
 /**
- * Resets the Tier 6 `WhitePageRoot` singleton back to the canonical 100-Omniverse tree.
+ * Resets the Tier 6 `WhitePageRoot` singleton back to the canonical 100-Overvoid / ∞-Hierarchy tree.
  */
 export function resetWhitePageSingletonRoot(
   roster: OmniverseSpeciesNpcEntry[] = TOP_100_OMNIVERSE_SPECIES_NPCS
 ): WhitePageRoot {
   whitePageSingletonInstance = buildCanonicalWhitePageHierarchyTree(roster);
   return whitePageSingletonInstance;
+}
+
+/**
+ * Rule 2: Bounded Array Enforcement (Tier 5).
+ * Enforces a hard validation limit of `100` (`COSMIC_LIMITS.OVERVOID_MAX_COUNT`) on `Overvoid` instances.
+ * Rejects any creation request that would exceed 100 Overvoids or use an out-of-bounds index.
+ */
+export function attemptCreateOvervoid(params: {
+  root?: WhitePageRoot;
+  candidateOvervoid: Partial<Overvoid>;
+}): {
+  allowed: boolean;
+  reason: string;
+  maxAllowed: typeof COSMIC_LIMITS.OVERVOID_MAX_COUNT;
+  currentCount: number;
+  root: WhitePageRoot;
+} {
+  const baseRoot = params.root ?? getWhitePageSingletonRoot();
+  const currentOvervoids = baseRoot.overvoids ?? baseRoot.exonverses ?? [];
+
+  if (currentOvervoids.length >= COSMIC_LIMITS.OVERVOID_MAX_COUNT) {
+    return {
+      allowed: false,
+      reason: `Rejected: Tier 5 Overvoid / Exonverse cardinality is strictly bounded at COSMIC_LIMITS.OVERVOID_MAX_COUNT (${COSMIC_LIMITS.OVERVOID_MAX_COUNT}). All 100 Overvoid slots (index 1..100) are already allocated under THE_WHITE_PAGE.`,
+      maxAllowed: COSMIC_LIMITS.OVERVOID_MAX_COUNT,
+      currentCount: currentOvervoids.length,
+      root: baseRoot,
+    };
+  }
+
+  const nextIndex = params.candidateOvervoid.index ?? currentOvervoids.length + 1;
+  if (nextIndex < 1 || nextIndex > COSMIC_LIMITS.OVERVOID_MAX_COUNT) {
+    return {
+      allowed: false,
+      reason: `Rejected: Tier 5 Overvoid index must be between 1 and ${COSMIC_LIMITS.OVERVOID_MAX_COUNT}, got ${nextIndex}.`,
+      maxAllowed: COSMIC_LIMITS.OVERVOID_MAX_COUNT,
+      currentCount: currentOvervoids.length,
+      root: baseRoot,
+    };
+  }
+
+  const padded = String(nextIndex).padStart(3, '0');
+  const newOvervoid: Overvoid = {
+    id: params.candidateOvervoid.id ?? `OVERVOID-${padded}`,
+    index: nextIndex,
+    name: params.candidateOvervoid.name ?? `Overvoid #${padded}`,
+    tier: 5,
+    alias: params.candidateOvervoid.alias ?? 'The Overvoid',
+    logicSystem: params.candidateOvervoid.logicSystem ?? 'Paraconsistent Transfinite Modal Logic',
+    cosmicHierarchyRules: {
+      ...STANDARD_OVERVOID_COSMIC_RULES,
+      ...(params.candidateOvervoid.cosmicHierarchyRules ?? {}),
+    },
+    omniverses:
+      params.candidateOvervoid.omniverses ??
+      createInfiniteCollection(`SEED-OVERVOID-${padded}-OMNIVERSE`, []),
+  };
+
+  const nextOvervoids = [...currentOvervoids, newOvervoid];
+  const nextRoot: WhitePageRoot = {
+    ...baseRoot,
+    overvoids: nextOvervoids,
+    exonverses: nextOvervoids,
+  };
+
+  return {
+    allowed: true,
+    reason: `Created Tier 5 Overvoid ${newOvervoid.id} (index ${nextIndex}/${COSMIC_LIMITS.OVERVOID_MAX_COUNT}).`,
+    maxAllowed: COSMIC_LIMITS.OVERVOID_MAX_COUNT,
+    currentCount: nextOvervoids.length,
+    root: nextRoot,
+  };
+}
+
+/**
+ * Rule 3: Infinite Tier Handling (Tiers 1–4).
+ * Lazily generates and appends a bounded page (`pageSize`, default 1, max 10 per call)
+ * of procedural nodes into an `InfiniteCollection` at Tier 4 (`Omniverse`), Tier 3 (`Megaverse`),
+ * Tier 2 (`Multiverse`), or Tier 1 (`Universe`) using deterministic seeds — never running
+ * unbounded `while(true)` loops.
+ */
+export function lazilyGenerateInfiniteTierSlice(params: {
+  root?: WhitePageRoot;
+  parentTier: 5 | 4 | 3 | 2;
+  parentId: string;
+  pageSize?: number;
+  syncSingleton?: boolean;
+}): WhitePageRoot {
+  const baseRoot = params.root ?? getWhitePageSingletonRoot();
+  const safePageSize = Math.max(1, Math.min(10, Math.floor(params.pageSize ?? 1)));
+
+  const nextOvervoids = baseRoot.overvoids.map((overvoid) => {
+    // Lazily generate new Tier 4 Omniverses inside a Tier 5 Overvoid
+    if (params.parentTier === 5 && overvoidMatchesIdentifier(overvoid, params.parentId)) {
+      const existingOmnis = overvoid.omniverses.loadedNodes;
+      const newOmnis: Omniverse[] = [];
+      for (let i = 0; i < safePageSize; i++) {
+        const cursor = existingOmnis.length + i + 1;
+        const hash = deterministicSeedHash(overvoid.omniverses.generatorSeed, cursor);
+        const scopes: Array<'past' | 'present' | 'potential' | 'all'> = [
+          'all',
+          'present',
+          'potential',
+          'past',
+        ];
+        const scope = scopes[hash % scopes.length];
+        const omniId = `OMNI-${String(overvoid.index).padStart(3, '0')}-∞${cursor}`;
+        const mgId = `HV-${String(overvoid.index).padStart(3, '0')}-∞${cursor}`;
+        const mvId = `MV-${String(overvoid.index).padStart(3, '0')}-∞${cursor}`;
+        const uId = `U-${String(overvoid.index).padStart(3, '0')}.∞${cursor}.1`;
+
+        const lazyUniverse: Universe = {
+          id: uId,
+          name: `Procedural Continuum ${uId} (Seed #${(hash % 9999) + 1000})`,
+          tier: 1,
+          spacetimeConfig: {
+            ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
+            proceduralCursor: cursor,
+            timeDilationFactor: Number((1 + (hash % 40) / 10).toFixed(2)),
+          },
+          matterConstants: {
+            ...STANDARD_UNIVERSE_MATTER_CONSTANTS,
+            qiSpiritDensityMultiplier: Number((1.2 + (hash % 50) / 10).toFixed(2)),
+            gravityMultiplier: Number((0.8 + (hash % 30) / 10).toFixed(2)),
+          },
+        };
+
+        const lazyMultiverse: Multiverse = {
+          id: mvId,
+          name: `Procedural Multiverse ${mvId}`,
+          tier: 2,
+          topology: hash % 2 === 0 ? 'parallel' : 'hybrid',
+          universes: createInfiniteCollection(`SEED-${mvId}-UNIVERSE`, [lazyUniverse]),
+        };
+
+        const lazyMegaverse: Megaverse = {
+          id: mgId,
+          name: `Procedural Hyperverse ${mgId}`,
+          tier: 3,
+          alias: hash % 2 === 0 ? 'Hyperverse' : 'Megaverse',
+          multiverses: createInfiniteCollection(`SEED-${mgId}-MULTIVERSE`, [lazyMultiverse]),
+        };
+
+        newOmnis.push({
+          id: omniId,
+          name: `Transfinite Omniverse ${omniId} (Overvoid #${overvoid.index} Slice #${cursor})`,
+          tier: 4,
+          temporalScope: scope,
+          megaverses: createInfiniteCollection(`SEED-${omniId}-MEGAVERSE`, [lazyMegaverse]),
+        });
+      }
+
+      return {
+        ...overvoid,
+        omniverses: {
+          ...overvoid.omniverses,
+          loadedNodes: [...existingOmnis, ...newOmnis],
+        },
+      };
+    }
+
+    // Traverse into Omniverses for parentTier 4, 3, or 2
+    const nextOmniverses = overvoid.omniverses.loadedNodes.map((omniverse) => {
+      if (params.parentTier === 4 && omniverse.id === params.parentId) {
+        const existingMgs = omniverse.megaverses.loadedNodes;
+        const newMgs: Megaverse[] = [];
+        for (let i = 0; i < safePageSize; i++) {
+          const cursor = existingMgs.length + i + 1;
+          const hash = deterministicSeedHash(omniverse.megaverses.generatorSeed, cursor);
+          const mgId = `${omniverse.id}-HV-∞${cursor}`;
+          const mvId = `${omniverse.id}-MV-∞${cursor}`;
+          const uId = `${omniverse.id}-U-∞${cursor}.1`;
+          const alias: 'Megaverse' | 'Hyperverse' = hash % 2 === 0 ? 'Hyperverse' : 'Megaverse';
+
+          const lazyUniv: Universe = {
+            id: uId,
+            name: `Procedural Universe ${uId}`,
+            tier: 1,
+            spacetimeConfig: {
+              ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
+              timeDilationFactor: Number((1 + (hash % 30) / 10).toFixed(2)),
+            },
+            matterConstants: {
+              ...STANDARD_UNIVERSE_MATTER_CONSTANTS,
+              qiSpiritDensityMultiplier: Number((1.5 + (hash % 40) / 10).toFixed(2)),
+            },
+          };
+
+          const lazyMv: Multiverse = {
+            id: mvId,
+            name: `Procedural Multiverse ${mvId}`,
+            tier: 2,
+            topology: 'parallel',
+            universes: createInfiniteCollection(`SEED-${mvId}-UNIVERSE`, [lazyUniv]),
+          };
+
+          newMgs.push({
+            id: mgId,
+            name: `Procedural ${alias} ${mgId} (Slice #${cursor})`,
+            tier: 3,
+            alias,
+            multiverses: createInfiniteCollection(`SEED-${mgId}-MULTIVERSE`, [lazyMv]),
+          });
+        }
+
+        return {
+          ...omniverse,
+          megaverses: {
+            ...omniverse.megaverses,
+            loadedNodes: [...existingMgs, ...newMgs],
+          },
+        };
+      }
+
+      const nextMegaverses = omniverse.megaverses.loadedNodes.map((megaverse) => {
+        if (params.parentTier === 3 && megaverse.id === params.parentId) {
+          const existingMvs = megaverse.multiverses.loadedNodes;
+          const newMvs: Multiverse[] = [];
+          for (let i = 0; i < safePageSize; i++) {
+            const cursor = existingMvs.length + i + 1;
+            const hash = deterministicSeedHash(megaverse.multiverses.generatorSeed, cursor);
+            const mvId = `${megaverse.id}-MV-∞${cursor}`;
+            const uId = `${megaverse.id}-U-∞${cursor}.1`;
+            const topologies: Array<'parallel' | 'series' | 'hybrid'> = [
+              'parallel',
+              'series',
+              'hybrid',
+            ];
+
+            const lazyUniv: Universe = {
+              id: uId,
+              name: `Procedural Universe ${uId}`,
+              tier: 1,
+              spacetimeConfig: {
+                ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
+                timeDilationFactor: Number((1 + (hash % 25) / 10).toFixed(2)),
+              },
+              matterConstants: {
+                ...STANDARD_UNIVERSE_MATTER_CONSTANTS,
+                qiSpiritDensityMultiplier: Number((1.5 + (hash % 35) / 10).toFixed(2)),
+              },
+            };
+
+            newMvs.push({
+              id: mvId,
+              name: `Procedural Multiverse ${mvId} (Slice #${cursor})`,
+              tier: 2,
+              topology: topologies[hash % topologies.length],
+              universes: createInfiniteCollection(`SEED-${mvId}-UNIVERSE`, [lazyUniv]),
+            });
+          }
+
+          return {
+            ...megaverse,
+            multiverses: {
+              ...megaverse.multiverses,
+              loadedNodes: [...existingMvs, ...newMvs],
+            },
+          };
+        }
+
+        const nextMultiverses = megaverse.multiverses.loadedNodes.map((multiverse) => {
+          if (params.parentTier !== 2 || multiverse.id !== params.parentId) {
+            return multiverse;
+          }
+          const existingUnivs = multiverse.universes.loadedNodes;
+          const newUnivs: Universe[] = [];
+          for (let i = 0; i < safePageSize; i++) {
+            const cursor = existingUnivs.length + i + 1;
+            const hash = deterministicSeedHash(multiverse.universes.generatorSeed, cursor);
+            const uId = `${multiverse.id}-U-∞${cursor}`;
+            newUnivs.push({
+              id: uId,
+              name: `Procedural Continuum ${uId} (Lazy Slice #${cursor})`,
+              tier: 1,
+              spacetimeConfig: {
+                ...STANDARD_UNIVERSE_SPACETIME_CONFIG,
+                proceduralSeed: multiverse.universes.generatorSeed,
+                cursorIndex: cursor,
+                timeDilationFactor: Number((1 + (hash % 50) / 10).toFixed(2)),
+              },
+              matterConstants: {
+                ...STANDARD_UNIVERSE_MATTER_CONSTANTS,
+                qiSpiritDensityMultiplier: Number((1.25 + (hash % 60) / 10).toFixed(2)),
+                gravityMultiplier: Number((0.75 + (hash % 40) / 10).toFixed(2)),
+              },
+            });
+          }
+
+          return {
+            ...multiverse,
+            universes: {
+              ...multiverse.universes,
+              loadedNodes: [...existingUnivs, ...newUnivs],
+            },
+          };
+        });
+
+        return {
+          ...megaverse,
+          multiverses: {
+            ...megaverse.multiverses,
+            loadedNodes: nextMultiverses,
+          },
+        };
+      });
+
+      return {
+        ...omniverse,
+        megaverses: {
+          ...omniverse.megaverses,
+          loadedNodes: nextMegaverses,
+        },
+      };
+    });
+
+    return {
+      ...overvoid,
+      omniverses: {
+        ...overvoid.omniverses,
+        loadedNodes: nextOmniverses,
+      },
+    };
+  });
+
+  const nextRoot: WhitePageRoot = {
+    ...baseRoot,
+    overvoids: nextOvervoids,
+    exonverses: nextOvervoids,
+  };
+
+  if (params.syncSingleton !== false) {
+    setWhitePageSingletonRoot(nextRoot);
+  }
+  return nextRoot;
 }
 
 export interface CosmologicalTreeValidationSummary {
@@ -2144,6 +2574,14 @@ export interface CosmologicalTreeValidationSummary {
   creatorEmail: string;
   includesOblivion: boolean;
   oblivionSpawnedFromWhitePage: boolean;
+  cardinalities: {
+    tier6WhitePageRoot: typeof COSMIC_LIMITS.WHITE_PAGE_COUNT;
+    tier5Overvoids: typeof COSMIC_LIMITS.OVERVOID_MAX_COUNT;
+    tier4Omniverses: typeof COSMIC_LIMITS.OMNIVERSE_COUNT;
+    tier3Megaverses: typeof COSMIC_LIMITS.MEGAVERSE_COUNT;
+    tier2Multiverses: typeof COSMIC_LIMITS.MULTIVERSE_COUNT;
+    tier1Universes: typeof COSMIC_LIMITS.UNIVERSE_COUNT;
+  };
   tierCounts: {
     tier6WhitePageRoot: number;
     tier5Overvoids: number;
@@ -2156,9 +2594,10 @@ export interface CosmologicalTreeValidationSummary {
 }
 
 /**
- * Enforces Rule 1 & Rule 2: Validates strict 6-tier parent-child nesting from
- * Tier 6 (`WhitePageRoot`) down to Tier 1 (`Universe`) and confirms that Tier 6
- * spawns both existence (`exonverses: Overvoid[]`) and non-existence (`Oblivion`).
+ * Enforces Rules 1, 2, and 3:
+ * 1. Singleton Enforcement (Tier 6): `WhitePageRoot` is a singleton (`id: 'THE_WHITE_PAGE'`, `tier: 6`, `isSingleton: true`, `creatorEmail: 'creatergame31@gmail.com'`, `oblivionState.exists: true`).
+ * 2. Bounded Array Enforcement (Tier 5): `overvoids.length === 100` (`COSMIC_LIMITS.OVERVOID_MAX_COUNT`), `index: 1..100`.
+ * 3. Infinite Tier Handling (Tiers 1–4): `InfiniteCollection<T>` with `totalCount === Infinity`, deterministic `generatorSeed`, and `loadedNodes`.
  */
 export function validateCosmologicalTreeHierarchy(
   root: WhitePageRoot = getWhitePageSingletonRoot()
@@ -2168,6 +2607,12 @@ export function validateCosmologicalTreeHierarchy(
   if (root.id !== 'THE_WHITE_PAGE') {
     violations.push(`Tier 6 root id must be 'THE_WHITE_PAGE', got '${String(root.id)}'.`);
   }
+  if (root.tier !== 6) {
+    violations.push(`Tier 6 root tier must be 6, got '${String(root.tier)}'.`);
+  }
+  if (root.isSingleton !== true) {
+    violations.push('Tier 6 root must enforce isSingleton === true.');
+  }
   if (root.alias !== 'The House of Ideas') {
     violations.push(`Tier 6 root alias must be 'The House of Ideas', got '${String(root.alias)}'.`);
   }
@@ -2176,19 +2621,24 @@ export function validateCosmologicalTreeHierarchy(
       `Tier 6 creatorEmail must be '${PRIMARY_ADMIN_EMAIL}', got '${String(root.creatorEmail)}'.`
     );
   }
-  if (root.includesOblivion !== true) {
-    violations.push('Tier 6 root must have includesOblivion === true.');
+  if (root.oblivionState?.exists !== true) {
+    violations.push('Tier 6 root must have oblivionState.exists === true.');
   }
 
   const oblivionSpawnedFromWhitePage =
-    root.includesOblivion === true &&
-    (!root.oblivionState || root.oblivionState.spawnedFrom === 'THE_WHITE_PAGE');
+    root.oblivionState?.exists === true &&
+    root.oblivionState.description === 'Absolute nothingness originating from The White Page';
   if (!oblivionSpawnedFromWhitePage) {
-    violations.push('Oblivion domain must originate from THE_WHITE_PAGE.');
+    violations.push(
+      "Oblivion domain must originate from THE_WHITE_PAGE with description 'Absolute nothingness originating from The White Page'."
+    );
   }
 
-  if (!Array.isArray(root.exonverses) || root.exonverses.length === 0) {
-    violations.push('Tier 6 root must contain at least one Tier 5 Overvoid/Exonverse.');
+  const overvoidList = root.overvoids ?? root.exonverses ?? [];
+  if (!Array.isArray(overvoidList) || overvoidList.length !== COSMIC_LIMITS.OVERVOID_MAX_COUNT) {
+    violations.push(
+      `Tier 5 Overvoid array length must equal exactly ${COSMIC_LIMITS.OVERVOID_MAX_COUNT}, got ${overvoidList?.length ?? 0}.`
+    );
   }
 
   let tier5Overvoids = 0;
@@ -2197,57 +2647,110 @@ export function validateCosmologicalTreeHierarchy(
   let tier2Multiverses = 0;
   let tier1Universes = 0;
 
-  for (const overvoid of root.exonverses ?? []) {
+  for (let i = 0; i < overvoidList.length; i++) {
+    const overvoid = overvoidList[i];
     tier5Overvoids += 1;
+    if (overvoid.tier !== 5) {
+      violations.push(`Overvoid ${overvoid.id} must have tier === 5.`);
+    }
+    if (overvoid.index < 1 || overvoid.index > COSMIC_LIMITS.OVERVOID_MAX_COUNT) {
+      violations.push(
+        `Overvoid ${overvoid.id} index ${overvoid.index} is outside bounded range 1..${COSMIC_LIMITS.OVERVOID_MAX_COUNT}.`
+      );
+    }
     if (overvoid.alias !== 'The Overvoid' && overvoid.alias !== 'Exonverse') {
       violations.push(`Invalid Tier 5 Overvoid alias on ${overvoid.id}: ${String(overvoid.alias)}`);
     }
     if (!overvoid.logicSystem || overvoid.logicSystem.trim().length === 0) {
       violations.push(`Tier 5 Overvoid ${overvoid.id} is missing logicSystem.`);
     }
-    if (!Array.isArray(overvoid.omniverses) || overvoid.omniverses.length === 0) {
-      violations.push(`Tier 5 Overvoid ${overvoid.id} has no child Tier 4 Omniverses.`);
+    if (
+      !overvoid.omniverses ||
+      overvoid.omniverses.totalCount !== Infinity ||
+      !overvoid.omniverses.generatorSeed ||
+      !Array.isArray(overvoid.omniverses.loadedNodes) ||
+      overvoid.omniverses.loadedNodes.length === 0
+    ) {
+      violations.push(
+        `Tier 5 Overvoid ${overvoid.id} must have an InfiniteCollection<Omniverse> with totalCount: Infinity and loadedNodes.`
+      );
       continue;
     }
 
-    for (const omniverse of overvoid.omniverses) {
+    for (const omniverse of overvoid.omniverses.loadedNodes) {
       tier4Omniverses += 1;
+      if (omniverse.tier !== 4) {
+        violations.push(`Tier 4 Omniverse ${omniverse.id} must have tier === 4.`);
+      }
       if (!['past', 'present', 'potential', 'all'].includes(omniverse.temporalScope)) {
         violations.push(
           `Invalid Tier 4 Omniverse temporalScope on ${omniverse.id}: ${String(omniverse.temporalScope)}`
         );
       }
-      if (!Array.isArray(omniverse.megaverses) || omniverse.megaverses.length === 0) {
-        violations.push(`Tier 4 Omniverse ${omniverse.id} has no child Tier 3 Megaverses.`);
+      if (
+        !omniverse.megaverses ||
+        omniverse.megaverses.totalCount !== Infinity ||
+        !omniverse.megaverses.generatorSeed ||
+        !Array.isArray(omniverse.megaverses.loadedNodes) ||
+        omniverse.megaverses.loadedNodes.length === 0
+      ) {
+        violations.push(
+          `Tier 4 Omniverse ${omniverse.id} must have an InfiniteCollection<Megaverse> with totalCount: Infinity.`
+        );
         continue;
       }
 
-      for (const megaverse of omniverse.megaverses) {
+      for (const megaverse of omniverse.megaverses.loadedNodes) {
         tier3Megaverses += 1;
+        if (megaverse.tier !== 3) {
+          violations.push(`Tier 3 Megaverse ${megaverse.id} must have tier === 3.`);
+        }
         if (megaverse.alias !== 'Megaverse' && megaverse.alias !== 'Hyperverse') {
           violations.push(
             `Invalid Tier 3 Megaverse alias on ${megaverse.id}: ${String(megaverse.alias)}`
           );
         }
-        if (!Array.isArray(megaverse.multiverses) || megaverse.multiverses.length === 0) {
-          violations.push(`Tier 3 Megaverse ${megaverse.id} has no child Tier 2 Multiverses.`);
+        if (
+          !megaverse.multiverses ||
+          megaverse.multiverses.totalCount !== Infinity ||
+          !megaverse.multiverses.generatorSeed ||
+          !Array.isArray(megaverse.multiverses.loadedNodes) ||
+          megaverse.multiverses.loadedNodes.length === 0
+        ) {
+          violations.push(
+            `Tier 3 Megaverse ${megaverse.id} must have an InfiniteCollection<Multiverse> with totalCount: Infinity.`
+          );
           continue;
         }
 
-        for (const multiverse of megaverse.multiverses) {
+        for (const multiverse of megaverse.multiverses.loadedNodes) {
           tier2Multiverses += 1;
+          if (multiverse.tier !== 2) {
+            violations.push(`Tier 2 Multiverse ${multiverse.id} must have tier === 2.`);
+          }
           if (!['parallel', 'series', 'hybrid'].includes(multiverse.topology)) {
             violations.push(
               `Invalid Tier 2 Multiverse topology on ${multiverse.id}: ${String(multiverse.topology)}`
             );
           }
-          if (!Array.isArray(multiverse.universes) || multiverse.universes.length === 0) {
-            violations.push(`Tier 2 Multiverse ${multiverse.id} has no child Tier 1 Universes.`);
+          if (
+            !multiverse.universes ||
+            multiverse.universes.totalCount !== Infinity ||
+            !multiverse.universes.generatorSeed ||
+            !Array.isArray(multiverse.universes.loadedNodes) ||
+            multiverse.universes.loadedNodes.length === 0
+          ) {
+            violations.push(
+              `Tier 2 Multiverse ${multiverse.id} must have an InfiniteCollection<Universe> with totalCount: Infinity.`
+            );
             continue;
           }
 
-          for (const universe of multiverse.universes) {
+          for (const universe of multiverse.universes.loadedNodes) {
             tier1Universes += 1;
+            if (universe.tier !== 1) {
+              violations.push(`Tier 1 Universe ${universe.id} must have tier === 1.`);
+            }
             if (!universe.id || !universe.name) {
               violations.push(`Tier 1 Universe under ${multiverse.id} is missing id or name.`);
             }
@@ -2268,10 +2771,18 @@ export function validateCosmologicalTreeHierarchy(
     rootId: root.id,
     rootAlias: root.alias,
     creatorEmail: root.creatorEmail,
-    includesOblivion: root.includesOblivion,
+    includesOblivion: root.oblivionState?.exists === true,
     oblivionSpawnedFromWhitePage,
+    cardinalities: {
+      tier6WhitePageRoot: COSMIC_LIMITS.WHITE_PAGE_COUNT,
+      tier5Overvoids: COSMIC_LIMITS.OVERVOID_MAX_COUNT,
+      tier4Omniverses: COSMIC_LIMITS.OMNIVERSE_COUNT,
+      tier3Megaverses: COSMIC_LIMITS.MEGAVERSE_COUNT,
+      tier2Multiverses: COSMIC_LIMITS.MULTIVERSE_COUNT,
+      tier1Universes: COSMIC_LIMITS.UNIVERSE_COUNT,
+    },
     tierCounts: {
-      tier6WhitePageRoot: 1,
+      tier6WhitePageRoot: COSMIC_LIMITS.WHITE_PAGE_COUNT,
       tier5Overvoids,
       tier4Omniverses,
       tier3Megaverses,
@@ -2286,6 +2797,8 @@ export interface EntityCosmologicalPath {
   found: boolean;
   tier6WhitePage: {
     id: 'THE_WHITE_PAGE';
+    tier: 6;
+    isSingleton: true;
     alias: 'The House of Ideas';
     creatorEmail: 'creatergame31@gmail.com';
     includesOblivion: true;
@@ -2307,19 +2820,22 @@ export function resolveEntityCosmologicalPath(
   root: WhitePageRoot = getWhitePageSingletonRoot(),
   universeId: string = SOLARA_PRIME_UNIVERSE_ID
 ): EntityCosmologicalPath {
-  for (const overvoid of root.exonverses) {
-    for (const omniverse of overvoid.omniverses) {
-      for (const megaverse of omniverse.megaverses) {
-        for (const multiverse of megaverse.multiverses) {
-          for (const universe of multiverse.universes) {
+  const overvoidList = root.overvoids ?? root.exonverses ?? [];
+  for (const overvoid of overvoidList) {
+    for (const omniverse of overvoid.omniverses.loadedNodes) {
+      for (const megaverse of omniverse.megaverses.loadedNodes) {
+        for (const multiverse of megaverse.multiverses.loadedNodes) {
+          for (const universe of multiverse.universes.loadedNodes) {
             if (universe.id === universeId) {
               return {
                 found: true,
                 tier6WhitePage: {
                   id: root.id,
+                  tier: 6,
+                  isSingleton: true,
                   alias: root.alias,
                   creatorEmail: root.creatorEmail,
-                  includesOblivion: root.includesOblivion,
+                  includesOblivion: true,
                 },
                 tier5Overvoid: overvoid,
                 tier4Omniverse: omniverse,
@@ -2336,10 +2852,10 @@ export function resolveEntityCosmologicalPath(
                 ],
                 breadcrumbNames: [
                   `${root.id} (${root.alias})`,
-                  `${overvoid.name} [${overvoid.alias}]`,
-                  `${omniverse.name} [Scope: ${omniverse.temporalScope}]`,
-                  `${megaverse.name} [${megaverse.alias}]`,
-                  `${multiverse.name} [Topology: ${multiverse.topology}]`,
+                  `${overvoid.name} [${overvoid.alias} #${overvoid.index}/100]`,
+                  `${omniverse.name} [Scope: ${omniverse.temporalScope} · ∞]`,
+                  `${megaverse.name} [${megaverse.alias} · ∞]`,
+                  `${multiverse.name} [Topology: ${multiverse.topology} · ∞]`,
                   universe.name,
                 ],
               };
@@ -2350,20 +2866,22 @@ export function resolveEntityCosmologicalPath(
     }
   }
 
-  // Fallback to the very first leaf universe in the tree if custom ID not found
-  const fallbackOvervoid = root.exonverses[0];
-  const fallbackOmniverse = fallbackOvervoid.omniverses[0];
-  const fallbackMegaverse = fallbackOmniverse.megaverses[0];
-  const fallbackMultiverse = fallbackMegaverse.multiverses[0];
-  const fallbackUniverse = fallbackMultiverse.universes[0];
+  // Fallback to the first loaded leaf universe in the tree if custom ID not found
+  const fallbackOvervoid = overvoidList[0];
+  const fallbackOmniverse = fallbackOvervoid.omniverses.loadedNodes[0];
+  const fallbackMegaverse = fallbackOmniverse.megaverses.loadedNodes[0];
+  const fallbackMultiverse = fallbackMegaverse.multiverses.loadedNodes[0];
+  const fallbackUniverse = fallbackMultiverse.universes.loadedNodes[0];
 
   return {
     found: false,
     tier6WhitePage: {
       id: root.id,
+      tier: 6,
+      isSingleton: true,
       alias: root.alias,
       creatorEmail: root.creatorEmail,
-      includesOblivion: root.includesOblivion,
+      includesOblivion: true,
     },
     tier5Overvoid: fallbackOvervoid,
     tier4Omniverse: fallbackOmniverse,
@@ -2380,10 +2898,10 @@ export function resolveEntityCosmologicalPath(
     ],
     breadcrumbNames: [
       `${root.id} (${root.alias})`,
-      `${fallbackOvervoid.name} [${fallbackOvervoid.alias}]`,
-      `${fallbackOmniverse.name} [Scope: ${fallbackOmniverse.temporalScope}]`,
-      `${fallbackMegaverse.name} [${fallbackMegaverse.alias}]`,
-      `${fallbackMultiverse.name} [Topology: ${fallbackMultiverse.topology}]`,
+      `${fallbackOvervoid.name} [${fallbackOvervoid.alias} #${fallbackOvervoid.index}/100]`,
+      `${fallbackOmniverse.name} [Scope: ${fallbackOmniverse.temporalScope} · ∞]`,
+      `${fallbackMegaverse.name} [${fallbackMegaverse.alias} · ∞]`,
+      `${fallbackMultiverse.name} [Topology: ${fallbackMultiverse.topology} · ∞]`,
       fallbackUniverse.name,
     ],
   };
@@ -2393,6 +2911,7 @@ export interface EffectiveCosmologicalPhysicsProfile {
   universeId: string;
   universeName: string;
   overvoidId: string;
+  overvoidIndex: number;
   overvoidAlias: 'The Overvoid' | 'Exonverse';
   effectiveLogicSystem: string;
   effectiveCosmicHierarchyRules: Record<string, unknown>;
@@ -2409,8 +2928,7 @@ export interface EffectiveCosmologicalPhysicsProfile {
 }
 
 /**
- * Enforces Rule 3: Evaluates effective physics and logic for a Tier 1 `Universe`
- * by cascading:
+ * Evaluates effective physics and logic for a Tier 1 `Universe` by cascading:
  *   1. Standard Baseline Physics & Logic (`STANDARD_UNIVERSE_*` & `STANDARD_OVERVOID_COSMIC_RULES`)
  *   2. Tier 5 (`Overvoid` / `Exonverse`) custom `logicSystem` & `cosmicHierarchyRules` overrides
  *   3. Tier 1 (`Universe`) custom `spacetimeConfig` & `matterConstants` overrides
@@ -2512,6 +3030,7 @@ export function evaluateEffectiveUniversePhysicsAndLogic(
     universeId: tier1Universe.id,
     universeName: tier1Universe.name,
     overvoidId: tier5Overvoid.id,
+    overvoidIndex: tier5Overvoid.index,
     overvoidAlias: tier5Overvoid.alias,
     effectiveLogicSystem: tier5Overvoid.logicSystem,
     effectiveCosmicHierarchyRules,
@@ -2528,9 +3047,9 @@ export function evaluateEffectiveUniversePhysicsAndLogic(
 }
 
 /**
- * Enforces Rule 3 at Tier 5 (`Overvoid` / `Exonverse`):
  * Allows custom logic systems and `cosmicHierarchyRules` to override standard
- * logic and physics across a Tier 5 Overvoid container.
+ * logic and physics across a Tier 5 Overvoid container (supports targeting by
+ * exact `OVERVOID-001..100` ID or sector group ID like `EXO-T5-SOLARA-PRIME`).
  */
 export function overrideOvervoidLogicRules(params: {
   root?: WhitePageRoot;
@@ -2541,23 +3060,26 @@ export function overrideOvervoidLogicRules(params: {
   syncSingleton?: boolean;
 }): WhitePageRoot {
   const baseRoot = params.root ?? getWhitePageSingletonRoot();
+  const nextOvervoids = baseRoot.overvoids.map((overvoid) => {
+    if (!overvoidMatchesIdentifier(overvoid, params.overvoidId)) return overvoid;
+    return {
+      ...overvoid,
+      alias: params.alias ?? overvoid.alias,
+      logicSystem:
+        params.logicSystem && params.logicSystem.trim().length > 0
+          ? params.logicSystem.trim()
+          : overvoid.logicSystem,
+      cosmicHierarchyRules: {
+        ...overvoid.cosmicHierarchyRules,
+        ...params.cosmicHierarchyRulesPatch,
+      },
+    };
+  });
+
   const nextRoot: WhitePageRoot = {
     ...baseRoot,
-    exonverses: baseRoot.exonverses.map((overvoid) => {
-      if (overvoid.id !== params.overvoidId) return overvoid;
-      return {
-        ...overvoid,
-        alias: params.alias ?? overvoid.alias,
-        logicSystem:
-          params.logicSystem && params.logicSystem.trim().length > 0
-            ? params.logicSystem.trim()
-            : overvoid.logicSystem,
-        cosmicHierarchyRules: {
-          ...overvoid.cosmicHierarchyRules,
-          ...params.cosmicHierarchyRulesPatch,
-        },
-      };
-    }),
+    overvoids: nextOvervoids,
+    exonverses: nextOvervoids,
   };
 
   if (params.syncSingleton !== false) {
@@ -2567,7 +3089,6 @@ export function overrideOvervoidLogicRules(params: {
 }
 
 /**
- * Enforces Rule 3 at Tier 1 (`Universe`):
  * Allows custom `spacetimeConfig` and `matterConstants` to override standard
  * physical constants inside a specific Tier 1 leaf `Universe`.
  */
@@ -2579,34 +3100,49 @@ export function overrideUniversePhysicsConstants(params: {
   syncSingleton?: boolean;
 }): WhitePageRoot {
   const baseRoot = params.root ?? getWhitePageSingletonRoot();
+  const nextOvervoids = baseRoot.overvoids.map((overvoid) => ({
+    ...overvoid,
+    omniverses: {
+      ...overvoid.omniverses,
+      loadedNodes: overvoid.omniverses.loadedNodes.map((omniverse) => ({
+        ...omniverse,
+        megaverses: {
+          ...omniverse.megaverses,
+          loadedNodes: omniverse.megaverses.loadedNodes.map((megaverse) => ({
+            ...megaverse,
+            multiverses: {
+              ...megaverse.multiverses,
+              loadedNodes: megaverse.multiverses.loadedNodes.map((multiverse) => ({
+                ...multiverse,
+                universes: {
+                  ...multiverse.universes,
+                  loadedNodes: multiverse.universes.loadedNodes.map((universe) => {
+                    if (universe.id !== params.universeId) return universe;
+                    return {
+                      ...universe,
+                      spacetimeConfig: {
+                        ...universe.spacetimeConfig,
+                        ...(params.spacetimeConfigPatch ?? {}),
+                      },
+                      matterConstants: {
+                        ...universe.matterConstants,
+                        ...(params.matterConstantsPatch ?? {}),
+                      },
+                    };
+                  }),
+                },
+              })),
+            },
+          })),
+        },
+      })),
+    },
+  }));
+
   const nextRoot: WhitePageRoot = {
     ...baseRoot,
-    exonverses: baseRoot.exonverses.map((overvoid) => ({
-      ...overvoid,
-      omniverses: overvoid.omniverses.map((omniverse) => ({
-        ...omniverse,
-        megaverses: omniverse.megaverses.map((megaverse) => ({
-          ...megaverse,
-          multiverses: megaverse.multiverses.map((multiverse) => ({
-            ...multiverse,
-            universes: multiverse.universes.map((universe) => {
-              if (universe.id !== params.universeId) return universe;
-              return {
-                ...universe,
-                spacetimeConfig: {
-                  ...universe.spacetimeConfig,
-                  ...(params.spacetimeConfigPatch ?? {}),
-                },
-                matterConstants: {
-                  ...universe.matterConstants,
-                  ...(params.matterConstantsPatch ?? {}),
-                },
-              };
-            }),
-          })),
-        })),
-      })),
-    })),
+    overvoids: nextOvervoids,
+    exonverses: nextOvervoids,
   };
 
   if (params.syncSingleton !== false) {
@@ -2616,37 +3152,58 @@ export function overrideUniversePhysicsConstants(params: {
 }
 
 /**
- * Spawns a new child `Universe` inside a parent Tier 2 `Multiverse` (or spawns a
- * new `Overvoid` directly under `THE_WHITE_PAGE`) while preserving strict 6-tier
- * parent-child nesting.
+ * Spawns a new child `Universe` inside a parent Tier 2 `Multiverse`'s `InfiniteCollection<Universe>`
+ * while preserving strict 6-tier parent-child nesting.
  */
 export function spawnNestedUniverseInMultiverse(params: {
   root?: WhitePageRoot;
   multiverseId: string;
-  newUniverse: Universe;
+  newUniverse: Omit<Universe, 'tier'> & { tier?: 1 };
   syncSingleton?: boolean;
 }): WhitePageRoot {
   const baseRoot = params.root ?? getWhitePageSingletonRoot();
+  const normalizedUniverse: Universe = {
+    ...params.newUniverse,
+    tier: 1,
+  };
+
+  const nextOvervoids = baseRoot.overvoids.map((overvoid) => ({
+    ...overvoid,
+    omniverses: {
+      ...overvoid.omniverses,
+      loadedNodes: overvoid.omniverses.loadedNodes.map((omniverse) => ({
+        ...omniverse,
+        megaverses: {
+          ...omniverse.megaverses,
+          loadedNodes: omniverse.megaverses.loadedNodes.map((megaverse) => ({
+            ...megaverse,
+            multiverses: {
+              ...megaverse.multiverses,
+              loadedNodes: megaverse.multiverses.loadedNodes.map((multiverse) => {
+                if (multiverse.id !== params.multiverseId) return multiverse;
+                const alreadyExists = multiverse.universes.loadedNodes.some(
+                  (u) => u.id === normalizedUniverse.id
+                );
+                if (alreadyExists) return multiverse;
+                return {
+                  ...multiverse,
+                  universes: {
+                    ...multiverse.universes,
+                    loadedNodes: [...multiverse.universes.loadedNodes, normalizedUniverse],
+                  },
+                };
+              }),
+            },
+          })),
+        },
+      })),
+    },
+  }));
+
   const nextRoot: WhitePageRoot = {
     ...baseRoot,
-    exonverses: baseRoot.exonverses.map((overvoid) => ({
-      ...overvoid,
-      omniverses: overvoid.omniverses.map((omniverse) => ({
-        ...omniverse,
-        megaverses: omniverse.megaverses.map((megaverse) => ({
-          ...megaverse,
-          multiverses: megaverse.multiverses.map((multiverse) => {
-            if (multiverse.id !== params.multiverseId) return multiverse;
-            const alreadyExists = multiverse.universes.some((u) => u.id === params.newUniverse.id);
-            if (alreadyExists) return multiverse;
-            return {
-              ...multiverse,
-              universes: [...multiverse.universes, params.newUniverse],
-            };
-          }),
-        })),
-      })),
-    })),
+    overvoids: nextOvervoids,
+    exonverses: nextOvervoids,
   };
 
   if (params.syncSingleton !== false) {

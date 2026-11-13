@@ -23,7 +23,7 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 108 unit tests across all 17 test suites
+- [ ] `npm test` passes all 110 unit tests across all 17 test suites
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
@@ -33,7 +33,7 @@ labels: ['release']
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
 - [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
-- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles), Imperial Lore & Cosmological History Codex, C++20 Software & Hardware Architect Studio (`06/11/2026`), 9-Pillar Cross-System Validation Engine (`67+` checks), and Engineering Transparency Matrix (`Implemented` vs `Simulated` vs `Planned`) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, C++20 Software & Hardware Architect Studio (`06/11/2026`), 9-Pillar Cross-System Validation Engine (`72+` checks), and Engineering Transparency Matrix (`Implemented` vs `Simulated` vs `Planned`) work
 - [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 

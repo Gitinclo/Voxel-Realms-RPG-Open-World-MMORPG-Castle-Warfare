@@ -72,6 +72,7 @@ import { WorldAIDirectorModal } from './components/WorldAIDirectorModal';
 import { DailyLoginModal } from './components/DailyLoginModal';
 import { VipSubscriptionModal } from './components/VipSubscriptionModal';
 import { LoreHistoryModal } from './components/LoreHistoryModal';
+import { CosmologicalAdminModal } from './components/CosmologicalAdminModal';
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -130,8 +131,10 @@ import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
   OmniverseSpeciesNpcEntry,
   WhitePageAuthorDecreeType,
+  WhitePageRoot,
   executeOmniverseSuperAdminCommand,
   executeWhitePageAuthorDecree,
+  getWhitePageSingletonRoot,
   projectOmniverseNpcToWorldNPC,
 } from './game/omniverse';
 import { comprehendLoreEpoch } from './game/loreHistory';
@@ -153,7 +156,8 @@ type ActiveModal =
   | 'world_ai'
   | 'daily_login'
   | 'vip_subscription'
-  | 'lore_history';
+  | 'lore_history'
+  | 'cosmological_admin';
 
 export default function App() {
   // Query param check for ?autostart=1
@@ -324,6 +328,9 @@ export default function App() {
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
   const [omniverseRoster, setOmniverseRoster] = useState<OmniverseSpeciesNpcEntry[]>(
     TOP_100_OMNIVERSE_SPECIES_NPCS
+  );
+  const [cosmologicalTree, setCosmologicalTree] = useState<WhitePageRoot>(() =>
+    getWhitePageSingletonRoot()
   );
   const [worldAiInitialTab, setWorldAiInitialTab] = useState<
     'npcs' | 'monsters' | 'telemetry' | 'omniverse'
@@ -1793,6 +1800,7 @@ export default function App() {
           canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onOpenLoreHistory={() => setActiveModal('lore_history')}
+          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
         />
       )}
 
@@ -1834,6 +1842,7 @@ export default function App() {
           onOpenCppCore={() => setActiveModal('cpp_core')}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onOpenLoreHistory={() => setActiveModal('lore_history')}
+          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
@@ -2114,6 +2123,7 @@ export default function App() {
             setWorldAiInitialTab('omniverse');
             setActiveModal('world_ai');
           }}
+          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onClose={() => setActiveModal('none')}
         />
       )}
@@ -2169,6 +2179,9 @@ export default function App() {
           onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
           onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
           onOpenAdminConsole={() => setActiveModal('admin_console')}
+          cosmologicalTree={cosmologicalTree}
+          onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
+          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onClose={() => {
             setWorldAiInitialTab('npcs');
             setActiveModal('none');
@@ -2212,6 +2225,17 @@ export default function App() {
             setWorldAiInitialTab('omniverse');
             setActiveModal('world_ai');
           }}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {activeModal === 'cosmological_admin' && (
+        <CosmologicalAdminModal
+          cosmologicalTree={cosmologicalTree}
+          onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
+          omniverseRoster={omniverseRoster}
+          activeAccountEmail={activeAccountEmail}
+          onNotify={(msg) => setToastMessage(msg)}
           onClose={() => setActiveModal('none')}
         />
       )}

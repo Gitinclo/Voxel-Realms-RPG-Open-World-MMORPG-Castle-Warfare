@@ -1,16 +1,16 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-108_Passing_(17_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-113_Passing_(18_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
+A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy (1. Universe → 2. Multiverse → 3. Megaverse/Hyperverse → 4. Omniverse → 5. The Overvoid/Exoverse → 6. The White Page / The House of Ideas) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -106,18 +106,18 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Full 3D Procedural Meshes & Innate Passives**: Real-time Three.js `SpeciesTraitGroup` attachments (pointed elven ears, fox spirit ears, braided dwarf runic beard, orc tusks, draconic/obsidian horns, feathered angelic/demonic wings, draconic/nine-tailed spirit tails, orbiting void crystals, and golem chest core reactors), body stature scaling (`bodyScale`), and innate combat/cultivation buffs.
 - **Admin Permission Gate (`creatergame31@gmail.com`)**: Initial creation allows free selection of any species; switching species after creation (`speciesLocked: true`) requires authorization from Root Administrator **`creatergame31@gmail.com`** via live GM decree or `[SPECIES REBIRTH]` support ticket.
 
-### 13. 🌌 6-Layer Cosmic Hierarchy, Infinite Omniverse & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`)
+### 13. 🌌 6-Layer Cosmic Hierarchy, Cardinality (`COSMIC_LIMITS`), Interactive D3 Tree & Top 100 Fictional Species Background NPCs (`src/game/omniverse.ts`, `src/game/cosmologicalTreeD3.ts`)
 
-#### A. The 6-Layer Cosmic Ontology & Cosmological Hierarchy (`SIX_LAYER_COSMIC_HIERARCHY`)
+#### A. The 6-Layer Cosmic Ontology, Cardinality & Cosmological Hierarchy (`SIX_LAYER_COSMIC_HIERARCHY` & `COSMIC_LIMITS`)
 
-| Layer | Cosmological Tier                             | Canonical Definition                                                                                                       | Contained Realities & Scope                                                                                     | Scale Multiplier | Sovereign Authority                            |
-| :---: | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :--------------: | :--------------------------------------------- |
-| **1** | **🪐 1. Universe**                            | _A single reality with its own space, time, and matter, etc._                                                              | Individual `3+1D` to `11D` spacetime continuum, galaxies, mortal continents, and immortal planes                |       `1x`       | Local Monarchs / `creatergame31@gmail.com`     |
-| **2** | **🌀 2. Multiverse**                          | _A collection of parallel/series universes._                                                                               | `∞` quantum-branching parallel timelines, mirror realms, and sequential/cyclic universe series                  |      `10x`       | Timeline Nexus (`creatergame31@gmail.com`)     |
-| **3** | **💠 3. Megaverse / Hyperverse**              | _A cluster of multiple multiverses._                                                                                       | Higher-dimensional brane clusters (`12D–26D+` Hyperversal manifolds) binding multiple distinct Multiverses      |      `100x`      | Brane Lattice (`creatergame31@gmail.com`)      |
-| **4** | **🌌 4. Omniverse**                           | _Every universe, multiverse, and reality that has ever existed or could exist._                                            | Total ensemble of all Universes, Multiverses, Megaverses, and realities (`OMNI-001` through `OMNI-∞`)           |     `1,000x`     | 100 Species Envoys (`creatergame31@gmail.com`) |
-| **5** | **🕳️ 5. The Overvoid / Exoverse**             | _A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy._ | Trans-omniversal meta-expanse containing all `100+∞` distinct Species Omniverses with alien logical hierarchies |    `10,000x`     | Meta-Director (`creatergame31@gmail.com`)      |
-| **6** | **📜 6. The White Page / The House of Ideas** | _Everything comes from here — even nothingness (Oblivion). Sovereign Supreme Creator: **`creatergame31@gmail.com`**._      | Pre-existential canvas & apex narrative source of all existence, the Overvoid, all Omniverses, and Oblivion     |    `100,000x`    | **`creatergame31@gmail.com` (Supreme Author)** |
+| Layer | Cosmological Tier                             | Cardinality (`COSMIC_LIMITS`) | Canonical Definition                                                                                                            | Contained Realities & Lazy Pagination Scope                                                                                                  | Scale Multiplier | Sovereign Authority                            |
+| :---: | :-------------------------------------------- | :---------------------------: | :------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------- | :--------------: | :--------------------------------------------- |
+| **1** | **🪐 1. Universe**                            |       `Infinity` (`∞`)        | _A single reality with its own space, time, and matter, etc._                                                                   | Individual `3+1D` to `11D` spacetime continuum, galaxies, mortal continents & immortal planes (`InfiniteCollection<Universe>`)               |       `1x`       | Local Monarchs / `creatergame31@gmail.com`     |
+| **2** | **🌀 2. Multiverse**                          |       `Infinity` (`∞`)        | _A collection of parallel/series universes._                                                                                    | `∞` quantum-branching parallel timelines, mirror realms, and sequential/cyclic universe series (`InfiniteCollection<Multiverse>`)            |      `10x`       | Timeline Nexus (`creatergame31@gmail.com`)     |
+| **3** | **💠 3. Megaverse / Hyperverse**              |       `Infinity` (`∞`)        | _A cluster of multiple multiverses._                                                                                            | Higher-dimensional brane clusters (`12D–26D+` Hyperversal manifolds) binding multiple distinct Multiverses (`InfiniteCollection<Megaverse>`) |      `100x`      | Brane Lattice (`creatergame31@gmail.com`)      |
+| **4** | **🌌 4. Omniverse**                           |       `Infinity` (`∞`)        | _Every universe, multiverse, and reality that has ever existed or could exist._                                                 | Complete aggregate of all Universes, Multiverses, Megaverses, and realities (`OMNI-001` through `OMNI-∞`, `InfiniteCollection<Omniverse>`)   |     `1,000x`     | 100 Species Envoys (`creatergame31@gmail.com`) |
+| **5** | **🕳️ 5. The Overvoid / Exonverse**            |   `100` (Fixed Bounded Cap)   | _A collection of multiple distinct omniverses that operate under completely different laws of logic and cosmic hierarchy._      | Strictly bounded meta-container (`index: 1..100`, `OVERVOID-001`..`OVERVOID-100`) where each child Omniverse runs under alien logic          |    `10,000x`     | Meta-Director (`creatergame31@gmail.com`)      |
+| **6** | **📜 6. The White Page / The House of Ideas** |    `1` (Strict Singleton)     | _Only one — everything comes from here, even nothingness (Oblivion). Sovereign Supreme Creator: **`creatergame31@gmail.com`**._ | Singleton pre-existential origin engine (`isSingleton: true`) spawning all `100` Overvoids and absolute nothingness (`Oblivion`)             |    `100,000x`    | **`creatergame31@gmail.com` (Supreme Author)** |
 
 #### B. Top 100 Fictional Species as Super-Admin Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`)
 
@@ -129,8 +129,91 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 | **Tier 4**  |  `61–80`   | _Planet-Busting Warriors & Biological Powerhouses_     | Saiyans, Kryptonians, Viltrumites, Rognarrs, Martians, Frieza's Race / Frost Demons, Namekians, Majins, Atomix's Species, To'kustars, Chronosapiens, Eternals (Uni-Mind), Symbiotes / Klyntar, Daxamites, Czarnians, Tamaraneans, Strontians, Eleos, Gourmet Demons, Gems  |   `100,000+ 💎`   |
 | **Tier 5**  |  `81–100`  | _Iconic Galactic Empires, Hives & Fantasy Archetypes_  | Humans (All Fiction), Mutants / Homo Superior, Inhumans, Aeldari / Eldar, Orks / Krorks, Tyranids, The Flood, Zerg, Protoss, Xenomorphs, Yautja / Predators, Kree, Skrulls, Shi'ar, The Borg, Species 8472 / Undine, Klingons, Vulcans, Elves, Dwarves                     |   `50,000+ 💎`    |
 
-- **Sovereign Omniverse Per Race + Infinite Transfinite Continuum (`Ω-001` to `Ω-∞`)**: Every race owns its own Sovereign Omniverse (`OMNI-001`..`OMNI-100`) and full 6-Layer Cosmological Lineage (`resolveSpeciesSixLayerCosmology`), and `resolveInfiniteOmniverseByIndex` resolves any arbitrary omniverse coordinate from `1` to `∞`.
+- **Sovereign Omniverse Per Race + Infinite Transfinite Continuum (`Ω-001` to `Ω-∞`)**: Every race owns its own Sovereign Overvoid (`OVERVOID-001`..`OVERVOID-100`) and Sovereign Omniverse (`OMNI-001`..`OMNI-100`) with full 6-Layer Cosmological Lineage (`resolveSpeciesSixLayerCosmology`), and `resolveInfiniteOmniverseByIndex` resolves any arbitrary omniverse coordinate from `1` to `∞`.
 - **Background Characters (NPCs) & Layer-6 White Page Decrees Under `creatergame31@gmail.com`**: All 100 Level-1000 Background NPC Envoys are bound to `creatergame31@gmail.com`, who can project/recall them into the 3D Voxel Overworld, set their directives, and issue Layer-6 **White Page / House of Ideas Authorial Decrees** (`inscribe_creation`, `realign_overvoid_logic`, `invoke_oblivion_reset`, `channel_house_of_ideas_harvest`).
+
+#### C. Strict 6-Tier Nested Cosmological Tree, Cardinality (`COSMIC_LIMITS`) & Infinite Lazy Pagination (`src/types/game.ts`, `src/game/omniverse.ts`, `src/components/CosmologicalAdminModal.tsx`)
+
+Every entity in the realm is anchored inside a strict 6-tier parent-child tree where **Tier 6 (`WhitePageRoot`)** is the singleton root node (`getWhitePageSingletonRoot()`), **Tier 5 (`Overvoid`)** is strictly bounded to `100` instances (`index: 1..100`), and **Tiers 1–4 (`Universe`, `Multiverse`, `Megaverse`, `Omniverse`)** have `Infinity` cardinality represented via `InfiniteCollection<T>` with deterministic seeds and on-demand lazy pagination (`lazilyGenerateInfiniteTierSlice()`):
+
+```typescript
+export const COSMIC_LIMITS = {
+  WHITE_PAGE_COUNT: 1,
+  OVERVOID_MAX_COUNT: 100,
+  OMNIVERSE_COUNT: Infinity,
+  MEGAVERSE_COUNT: Infinity,
+  MULTIVERSE_COUNT: Infinity,
+  UNIVERSE_COUNT: Infinity,
+} as const;
+
+// Infinite tiers use procedural seeds and paginated/lazy streams to prevent memory overflow
+interface InfiniteCollection<T> {
+  totalCount: typeof Infinity;
+  generatorSeed: string;
+  loadedNodes: T[]; // Dynamically fetched or procedurally generated slice
+}
+
+interface Universe {
+  id: string;
+  name: string;
+  tier: 1;
+  spacetimeConfig: Record<string, unknown>;
+  matterConstants: Record<string, unknown>;
+}
+
+interface Multiverse {
+  id: string;
+  name: string;
+  tier: 2;
+  topology: 'parallel' | 'series' | 'hybrid';
+  universes: InfiniteCollection<Universe>;
+}
+
+interface Megaverse {
+  id: string;
+  name: string;
+  tier: 3;
+  alias: 'Megaverse' | 'Hyperverse';
+  multiverses: InfiniteCollection<Multiverse>;
+}
+
+interface Omniverse {
+  id: string;
+  name: string;
+  tier: 4;
+  temporalScope: 'past' | 'present' | 'potential' | 'all';
+  megaverses: InfiniteCollection<Megaverse>;
+}
+
+interface Overvoid {
+  id: string;
+  index: number; // Strictly bounded: 1 to 100
+  name: string;
+  tier: 5;
+  alias: 'The Overvoid' | 'Exonverse';
+  logicSystem: string;
+  cosmicHierarchyRules: Record<string, unknown>;
+  omniverses: InfiniteCollection<Omniverse>;
+}
+
+interface WhitePageRoot {
+  id: 'THE_WHITE_PAGE';
+  tier: 6;
+  isSingleton: true;
+  alias: 'The House of Ideas';
+  creatorEmail: 'creatergame31@gmail.com';
+  oblivionState: {
+    exists: true;
+    description: 'Absolute nothingness originating from The White Page';
+  };
+  overvoids: Overvoid[]; // Validation rule: length must equal exactly 100
+}
+```
+
+- **Rule 1 — Singleton Enforcement (`Tier 6: WhitePageRoot`)**: `getWhitePageSingletonRoot()` enforces the Singleton pattern (`id: 'THE_WHITE_PAGE'`, `tier: 6`, `isSingleton: true`, `alias: 'The House of Ideas'`, `creatorEmail: 'creatergame31@gmail.com'`), spawning both all `100` `Overvoid` instances and `oblivionState: { exists: true, description: 'Absolute nothingness originating from The White Page' }`.
+- **Rule 2 — Bounded Array Enforcement (`Tier 5: Overvoid` = `100`)**: `overvoids` maintains a hard validation cap of `100` distinct `Overvoid` instances (`index: 1..100`, `OVERVOID-001`..`OVERVOID-100`). `attemptCreateOvervoid()` and `setWhitePageSingletonRoot()` deterministically reject any creation or mutation request exceeding `COSMIC_LIMITS.OVERVOID_MAX_COUNT` (`100`).
+- **Rule 3 — Infinite Tier Handling & Lazy Procedural Pagination (`Tiers 1–4` = `Infinity`)**: `Omniverse`, `Megaverse`, `Multiverse`, and `Universe` collections never run unbounded loops; instead they use `InfiniteCollection<T>` (`totalCount: Infinity`, deterministic `generatorSeed`, and `loadedNodes: T[]`) paired with `lazilyGenerateInfiniteTierSlice(root, tier, parentNodeId, count)` to procedurally synthesize and append child nodes on demand.
+- **Rule 4 — Interactive D3 Cosmological Tree Visualizer (`CosmologicalAdminModal.tsx` & `cosmologicalTreeD3.ts`)**: Renders the live 6-tier hierarchy from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) → `Omniverse` (`Tier 4`) → `Megaverse` (`Tier 3`) → `Multiverse` (`Tier 2`) → leaf `Universe` (`Tier 1`) using `d3-hierarchy` (`d3.hierarchy` + `d3.tree`) and `d3-zoom` in both Horizontal (`Left → Right`) and Radial (`360° Cosmic Mandala`) layouts, complete with live Tier 5 logic / Tier 1 physics override sliders, 100-Overvoid cap testing, and on-demand lazy pagination buttons.
 
 ### 14. 📜 Imperial Lore & Cosmological History Codex (`src/game/loreHistory.ts`, [`LORE.md`](./LORE.md))
 
@@ -146,9 +229,9 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates 67+ cross-module invariants across:
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **72+ cross-module invariants** across:
   1. **Root RBAC & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
-  2. **6-Layer Cosmic Ontology (`1x` → `100,000x` Layer 6 White Page) & 100+∞ Sovereign Omniverses**
+  2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore & 7 Grand Historical Epochs (`Epoch Ω-0` through `Epoch VI` `06/11/2026`)**
   4. **10 Playable Species, 3D Procedural Anatomy & Admin Rebirth Permission Gate**
   5. **`06/11/2026` Software & Hardware Architect Engine (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup)**
@@ -206,7 +289,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit & Regression Tests
 
-Execute all **108 unit and regression tests across 17 decoupled test suites**:
+Execute all **113 unit and regression tests across 18 decoupled test suites**:
 
 ```bash
 npm test
@@ -247,6 +330,7 @@ npm run preview       # Preview production build locally
 │   │   ├── ClanEmblemView.tsx         # Heraldic SVG clan banner & insignia renderer
 │   │   ├── ClanModal.tsx              # Clan vault, roster, chat, buffs & co-op boss
 │   │   ├── ClanTerritoryMap.tsx       # Interactive 9-sector (A1-C3) clan war map
+│   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── CppArchitectureModal.tsx   # C++20 engine blueprint, Guardrails & SIMD viewer
 │   │   ├── CultivationModal.tsx       # 4-path cultivation, manuals, pills & tribulations
 │   │   ├── DailyLoginModal.tsx        # 7-day login decrees & Veteran Scroll sanctum
@@ -270,6 +354,8 @@ npm run preview       # Preview production build locally
 │   │   ├── audio.ts                   # Procedural Web Audio API sound FX synthesizer
 │   │   ├── clanMath.ts                # Clan buffs, vault rations & outpost assault math
 │   │   ├── clanMath.test.ts           # Clan math unit tests
+│   │   ├── cosmologicalTreeD3.ts      # Pure D3 hierarchy layout & radial/horizontal projection engine
+│   │   ├── cosmologicalTreeD3.test.ts # D3 6-tier cosmological tree layout unit tests
 │   │   ├── cppEngine.ts               # C++20 SIMD engine blueprint & Guardrail generators
 │   │   ├── cultivationMath.ts         # 4 paths, 100x suppression, karma & disciple logic
 │   │   ├── cultivationMath.test.ts    # Cultivation math unit tests
@@ -290,7 +376,7 @@ npm run preview       # Preview production build locally
 │   │   ├── proceduralWorld.test.ts    # 3D scene-graph, aura & engine telemetry regression tests
 │   │   ├── species.ts                 # 10-Species catalog, 3D mesh specs & Admin switch permission gate
 │   │   ├── species.test.ts            # 10-Species catalog, 3D attachments & Admin permission unit tests
-│   │   ├── systemValidation.ts        # 8-Pillar Cross-System Validation & Integrity Audit Engine
+│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine
 │   │   ├── systemValidation.test.ts   # Cross-System Validation & Integrity unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
@@ -346,7 +432,7 @@ Every push and Pull Request automatically runs four strict Web/TypeScript qualit
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **108 unit and regression tests across 17 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Runs all **113 unit and regression tests across 18 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -356,26 +442,27 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
 3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
 
-### Automated Test Suites (`108/108 Passing` across 17 TypeScript Suites + `CTest C++20 Passing`)
+### Automated Test Suites (`113/113 Passing` across 18 TypeScript Suites + `CTest C++20 Passing`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
 - **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
+- **`cosmologicalTreeD3.test.ts`**: Verifies D3 hierarchy construction (`buildCosmologicalD3TreeData`) and Horizontal/Radial layout coordinate projection (`computeCosmologicalD3Layout`) from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) to leaf `Universe` (`Tier 1`) nodes.
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`Implemented` / `Simulated` / `Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`Epoch Ω-0: Pre-Genesis: The White Page & The House of Ideas` under `creatergame31@gmail.com` through `Epoch VI: 06/11/2026 Architect Convergence`), 6 Sacred Compendium Codices, one-time epoch comprehension rewards (`comprehendLoreEpoch`), and full-text lore search (`searchLoreHistory`).
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
-- **`omniverse.test.ts`**: Verifies the 6-Layer Cosmic Hierarchy (`1. Universe` → `2. Multiverse` → `3. Megaverse / Hyperverse` → `4. Omniverse` → `5. The Overvoid / Exoverse` → `6. The White Page / The House of Ideas` under `creatergame31@gmail.com`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), infinite transfinite Omniverse coordinate resolution, 3D Overworld NPC projection, and Layer-6 White Page / House of Ideas authorial decrees.
+- **`omniverse.test.ts`**: Verifies `COSMIC_LIMITS` (`WHITE_PAGE_COUNT: 1`, `OVERVOID_MAX_COUNT: 100`, `Infinity` for Tiers 1–4), `InfiniteCollection<T>`, the strict 6-Tier Nested Cosmological Tree (`WhitePageRoot` singleton → `100` bounded `Overvoid` instances → `Omniverse` → `Megaverse` / `Hyperverse` → `Multiverse` → `Universe` leaf), `attemptCreateOvervoid` hard cap enforcement (`> 100` rejected), `lazilyGenerateInfiniteTierSlice` procedural pagination, Tier 5 `Overvoid` logic overrides and Tier 1 `Universe` physics overrides (`evaluateEffectiveUniversePhysicsAndLogic`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), and Layer-6 White Page / House of Ideas authorial decrees.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, live `applyCrossPlatformPipeline` mutations (`THREE.LOD`, `InstancedMesh.count`, `normalScale`/`bumpScale`, small-prop shadow culling), and C++20 engine telemetry.
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying 67+ invariants across Root RBAC (`creatergame31@gmail.com`), 6-Layer Cosmology, 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying 72+ invariants across Root RBAC (`creatergame31@gmail.com`), 6-Tier Nested Cosmological Tree & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster complexity brackets, A\* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
-- **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
+- **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `WhitePageRootSpec` & `computeCascadedUniverseQiMultiplier` `static_assert`s, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
 
 Run all Guardrail checks locally:
 
@@ -384,7 +471,7 @@ npm run validate              # Unified 4-stage check (lint + format:check + tes
 npm run lint                  # 1. Check TypeScript for messy code & unused variables
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 108 TypeScript unit & regression tests
+npm test                      # 4. Run all 113 TypeScript unit & regression tests
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -403,7 +490,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)  | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                            | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)          | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 108 automated unit tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 113 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -425,7 +512,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 108 unit & regression tests across 17 test suites
+- [x] `npm test` passes all 113 unit & regression tests across 18 test suites
 - [x] `npm run validate` passes the full 4-stage validation gate cleanly
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
@@ -439,6 +526,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 - **Framework**: React 19
 - **3D Graphics**: Three.js (WebGL2 with adaptive software fallback support)
+- **Hierarchy & Data Visualization**: D3.js (`d3-hierarchy`, `d3-zoom`, `d3-selection`)
 - **Styling**: Tailwind CSS v4
 - **Language**: TypeScript 7 & C++20
 - **Bundler**: Vite 8
