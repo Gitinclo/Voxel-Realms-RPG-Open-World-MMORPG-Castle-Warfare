@@ -75,6 +75,7 @@ import { DailyLoginModal } from './components/DailyLoginModal';
 import { VipSubscriptionModal } from './components/VipSubscriptionModal';
 import { LoreHistoryModal } from './components/LoreHistoryModal';
 import { CosmologicalAdminModal } from './components/CosmologicalAdminModal';
+import { GmailModal } from './components/GmailModal';
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -169,7 +170,8 @@ type ActiveModal =
   | 'daily_login'
   | 'vip_subscription'
   | 'lore_history'
-  | 'cosmological_admin';
+  | 'cosmological_admin'
+  | 'gmail';
 
 export default function App() {
   const {
@@ -2082,6 +2084,7 @@ export default function App() {
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+          onOpenGmail={() => setActiveModal('gmail')}
           authUserEmail={authUser?.email ?? null}
           authLoading={authLoading}
           isSyncingAccount={isSyncingAccount}
@@ -2138,6 +2141,7 @@ export default function App() {
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+          onOpenGmail={() => setActiveModal('gmail')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
@@ -2535,6 +2539,15 @@ export default function App() {
           omniverseRoster={omniverseRoster}
           activeAccountEmail={activeAccountEmail}
           onNotify={(msg) => setToastMessage(msg)}
+          onClose={() => setActiveModal('none')}
+        />
+      )}
+
+      {activeModal === 'gmail' && (
+        <GmailModal
+          commanderName={playerAppearance.name || 'Sovereign Vanguard'}
+          castleLevel={castleLevel}
+          allianceTag={clan.tag || 'SOL'}
           onClose={() => setActiveModal('none')}
         />
       )}

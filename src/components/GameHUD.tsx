@@ -30,6 +30,7 @@ import {
   Gavel,
   BookOpen,
   GitBranch,
+  Mail,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -67,6 +68,7 @@ interface GameHUDProps {
   onOpenAdminConsole: () => void;
   onOpenLoreHistory?: () => void;
   onOpenCosmologicalAdmin?: () => void;
+  onOpenGmail?: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
@@ -115,6 +117,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenAdminConsole,
   onOpenLoreHistory,
   onOpenCosmologicalAdmin,
+  onOpenGmail,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
@@ -912,6 +915,23 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   Cosmology D3
                 </span>
                 <span className="text-[9px] font-mono text-amber-300">6-Tier Tree</span>
+              </button>
+            )}
+
+            {onOpenGmail && (
+              <button
+                type="button"
+                data-testid="dock-gmail-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  onOpenGmail();
+                }}
+                className="p-2 rounded-xl bg-amber-950/70 hover:bg-amber-900/70 border border-amber-500/50 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              >
+                <Mail className="w-5 h-5 text-amber-400" />
+                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Gmail</span>
+                <span className="text-[9px] font-mono text-amber-300">Dispatch</span>
               </button>
             )}
           </div>

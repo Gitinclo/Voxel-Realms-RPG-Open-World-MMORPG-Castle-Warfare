@@ -13,12 +13,13 @@ import {
   Gavel,
   BookOpen,
   GitBranch,
-  LogIn,
   LogOut,
   RefreshCw,
+  Mail,
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
+import { GoogleSignInButton } from './GmailModal';
 
 interface TitleScreenProps {
   onStartGame: () => void;
@@ -31,6 +32,7 @@ interface TitleScreenProps {
   onOpenAdminConsole?: () => void;
   onOpenLoreHistory?: () => void;
   onOpenCosmologicalAdmin?: () => void;
+  onOpenGmail?: () => void;
   authUserEmail?: string | null;
   authLoading?: boolean;
   isSyncingAccount?: boolean;
@@ -52,6 +54,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenAdminConsole,
   onOpenLoreHistory,
   onOpenCosmologicalAdmin,
+  onOpenGmail,
   authUserEmail = null,
   authLoading = false,
   isSyncingAccount = false,
@@ -162,6 +165,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             Character Creation Centre
           </button>
 
+          {onOpenGmail && (
+            <button
+              type="button"
+              data-testid="title-gmail-btn"
+              onClick={onOpenGmail}
+              className="px-3.5 py-2 rounded-xl bg-amber-950/85 hover:bg-amber-900/85 border border-amber-500/50 text-xs font-bold text-amber-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title="Open Gmail Dispatch Center"
+            >
+              <Mail className="w-4 h-4 text-amber-400" />
+              <span>Gmail</span>
+            </button>
+          )}
+
           {!authLoading &&
             (authUserEmail ? (
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-950/85 border border-emerald-500/50 text-xs font-bold text-emerald-200">
@@ -196,17 +212,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 )}
               </div>
             ) : (
-              onSignInGoogle && (
-                <button
-                  type="button"
-                  data-testid="title-google-signin-btn"
-                  onClick={onSignInGoogle}
-                  className="px-4 py-2 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 border border-emerald-400/60 text-xs font-bold text-slate-950 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign in with Google</span>
-                </button>
-              )
+              onSignInGoogle && <GoogleSignInButton onClick={onSignInGoogle} />
             ))}
         </div>
       </div>
