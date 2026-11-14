@@ -83,9 +83,11 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **4 Tier Levels (`Free Sovereign`, `VIP 1 Silver Archon`, `VIP 2 Golden Sovereign`, `VIP 3 Celestial Emperor`)**:
   - Monthly and Annual billing cycles (activatable via Store Pass or Kingdom Diamonds), daily VIP Stipend Chests, Loyalty Level progression (`Lv. 1–15`), Castle Upgrade cost discounts, Extra Gathering March queues, and custom Realm Aura overrides.
 
-### 9. 🛡️ Clan Alliances, 9-Sector Territory Wars & Global Leaderboards
+### 9. 🛡️ Clan Alliances, 9-Sector Territory Wars, Authoritative 20Hz 50v50 WebSocket Siege Server & Multi-Region Persistence (`server.ts`, `src/game/siegeNetProtocol.ts`)
 
-- Create and customize heraldic SVG clan emblems, manage membership hierarchies, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
+- **Heraldic Alliances & 9-Sector Territory War Map (`A1`–`C3`)**: Create and customize heraldic SVG clan emblems, manage membership hierarchies, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
+- **Authoritative 20Hz (`50ms`) 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
+- **3-Node Multi-Region Persistence Quorum (`/api/online/status`, `/api/online/sync`, `/api/online/siege/cmd`)**: Replicates authoritative realm state and FNV-1a consensus checksums across 3 regional cluster nodes (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) backed by durable server-side disk storage (`data/online_realm_state.json`) and client `localStorage`.
 
 ### 10. ⚖️ Administration, GM, Admin & Moderator RBAC Control (`creatergame31@gmail.com`)
 

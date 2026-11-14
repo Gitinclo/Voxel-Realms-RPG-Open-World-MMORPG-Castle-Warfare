@@ -8,4 +8,6 @@ package-lock.json
 .clang-tidy
 *.log
 public/assets/
+data/
+.playwright-cli/
 

@@ -33,7 +33,7 @@ The governance structure mirrors the deterministic Role-Based Access Control (RB
 ### A. Routine Bug Fixes, UI Polish & Test Additions
 
 - May be submitted directly via a Pull Request following [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md).
-- Requires all automated CI checks (`116` unit tests across 17 TypeScript suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
+- Requires all automated CI checks (`122` unit tests across 18 TypeScript suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
 
 ### B. Major Gameplay, Mathematical or Engine Changes ("Architect-First" RFCs)
 
@@ -45,9 +45,9 @@ Any change that alters:
 - 6-Tier Nested Cosmological Hierarchy (`WhitePageRoot` Singleton → `Overvoid` → `Omniverse` → `Megaverse` → `Multiverse` → `Universe` Leaf), D3 Tree Layout (`src/game/cosmologicalTreeD3.ts`), Tier 5/Tier 1 Physics Overrides & 100 Species Background NPCs (`src/game/omniverse.ts`),
 - Imperial Lore, 7 Grand Historical Epochs, 12 Dynastic Annals, Auto-Populating Open-World Codex & `10^100`-Word Akashic Stream (`src/game/loreHistory.ts`),
 - 9-Pillar Cross-System Validation & Integrity Audit (`src/game/systemValidation.ts`),
-- Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`) & live WebGL2 pipeline (`src/game/graphicsEngine.ts` & `src/game/proceduralWorld.ts`),
+- Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) & live WebGL2 pipeline (`src/game/graphicsEngine.ts` & `src/game/proceduralWorld.ts`),
 - Software & Hardware Architect ISA/GPU/TDP/SoA optimization (`src/game/architectOptimization.ts`),
-- Network wire schemas (`CHANGELOG.md` / `v1.5.1` Siege Protocol), or
+- Authoritative 20Hz 50v50 WebSocket Siege Protocol & Multi-Region Persistence (`src/game/siegeNetProtocol.ts` & `server.ts`), or
 - C++20 RAII / SIMD headers (`cpp/VoxelRealmsGuardrails.hpp`),
 
 must follow the **Architect-First Rule** (which **helps prevent early design flaws**):

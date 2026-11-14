@@ -56,7 +56,8 @@ local.properties
 ehthumbs.db
 Thumbs.db
 
-# AI Studio and Test Artifacts
+# AI Studio, Runtime Persistence and Test Artifacts
 .aistudio/
 .playwright-cli/
+data/
 public/assets/aistudio/

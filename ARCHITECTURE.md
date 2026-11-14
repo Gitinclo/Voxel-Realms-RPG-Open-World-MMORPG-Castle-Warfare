@@ -33,6 +33,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/omniverse.ts         (COSMIC_LIMITS, 100 Overvoids & Omniverses)│
 │  • src/game/cosmologicalTreeD3.ts (D3 6-tier hierarchy layout & projection) │
 │  • src/game/loreHistory.ts       (7 Epochs, 12 Annals, Codex & 10^100 Corpus)│
+│  • src/game/siegeNetProtocol.ts  (20Hz 50v50 Siege Delta, CSP & Quorum)      │
 │  • src/game/graphicsEngine.ts    (Cross-Platform Pipeline & Transparency)   │
 │  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
@@ -42,7 +43,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **116 unit and regression tests across 17 TypeScript suites** in ~2.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **122 unit and regression tests across 18 TypeScript suites** in ~2.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -157,9 +158,14 @@ Players cultivate four complementary paths simultaneously:
 - **Auto-Populating Open-World Lore Codex (`evaluateOpenWorldLoreDiscovery`)**: Automatically populates `localStorage`-persisted Codex entries (`OPEN_WORLD_BIOME_CODEX_CATALOG`, `OPEN_WORLD_MONSTER_CODEX_CATALOG`, and `buildDynamicMonsterCodexEntry`) whenever the player explores any of Solara's 8 spatial biomes or encounters/selects/spawns monsters, granting one-time Kingdom Diamond and Scripture Fragment bounties (`claimLoreCodexReward`).
 - **`10^100` Words Minimum (One Googol Words) Procedural Akashic Stream (`GOOGOL_LORE_ARCHIVE_SPEC`)**: Deterministically synthesizes `>= 1,000` real English words per volume across `10^97` `BigInt`-addressable volume coordinates (`generateGoogolScaleLoreScrollSlice`) without blocking RAM.
 
-### J. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
+### J. Authoritative 20Hz 50v50 WebSocket Siege Protocol & Multi-Region Persistence (`src/game/siegeNetProtocol.ts`, `server.ts`, `src/components/ClanTerritoryMap.tsx`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **84 invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency Matrix & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **20Hz (`50ms`) Authoritative Server & Bitmasked Delta Compression**: `server.ts` hosts the RFC 6455 WebSocket upgrade endpoint (`/ws/siege`) and `/api/online/*` REST endpoints on port `3000`, advancing `stepAuthoritativeSiegeTick` every `50ms`, computing `CohortDirtyBit` delta records (`applySiegeDeltaUpdate`), and verifying client-server parity with 32-bit FNV-1a state hashes (`computeSectorStateHash`).
+- **128-Frame Client-Side Prediction (CSP) & Multi-Region Quorum**: `ClientPredictionRingBuffer` (`reconcileClientPrediction`) reconciles local cohort movements via Cubic Hermite smoothing (`<= 0.15m`) or deterministic rollback (`> 0.15m`), while `buildMultiRegionReplicationStatus` replicates state across 3 regional clusters (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) backed by durable server-side disk storage (`data/online_realm_state.json`).
+
+### K. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
+
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **88 invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ---
 
@@ -168,7 +174,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 116 deterministic unit tests across 17 TypeScript suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 122 deterministic unit tests across 18 TypeScript suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
