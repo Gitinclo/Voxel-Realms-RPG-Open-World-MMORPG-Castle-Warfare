@@ -2,11 +2,13 @@
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
 [![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-136_Passing_(21_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
-[![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
+[![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
+
+> **Release Status Notice:** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch source milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), validated by CI (`npm run validate` + `npm run verify:ops` uploading temporary workflow artifacts). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 

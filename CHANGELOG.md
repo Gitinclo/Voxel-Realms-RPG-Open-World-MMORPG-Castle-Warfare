@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to the **Voxel Realms RPG** project will be documented in this file.
+All notable changes to the **Voxel Realms RPG** project are documented in this file.
+
+> **Release Publication Status:** Version entries (`[1.0.0]`–`[1.5.0]`) track implemented codebase milestones and `package.json` versions on the source branch. **No formal GitHub Releases or `v*` Git tags have been published yet**; once ready, tagging `v*.*.*` triggers [`.github/workflows/release.yml`](./.github/workflows/release.yml) to publish checksummed GitHub Release artifacts.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

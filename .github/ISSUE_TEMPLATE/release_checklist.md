@@ -23,7 +23,8 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 122 unit tests across all 18 test suites
+- [ ] `npm test` passes all 136 unit tests across all 21 test suites
+- [ ] `npm run verify:ops` passes live server load, exploit, crash-recovery & `SIGTERM` checks
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
@@ -33,7 +34,7 @@ labels: ['release']
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
 - [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
-- [ ] World AI Director (Lv. 1–1000 monsters, A* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server (`/ws/siege` & `/api/online/*`), C++20 Software & Hardware Architect Studio (`06/11/2026`), 9-Pillar Cross-System Validation Engine (`88+` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A\* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server (`/ws/siege` & `/api/online/*`), C++20 Software & Hardware Architect Studio (`06/11/2026`), 9-Pillar Cross-System Validation Engine (`89+` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
 - [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 
@@ -54,4 +55,5 @@ labels: ['release']
 
 - [ ] GitHub Actions workflow (`.github/workflows/build.yml`) is green on `push` / `pull_request`
 - [ ] Production build artifact (`voxel-realms-rpg-dist`) uploads cleanly
-- [ ] Tag release commit (`git tag -a v1.5.0 -m "Release v1.5.0 (06/11/2026)"`)
+- [ ] Tag and push release commit (`git tag -a v1.5.0 -m "Release v1.5.0 (06/11/2026)" && git push origin v1.5.0`) to trigger `.github/workflows/release.yml`
+- [ ] Verify published GitHub Release page lists generated `tar.gz` bundle and SHA-256 checksums

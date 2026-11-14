@@ -1,0 +1,57 @@
+name: Release — Tagged GitHub Release & Checksums
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    name: Validate, Package & Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --no-audit
+
+      - name: Verify package.json version matches Git tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "Git tag version: ${TAG_VERSION} | package.json version: ${PKG_VERSION}"
+          if [ "${TAG_VERSION}" != "${PKG_VERSION}" ]; then
+            echo "Mismatch: push tag v${PKG_VERSION} or update package.json before releasing."
+            exit 1
+          fi
+
+      - name: Run full validation & live server ops suite
+        run: npm run validate && npm run verify:ops
+
+      - name: Package versioned release archive + SHA-256 manifest
+        run: |
+          mkdir -p release-assets
+          ARCHIVE="release-assets/voxel-realms-rpg-${GITHUB_REF_NAME}-dist.tar.gz"
+          tar -czf "${ARCHIVE}" dist server.ts package.json SECURITY.md CHANGELOG.md LICENSE NOTICE
+          (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" release-assets/* \
+            --title "Voxel Realms RPG ${GITHUB_REF_NAME}" \
+            --generate-notes
