@@ -74,6 +74,9 @@ enum class CosmicOntologyLayer : uint8_t {
 
 inline constexpr std::string_view kSupremeAuthorEmail = "creatergame31@gmail.com";
 inline constexpr std::size_t kCanonicalLoreEpochCount = 7U;
+inline constexpr std::size_t kCanonicalDynasticAnnalsCount = 12U;
+inline constexpr std::size_t kCanonicalOpenWorldBiomeCount = 8U;
+inline constexpr std::size_t kGoogolLoreWordExponent = 100U;
 inline constexpr std::size_t kOmniverseSpeciesNpcCount = 100U;
 
 [[nodiscard]] constexpr uint64_t
@@ -90,7 +93,13 @@ static_assert(
     computeCosmicLayerScaleMultiplier(CosmicOntologyLayer::TheWhitePage_HouseOfIdeas) == 100000ULL,
     "Layer 6 (The White Page / The House of Ideas) must hold 100,000x Cosmological Scale");
 static_assert(kCanonicalLoreEpochCount == 7U,
-              "Imperial Lore & Cosmological History Codex must define 7 Grand Historical Epochs");
+              "Imperial Lore Codex must define 7 Grand Historical Epochs");
+static_assert(kCanonicalDynasticAnnalsCount == 12U,
+              "Imperial Lore Codex must define 12 Dynastic Annals");
+static_assert(kCanonicalOpenWorldBiomeCount == 8U,
+              "Open-World Lore Codex must index 8 Spatial Biomes");
+static_assert(kGoogolLoreWordExponent == 100U,
+              "Akashic Lore Archive must enforce a 10^100-word minimum horizon");
 
 // Strict 6-Tier Nested Cosmological Tree & Custom Physics/Logic Override Guardrail
 struct WhitePageRootSpec final {
@@ -98,7 +107,7 @@ struct WhitePageRootSpec final {
     std::string_view alias{"The House of Ideas"};
     std::string_view creatorEmail{kSupremeAuthorEmail};
     bool includesOblivion{true};
-    std::size_t tier5OvervoidCount{5U};
+    std::size_t tier5OvervoidCount{100U};
     std::size_t tier4OmniverseCount{100U};
     std::size_t tier3MegaverseCount{100U};
     std::size_t tier2MultiverseCount{100U};
@@ -113,6 +122,8 @@ computeCascadedUniverseQiMultiplier(double tier1UniverseQiMultiplier,
 
 static_assert(WhitePageRootSpec{}.includesOblivion,
               "Tier 6 WhitePageRoot singleton must spawn both existence (Overvoid[]) and Oblivion");
+static_assert(WhitePageRootSpec{}.tier5OvervoidCount == 100U,
+              "Tier 5 Overvoid / Exonverse array must enforce exact bounded cap of 100");
 static_assert(WhitePageRootSpec{}.creatorEmail == "creatergame31@gmail.com",
               "Tier 6 WhitePageRoot creatorEmail must be creatergame31@gmail.com");
 static_assert(computeCascadedUniverseQiMultiplier(5.0, 4.0) == 20.0,

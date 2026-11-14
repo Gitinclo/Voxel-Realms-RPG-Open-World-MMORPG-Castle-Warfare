@@ -24,7 +24,7 @@ Please confirm all items below before requesting a review or merging:
 
 - [ ] `npm install` completes cleanly with no dependency conflicts
 - [ ] `npm run lint` (`tsc --noEmit`) passes with zero TypeScript errors
-- [ ] `npm test` passes all 110+ unit tests across all 17 suites (`adminModeration`, `architectOptimization`, `species`, `omniverse`, `loreHistory`, `systemValidation`, `cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`, `vipSubscription`, `troopTraining`, `heroSkins`, `graphicsEngine`, `proceduralWorld`)
+- [ ] `npm test` passes all 116+ unit tests across all 17 TypeScript suites (`adminModeration`, `architectOptimization`, `species`, `omniverse`, `cosmologicalTreeD3`, `loreHistory`, `systemValidation`, `cultivationMath`, `math`, `worldAI`, `weather`, `dailyLogin`, `clanMath`, `vipSubscription`, `troopTraining`, `heroSkins`, `graphicsEngine`, `proceduralWorld`)
 - [ ] `npm run validate` & `npm run build` generate the production bundle under `dist/` without errors
 
 ### 2. Runtime Smoke Test
@@ -35,6 +35,6 @@ Please confirm all items below before requesting a review or merging:
 
 ### 3. Architecture, Security & Hygiene
 
-- [ ] Pure calculations and state transitions are decoupled into `src/game/` with unit tests per [`ARCHITECTURE.md`](../ARCHITECTURE.md) and [`GOVERNANCE.md`](../GOVERNANCE.md)
+- [ ] Follows the **Architect-First** rule (which **helps prevent early design flaws**): pure calculations and state transitions are decoupled into `src/game/` with unit tests per [`ARCHITECTURE.md`](../ARCHITECTURE.md) and [`GOVERNANCE.md`](../GOVERNANCE.md)
 - [ ] No `.env` files, API keys, tokens, or Android signing keystores (`*.jks`, `*.keystore`) are included
 - [ ] `README.md`, `ROADMAP.md`, and `CHANGELOG.md` are updated if user-facing features or setup steps changed

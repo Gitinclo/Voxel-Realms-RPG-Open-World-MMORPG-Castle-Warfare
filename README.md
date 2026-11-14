@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-113_Passing_(18_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-116_Passing_(17_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Release-v1.5.0_(06%2F11%2F2026)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
@@ -10,7 +10,7 @@
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`Implemented` vs. `Simulated` vs. `Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -215,24 +215,30 @@ interface WhitePageRoot {
 - **Rule 3 — Infinite Tier Handling & Lazy Procedural Pagination (`Tiers 1–4` = `Infinity`)**: `Omniverse`, `Megaverse`, `Multiverse`, and `Universe` collections never run unbounded loops; instead they use `InfiniteCollection<T>` (`totalCount: Infinity`, deterministic `generatorSeed`, and `loadedNodes: T[]`) paired with `lazilyGenerateInfiniteTierSlice(root, tier, parentNodeId, count)` to procedurally synthesize and append child nodes on demand.
 - **Rule 4 — Interactive D3 Cosmological Tree Visualizer (`CosmologicalAdminModal.tsx` & `cosmologicalTreeD3.ts`)**: Renders the live 6-tier hierarchy from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) → `Omniverse` (`Tier 4`) → `Megaverse` (`Tier 3`) → `Multiverse` (`Tier 2`) → leaf `Universe` (`Tier 1`) using `d3-hierarchy` (`d3.hierarchy` + `d3.tree`) and `d3-zoom` in both Horizontal (`Left → Right`) and Radial (`360° Cosmic Mandala`) layouts, complete with live Tier 5 logic / Tier 1 physics override sliders, 100-Overvoid cap testing, and on-demand lazy pagination buttons.
 
-### 14. 📜 Imperial Lore & Cosmological History Codex (`src/game/loreHistory.ts`, [`LORE.md`](./LORE.md))
+### 14. 📜 Imperial Lore, Auto-Populating Open-World Codex, 12 Dynastic Annals & `10^100`-Word Akashic Stream (`src/game/loreHistory.ts`, [`LORE.md`](./LORE.md))
 
-- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`)**:
+- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`, 6–7 Sections Each)**:
   - **Epoch Ω-0 — Pre-Genesis: The White Page & The House of Ideas (`creatergame31@gmail.com`)**: Chronicles how everything — including Nothingness (`Oblivion`), the 3,000 Great Daos, and the Four Authorial Decrees — was inscribed upon the pre-existential White Page by `creatergame31@gmail.com`.
-  - **Epoch Ω-I — The Overvoid Divergence & 100+∞ Sovereign Omniverses**: Chronicles the unfurling of Layer 5 (_The Overvoid / Exoverse_) and the creation of `OMNI-001` through `OMNI-100+∞` for the 100 Fictional Species.
+  - **Epoch Ω-I — The Overvoid Divergence & 100+∞ Sovereign Omniverses**: Chronicles the unfurling of Layer 5 (_The Overvoid / Exonverse_) and the creation of `OMNI-001` through `OMNI-100+∞` for the 100 Fictional Species.
   - **Epoch Ω-II — Hyperversal Brane Weaving & Multiversal Timeline Tree**: Chronicles the condensation of Megaverses/Hyperverses (`Layer 3`), Multiverses (`Layer 2`), and the Prime Sovereign Universe (`Layer 1`).
   - **Epoch III — Awakening of the 10 Playable Species & Admin Rebirth Seal**: Chronicles the rise of the 10 Sovereign Playable Bloodlines and the Admin Rebirth Governance Seal (`creatergame31@gmail.com`).
   - **Epoch IV — The Han Jue Four-Path Immortal Revelation & 100x Realm Suppression**: Chronicles Han Jue's Secluded Providence doctrine, the 4 Cultivation Paths, and `100x` Realm Suppression.
   - **Epoch V — The Ten Citadel Eras & Trillion-Scale Siege Wars**: Chronicles the 10 Citadel Eras, T1–T20 Legions, and `1T` World Boss Rallies.
   - **Epoch VI — The `06/11/2026` Software & Hardware Architect Convergence (`v1.5.0`)**: Chronicles the unification of the Three.js PBR renderer with the C++20 SIMD/SoA Architect Engine.
-- **6 Sacred Compendium Codices & Interactive Chronicle Comprehension (`LoreHistoryModal.tsx`)**: Full-text searchable lore archive (`searchLoreHistory`) and interactive epoch comprehension (`comprehendLoreEpoch`) granting Kingdom Diamonds (`💎`) and Scripture Fragments.
+- **Auto-Populating Open-World Lore Codex (`OPEN_WORLD_BIOME_CODEX_CATALOG` & `OPEN_WORLD_MONSTER_CODEX_CATALOG`)**:
+  - Automatically unlocks and persists entries (`localStorage` key `voxel_realms_lore_codex_state_v1`) as the player explores Solara's **8 Spatial Biomes** (`resolveBiomeAtWorldPosition`) or encounters/selects/spawns **Canonical & Dynamic Lv. 1–1000 Monsters** (`evaluateOpenWorldLoreDiscovery`, `buildDynamicMonsterCodexEntry`), awarding one-time Kingdom Diamond (`💎`) and Scripture Fragment discovery bounties (`claimLoreCodexReward`).
+- **12 Imperial Dynastic Annals & Legendary Artifact Histories (`LORE_DYNASTIC_ANNALS`)**:
+  - Twelve multi-paragraph primary historical treatises spanning Layer 6 _The White Page Quill_, the _Overvoid Logic Schism War_, the _First Solara Dragon-Vein Concordat_, the _Crystalline Golem Foundry Oath_, and the _Void Leviathan Abyssal Siege_.
+- **`10^100` Words Minimum (One Googol Words) Akashic Lore & History Stream (`GOOGOL_LORE_ARCHIVE_SPEC`)**:
+  - Deterministically synthesizes **`1,000+` real English words per volume** across `10^97` `BigInt`-addressable coordinates (`1n` to `GOOGOL_MAX_VOLUME_INDEX = 10n ** 97n`, `generateGoogolScaleLoreScrollSlice`) without blocking RAM — achieving `10^97 × >=1,000 >= 10^100` (One Googol Words Minimum).
+- **6 Sacred Compendium Codices, Epoch Comprehension & Full-Text Search (`LoreHistoryModal.tsx`)**: Full-text searchable lore archive (`searchLoreHistory`) spanning Epochs, Annals, Codex Biomes/Monsters, and Compendium chapters, paired with interactive Epoch Comprehension (`comprehendLoreEpoch`).
 
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **72+ cross-module invariants** across:
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **84 cross-module invariants** across:
   1. **Root RBAC & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
-  3. **Imperial Lore & 7 Grand Historical Epochs (`Epoch Ω-0` through `Epoch VI` `06/11/2026`)**
+  3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
   4. **10 Playable Species, 3D Procedural Anatomy & Admin Rebirth Permission Gate**
   5. **`06/11/2026` Software & Hardware Architect Engine (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup)**
   6. **Castle Lv. 0–100 (`1,000T` Cap), `1T` World Boss Rally & T1–T20 Tri-Branch Counter Matrix (`1.5x`)**
@@ -289,7 +295,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit & Regression Tests
 
-Execute all **113 unit and regression tests across 18 decoupled test suites**:
+Execute all **116 unit and regression tests across 17 decoupled TypeScript test suites**:
 
 ```bash
 npm test
@@ -338,7 +344,7 @@ npm run preview       # Preview production build locally
 │   │   ├── GameHUD.tsx                # Consolidated top bar, D-pad & 5-tab command dock
 │   │   ├── HeroModal.tsx              # Hero ascension, tavern summons & aesthetic skins
 │   │   ├── LeaderboardModal.tsx       # Global lord & clan power rankings
-│   │   ├── LoreHistoryModal.tsx       # 7 Grand Historical Epochs, 6-Layer Cosmology & Compendium Codex
+│   │   ├── LoreHistoryModal.tsx       # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
 │   │   ├── ResourceGatherModal.tsx    # Lv 1-10 resource node extraction & march queues
 │   │   ├── TitleScreen.tsx            # Game startup overlay & quick access triggers
 │   │   ├── TroopBarracksModal.tsx     # T1-T20 troop recruitment & live training queue
@@ -366,8 +372,8 @@ npm run preview       # Preview production build locally
 │   │   ├── heroSkins.ts               # Hero aesthetic skins & particle aura catalog
 │   │   ├── heroSkins.test.ts          # Hero skins unit tests
 │   │   ├── initialData.ts             # Deterministic seed data for heroes, clans, AI & nodes
-│   │   ├── loreHistory.ts             # 7 Historical Epochs, 6 Compendium Codices & comprehension rewards
-│   │   ├── loreHistory.test.ts        # Lore & Cosmological History unit tests
+│   │   ├── loreHistory.ts             # 7 Epochs, 12 Annals, Auto-Populating Codex & 10^100 Akashic Archive
+│   │   ├── loreHistory.test.ts        # Lore Codex, Dynastic Annals & 10^100 Akashic unit tests
 │   │   ├── math.ts                    # Castle eras, 1000T cap & T1-T20 troop combat math
 │   │   ├── math.test.ts               # Castle & combat math unit tests
 │   │   ├── omniverse.ts               # 6-Layer Cosmology, White Page, 100 Species NPCs & Infinite Omniverse
@@ -404,7 +410,7 @@ npm run preview       # Preview production build locally
 ├── GOVERNANCE.md                      # Project governance, RBAC hierarchy & RFC process
 ├── LICENSE                            # Apache License 2.0 (raw text)
 ├── LICENSE.md                         # Apache License 2.0 (formatted legal summary & full terms)
-├── LORE.md                            # Imperial Lore, 6-Layer Cosmology & 7 Grand Historical Epochs Codex
+├── LORE.md                            # Imperial Lore, Auto-Populating Codex, 12 Annals & 10^100 Akashic Archive
 ├── NOTICE                             # Apache 2.0 Section 4(d) mandatory attribution notice
 ├── PRIVACY.md                         # User Privacy Policy (GDPR/CCPA, localStorage, payments, ads)
 ├── README.md                          # Project overview & documentation hub (this file)
@@ -432,7 +438,7 @@ Every push and Pull Request automatically runs four strict Web/TypeScript qualit
 1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **113 unit and regression tests across 18 decoupled test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression Test Suite (`npm test`)**: Runs all **116 unit and regression tests across 17 decoupled TypeScript test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -442,7 +448,18 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
 3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
 
-### Automated Test Suites (`113/113 Passing` across 18 TypeScript Suites + `CTest C++20 Passing`)
+### Part 2: The Process Fix — "Architect-First" & Refactor Sessions
+
+Tools catch syntax and formatting issues, while disciplined engineering process **helps prevent early design flaws**:
+
+1. **The "Architect-First" Rule**:
+   - **Helps prevent early design flaws** by requiring data structures, pure domain functions (`src/game/*.ts`), and existing module reuse to be planned and verified before writing UI or rendering code.
+   - **Bad Prompt**: _"Make the character jump."_
+   - **Good Prompt**: _"Plan the logic for the character jump. Check `src/game/` for existing physics or movement functions we can reuse. Don't write code yet—just give me the plan."_
+2. **The Refactor Session (Every 3–4 Features)**:
+   - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
+
+### Automated Test Suites (`116/116 Passing` across 17 TypeScript Suites + `CTest C++20 Passing`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
@@ -452,17 +469,17 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`Implemented` / `Simulated` / `Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
-- **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`Epoch Ω-0: Pre-Genesis: The White Page & The House of Ideas` under `creatergame31@gmail.com` through `Epoch VI: 06/11/2026 Architect Convergence`), 6 Sacred Compendium Codices, one-time epoch comprehension rewards (`comprehendLoreEpoch`), and full-text lore search (`searchLoreHistory`).
+- **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`6+` sections each), 12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`), Auto-Populating Open-World Lore Codex (8 spatial biomes + canonical/dynamic Lv. 1–1000 monster discovery & bounty claims), the `10^100`-Word Minimum Akashic Lore Stream (`generateGoogolScaleLoreScrollSlice` synthesizing `>= 1,000` real words/volume across `10^97` `BigInt` coordinates), 6 Sacred Compendium Codices, `comprehendLoreEpoch`, and full-text `searchLoreHistory`.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
 - **`omniverse.test.ts`**: Verifies `COSMIC_LIMITS` (`WHITE_PAGE_COUNT: 1`, `OVERVOID_MAX_COUNT: 100`, `Infinity` for Tiers 1–4), `InfiniteCollection<T>`, the strict 6-Tier Nested Cosmological Tree (`WhitePageRoot` singleton → `100` bounded `Overvoid` instances → `Omniverse` → `Megaverse` / `Hyperverse` → `Multiverse` → `Universe` leaf), `attemptCreateOvervoid` hard cap enforcement (`> 100` rejected), `lazilyGenerateInfiniteTierSlice` procedural pagination, Tier 5 `Overvoid` logic overrides and Tier 1 `Universe` physics overrides (`evaluateEffectiveUniversePhysicsAndLogic`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), and Layer-6 White Page / House of Ideas authorial decrees.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, live `applyCrossPlatformPipeline` mutations (`THREE.LOD`, `InstancedMesh.count`, `normalScale`/`bumpScale`, small-prop shadow culling), and C++20 engine telemetry.
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying 72+ invariants across Root RBAC (`creatergame31@gmail.com`), 6-Tier Nested Cosmological Tree & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **84 invariants** across Root RBAC (`creatergame31@gmail.com`), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster complexity brackets, A\* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
-- **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `WhitePageRootSpec` & `computeCascadedUniverseQiMultiplier` `static_assert`s, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
+- **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `WhitePageRootSpec` (`tier5OvervoidCount == 100U`, `tier4OmniverseCount == 100U`), `kGoogolLoreWordExponent == 100U`, `kCanonicalDynasticAnnalsCount == 12U`, `kCanonicalOpenWorldBiomeCount == 8U`, `computeCascadedUniverseQiMultiplier`, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
 
 Run all Guardrail checks locally:
 
@@ -471,7 +488,7 @@ npm run validate              # Unified 4-stage check (lint + format:check + tes
 npm run lint                  # 1. Check TypeScript for messy code & unused variables
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 113 TypeScript unit & regression tests
+npm test                      # 4. Run all 116 TypeScript unit & regression tests across 17 suites
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -490,7 +507,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)  | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                            | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)          | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 113 automated unit tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 116 automated unit tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -512,7 +529,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 113 unit & regression tests across 18 test suites
+- [x] `npm test` passes all 116 unit & regression tests across 17 TypeScript test suites
 - [x] `npm run validate` passes the full 4-stage validation gate cleanly
 - [x] `npm run build` succeeds and outputs production bundle under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
@@ -548,7 +565,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 ### Project Tracking & History
 
-- **[Imperial Lore & Cosmological History Codex (`LORE.md`)](./LORE.md)** — Complete 6-Layer Cosmic Ontology (`Layer 1 Universe` → `Layer 6 The White Page / The House of Ideas`), 7 Grand Historical Epochs (`Epoch Ω-0` through `Epoch VI`), and 100+∞ Sovereign Omniverses lore.
+- **[Imperial Lore & Cosmological History Codex (`LORE.md`)](./LORE.md)** — Complete 6-Layer Cosmic Ontology (`COSMIC_LIMITS`: `1` White Page Singleton → `100` Overvoids → `∞` Realities), 7 Grand Historical Epochs (`Epoch Ω-0`–`VI`), 12 Imperial Dynastic Annals, Auto-Populating Open-World Lore Codex (`Biomes` & `Monsters`), and `10^100`-Word Akashic Archive.
 - **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.5.0` · `06/11/2026`).
 - **[Project Roadmap (`ROADMAP.md`)](./ROADMAP.md)** — High-level vision and upcoming milestones (`v1.5.0` Software & Hardware Architect, `v1.5.1` 50v50 WebSocket Sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU Flocking, `v2.0.0` Native C++20/Vulkan).
 

@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.ok(report.totalAssertionsPassed >= 63);
+  assert.ok(report.totalAssertionsPassed >= 80);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -26,7 +26,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   }
 });
 
-test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, and Engineering Transparency Matrix', () => {
+test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus & Transparency Matrix', () => {
   const report = runFullSystemValidationReport();
   const cosmologyPillar = report.pillars.find(
     (p) => p.id === 'six_layer_cosmology_and_100_omniverses'
@@ -46,7 +46,13 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
 
   assert.ok(lorePillar);
   assert.equal(lorePillar.passed, true);
-  assert.ok(lorePillar.verifiedInvariants.some((inv) => inv.includes('7 Chronological Epochs')));
+  assert.ok(lorePillar.verifiedInvariants.some((inv) => inv.includes('12 Dynastic Annals')));
+  assert.ok(
+    lorePillar.verifiedInvariants.some((inv) =>
+      inv.includes('Auto-Populating Open-World Lore Codex')
+    )
+  );
+  assert.ok(lorePillar.verifiedInvariants.some((inv) => inv.includes('10^100 Words Minimum')));
 
   assert.ok(transparencyPillar);
   assert.equal(transparencyPillar.passed, true);

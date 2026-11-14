@@ -23,7 +23,9 @@ int main() {
     constexpr WhitePageRootSpec rootSpec{};
     static_assert(suppression > 99.9);
     static_assert(whitePageScale == 100000ULL);
-    static_assert(rootSpec.includesOblivion && rootSpec.tier4OmniverseCount == 100U);
+    static_assert(rootSpec.includesOblivion && rootSpec.tier5OvervoidCount == 100U &&
+                  rootSpec.tier4OmniverseCount == 100U);
+    static_assert(voxel::guardrails::kGoogolLoreWordExponent == 100U);
     static_assert(computeCascadedUniverseQiMultiplier(5.0, 4.0) == 20.0);
     static_assert(computeCacheLineBytesForIsa(HardwareIsaTier::AppleSilicon_UMA128) == 128U);
     static_assert(alignof(SoaEntityKinematicChunk) == 64U);

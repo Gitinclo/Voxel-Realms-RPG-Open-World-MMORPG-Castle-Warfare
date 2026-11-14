@@ -23,9 +23,21 @@ import {
 import {
   LORE_HISTORICAL_EPOCHS,
   LORE_COMPENDIUM_CHAPTERS,
+  LORE_DYNASTIC_ANNALS,
+  OPEN_WORLD_BIOME_CODEX_CATALOG,
+  OPEN_WORLD_MONSTER_CODEX_CATALOG,
+  GOOGOL_LORE_ARCHIVE_SPEC,
+  GOOGOL_INTEGER_DECIMAL,
+  GOOGOL_MAX_VOLUME_INDEX,
+  INITIAL_LORE_CODEX_STATE,
   comprehendLoreEpoch,
   searchLoreHistory,
+  resolveBiomeAtWorldPosition,
+  evaluateOpenWorldLoreDiscovery,
+  claimLoreCodexReward,
+  generateGoogolScaleLoreScrollSlice,
 } from './loreHistory';
+import { INITIAL_MONSTERS } from './initialData';
 import { CHARACTER_SPECIES_CATALOG, evaluateSpeciesSwitchPermission } from './species';
 import {
   HARDWARE_ISA_PROFILES,
@@ -193,36 +205,79 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
 
-  // Pillar 3: Imperial Lore & 7 Grand Historical Epochs
+  // Pillar 3: Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Corpus
   const epoch0 = LORE_HISTORICAL_EPOCHS[0];
   const compTest = comprehendLoreEpoch({
     epochId: epoch0.id,
     comprehendedEpochIds: [],
   });
-  const searchTest = searchLoreHistory('Oblivion');
+  const searchTest = searchLoreHistory('Oblivion', INITIAL_MONSTERS);
+  const magmaBiome = resolveBiomeAtWorldPosition(20, 18);
+  const codexDiscovery = evaluateOpenWorldLoreDiscovery({
+    currentState: INITIAL_LORE_CODEX_STATE,
+    playerX: 20,
+    playerZ: 18,
+    monsters: INITIAL_MONSTERS,
+    monsterProximityRadius: 16,
+  });
+  const codexClaim = claimLoreCodexReward({
+    currentState: codexDiscovery.updatedState,
+    entryId: 'codex_biome_scorched_magma_caldera',
+    monsters: INITIAL_MONSTERS,
+  });
+  const codexDuplicateClaim = claimLoreCodexReward({
+    currentState: codexClaim.updatedState,
+    entryId: 'codex_biome_scorched_magma_caldera',
+    monsters: INITIAL_MONSTERS,
+  });
+  const googolHorizonSlice = generateGoogolScaleLoreScrollSlice({
+    exponentTier: 100,
+    scrollOffset: GOOGOL_MAX_VOLUME_INDEX,
+    sliceCount: 1,
+  });
 
   const p3Passed =
     LORE_HISTORICAL_EPOCHS.length === 7 &&
+    LORE_HISTORICAL_EPOCHS.every((e) => e.chronicleScrollText.length >= 6) &&
+    LORE_DYNASTIC_ANNALS.length === 12 &&
     LORE_COMPENDIUM_CHAPTERS.length === 6 &&
+    OPEN_WORLD_BIOME_CODEX_CATALOG.length === 8 &&
+    OPEN_WORLD_MONSTER_CODEX_CATALOG.length === 6 &&
     epoch0.cosmicLayerAnchor.includes('6. The White Page / The House of Ideas') &&
     epoch0.keyFigures.some((f) => f.includes(PRIMARY_ADMIN_EMAIL)) &&
     compTest.newlyComprehended &&
     compTest.rewardDiamonds > 0n &&
     compTest.rewardFragments > 0 &&
-    searchTest.matchingEpochs.length >= 1;
+    searchTest.matchingEpochs.length >= 1 &&
+    searchTest.matchingAnnals.length >= 1 &&
+    magmaBiome.id === 'codex_biome_scorched_magma_caldera' &&
+    codexDiscovery.newlyDiscoveredEntries.some(
+      (e) => e.id === 'codex_biome_scorched_magma_caldera'
+    ) &&
+    codexDiscovery.newlyDiscoveredEntries.some((e) => e.id === 'codex_monster_m_drake_240') &&
+    codexClaim.claimed &&
+    codexClaim.rewardDiamonds > 0n &&
+    !codexDuplicateClaim.claimed &&
+    GOOGOL_LORE_ARCHIVE_SPEC.minimumWordCountScientific === '10^100' &&
+    GOOGOL_INTEGER_DECIMAL.length === 101 &&
+    GOOGOL_MAX_VOLUME_INDEX === 10n ** 97n &&
+    googolHorizonSlice.length === 1 &&
+    googolHorizonSlice[0].actualWordCount >= 1000;
 
   pillars.push({
     id: 'imperial_lore_and_7_epochs',
-    title: '3. Imperial Lore & 7 Grand Historical Epochs Codex',
+    title:
+      '3. Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Corpus',
     passed: p3Passed,
-    assertionsPassed: 8,
+    assertionsPassed: 18,
     summary:
-      'Verified 7 Historical Epochs (Epoch Ω-0 Pre-Genesis through Epoch VI 06/11/2026) & 6 Sacred Compendium Codices.',
+      'Verified 7 Historical Epochs (6+ sections each), 12 Dynastic Annals, 6 Sacred Codices, Auto-Populating Open-World Lore Codex (8 Biomes & Monsters), and 10^100-Word Lazy Akashic Archive.',
     verifiedInvariants: [
-      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (06/11/2026 v1.5.0)',
+      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (06/11/2026 v1.5.0) & 12 Dynastic Annals',
       '6 Sacred Compendium Codices covering Cosmology, Omniverse, Species, Dao, Warfare & Architect',
-      'One-time Chronicle Comprehension rewards (Kingdom Diamonds + Scripture Fragments)',
-      'Full-text search indexing across epochs, decrees, and compendium tenets',
+      'Auto-Populating Open-World Lore Codex: 8 Spatial Biomes + Canonical & Dynamic Lv. 1–1000 Monster Bestiary with one-time bounties',
+      '10^100 Words Minimum (One Googol Words) Akashic Stream: 10^97 BigInt-addressable Volumes × >= 1,000 real synthesized words/volume',
+      'Full-text search indexing across epochs, annals, decrees, codex entries, and compendium tenets',
     ],
   });
 

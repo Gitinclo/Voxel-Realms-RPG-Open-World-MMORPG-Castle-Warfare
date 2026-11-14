@@ -32,7 +32,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/species.ts           (10 Species catalog, 3D specs & Admin gate)│
 │  • src/game/omniverse.ts         (COSMIC_LIMITS, 100 Overvoids & Omniverses)│
 │  • src/game/cosmologicalTreeD3.ts (D3 6-tier hierarchy layout & projection) │
-│  • src/game/loreHistory.ts       (7 Historical Epochs & 6 Lore Codices)     │
+│  • src/game/loreHistory.ts       (7 Epochs, 12 Annals, Codex & 10^100 Corpus)│
 │  • src/game/graphicsEngine.ts    (Cross-Platform Pipeline & Transparency)   │
 │  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
@@ -42,7 +42,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **113 unit and regression tests across 18 suites** in ~1.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **116 unit and regression tests across 17 TypeScript suites** in ~2.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -150,14 +150,16 @@ Players cultivate four complementary paths simultaneously:
 - **Custom Logic & Physics Override Engine (`overrideOvervoidLogicRules`, `overrideUniversePhysicsConstants` & `evaluateEffectiveUniversePhysicsAndLogic`)**: Cascades baseline physical constants through Tier 5 `Overvoid` custom logic/hierarchy overrides and Tier 1 `Universe` custom spacetime/matter overrides, validated by `validateCosmologicalTreeHierarchy` and `resolveEntityCosmologicalPath`.
 - **100 Canonical Fictional Species & Super Admin Command (`TOP_100_OMNIVERSE_SPECIES_NPCS`, `executeOmniverseSuperAdminCommand` & `executeWhitePageAuthorDecree`)**: Catalogs all 100 species across 5 Tiers (`OMNI-001`..`OMNI-100` + transfinite `Ω-∞`) and enforces that only Super Admin **`creatergame31@gmail.com`** controls the 100 Background NPCs and Layer-6 White Page / House of Ideas Decrees.
 
-### I. Imperial Lore & Cosmological History Codex (`src/game/loreHistory.ts`)
+### I. Imperial Lore, Auto-Populating Open-World Codex, 12 Dynastic Annals & `10^100`-Word Akashic Corpus (`src/game/loreHistory.ts`, `src/components/LoreHistoryModal.tsx`)
 
-- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 06/11/2026 Software & Hardware Architect Convergence_).
-- **6 Sacred Compendium Codices (`LORE_COMPENDIUM_CHAPTERS`), Comprehension & Search**: Provides pure functions for one-time epoch comprehension (`comprehendLoreEpoch`, awarding Diamonds and Scripture Fragments) and full-text lore search (`searchLoreHistory`).
+- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`, 6–7 Sections Each)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 06/11/2026 Software & Hardware Architect Convergence_).
+- **12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`) & 6 Sacred Compendium Codices (`LORE_COMPENDIUM_CHAPTERS`)**: Twelve multi-paragraph primary chronicles paired with one-time epoch comprehension (`comprehendLoreEpoch`) and unified full-text lore search (`searchLoreHistory`).
+- **Auto-Populating Open-World Lore Codex (`evaluateOpenWorldLoreDiscovery`)**: Automatically populates `localStorage`-persisted Codex entries (`OPEN_WORLD_BIOME_CODEX_CATALOG`, `OPEN_WORLD_MONSTER_CODEX_CATALOG`, and `buildDynamicMonsterCodexEntry`) whenever the player explores any of Solara's 8 spatial biomes or encounters/selects/spawns monsters, granting one-time Kingdom Diamond and Scripture Fragment bounties (`claimLoreCodexReward`).
+- **`10^100` Words Minimum (One Googol Words) Procedural Akashic Stream (`GOOGOL_LORE_ARCHIVE_SPEC`)**: Deterministically synthesizes `>= 1,000` real English words per volume across `10^97` `BigInt`-addressable volume coordinates (`generateGoogolScaleLoreScrollSlice`) without blocking RAM.
 
 ### J. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **72+ invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, 7 Lore Epochs, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency Matrix & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **84 invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency Matrix & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ---
 
@@ -166,7 +168,8 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 113 deterministic unit tests across 18 suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 116 deterministic unit tests across 17 TypeScript suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
+6. **Architect-First Pre-Flight Specification (`CONTRIBUTING.md` & `GOVERNANCE.md`)**: Requires planning pure domain types (`src/types/`), decoupled engine functions (`src/game/`), and 9-Pillar invariants (`src/game/systemValidation.ts`) before UI integration — **helps prevent early design flaws** and eliminates state entanglement.

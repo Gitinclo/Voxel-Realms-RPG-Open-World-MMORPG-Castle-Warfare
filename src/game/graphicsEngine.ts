@@ -815,19 +815,20 @@ export const ENGINEERING_TRANSPARENCY_MATRIX: EngineeringTransparencyEntry[] = [
     id: 'trillion_scale_warfare_and_cosmology',
     category: 'gameplay_simulation',
     featureName:
-      '1,000-Trillion Castle Garrison, 23 Cultivation Realms, 6-Layer Cosmology & 100 Omniverses',
+      '1,000-Trillion Castle Garrison, 23 Cultivation Realms, 6-Layer Cosmology & 10^100 Akashic Lore',
     status: 'implemented',
     statusBadgeLabel: 'IMPLEMENTED · BIGINT ENGINE + 3D PROJECTION',
     whatRunsInBrowserNow:
-      'All castle capacities (up to 1,000T), T1–T20 Tri-Branch battles, 23 cultivation realms (100x suppression), A* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, and 6-Layer Cosmology / 100 Omniverse NPCs under creatergame31@gmail.com are fully implemented in TypeScript using exact 64-bit BigInt math and projected as representative 3D entities in the overworld.',
+      'All castle capacities (up to 1,000T), T1–T20 Tri-Branch battles, 23 cultivation realms (100x suppression), A* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, 12 Dynastic Annals, Auto-Populating Open-World Lore Codex (8 Biomes + Monsters), 10^100-Word Lazy Akashic Stream, and 6-Layer Cosmology / D3 Tree / 100 Overvoids under creatergame31@gmail.com are implemented in TypeScript with BigInt math.',
     whatIsSimulatedOrModeled:
-      'Trillion-unit troop clashes and 100-Omniverse tributes are resolved analytically via deterministic BigInt combat/economy equations while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.',
+      'Trillion-unit troop clashes, 100-Omniverse tributes, and the 10^97-volume Akashic Lore Archive are resolved analytically via deterministic BigInt & seeded lazy pagination while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.',
     plannedNativeTarget:
       'GPU instanced crowd impostor rendering for visualizing 100,000+ simultaneous march units during siege replays.',
     sourceFiles: [
       'src/game/math.ts',
       'src/game/cultivationMath.ts',
       'src/game/omniverse.ts',
+      'src/game/cosmologicalTreeD3.ts',
       'src/game/loreHistory.ts',
     ],
   },
