@@ -46,6 +46,7 @@ export interface SignedSessionTokenPayload {
 export interface ServerRuntimeSecurityConfig {
   isProduction: boolean;
   sessionSecret: string;
+  ephemeralSessionSecretGenerated: boolean;
   adminPasskey: string | null;
   ephemeralDevPasskeyGenerated: boolean;
   failClosedMisconfigured: boolean;
@@ -69,32 +70,37 @@ export function resolveServerRuntimeSecurityConfig(
   const configuredPasskey = (env.VOXEL_ADMIN_PASSKEY || '').trim();
 
   if (isProduction) {
-    if (configuredSecret.length < 32) {
-      return {
-        isProduction: true,
-        sessionSecret: '',
-        adminPasskey: null,
-        ephemeralDevPasskeyGenerated: false,
-        failClosedMisconfigured: true,
-        misconfigurationReason:
-          'VOXEL_SESSION_SECRET must be at least 32 characters in production.',
-      };
+    const hasValidSecret = configuredSecret.length >= 32;
+    const sessionSecret = hasValidSecret
+      ? configuredSecret
+      : crypto.randomBytes(32).toString('hex');
+    const hasValidPasskey = configuredPasskey.length >= 12;
+    const reasons: string[] = [];
+
+    if (!hasValidSecret) {
+      reasons.push(
+        'VOXEL_SESSION_SECRET not set (>=32 chars); using ephemeral per-instance 256-bit CSPRNG signing key (sessions reset on container restart).'
+      );
     }
+    if (!hasValidPasskey) {
+      reasons.push(
+        'VOXEL_ADMIN_PASSKEY unset or <12 chars in production; operator /api/auth/admin-login disabled (fail-closed).'
+      );
+    }
+
     return {
       isProduction: true,
-      sessionSecret: configuredSecret,
-      adminPasskey: configuredPasskey.length >= 12 ? configuredPasskey : null,
+      sessionSecret,
+      ephemeralSessionSecretGenerated: !hasValidSecret,
+      adminPasskey: hasValidPasskey ? configuredPasskey : null,
       ephemeralDevPasskeyGenerated: false,
       failClosedMisconfigured: false,
-      misconfigurationReason:
-        configuredPasskey.length < 12
-          ? 'VOXEL_ADMIN_PASSKEY unset or <12 chars in production; operator login disabled (fail-closed).'
-          : null,
+      misconfigurationReason: reasons.length > 0 ? reasons.join(' ') : null,
     };
   }
 
-  const devSessionSecret =
-    configuredSecret.length >= 16 ? configuredSecret : crypto.randomBytes(32).toString('hex');
+  const hasDevSecret = configuredSecret.length >= 16;
+  const devSessionSecret = hasDevSecret ? configuredSecret : crypto.randomBytes(32).toString('hex');
   const ephemeralDevPasskeyGenerated = configuredPasskey.length === 0;
   const adminPasskey = ephemeralDevPasskeyGenerated
     ? crypto.randomBytes(16).toString('hex')
@@ -103,6 +109,7 @@ export function resolveServerRuntimeSecurityConfig(
   return {
     isProduction: false,
     sessionSecret: devSessionSecret,
+    ephemeralSessionSecretGenerated: !hasDevSecret,
     adminPasskey,
     ephemeralDevPasskeyGenerated,
     failClosedMisconfigured: false,

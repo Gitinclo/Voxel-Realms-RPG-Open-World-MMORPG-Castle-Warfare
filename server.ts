@@ -10,7 +10,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Duplex } from 'node:stream';
-import { createServer as createViteServer } from 'vite';
 import {
   AdminPermissions,
   ContactCategory,
@@ -57,11 +56,19 @@ import {
   sanitizeAndValidateSyncPayload,
 } from './src/game/serverAuth';
 
-const PORT = Number(process.env.PORT || 3000);
-const DATA_DIR = path.resolve(import.meta.dirname, 'data');
+const parsedPort = Number.parseInt(process.env.PORT || '', 10);
+const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
+const ROOT_DIR = import.meta.dirname ?? process.cwd();
+const DATA_DIR = path.resolve(ROOT_DIR, 'data');
 const STATE_FILE_PATH = path.join(DATA_DIR, 'online_realm_state.json');
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const MAX_AUDIT_LOG_ENTRIES = 200;
+
+function isHttpsRequest(req: Request): boolean {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protoStr = Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto;
+  return Boolean(req.secure || protoStr?.split(',')[0]?.trim().toLowerCase() === 'https');
+}
 
 interface ServerDecreeRecord {
   id: string;
@@ -279,6 +286,7 @@ async function startServer() {
   }
 
   const app = express();
+  app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(express.json({ limit: '512kb' }));
 
@@ -291,6 +299,14 @@ async function startServer() {
       res.setHeader('Cache-Control', 'no-store');
     }
     next();
+  });
+
+  app.get(['/healthz', '/api/health'], (_req, res) => {
+    res.status(200).json({
+      ok: true,
+      status: 'healthy',
+      uptimeSec: Math.round(process.uptime()),
+    });
   });
 
   const store = loadOrInitializeStore();
@@ -438,10 +454,7 @@ async function startServer() {
       secret: securityConfig.sessionSecret,
     });
 
-    res.setHeader(
-      'Set-Cookie',
-      buildSessionSetCookieHeader(issued.token, securityConfig.isProduction)
-    );
+    res.setHeader('Set-Cookie', buildSessionSetCookieHeader(issued.token, isHttpsRequest(req)));
 
     appendAuditEntry(
       store,
@@ -491,10 +504,7 @@ async function startServer() {
       return;
     }
 
-    res.setHeader(
-      'Set-Cookie',
-      buildSessionSetCookieHeader(result.token, securityConfig.isProduction)
-    );
+    res.setHeader('Set-Cookie', buildSessionSetCookieHeader(result.token, isHttpsRequest(req)));
 
     appendAuditEntry(
       store,
@@ -517,7 +527,7 @@ async function startServer() {
 
   app.post('/api/auth/logout', (req, res) => {
     const session = resolveRequestSession(req);
-    res.setHeader('Set-Cookie', buildClearSessionCookieHeader(securityConfig.isProduction));
+    res.setHeader('Set-Cookie', buildClearSessionCookieHeader(isHttpsRequest(req)));
     if (session) {
       appendAuditEntry(
         store,
@@ -957,7 +967,13 @@ async function startServer() {
       socket.unshift(head);
     }
 
-    const parsedUrl = new URL(url, `http://localhost:${PORT}`);
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url, `http://${req.headers.host || `localhost:${PORT}`}`);
+    } catch {
+      socket.destroy();
+      return;
+    }
     const sectorParam = (parsedUrl.searchParams.get('sector') ||
       store.activeSector) as TerritorySectorCode;
     const validSector: TerritorySectorCode = ALL_TERRITORY_SECTORS.includes(sectorParam)
@@ -1109,16 +1125,31 @@ async function startServer() {
   // VITE MIDDLEWARE (DEV) OR STATIC ASSET SERVING (PRODUCTION)
   // ==========================================================================
   if (!securityConfig.isProduction) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(import.meta.dirname, 'dist');
+    const distPath = path.join(ROOT_DIR, 'dist');
+    const distIndexPath = path.join(distPath, 'index.html');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) {
+        res.status(404).json({ ok: false, error: `Unknown API route: ${req.method} ${req.path}` });
+        return;
+      }
+      if (fs.existsSync(distIndexPath)) {
+        res.sendFile(distIndexPath);
+        return;
+      }
+      res
+        .status(503)
+        .type('text/plain')
+        .send(
+          'Production bundle not found in dist/. Run "npm run build" before starting the server.'
+        );
     });
   }
 

@@ -28,13 +28,16 @@ import {
 const TEST_SECRET = '0123456789abcdef0123456789abcdef';
 const TEST_PASSKEY = 'super-secret-operator-key-2026';
 
-test('resolveServerRuntimeSecurityConfig fails closed in production without 32+ char secret', () => {
-  const prodBad = resolveServerRuntimeSecurityConfig({
+test('resolveServerRuntimeSecurityConfig uses ephemeral CSPRNG secret if unset in production while keeping admin login fail-closed', () => {
+  const prodFallback = resolveServerRuntimeSecurityConfig({
     NODE_ENV: 'production',
     VOXEL_SESSION_SECRET: 'too-short',
   });
-  assert.equal(prodBad.isProduction, true);
-  assert.equal(prodBad.failClosedMisconfigured, true);
+  assert.equal(prodFallback.isProduction, true);
+  assert.equal(prodFallback.failClosedMisconfigured, false);
+  assert.equal(prodFallback.ephemeralSessionSecretGenerated, true);
+  assert.ok(prodFallback.sessionSecret.length >= 64);
+  assert.equal(prodFallback.adminPasskey, null);
 
   const prodGood = resolveServerRuntimeSecurityConfig({
     NODE_ENV: 'production',
@@ -42,6 +45,7 @@ test('resolveServerRuntimeSecurityConfig fails closed in production without 32+ 
     VOXEL_ADMIN_PASSKEY: TEST_PASSKEY,
   });
   assert.equal(prodGood.failClosedMisconfigured, false);
+  assert.equal(prodGood.ephemeralSessionSecretGenerated, false);
   assert.equal(prodGood.adminPasskey, TEST_PASSKEY);
 
   const devEphemeral = resolveServerRuntimeSecurityConfig({ NODE_ENV: 'development' });

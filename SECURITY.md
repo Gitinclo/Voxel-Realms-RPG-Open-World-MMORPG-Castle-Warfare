@@ -34,9 +34,9 @@ Client-side roles, email selectors, React state, and browser `localStorage` **ar
    - `POST /api/online/sync` and `POST /api/online/siege/cmd` require a valid HMAC-signed session (`HTTP 401` otherwise). Non-staff sessions cannot use `/api/online/sync` to spoof `commanderId`, `email`, `castleLevel`, `cultivationRealmIndex`, `vipTier`, `karma`, or `garrisonTroopsWire`; restricted or out-of-range fields are stripped/clamped server-side and logged (`SYNC_SANITIZED`).
    - `GET /api/online/status` redacts account email addresses (`emailRedacted: true`) from public responses unless requested by a verified staff session.
    - WebSocket connections on `/ws/siege` allow read-only telemetry streaming for spectating peers, but reject unauthenticated `C2S_TROOP_POSITION_CMD` and `C2S_RALLY_ACTION_CMD` mutations with `S2C_AUTH_ERROR` (`401`) and bind authenticated commands to `peer.session.commanderId`.
-4. **Security Response Headers & Fail-Closed Production Config**:
+4. **Security Response Headers & Fail-Closed Operator Config**:
    - `server.ts` disables `x-powered-by`, enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Cache-Control: no-store` on `/api/*`.
-   - When `NODE_ENV=production`, `resolveServerRuntimeSecurityConfig` fails closed on startup unless `VOXEL_SESSION_SECRET` is configured with at least 32 characters; operator logins fail closed unless `VOXEL_ADMIN_PASSKEY` is set. In local non-production dev mode, an ephemeral CSPRNG secret/passkey is generated per boot in memory (and never hardcoded into client bundles or `.env.example`).
+   - Operator logins (`/api/auth/admin-login`) fail closed (`503`) in production unless `VOXEL_ADMIN_PASSKEY` (`>= 12` chars) is explicitly configured in environment secrets. If `VOXEL_SESSION_SECRET` is omitted, the server generates an ephemeral per-instance 256-bit CSPRNG HMAC signing key in memory (sessions do not persist across restarts unless `VOXEL_SESSION_SECRET` is set). No secrets are ever hardcoded in client bundles or `.env.example`.
 
 ---
 
