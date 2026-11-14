@@ -38,13 +38,15 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
 │  • src/game/serverAuth.ts        (Server-only HMAC-SHA256 Auth & RBAC)     │
+│  • src/game/serverHardening.ts   (Rate Limits, CSRF, Brute-Force, WS Caps)   │
+│  • src/game/serverPersistence.ts (Atomic fsync+rename + SHA-256 .bak Saves)  │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **128 unit and regression tests across 19 TypeScript suites** in ~2.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **136 unit and regression tests across 21 TypeScript suites** in ~3 seconds, paired with live server operational verification (`npm run verify:ops`).
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---

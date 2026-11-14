@@ -836,19 +836,22 @@ export const ENGINEERING_TRANSPARENCY_MATRIX: EngineeringTransparencyEntry[] = [
     id: 'multiplayer_persistence_and_cloud_sync',
     category: 'persistence_networking',
     featureName:
-      'Authoritative 20Hz 50v50 WebSocket Siege, Server-Side RBAC & Multi-Region Persistence',
+      'Authoritative 20Hz 50v50 WebSocket Siege, Server-Side RBAC & Atomic Disk Persistence',
     status: 'implemented',
-    statusBadgeLabel: 'IMPLEMENTED · LIVE 20Hz WS + SERVER RBAC ENFORCEMENT',
+    statusBadgeLabel: 'IMPLEMENTED · SINGLE-INSTANCE HARDENED SERVER',
     whatRunsInBrowserNow:
-      'Runs a full-stack Express + RFC 6455 WebSocket server (/ws/siege on port 3000) enforcing HMAC-SHA256 HttpOnly session cookies (/api/auth/*), fail-closed 401/403 RBAC checks (/api/admin/*), anti-tamper sync sanitization (/api/online/sync), authenticated WebSocket command identity binding, 20Hz bitmasked delta-compression (CohortDirtyBit), FNV-1a 32-bit hashing, 128-frame CSP ring buffer, and disk persistence (data/online_realm_state.json).',
+      'Runs an Express + RFC 6455 WebSocket server (/ws/siege on port 3000) enforcing HMAC-SHA256 HttpOnly sessions, 401/403 RBAC checks, sliding-window rate limits, 5-attempt admin login lockout (429), Same-Origin CSRF & prototype-pollution filters, WS 32 KiB frame & 30 msg/s flood caps, slow-consumer disconnects, atomic fsync+rename saves with SHA-256 verification and .bak crash failover, /healthz + /readyz + /api/ops/readiness probes, and SIGTERM graceful shutdown flushing.',
     whatIsSimulatedOrModeled:
-      'Single-player canvas/localStorage state remains an untrusted client preview; the 3 regional cluster nodes (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1) replicate within the unified Node.js server process without an external PostgreSQL/IdP or hardware TLS terminator in local dev.',
+      'Single-player canvas/localStorage state remains an untrusted client preview; load, exploit, and crash-recovery checks establish single-instance capacity (<=250 concurrent WS peers, 5,000 capped commanders) on local POSIX storage. Horizontal multi-pod scaling across multiple instances requires an external database (Cloud SQL/Spanner) and Redis pub/sub adapter.',
     plannedNativeTarget:
-      'Geo-distributed Kubernetes Agones dedicated game server fleet backed by Cloud Spanner / CockroachDB raft shards and external OIDC/OAuth identity federation.',
+      'Geo-distributed Kubernetes Agones dedicated game server fleet backed by Cloud Spanner / CockroachDB raft shards, Redis WebSocket fan-out, and external OIDC/OAuth identity federation.',
     sourceFiles: [
       'src/game/siegeNetProtocol.ts',
       'src/game/serverAuth.ts',
+      'src/game/serverHardening.ts',
+      'src/game/serverPersistence.ts',
       'server.ts',
+      'scripts/verify-readiness.ts',
       'src/components/ClanTerritoryMap.tsx',
       'src/components/AdminConsoleModal.tsx',
       'src/game/adminModeration.ts',

@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +16,7 @@ concurrency:
 
 jobs:
   quality-check:
-    name: Guardrails (Lint, Audit, Prettier, Unit Tests & Build)
+    name: Guardrails (Lint, Audit, Prettier, Unit Tests, Build & Live Ops Verification)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -30,9 +28,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --package-lock
+        run: npm install --no-audit
 
       # 1. The Linter (catches messy code, syntax errors & unused variables)
       - name: Run Linter
@@ -53,6 +52,10 @@ jobs:
       # 5. Production Bundle Verification
       - name: Build production bundle
         run: npm run build
+
+      # 6. Live Production Server Load, Exploit Resistance, Crash Recovery & SIGTERM Readiness
+      - name: Run Live Server Operational Readiness Suite
+        run: npm run verify:ops
 
       - name: Upload production build artifact
         uses: actions/upload-artifact@v4

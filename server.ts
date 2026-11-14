@@ -42,6 +42,7 @@ import {
 } from './src/game/siegeNetProtocol';
 import {
   ALLOWED_CLUSTER_IDS,
+  SESSION_COOKIE_NAME,
   authorizeStaffPermission,
   bindSiegeCommandToSession,
   buildClearSessionCookieHeader,
@@ -50,19 +51,30 @@ import {
   extractSessionTokenFromHeaders,
   issueSessionTokenForOperator,
   issueSessionTokenForPlayer,
+  parseCookieHeader,
   redactCommanderForPublicStatus,
   resolveAuthenticatedSession,
   resolveServerRuntimeSecurityConfig,
   sanitizeAndValidateSyncPayload,
 } from './src/game/serverAuth';
+import {
+  BruteForceLockoutGuard,
+  OPERATIONAL_LIMITS,
+  SlidingWindowRateLimiter,
+  TickLatencyTracker,
+  containsUnsafePrototypeKey,
+  decodeWsFramesHardened,
+  pruneCommanderMap,
+  verifySameOriginRequest,
+} from './src/game/serverHardening';
+import { AtomicRealmPersistence } from './src/game/serverPersistence';
 
 const parsedPort = Number.parseInt(process.env.PORT || '', 10);
 const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 const ROOT_DIR = import.meta.dirname ?? process.cwd();
-const DATA_DIR = path.resolve(ROOT_DIR, 'data');
-const STATE_FILE_PATH = path.join(DATA_DIR, 'online_realm_state.json');
+const DATA_DIR = path.resolve(process.env.VOXEL_DATA_DIR || path.join(ROOT_DIR, 'data'));
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-const MAX_AUDIT_LOG_ENTRIES = 200;
+const MAX_AUDIT_LOG_ENTRIES = OPERATIONAL_LIMITS.MAX_AUDIT_LOG_ENTRIES;
 
 function isHttpsRequest(req: Request): boolean {
   const forwardedProto = req.headers['x-forwarded-proto'];
@@ -98,47 +110,26 @@ function appendAuditEntry(store: PersistedMultiRegionStore, entry: SecurityAudit
   }
 }
 
-function loadOrInitializeStore(): PersistedMultiRegionStore {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (fs.existsSync(STATE_FILE_PATH)) {
-      const raw = fs.readFileSync(STATE_FILE_PATH, 'utf8');
-      const parsed = JSON.parse(raw) as Partial<PersistedMultiRegionStore>;
-      if (parsed && parsed.sectors && parsed.sectors.B2) {
-        // Hydrate security collections smoothly when upgrading older disk snapshots
-        return {
-          primaryClusterId: parsed.primaryClusterId || 'us-east-solara-1',
-          activeSector: parsed.activeSector || 'B2',
-          lastDiskFlushIso: parsed.lastDiskFlushIso || new Date().toISOString(),
-          sectors: parsed.sectors as Record<TerritorySectorCode, AuthoritativeSiegeSectorState>,
-          commanders: parsed.commanders || {},
-          moderatedPlayers:
-            Array.isArray(parsed.moderatedPlayers) && parsed.moderatedPlayers.length > 0
-              ? parsed.moderatedPlayers
-              : [...INITIAL_MODERATED_PLAYERS],
-          supportTickets:
-            Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0
-              ? parsed.supportTickets
-              : [...INITIAL_SUPPORT_TICKETS],
-          securityAuditLog: Array.isArray(parsed.securityAuditLog) ? parsed.securityAuditLog : [],
-          activeDecrees: Array.isArray(parsed.activeDecrees) ? parsed.activeDecrees : [],
-          speciesSwitchGlobalApproved: Boolean(parsed.speciesSwitchGlobalApproved),
-        };
-      }
-    }
-  } catch {
-    // Fallback to clean initialization if disk state is absent or corrupted
-  }
+function isValidPersistedStore(raw: unknown): raw is PersistedMultiRegionStore {
+  if (!raw || typeof raw !== 'object') return false;
+  const parsed = raw as Partial<PersistedMultiRegionStore>;
+  return Boolean(
+    parsed.sectors &&
+    typeof parsed.sectors === 'object' &&
+    parsed.sectors.B2 &&
+    typeof parsed.activeSector === 'string' &&
+    Array.isArray(parsed.moderatedPlayers)
+  );
+}
 
+function createDefaultStore(): PersistedMultiRegionStore {
   const sectors = {} as Record<TerritorySectorCode, AuthoritativeSiegeSectorState>;
   for (const sector of ALL_TERRITORY_SECTORS) {
     sectors[sector] = createInitialAuthoritativeSiegeSectorState(sector);
   }
 
   const nowIso = new Date().toISOString();
-  const initialStore: PersistedMultiRegionStore = {
+  return {
     primaryClusterId: 'us-east-solara-1',
     activeSector: 'B2',
     lastDiskFlushIso: nowIso,
@@ -165,21 +156,6 @@ function loadOrInitializeStore(): PersistedMultiRegionStore {
     activeDecrees: [],
     speciesSwitchGlobalApproved: false,
   };
-
-  persistStoreToDisk(initialStore);
-  return initialStore;
-}
-
-function persistStoreToDisk(store: PersistedMultiRegionStore): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    store.lastDiskFlushIso = new Date().toISOString();
-    fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(store, null, 2), 'utf8');
-  } catch {
-    // Non-fatal in read-only or ephemeral environments
-  }
 }
 
 // ============================================================================
@@ -188,10 +164,15 @@ function persistStoreToDisk(store: PersistedMultiRegionStore): void {
 
 interface ConnectedSiegePeer {
   id: string;
+  ip: string;
   socket: Duplex;
   subscribedSector: TerritorySectorCode;
   connectedAtIso: string;
   session: ServerSessionInfo | null;
+  rxBuffer: Buffer;
+  msgLimiter: SlidingWindowRateLimiter;
+  rateViolations: number;
+  lastClientSeq: number;
 }
 
 function encodeWsTextFrame(jsonText: string): Buffer {
@@ -215,59 +196,12 @@ function encodeWsTextFrame(jsonText: string): Buffer {
   return Buffer.concat([header, payload]);
 }
 
-function decodeWsFrames(buffer: Buffer): {
-  messages: string[];
-  closeRequested: boolean;
-  pingPayload: Buffer | null;
-} {
-  const messages: string[] = [];
-  let closeRequested = false;
-  let pingPayload: Buffer | null = null;
-  let offset = 0;
-
-  while (offset + 2 <= buffer.length) {
-    const byte0 = buffer[offset];
-    const byte1 = buffer[offset + 1];
-    const opcode = byte0 & 0x0f;
-    const isMasked = (byte1 & 0x80) !== 0;
-    let payloadLen = byte1 & 0x7f;
-    let headerLen = 2;
-
-    if (payloadLen === 126) {
-      if (offset + 4 > buffer.length) break;
-      payloadLen = buffer.readUInt16BE(offset + 2);
-      headerLen = 4;
-    } else if (payloadLen === 127) {
-      if (offset + 10 > buffer.length) break;
-      payloadLen = Number(buffer.readBigUInt64BE(offset + 2));
-      headerLen = 10;
-    }
-
-    const maskLen = isMasked ? 4 : 0;
-    if (offset + headerLen + maskLen + payloadLen > buffer.length) break;
-
-    const payloadStart = offset + headerLen + maskLen;
-    const rawPayload = Buffer.from(buffer.subarray(payloadStart, payloadStart + payloadLen));
-
-    if (isMasked) {
-      const maskKey = buffer.subarray(offset + headerLen, offset + headerLen + 4);
-      for (let i = 0; i < rawPayload.length; i++) {
-        rawPayload[i] ^= maskKey[i & 3];
-      }
-    }
-
-    if (opcode === 0x08) {
-      closeRequested = true;
-    } else if (opcode === 0x09) {
-      pingPayload = rawPayload;
-    } else if (opcode === 0x01) {
-      messages.push(rawPayload.toString('utf8'));
-    }
-
-    offset = payloadStart + payloadLen;
-  }
-
-  return { messages, closeRequested, pingPayload };
+function encodeWsCloseFrame(code: number, reason: string = ''): Buffer {
+  const reasonBuf = Buffer.from(reason.slice(0, 64), 'utf8');
+  const payload = Buffer.alloc(2 + reasonBuf.length);
+  payload.writeUInt16BE(code, 0);
+  reasonBuf.copy(payload, 2);
+  return Buffer.concat([Buffer.from([0x88, payload.length]), payload]);
 }
 
 async function startServer() {
@@ -285,23 +219,132 @@ async function startServer() {
     console.warn(`[Voxel Realms Security] ${securityConfig.misconfigurationReason}`);
   }
 
+  const persistence = new AtomicRealmPersistence<PersistedMultiRegionStore>({
+    dataDir: DATA_DIR,
+    fileName: 'online_realm_state.json',
+    validateState: isValidPersistedStore,
+  });
+
+  const store = persistence.loadWithBackupRecovery(createDefaultStore);
+  const persistStoreToDisk = (targetStore: PersistedMultiRegionStore) => {
+    targetStore.lastDiskFlushIso = new Date().toISOString();
+    pruneCommanderMap(targetStore.commanders, OPERATIONAL_LIMITS.MAX_PERSISTED_COMMANDERS);
+    if (targetStore.supportTickets.length > OPERATIONAL_LIMITS.MAX_SUPPORT_TICKETS) {
+      targetStore.supportTickets.length = OPERATIONAL_LIMITS.MAX_SUPPORT_TICKETS;
+    }
+    persistence.saveAtomic(targetStore, targetStore.lastDiskFlushIso);
+  };
+
+  if (persistence.getHealthMetrics().recoveredFromBackup) {
+    console.warn(
+      `[Voxel Realms Persistence] Automatically recovered realm state from verified .bak snapshot (${persistence.getHealthMetrics().recoveryReason}).`
+    );
+  }
+
+  const apiWriteLimiter = new SlidingWindowRateLimiter({
+    maxRequests:
+      Number.parseInt(process.env.VOXEL_API_WRITE_LIMIT_PER_MIN || '', 10) ||
+      OPERATIONAL_LIMITS.API_WRITES_PER_MINUTE,
+    windowMs: 60_000,
+    maxKeys: 10_000,
+  });
+  const loginLockoutGuard = new BruteForceLockoutGuard({
+    maxAttempts: OPERATIONAL_LIMITS.AUTH_FAIL_MAX_ATTEMPTS,
+    lockoutMs: OPERATIONAL_LIMITS.AUTH_LOCKOUT_MS,
+  });
+  const tickLatencyTracker = new TickLatencyTracker({ capacity: 200, budgetMs: 50 });
+
+  const opsCounters = {
+    startedAtIso: new Date().toISOString(),
+    httpRequestsTotal: 0,
+    rateLimitBlocks: 0,
+    csrfBlocks: 0,
+    prototypePollutionBlocks: 0,
+    wsConnectionsAccepted: 0,
+    wsConnectionsRejected: 0,
+    wsFramesRejected: 0,
+    wsRateLimitDisconnects: 0,
+    wsSlowConsumerDisconnects: 0,
+  };
+  let isShuttingDown = false;
+
   const app = express();
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
   app.use(express.json({ limit: '512kb' }));
 
-  // Baseline Security Response Headers
+  // Baseline Security Headers + Request Counter + Prototype Pollution & CSRF & Rate Limit Middleware
   app.use((req, res, next) => {
+    opsCounters.httpRequestsTotal += 1;
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     if (req.path.startsWith('/api/')) {
       res.setHeader('Cache-Control', 'no-store');
     }
+
+    if (req.path.startsWith('/api/') && req.method !== 'GET' && req.method !== 'HEAD') {
+      if (isShuttingDown) {
+        res.setHeader('Connection', 'close');
+        res.status(503).json({ ok: false, error: 'Server is gracefully shutting down.' });
+        return;
+      }
+
+      if (containsUnsafePrototypeKey(req.body)) {
+        opsCounters.prototypePollutionBlocks += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'AUTHZ_DENIED',
+            actorEmail: 'anonymous',
+            actorRole: 'anonymous',
+            outcome: 'denied',
+            detail: `Blocked prototype pollution key on ${req.method} ${req.path}`,
+          })
+        );
+        res.status(400).json({ ok: false, error: 'Invalid object key in request payload.' });
+        return;
+      }
+
+      const cookies = parseCookieHeader(req.headers.cookie);
+      const hasSessionCookie = Boolean(cookies[SESSION_COOKIE_NAME]);
+      const hasBearerAuth = Boolean(req.headers.authorization?.startsWith('Bearer '));
+      const csrfCheck = verifySameOriginRequest({
+        method: req.method,
+        originHeader: typeof req.headers.origin === 'string' ? req.headers.origin : undefined,
+        refererHeader: typeof req.headers.referer === 'string' ? req.headers.referer : undefined,
+        hostHeader: typeof req.headers.host === 'string' ? req.headers.host : undefined,
+        hasSessionCookie,
+        hasBearerAuth,
+        appUrl: process.env.APP_URL,
+      });
+      if (!csrfCheck.allowed) {
+        opsCounters.csrfBlocks += 1;
+        res.status(403).json({ ok: false, error: csrfCheck.reason });
+        return;
+      }
+
+      const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateCheck = apiWriteLimiter.check(`write:${clientIp}:${req.path}`);
+      if (!rateCheck.allowed) {
+        opsCounters.rateLimitBlocks += 1;
+        res.setHeader('Retry-After', String(rateCheck.retryAfterSec));
+        res.status(429).json({
+          ok: false,
+          error: `Rate limit exceeded on ${req.path}. Retry after ${rateCheck.retryAfterSec}s.`,
+        });
+        return;
+      }
+    }
+
     next();
   });
 
   app.get(['/healthz', '/api/health'], (_req, res) => {
+    if (isShuttingDown) {
+      res.status(503).json({ ok: false, status: 'shutting_down' });
+      return;
+    }
     res.status(200).json({
       ok: true,
       status: 'healthy',
@@ -309,8 +352,30 @@ async function startServer() {
     });
   });
 
-  const store = loadOrInitializeStore();
   const peers = new Map<string, ConnectedSiegePeer>();
+
+  app.get('/readyz', (_req, res) => {
+    const persistHealth = persistence.getHealthMetrics();
+    const tickStats = tickLatencyTracker.getSummary();
+    const ready =
+      !isShuttingDown &&
+      persistHealth.writable &&
+      tickStats.overrunCount < 50 &&
+      peers.size < OPERATIONAL_LIMITS.MAX_WS_PEERS;
+
+    res.status(ready ? 200 : 503).json({
+      ok: ready,
+      status: ready ? 'ready' : isShuttingDown ? 'draining' : 'degraded',
+      checks: {
+        notShuttingDown: !isShuttingDown,
+        storageWritable: persistHealth.writable,
+        recoveredFromBackup: persistHealth.recoveredFromBackup,
+        tickBudgetHealthy: tickStats.overrunCount < 50,
+        wsCapacityAvailable: peers.size < OPERATIONAL_LIMITS.MAX_WS_PEERS,
+      },
+      uptimeSec: Math.round(process.uptime()),
+    });
+  });
 
   const resolveRequestSession = (req: Request): ServerSessionInfo | null => {
     const token = extractSessionTokenFromHeaders({
@@ -324,6 +389,64 @@ async function startServer() {
     });
     return resolved.authenticated ? resolved.session : null;
   };
+
+  app.get('/api/ops/readiness', (req, res) => {
+    const session = resolveRequestSession(req);
+    const isPrivileged = Boolean(session?.permissions.canAccessGmConsole);
+    const persistHealth = persistence.getHealthMetrics();
+    const mem = process.memoryUsage();
+    const tickStats = tickLatencyTracker.getSummary();
+
+    res.json({
+      ok: true,
+      status: isShuttingDown ? 'draining' : persistHealth.writable ? 'operational' : 'degraded',
+      startedAtIso: opsCounters.startedAtIso,
+      uptimeSec: Math.round(process.uptime()),
+      capacityLimits: {
+        maxConcurrentWsPeers: OPERATIONAL_LIMITS.MAX_WS_PEERS,
+        activeWsPeers: peers.size,
+        maxWsPeersPerIp: OPERATIONAL_LIMITS.MAX_WS_PEERS_PER_IP,
+        maxWsFrameBytes: OPERATIONAL_LIMITS.MAX_WS_FRAME_BYTES,
+        maxWsMessagesPerSec: OPERATIONAL_LIMITS.WS_MESSAGES_PER_WINDOW,
+        maxApiWritesPerMinPerIp: OPERATIONAL_LIMITS.API_WRITES_PER_MINUTE,
+        maxPersistedCommanders: OPERATIONAL_LIMITS.MAX_PERSISTED_COMMANDERS,
+        activePersistedCommanders: Object.keys(store.commanders).length,
+      },
+      tickLoop20Hz: tickStats,
+      memoryMb: {
+        rss: Math.round((mem.rss / 1_048_576) * 10) / 10,
+        heapUsed: Math.round((mem.heapUsed / 1_048_576) * 10) / 10,
+      },
+      persistence: {
+        writable: persistHealth.writable,
+        totalWrites: persistHealth.totalWrites,
+        failedWrites: persistHealth.failedWrites,
+        recoveredFromBackup: persistHealth.recoveredFromBackup,
+        lastWriteDurationMs: persistHealth.lastWriteDurationMs,
+        lastFlushAtIso: persistHealth.lastFlushAtIso,
+        ...(isPrivileged
+          ? {
+              primaryPath: persistHealth.primaryPath,
+              backupPath: persistHealth.backupPath,
+              recoveryReason: persistHealth.recoveryReason,
+              lastError: persistHealth.lastError,
+            }
+          : {}),
+      },
+      exploitDefenseCounters: {
+        httpRequestsTotal: opsCounters.httpRequestsTotal,
+        rateLimitBlocks: opsCounters.rateLimitBlocks,
+        bruteForceLockouts: loginLockoutGuard.getTotalLockoutsTriggered(),
+        csrfBlocks: opsCounters.csrfBlocks,
+        prototypePollutionBlocks: opsCounters.prototypePollutionBlocks,
+        wsFramesRejected: opsCounters.wsFramesRejected,
+        wsRateLimitDisconnects: opsCounters.wsRateLimitDisconnects,
+        wsSlowConsumerDisconnects: opsCounters.wsSlowConsumerDisconnects,
+      },
+      deploymentTopologyBoundary:
+        'Single-instance Node.js authoritative server with atomic SHA-256 disk persistence (.bak failover). Horizontal multi-pod scaling requires an external database (Cloud SQL/Spanner) and Redis pub/sub adapter.',
+    });
+  });
 
   const requireAuthenticatedSession = (req: Request, res: Response): ServerSessionInfo | null => {
     const session = resolveRequestSession(req);
@@ -382,6 +505,16 @@ async function startServer() {
     const frame = encodeWsTextFrame(JSON.stringify(envelope));
     for (const [peerId, peer] of peers.entries()) {
       if (peer.subscribedSector === sector && !peer.socket.destroyed) {
+        if (peer.socket.writableLength > OPERATIONAL_LIMITS.WS_SLOW_CONSUMER_HIGH_WATER_BYTES) {
+          opsCounters.wsSlowConsumerDisconnects += 1;
+          peers.delete(peerId);
+          try {
+            peer.socket.end(encodeWsCloseFrame(1008, 'Slow consumer backpressure exceeded'));
+          } catch {
+            peer.socket.destroy();
+          }
+          continue;
+        }
         try {
           peer.socket.write(frame);
         } catch {
@@ -395,7 +528,9 @@ async function startServer() {
   // AUTHORITATIVE 20HZ (50ms) SIEGE SERVER LOOP & PERIODIC DISK PERSISTENCE
   // ==========================================================================
   let tickCounter = 0;
-  setInterval(() => {
+  const siegeTickInterval = setInterval(() => {
+    if (isShuttingDown) return;
+    const tickStartNs = process.hrtime.bigint();
     tickCounter++;
     const activeSector = store.activeSector;
     const currentSectorState = store.sectors[activeSector];
@@ -420,7 +555,16 @@ async function startServer() {
     if (tickCounter % 200 === 0) {
       persistStoreToDisk(store);
     }
+
+    const elapsedMs = Number(process.hrtime.bigint() - tickStartNs) / 1_000_000;
+    tickLatencyTracker.record(elapsedMs);
   }, 50);
+
+  const sweepInterval = setInterval(() => {
+    apiWriteLimiter.sweepExpired();
+    pruneCommanderMap(store.commanders, OPERATIONAL_LIMITS.MAX_PERSISTED_COMMANDERS);
+  }, 15_000);
+  sweepInterval.unref();
 
   // ==========================================================================
   // SERVER-SIDE AUTHENTICATION & SESSION MANAGEMENT ROUTES (/api/auth/*)
@@ -476,6 +620,18 @@ async function startServer() {
   });
 
   app.post('/api/auth/admin-login', (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const lockoutKey = `${clientIp}:admin-login`;
+    const lockStatus = loginLockoutGuard.isLocked(lockoutKey);
+    if (lockStatus.locked) {
+      res.setHeader('Retry-After', String(lockStatus.retryAfterSec));
+      res.status(429).json({
+        ok: false,
+        error: `Too many failed operator login attempts. Account locked for ${lockStatus.retryAfterSec}s.`,
+      });
+      return;
+    }
+
     const body = (req.body || {}) as { email?: string; passkey?: string };
     const result = issueSessionTokenForOperator({
       email: body.email || '',
@@ -486,6 +642,12 @@ async function startServer() {
     });
 
     if (!result.ok) {
+      if (result.statusCode === 401 || result.statusCode === 403) {
+        const failInfo = loginLockoutGuard.recordFailure(lockoutKey);
+        if (failInfo.lockedNow) {
+          res.setHeader('Retry-After', String(failInfo.retryAfterSec));
+        }
+      }
       appendAuditEntry(
         store,
         createAuditEntry({
@@ -504,6 +666,7 @@ async function startServer() {
       return;
     }
 
+    loginLockoutGuard.recordSuccess(lockoutKey);
     res.setHeader('Set-Cookie', buildSessionSetCookieHeader(result.token, isHttpsRequest(req)));
 
     appendAuditEntry(
@@ -936,11 +1099,30 @@ async function startServer() {
   const httpServer = http.createServer(app);
 
   // ==========================================================================
-  // RFC 6455 WEBSOCKET UPGRADE HANDLER ON /ws/siege (SESSION-VERIFIED WRITES)
+  // RFC 6455 WEBSOCKET UPGRADE HANDLER ON /ws/siege (HARDENED & SESSION-BOUND)
   // ==========================================================================
   httpServer.on('upgrade', (req, socket, head) => {
     const url = req.url || '';
     if (!url.startsWith('/ws/siege')) {
+      return;
+    }
+
+    if (isShuttingDown || peers.size >= OPERATIONAL_LIMITS.MAX_WS_PEERS) {
+      opsCounters.wsConnectionsRejected += 1;
+      socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const peerIp = req.socket.remoteAddress || 'unknown';
+    let ipPeerCount = 0;
+    for (const p of peers.values()) {
+      if (p.ip === peerIp) ipPeerCount += 1;
+    }
+    if (ipPeerCount >= OPERATIONAL_LIMITS.MAX_WS_PEERS_PER_IP) {
+      opsCounters.wsConnectionsRejected += 1;
+      socket.write('HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n');
+      socket.destroy();
       return;
     }
 
@@ -995,12 +1177,22 @@ async function startServer() {
     const peerId = `peer-${crypto.randomUUID().slice(0, 8)}`;
     const peer: ConnectedSiegePeer = {
       id: peerId,
+      ip: peerIp,
       socket,
       subscribedSector: validSector,
       connectedAtIso: new Date().toISOString(),
       session: resolvedWsSession.authenticated ? resolvedWsSession.session : null,
+      rxBuffer: Buffer.alloc(0),
+      msgLimiter: new SlidingWindowRateLimiter({
+        maxRequests: OPERATIONAL_LIMITS.WS_MESSAGES_PER_WINDOW,
+        windowMs: OPERATIONAL_LIMITS.WS_RATE_WINDOW_MS,
+        maxKeys: 8,
+      }),
+      rateViolations: 0,
+      lastClientSeq: -1,
     };
     peers.set(peerId, peer);
+    opsCounters.wsConnectionsAccepted += 1;
 
     const initialState = store.sectors[validSector];
     const snapshotEnvelope: SiegeNetEnvelope<{ sectorState: AuthoritativeSiegeSectorState }> = {
@@ -1014,27 +1206,68 @@ async function startServer() {
     socket.write(encodeWsTextFrame(JSON.stringify(snapshotEnvelope)));
 
     socket.on('data', (chunk: Buffer) => {
-      const { messages, closeRequested, pingPayload } = decodeWsFrames(chunk);
-      if (closeRequested) {
+      const combined = peer.rxBuffer.length > 0 ? Buffer.concat([peer.rxBuffer, chunk]) : chunk;
+      const decoded = decodeWsFramesHardened(combined);
+      peer.rxBuffer = decoded.remainingBuffer;
+
+      if (decoded.protocolError) {
+        opsCounters.wsFramesRejected += 1;
+        peers.delete(peerId);
+        try {
+          socket.end(encodeWsCloseFrame(1009, decoded.protocolError));
+        } catch {
+          socket.destroy();
+        }
+        return;
+      }
+
+      if (decoded.closeRequested) {
         peers.delete(peerId);
         socket.end();
         return;
       }
-      if (pingPayload) {
+
+      if (decoded.pingPayload) {
         const pong = Buffer.concat([
-          Buffer.from([0x8a, pingPayload.length & 0x7f]),
-          pingPayload.subarray(0, 125),
+          Buffer.from([0x8a, decoded.pingPayload.length & 0x7f]),
+          decoded.pingPayload.subarray(0, 125),
         ]);
         socket.write(pong);
       }
 
-      for (const rawMsg of messages) {
+      for (const rawMsg of decoded.messages) {
+        const msgRate = peer.msgLimiter.check('ws-msg');
+        if (!msgRate.allowed) {
+          peer.rateViolations += 1;
+          socket.write(
+            encodeWsTextFrame(
+              JSON.stringify({
+                opcode: 'S2C_RATE_LIMIT',
+                code: 429,
+                error: 'WebSocket message rate limit exceeded.',
+              })
+            )
+          );
+          if (peer.rateViolations >= 3) {
+            opsCounters.wsRateLimitDisconnects += 1;
+            peers.delete(peerId);
+            socket.end(encodeWsCloseFrame(1008, 'Sustained WebSocket message flood'));
+            return;
+          }
+          continue;
+        }
+
         try {
           const parsed = JSON.parse(rawMsg) as {
             opcode?: SiegeNetOpcode;
             sector?: TerritorySectorCode;
             payload?: unknown;
           };
+
+          if (containsUnsafePrototypeKey(parsed)) {
+            opsCounters.wsFramesRejected += 1;
+            continue;
+          }
 
           if (parsed.sector && ALL_TERRITORY_SECTORS.includes(parsed.sector)) {
             peer.subscribedSector = parsed.sector;
@@ -1074,11 +1307,19 @@ async function startServer() {
           if (
             peer.session &&
             parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD &&
-            parsed.payload
+            parsed.payload &&
+            typeof parsed.payload === 'object'
           ) {
+            const rawCmd = parsed.payload as TroopPositionCommandPacket;
+            if (typeof rawCmd.clientSeq === 'number' && Number.isFinite(rawCmd.clientSeq)) {
+              if (rawCmd.clientSeq <= peer.lastClientSeq) {
+                continue; // Drop replayed or out-of-order stale command packets
+              }
+              peer.lastClientSeq = rawCmd.clientSeq;
+            }
             const bound = bindSiegeCommandToSession({
               session: peer.session,
-              troopCmd: parsed.payload as TroopPositionCommandPacket,
+              troopCmd: rawCmd,
             });
             if (bound.troopCmd) {
               sectorState = applyTroopPositionCommand(sectorState, bound.troopCmd);
@@ -1087,7 +1328,8 @@ async function startServer() {
           } else if (
             peer.session &&
             parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD &&
-            parsed.payload
+            parsed.payload &&
+            typeof parsed.payload === 'object'
           ) {
             const bound = bindSiegeCommandToSession({
               session: peer.session,
@@ -1108,7 +1350,7 @@ async function startServer() {
             payload: { sectorState },
           });
         } catch {
-          // Ignore malformed client frames
+          opsCounters.wsFramesRejected += 1;
         }
       }
     });
@@ -1153,9 +1395,52 @@ async function startServer() {
     });
   }
 
+  // ==========================================================================
+  // GRACEFUL SIGTERM / SIGINT SHUTDOWN (DRAINS WS/HTTP & ATOMICALLY FLUSHES)
+  // ==========================================================================
+  const performGracefulShutdown = (signal: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.info(
+      `[Voxel Realms Server] Received ${signal}; draining peers & flushing atomic save...`
+    );
+
+    clearInterval(siegeTickInterval);
+    clearInterval(sweepInterval);
+
+    const closeFrame = encodeWsCloseFrame(1001, 'Server shutting down cleanly');
+    for (const [peerId, peer] of peers.entries()) {
+      try {
+        if (!peer.socket.destroyed) {
+          peer.socket.end(closeFrame);
+        }
+      } catch {
+        peer.socket.destroy();
+      }
+      peers.delete(peerId);
+    }
+
+    persistStoreToDisk(store);
+
+    const forceTimer = setTimeout(() => {
+      console.warn('[Voxel Realms Server] Graceful shutdown deadline reached; exiting.');
+      process.exit(0);
+    }, OPERATIONAL_LIMITS.GRACEFUL_SHUTDOWN_DEADLINE_MS);
+    forceTimer.unref();
+
+    httpServer.close(() => {
+      clearTimeout(forceTimer);
+      console.info('[Voxel Realms Server] Shutdown complete.');
+      process.exit(0);
+    });
+  };
+
+  process.once('SIGTERM', () => performGracefulShutdown('SIGTERM'));
+  process.once('SIGINT', () => performGracefulShutdown('SIGINT'));
+
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(
-      `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Multi-Region Persistence listening on http://0.0.0.0:${PORT}`
+      `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Atomic Persistence listening on http://0.0.0.0:${PORT}`
     );
   });
 }

@@ -14,9 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Procedural dungeon delves with ancient Dao relics and heavenly tribulations (`src/game/dungeons.ts` & `src/game/dungeons.test.ts`).
 - WebGPU compute shader upgrade for 10,000+ simultaneous flocking entities.
 
+### Implemented Operational Readiness, Exploit Hardening & Atomic Persistence (`src/game/serverPersistence.ts`, `src/game/serverHardening.ts`, `scripts/verify-readiness.ts`)
+
+- Added `AtomicRealmPersistence` (`src/game/serverPersistence.ts`, `serverPersistence.test.ts`) using write-temp → `fsyncSync` → verified `.bak` promotion → atomic POSIX rename inside a SHA-256 integrity envelope (`schemaVersion: 2`), with automatic failover recovery from `.bak` on truncated/corrupt primary files and graceful `SIGTERM`/`SIGINT` drain flushing.
+- Added exploit & load bounds (`src/game/serverHardening.ts`, `serverHardening.test.ts`): sliding-window API write rate limiting (`120/min`), 5-attempt operator login brute-force lockout (`429` + `Retry-After`), Same-Origin CSRF checks on cookie mutations (`403`), recursive prototype-pollution rejection (`400`), fragmented/bounded RFC 6455 WS frame decoder (`32 KiB` max frame, `64 KiB` RX buffer, `30 msg/s` flood disconnects, slow-consumer backpressure drops), 20Hz tick latency p50/p95/max tracking, and `/readyz` + `/api/ops/readiness` probes.
+- Added live production verification harness `scripts/verify-readiness.ts` (`npm run verify:ops`) wired into CI (`.github/workflows/build.yml`) to empirically verify concurrent HTTP/WS load (`0` tick overruns), exploit blocks, truncated save `.bak` failover, and clean `SIGTERM` shutdown.
+
 ### Implemented Security Hardening — Server-Side HMAC-SHA256 Session Auth, Fail-Closed RBAC & Trust Boundaries (`src/game/serverAuth.ts`, `server.ts`, `SECURITY.md`)
 
-- Implemented cryptographic HMAC-SHA256 `HttpOnly` session authentication (`/api/auth/player-session`, `/api/auth/admin-login`, `/api/auth/session`, `/api/auth/logout`) backed by timing-safe `VOXEL_ADMIN_PASSKEY` verification and fail-closed production secret enforcement (`src/game/serverAuth.ts` + `src/game/serverAuth.test.ts`).
+- Implemented cryptographic HMAC-SHA256 `HttpOnly` session authentication (`/api/auth/player-session`, `/api/auth/admin-login`, `/api/auth/session`, `/api/auth/logout`) backed by timing-safe `VOXEL_ADMIN_PASSKEY` verification and fail-closed production operator enforcement (`src/game/serverAuth.ts` + `src/game/serverAuth.test.ts`).
 - Enforced fail-closed `401`/`403` RBAC authorization on `/api/admin/state`, `/api/admin/moderation`, `/api/admin/tickets/resolve`, `/api/admin/decree`, and `/api/admin/species-rebirth`, persistent server security audit logs (`securityAuditLog`), anti-tamper `/api/online/sync` sanitization, email redaction on `/api/online/status`, and authenticated WebSocket command identity binding on `/ws/siege`.
 - Explicitly tagged client-side `verifyAccountPrivileges` checks as `UNTRUSTED_CLIENT_PREVIEW` in `src/game/adminModeration.ts` and added verified server session status + operator sign-in UI in `src/components/AdminConsoleModal.tsx`.
 

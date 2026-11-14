@@ -64,7 +64,8 @@ This project and everyone participating in it is governed by our [Code of Conduc
 | `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                 |
 | `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                               |
 | `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                |
-| `npm test`                     | Runs the Node.js test runner against all 18 pure game logic, netcode & 3D scene-graph test suites (`122` tests)                  |
+| `npm test`                     | Runs the Node.js test runner against all 21 pure game logic, security, persistence, netcode & 3D suites (`136` tests)            |
+| `npm run verify:ops`           | Runs live production server load, exploit resistance, truncated-save `.bak` crash recovery & `SIGTERM` shutdown verification     |
 | `npm run validate`             | Runs the full 4-stage validation gate (`lint` + `format:check` + `test` + `build`)                                               |
 | `npm run clean`                | Cleans build artifacts (`dist/`, `server.js`)                                                                                    |
 

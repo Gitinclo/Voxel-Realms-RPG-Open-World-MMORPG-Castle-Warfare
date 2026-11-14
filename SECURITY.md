@@ -34,16 +34,20 @@ Client-side roles, email selectors, React state, and browser `localStorage` **ar
    - `POST /api/online/sync` and `POST /api/online/siege/cmd` require a valid HMAC-signed session (`HTTP 401` otherwise). Non-staff sessions cannot use `/api/online/sync` to spoof `commanderId`, `email`, `castleLevel`, `cultivationRealmIndex`, `vipTier`, `karma`, or `garrisonTroopsWire`; restricted or out-of-range fields are stripped/clamped server-side and logged (`SYNC_SANITIZED`).
    - `GET /api/online/status` redacts account email addresses (`emailRedacted: true`) from public responses unless requested by a verified staff session.
    - WebSocket connections on `/ws/siege` allow read-only telemetry streaming for spectating peers, but reject unauthenticated `C2S_TROOP_POSITION_CMD` and `C2S_RALLY_ACTION_CMD` mutations with `S2C_AUTH_ERROR` (`401`) and bind authenticated commands to `peer.session.commanderId`.
-4. **Security Response Headers & Fail-Closed Operator Config**:
-   - `server.ts` disables `x-powered-by`, enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Cache-Control: no-store` on `/api/*`.
-   - Operator logins (`/api/auth/admin-login`) fail closed (`503`) in production unless `VOXEL_ADMIN_PASSKEY` (`>= 12` chars) is explicitly configured in environment secrets. If `VOXEL_SESSION_SECRET` is omitted, the server generates an ephemeral per-instance 256-bit CSPRNG HMAC signing key in memory (sessions do not persist across restarts unless `VOXEL_SESSION_SECRET` is set). No secrets are ever hardcoded in client bundles or `.env.example`.
+4. **Exploit Resistance, Rate Limits & Connection Bounds (`src/game/serverHardening.ts`)**:
+   - `server.ts` enforces sliding-window IP/route write rate limiting (`120/min`), 5-attempt operator login brute-force lockouts (`HTTP 429` + `Retry-After`), Same-Origin CSRF checks on cookie-authenticated mutations (`HTTP 403`), recursive prototype-pollution key rejection (`__proto__`, `constructor`, `prototype`), HTTP `512 KiB` body caps, and WebSocket `/ws/siege` limits (`250` max peers, `20` peers/IP, `32 KiB` max frame, `64 KiB` fragmented RX cap, `30 msg/s` flood disconnects, monotonic `clientSeq` anti-replay, and `256 KiB` slow-consumer backpressure disconnects).
+   - Security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Cache-Control: no-store` on `/api/*`, `x-powered-by` disabled) are enforced on all responses.
+   - Operator logins (`/api/auth/admin-login`) fail closed (`503`) in production unless `VOXEL_ADMIN_PASSKEY` (`>= 12` chars) is explicitly configured in environment secrets.
+5. **Reliable Atomic Saves & Operational Readiness (`src/game/serverPersistence.ts`, `/readyz`, `/api/ops/readiness`)**:
+   - Realm saves use write-temp → `fsyncSync` → promote valid primary to `.bak` → atomic POSIX rename wrapped in a SHA-256 integrity envelope (`schemaVersion: 2`). Truncated or tampered primary snapshots automatically fail over to `.bak` on boot, and `SIGTERM`/`SIGINT` triggers peer draining plus a final atomic disk flush before exit.
+   - Liveness (`/healthz`), readiness (`/readyz`), and live telemetry (`/api/ops/readiness`: 20Hz tick p50/p95/max latency, storage health, RSS/heap memory, exploit blocks) are verifiable end-to-end via `npm run verify:ops` (`scripts/verify-readiness.ts`).
 
 ---
 
-## Explicit Trust Boundary Disclosure
+## Explicit Trust & Operational Boundary Disclosure
 
 - **Untrusted Client Sandbox**: Single-player 3D canvas progression, local resource counters, local `verifyAccountPrivileges(..., 'UNTRUSTED_CLIENT_PREVIEW')`, and `localStorage` caches run in the user's browser for offline convenience and sandbox testing only. Browser DevTools modifications to React state or `localStorage` **do not** bypass server `/api/admin/*` or `/api/online/*` checks.
-- **Production Hardening Checklist**: Before exposing `server.ts` on the public internet, deploy behind a TLS-terminating reverse proxy (`HTTPS`/`WSS` so `HttpOnly; Secure` session cookies are encrypted in transit), set high-entropy `VOXEL_SESSION_SECRET` and `VOXEL_ADMIN_PASSKEY` environment secrets, and place rate limiting at your ingress/load balancer.
+- **Single-Instance Scope vs. Horizontal Scaling**: `server.ts` guarantees single-instance reliability up to its bounded limits (`<=250` concurrent WebSocket peers, `<=5,000` cached commander records) on local POSIX storage. Horizontal multi-instance Cloud Run scaling or multi-region high availability requires externalizing state to Cloud SQL / Spanner and Redis pub/sub so replicas do not maintain isolated disk files.
 
 ---
 
