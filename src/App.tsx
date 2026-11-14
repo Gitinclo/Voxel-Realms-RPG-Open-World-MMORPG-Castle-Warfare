@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useAuth } from './contexts/AuthContext';
+import { subscribeToCommanderSave, syncUserAccountDocuments } from './lib/firestore';
 import {
   CharacterAppearance,
   Clan,
@@ -1840,7 +1841,23 @@ export default function App() {
     setIsSyncingAccount(true);
     try {
       const totalTroops = (Object.values(troops) as bigint[]).reduce((sum, n) => sum + n, 0n);
-      const discoveredCodexCount = Object.keys(loreCodexState.discoveredRecords).length;
+      const discoveredIds = Object.keys(loreCodexState.discoveredRecords);
+      const discoveredCodexCount = discoveredIds.length;
+      const commanderName = authUser?.displayName || playerAppearance.name || 'Sovereign Vanguard';
+
+      if (authUser) {
+        await syncUserAccountDocuments(authUser, {
+          commanderName,
+          allianceTag: clan.tag || 'SOL',
+          castleLevel,
+          cultivationRealmIndex: cultivation.currentRealmIndex,
+          vipRank: vipEvaluation.tierConfig.rank,
+          karmaValue: cultivation.karma?.karmaValue ?? 0,
+          garrisonTroopsWire: totalTroops.toString(),
+          discoveredCodexIds: discoveredIds,
+        });
+      }
+
       const profileRes = await fetch('/api/db/profile', {
         method: 'PUT',
         headers: {
@@ -1848,7 +1865,7 @@ export default function App() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          commanderName: authUser?.displayName || playerAppearance.name || 'Sovereign Vanguard',
+          commanderName,
           allianceTag: clan.tag || 'SOL',
           castleLevel,
           cultivationRealmIndex: cultivation.currentRealmIndex,
@@ -1889,9 +1906,13 @@ export default function App() {
 
       setToastMessage(`Commander progress synced for ${authUser?.email || 'your account'}.`);
     } catch (err) {
-      setToastMessage(
-        err instanceof Error ? err.message : 'Unable to sync commander progress right now.'
-      );
+      const msg =
+        err instanceof Error ? err.message : 'Unable to sync commander progress right now.';
+      if (msg.includes('Quota exceeded')) {
+        setToastMessage('Daily storage quota exceeded. Free tier quota resets tomorrow.');
+      } else {
+        setToastMessage(msg);
+      }
     } finally {
       setIsSyncingAccount(false);
     }
@@ -1910,7 +1931,20 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!authUser) return;
+    if (authLoading || !authUser) return;
+
+    const unsubscribeSave = subscribeToCommanderSave(
+      authUser.uid,
+      (save) => {
+        if (!save || cancelled) return;
+        setCastleLevel((prev) => Math.max(prev, save.castleLevel));
+      },
+      (err) => {
+        if (!cancelled && err.message.includes('Quota exceeded')) {
+          setToastMessage('Daily storage quota exceeded. Free tier quota resets tomorrow.');
+        }
+      }
+    );
 
     const loadAuthenticatedProfile = async () => {
       const token = await getFreshIdToken();
@@ -1939,8 +1973,9 @@ export default function App() {
     loadAuthenticatedProfile();
     return () => {
       cancelled = true;
+      unsubscribeSave();
     };
-  }, [authUser, getFreshIdToken]);
+  }, [authLoading, authUser, getFreshIdToken]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">

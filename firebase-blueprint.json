@@ -1,0 +1,307 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Publicly scoped commander stats without PII, isolated from private account credentials.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning player.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "commanderName": {
+          "type": "string",
+          "description": "In-game display name of the commander.",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "allianceTag": {
+          "type": "string",
+          "description": "Short alphanumeric clan/alliance tag.",
+          "pattern": "^[A-Za-z0-9]{2,6}$",
+          "minLength": 2,
+          "maxLength": 6
+        },
+        "castleLevel": {
+          "type": "integer",
+          "description": "Castle progression level (0 to 100)."
+        },
+        "cultivationRealmIndex": {
+          "type": "integer",
+          "description": "Current Four-Path Cultivation realm index (0 to 22)."
+        },
+        "vipRank": {
+          "type": "integer",
+          "description": "Server-validated VIP rank tier (0 to 3)."
+        },
+        "karmaValue": {
+          "type": "integer",
+          "description": "Player alignment karma score (-100000 to 100000)."
+        },
+        "garrisonTroopsWire": {
+          "type": "string",
+          "description": "Decimal wire representation of total garrison troops up to 1000T.",
+          "pattern": "^[0-9]{1,18}$",
+          "minLength": 1,
+          "maxLength": 18
+        },
+        "discoveredCodexCount": {
+          "type": "integer",
+          "description": "Count of unlocked Lore Codex entries."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-enforced timestamp of last update."
+        }
+      },
+      "required": [
+        "uid",
+        "commanderName",
+        "allianceTag",
+        "castleLevel",
+        "cultivationRealmIndex",
+        "vipRank",
+        "karmaValue",
+        "garrisonTroopsWire",
+        "discoveredCodexCount",
+        "updatedAt"
+      ]
+    },
+    "UserPrivateAccount": {
+      "title": "UserPrivateAccount",
+      "description": "Owner-only PII record storing verified email and immutable non-privileged player role.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified account email address.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "role": {
+          "type": "string",
+          "description": "Immutable client-created account role (always player; admins live in /admins).",
+          "enum": ["player"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable account creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last account update server timestamp."
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt", "updatedAt"]
+    },
+    "CommanderRealmSave": {
+      "title": "CommanderRealmSave",
+      "description": "Authenticated commander progression snapshot owned by a single verified user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "saveId": {
+          "type": "string",
+          "description": "Deterministic save slot identifier.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "castleLevel": {
+          "type": "integer",
+          "description": "Castle level (0 to 100)."
+        },
+        "cultivationRealmIndex": {
+          "type": "integer",
+          "description": "Cultivation realm index (0 to 22)."
+        },
+        "allianceTag": {
+          "type": "string",
+          "description": "Short alphanumeric clan tag.",
+          "pattern": "^[A-Za-z0-9]{2,6}$",
+          "minLength": 2,
+          "maxLength": 6
+        },
+        "garrisonTroopsWire": {
+          "type": "string",
+          "description": "Decimal troop count wire string.",
+          "pattern": "^[0-9]{1,18}$",
+          "minLength": 1,
+          "maxLength": 18
+        },
+        "discoveredCodexIds": {
+          "type": "array",
+          "description": "Bounded array (<= 64 strings) of discovered codex identifiers."
+        },
+        "version": {
+          "type": "integer",
+          "description": "Monotonic save format version integer."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "saveId",
+        "castleLevel",
+        "cultivationRealmIndex",
+        "allianceTag",
+        "garrisonTroopsWire",
+        "discoveredCodexIds",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SupportTicket": {
+      "title": "SupportTicket",
+      "description": "Player-submitted support or moderation ticket with terminal status locking.",
+      "type": "object",
+      "properties": {
+        "ticketId": {
+          "type": "string",
+          "description": "Ticket document identifier.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the ticket creator.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "category": {
+          "type": "string",
+          "description": "Ticket category.",
+          "enum": ["general", "bug", "abuse", "billing"]
+        },
+        "subject": {
+          "type": "string",
+          "description": "Ticket summary subject.",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "message": {
+          "type": "string",
+          "description": "Ticket body text.",
+          "minLength": 5,
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "description": "Ticket lifecycle status (created as open; locked once resolved).",
+          "enum": ["open", "resolved"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Immutable creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": [
+        "ticketId",
+        "ownerId",
+        "category",
+        "subject",
+        "message",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Trusted administrator lookup documents (client writes denied).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the administrator.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified administrator email address.",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "grantedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp admin privilege was provisioned."
+        }
+      },
+      "required": ["uid", "email", "grantedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/public/profile": {
+      "schema": {
+        "$ref": "#/entities/UserPublicProfile"
+      },
+      "description": "Non-PII commander profile document readable by signed-in verified users and writable only by the owning user."
+    },
+    "/users/{userId}/private/account": {
+      "schema": {
+        "$ref": "#/entities/UserPrivateAccount"
+      },
+      "description": "PII-isolated private account document readable and writable strictly by the owning user or an admin."
+    },
+    "/users/{userId}/saves/{saveId}": {
+      "schema": {
+        "$ref": "#/entities/CommanderRealmSave"
+      },
+      "description": "Per-commander cloud realm save slots owned and accessed strictly by the owning verified user or an admin."
+    },
+    "/supportTickets/{ticketId}": {
+      "schema": {
+        "$ref": "#/entities/SupportTicket"
+      },
+      "description": "Support tickets readable/updatable by the owning verified user (while open) or admins; list queries enforced via ownerId."
+    },
+    "/admins/{userId}": {
+      "schema": {
+        "$ref": "#/entities/AdminUser"
+      },
+      "description": "Server-managed administrator registry used for role lookups; all client writes are denied."
+    }
+  }
+}

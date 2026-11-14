@@ -3,6 +3,7 @@
   "appId": "1:123683993015:web:6eba9c973c9ef9167ca432",
   "apiKey": "AIzaSyBMulO8xFmcKSK0DCYXhJ46p-u_tjv5rUg",
   "authDomain": "dev-ivy-6v0ns.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-voxelrealmsrpgop-416287a7-e9eb-4cc3-b431-b5f2455f192b",
   "storageBucket": "dev-ivy-6v0ns.firebasestorage.app",
   "messagingSenderId": "123683993015",
   "measurementId": "",

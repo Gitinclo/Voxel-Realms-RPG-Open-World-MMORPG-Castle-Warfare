@@ -1,0 +1,345 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // =========================================================================
+    // 1. GLOBAL DEFAULT-DENY SAFETY NET
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 2. HARDENED GLOBAL PRIMITIVES
+    // =========================================================================
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isEmailVerified() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'creatergame31@gmail.com'
+      );
+    }
+
+    // =========================================================================
+    // 3. ENTITY VALIDATION BLUEPRINTS (ANTI-UPDATE-GAP)
+    // =========================================================================
+    function isValidUserPublicProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid',
+          'commanderName',
+          'allianceTag',
+          'castleLevel',
+          'cultivationRealmIndex',
+          'vipRank',
+          'karmaValue',
+          'garrisonTroopsWire',
+          'discoveredCodexCount',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'commanderName',
+          'allianceTag',
+          'castleLevel',
+          'cultivationRealmIndex',
+          'vipRank',
+          'karmaValue',
+          'garrisonTroopsWire',
+          'discoveredCodexCount',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        isValidId(data.uid) &&
+        data.uid == userId &&
+        data.commanderName is string &&
+        data.commanderName.size() >= 1 &&
+        data.commanderName.size() <= 48 &&
+        data.allianceTag is string &&
+        data.allianceTag.size() >= 2 &&
+        data.allianceTag.size() <= 6 &&
+        data.allianceTag.matches('^[A-Za-z0-9]{2,6}$') &&
+        data.castleLevel is int &&
+        data.castleLevel >= 0 &&
+        data.castleLevel <= 100 &&
+        data.cultivationRealmIndex is int &&
+        data.cultivationRealmIndex >= 0 &&
+        data.cultivationRealmIndex <= 22 &&
+        data.vipRank is int &&
+        data.vipRank >= 0 &&
+        data.vipRank <= 3 &&
+        data.karmaValue is int &&
+        data.karmaValue >= -100000 &&
+        data.karmaValue <= 100000 &&
+        data.garrisonTroopsWire is string &&
+        data.garrisonTroopsWire.size() >= 1 &&
+        data.garrisonTroopsWire.size() <= 18 &&
+        data.garrisonTroopsWire.matches('^[0-9]{1,18}$') &&
+        data.discoveredCodexCount is int &&
+        data.discoveredCodexCount >= 0 &&
+        data.discoveredCodexCount <= 100000 &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidUserPrivateAccount(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        data.uid is string &&
+        isValidId(data.uid) &&
+        data.uid == userId &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.role is string &&
+        data.role.size() == 6 &&
+        data.role == 'player' &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidCodexIdList(ids) {
+      return ids is list &&
+        ids.size() <= 64 &&
+        (ids.size() == 0 || (ids[0] is string && ids[0].size() >= 1 && ids[0].size() <= 64));
+    }
+
+    function isValidCommanderRealmSave(data, userId, saveId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'saveId',
+          'castleLevel',
+          'cultivationRealmIndex',
+          'allianceTag',
+          'garrisonTroopsWire',
+          'discoveredCodexIds',
+          'version',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId',
+          'saveId',
+          'castleLevel',
+          'cultivationRealmIndex',
+          'allianceTag',
+          'garrisonTroopsWire',
+          'discoveredCodexIds',
+          'version',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ownerId is string &&
+        isValidId(data.ownerId) &&
+        data.ownerId == userId &&
+        data.saveId is string &&
+        isValidId(data.saveId) &&
+        data.saveId == saveId &&
+        data.castleLevel is int &&
+        data.castleLevel >= 0 &&
+        data.castleLevel <= 100 &&
+        data.cultivationRealmIndex is int &&
+        data.cultivationRealmIndex >= 0 &&
+        data.cultivationRealmIndex <= 22 &&
+        data.allianceTag is string &&
+        data.allianceTag.size() >= 2 &&
+        data.allianceTag.size() <= 6 &&
+        data.allianceTag.matches('^[A-Za-z0-9]{2,6}$') &&
+        data.garrisonTroopsWire is string &&
+        data.garrisonTroopsWire.size() >= 1 &&
+        data.garrisonTroopsWire.size() <= 18 &&
+        data.garrisonTroopsWire.matches('^[0-9]{1,18}$') &&
+        isValidCodexIdList(data.discoveredCodexIds) &&
+        data.version is int &&
+        data.version >= 1 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    function isValidSupportTicket(data, ticketId) {
+      return data.keys().hasAll([
+          'ticketId',
+          'ownerId',
+          'category',
+          'subject',
+          'message',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ticketId',
+          'ownerId',
+          'category',
+          'subject',
+          'message',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.ticketId is string &&
+        isValidId(data.ticketId) &&
+        data.ticketId == ticketId &&
+        data.ownerId is string &&
+        isValidId(data.ownerId) &&
+        data.category is string &&
+        data.category.size() >= 3 &&
+        data.category.size() <= 16 &&
+        data.category in ['general', 'bug', 'abuse', 'billing'] &&
+        data.subject is string &&
+        data.subject.size() >= 3 &&
+        data.subject.size() <= 120 &&
+        data.message is string &&
+        data.message.size() >= 5 &&
+        data.message.size() <= 2000 &&
+        data.status is string &&
+        data.status.size() >= 4 &&
+        data.status.size() <= 16 &&
+        data.status in ['open', 'resolved'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time;
+    }
+
+    // =========================================================================
+    // 4. COLLECTION MATCH BLOCKS (1:1 WITH firebase-blueprint.json)
+    // =========================================================================
+    match /users/{userId}/public/profile {
+      allow get: if isEmailVerified() && isValidId(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidUserPublicProfile(incoming(), userId);
+      allow update: if isValidUserPublicProfile(incoming(), userId) && (
+        isAdmin() || (
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'commanderName',
+            'allianceTag',
+            'castleLevel',
+            'cultivationRealmIndex',
+            'vipRank',
+            'karmaValue',
+            'garrisonTroopsWire',
+            'discoveredCodexCount',
+            'updatedAt'
+          ])
+        )
+      );
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    match /users/{userId}/private/account {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create: if isOwner(userId) &&
+        isValidUserPrivateAccount(incoming(), userId) &&
+        incoming().createdAt == request.time &&
+        incoming().email == request.auth.token.email;
+      allow update: if isValidUserPrivateAccount(incoming(), userId) && (
+        isAdmin() || (
+          isOwner(userId) &&
+          incoming().uid == existing().uid &&
+          incoming().role == existing().role &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().email == request.auth.token.email &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt'])
+        )
+      );
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    match /users/{userId}/saves/{saveId} {
+      allow get: if isValidId(userId) && isValidId(saveId) && (isOwner(userId) || isAdmin());
+      allow list: if isEmailVerified() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.token.email == 'creatergame31@gmail.com'
+      );
+      allow create: if isOwner(userId) &&
+        isValidId(saveId) &&
+        isValidCommanderRealmSave(incoming(), userId, saveId) &&
+        incoming().createdAt == request.time;
+      allow update: if isValidId(saveId) &&
+        isValidCommanderRealmSave(incoming(), userId, saveId) && (
+          isAdmin() || (
+            isOwner(userId) &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().saveId == existing().saveId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'castleLevel',
+              'cultivationRealmIndex',
+              'allianceTag',
+              'garrisonTroopsWire',
+              'discoveredCodexIds',
+              'version',
+              'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isValidId(userId) && isValidId(saveId) && (isOwner(userId) || isAdmin());
+    }
+
+    match /supportTickets/{ticketId} {
+      allow get: if isValidId(ticketId) && (
+        isAdmin() || (isEmailVerified() && existing().ownerId == request.auth.uid)
+      );
+      allow list: if isEmailVerified() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.token.email == 'creatergame31@gmail.com'
+      );
+      allow create: if isEmailVerified() &&
+        isValidId(ticketId) &&
+        isValidSupportTicket(incoming(), ticketId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'open' &&
+        incoming().createdAt == request.time;
+      allow update: if isValidId(ticketId) &&
+        isValidSupportTicket(incoming(), ticketId) && (
+          (isAdmin() &&
+            incoming().ticketId == existing().ticketId &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+          (isEmailVerified() &&
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'resolved' &&
+            incoming().status == existing().status &&
+            incoming().ticketId == existing().ticketId &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['subject', 'message', 'updatedAt']))
+        );
+      allow delete: if isAdmin() && isValidId(ticketId);
+    }
+
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+  }
+}
