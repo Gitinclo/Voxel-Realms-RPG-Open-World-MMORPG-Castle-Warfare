@@ -55,19 +55,21 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ## Scripts & Development Commands
 
-| Command                        | Purpose                                                                                                                          |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                  | Starts full-stack Express + RFC 6455 WebSocket (`/ws/siege`) + Vite server (`tsx server.ts`) on `http://0.0.0.0:3000`            |
-| `npm run build`                | Builds production client assets to `dist/`                                                                                       |
-| `npm run preview`              | Previews the production build locally                                                                                            |
-| `npm run lint`                 | Runs `tsc --noEmit` (with `noUnusedLocals` & `noUnusedParameters`) to catch syntax errors, type mismatches, and unused variables |
-| `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                 |
-| `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                               |
-| `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                |
-| `npm test`                     | Runs the Node.js test runner against all 21 pure game logic, security, persistence, netcode & 3D suites (`136` tests)            |
-| `npm run verify:ops`           | Runs live production server load, exploit resistance, truncated-save `.bak` crash recovery & `SIGTERM` shutdown verification     |
-| `npm run validate`             | Runs the full 4-stage validation gate (`lint` + `format:check` + `test` + `build`)                                               |
-| `npm run clean`                | Cleans build artifacts (`dist/`, `server.js`)                                                                                    |
+| Command                        | Purpose                                                                                                                           |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                  | Starts full-stack Express + RFC 6455 WebSocket (`/ws/siege`) + Vite server (`tsx server.ts`) on `http://0.0.0.0:3000`             |
+| `npm run build`                | Builds code-split production client assets to `dist/`                                                                             |
+| `npm run preview`              | Previews the production build locally                                                                                             |
+| `npm run lint`                 | Runs `tsc --noEmit` (with `noUnusedLocals` & `noUnusedParameters`) to catch syntax errors, type mismatches, and unused variables  |
+| `npm run lint:rules`           | Audits `firestore.rules` syntax and security patterns with ESLint                                                                 |
+| `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                  |
+| `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                                |
+| `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                 |
+| `npm test`                     | Runs Node's test runner across all 24 pure game logic, MIME, security, persistence, netcode, 3D & rules suites (`144` tests)      |
+| `npm run test:rules`           | Runs the standalone Dirty Dozen static & structural Firestore security rules test suite (`firestore.rules.test.ts`)               |
+| `npm run verify:ops`           | Runs live production server load, exploit/`/api/db/*` `401` checks, truncated-save `.bak` crash recovery & `SIGTERM` verification |
+| `npm run validate`             | Runs the full 5-stage validation gate (`lint` + `lint:rules` + `format:check` + `test` + `build`)                                 |
+| `npm run clean`                | Cleans build artifacts (`dist/`, `server.js`)                                                                                     |
 
 ---
 
@@ -90,8 +92,12 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   ├── DailyLoginModal.tsx     # Daily login decrees & Veteran Scroll sanctum
 │   │   ├── LoreHistoryModal.tsx    # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
 │   │   ├── VipSubscriptionModal.tsx# VIP Tiers 0-3, daily stipends & loyalty progression
-│   │   └── ...
-│   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites
+│   │   ├── GmailModal.tsx          # Lazy-loaded Google Workspace Gmail Dispatch Center
+│   │   ├── GoogleSignInButton.tsx  # Standalone Firebase Google Sign-In trigger
+│   │   └── ...                     # 18 conditional modals lazy-loaded via React.lazy in App.tsx
+│   ├── contexts/             # AuthContext (Firebase Google Sign-In & in-memory Gmail OAuth)
+│   ├── db/                   # Cloud SQL PostgreSQL pg.Pool (SQL_HOST/SQL_USER/SQL_PASSWORD/SQL_DB_NAME) + Drizzle ORM
+│   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites (22 suites)
 │   │   ├── adminModeration.ts      # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── architectOptimization.ts# 06/11/2026 Software & Hardware Architect optimization engine
 │   │   ├── clanMath.ts             # Clan buffs, vault rations & 9-sector outpost math
@@ -104,17 +110,24 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   ├── math.ts                 # Castle Lv 0-100, 1000T capacity & T1-T20 troop math
 │   │   ├── omniverse.ts            # 6-Tier Cosmology (COSMIC_LIMITS), 100 Overvoids & 100 Species NPCs
 │   │   ├── proceduralWorld.ts      # Deterministic 3D voxel terrain, castle, species & aura meshes
+│   │   ├── serverAuth.ts           # Server-only HMAC-SHA256 Auth & fail-closed RBAC
+│   │   ├── serverHardening.ts      # Rate limits, CSRF, brute-force lockouts & WS bounds
+│   │   ├── serverPersistence.ts    # Atomic fsync+rename + SHA-256 .bak realm saves
 │   │   ├── siegeNetProtocol.ts     # Authoritative 20Hz 50v50 WebSocket Siege, Delta, CSP & Multi-Region Engine
 │   │   ├── species.ts              # 10-Species catalog, 3D mesh specs & Admin switch permission gate
-│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (88 checks)
+│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (89 checks)
 │   │   ├── troopTraining.ts        # Real-time troop training queue & speedup math
 │   │   ├── vipSubscription.ts      # VIP tiers, discounts & feature access gates
 │   │   ├── weather.ts              # Weather cycle & gathering/combat multipliers
 │   │   └── worldAI.ts              # Lv 1-1000 monster brackets, A* pathfinding & NPC roles
+│   ├── lib/                  # Firebase SDK, Firebase Admin, Firestore helpers & Gmail MIME/API client (+ gmail.test.ts)
+│   ├── middleware/           # Express `requireAuth` Firebase ID token middleware
 │   ├── types/                # TypeScript interfaces and domain models
-│   ├── App.tsx               # Main application state orchestrator
+│   ├── App.tsx               # Main application state orchestrator & lazy modal Suspense shell
 │   └── main.tsx              # React application root
-├── server.ts                 # Authoritative 20Hz WebSocket (/ws/siege) & Multi-Region Persistence server
+├── firestore.rules           # Hardened Cloud Firestore rules (audited by firestore.rules.test.ts)
+├── firebase-blueprint.json   # Firestore schema blueprint
+├── server.ts                 # Authoritative 20Hz WebSocket (/ws/siege), RBAC, Multi-Region & /api/db/* server
 ├── ARCHITECTURE.md           # Functional Core / Imperative Shell technical reference
 ├── CHANGELOG.md              # Version release history & v1.5.0 network protocol
 ├── CODE_OF_CONDUCT.md        # Contributor Covenant v2.1
@@ -217,10 +230,10 @@ Every push and Pull Request must pass both our **Web/TypeScript Guardrails** and
 
 #### A. TypeScript & WebGL Guardrails (`quality-check` job)
 
-1. **The Linter (`npm run lint`)**: Enforces strict TypeScript compilation with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch`. Any unused variable, dead import, or type mismatch immediately fails the build.
+1. **The Linter (`npm run lint && npm run lint:rules`)**: Enforces strict TypeScript compilation (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`) plus ESLint auditing of `firestore.rules`. Any unused variable, dead import, rule anti-pattern, or type mismatch immediately fails the build.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Blocks outdated or vulnerable third-party packages.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting (`.prettierrc`) so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Executes all 122 unit and regression tests across 18 TypeScript suites (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression & Security Test Suite (`npm test`)**: Executes all **144 automated tests across 24 suites** (`22` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`) to ensure new features never break existing systems.
 
 #### B. C++20 Engine Guardrail Stack (`cpp20-guardrails` job)
 
@@ -248,12 +261,13 @@ Tools catch syntax and formatting issues, while disciplined prompting preserves 
 1. **Run the full Guardrails suite locally:**
 
    ```bash
-   npm run validate              # Unified 4-stage gate (lint + format:check + test + build)
+   npm run validate              # Unified 5-stage gate (lint + lint:rules + format:check + test + build)
    npm run lint                  # 1. Catch messy code & unused variables
-   npm audit --audit-level=high  # 2. Check for vulnerable/deprecated packages
-   npx prettier --check .        # 3. Verify consistent code formatting (or run `npm run format`)
-   npm test                      # 4. Run all 122 unit & regression tests across 18 suites
-   npm run build                 # 5. Verify production bundle compiles cleanly
+   npm run lint:rules            # 2. Validate Cloud Firestore security rules
+   npm audit --audit-level=high  # 3. Check for vulnerable/deprecated packages
+   npx prettier --check .        # 4. Verify consistent code formatting (or run `npm run format`)
+   npm test                      # 5. Run all 144 automated tests across 24 suites
+   npm run build                 # 6. Verify code-split production bundle compiles cleanly
    ```
 
 2. **Push your branch:**

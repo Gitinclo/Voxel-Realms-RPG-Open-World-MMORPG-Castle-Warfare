@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useAuth } from './contexts/AuthContext';
 import { subscribeToCommanderSave, syncUserAccountDocuments } from './lib/firestore';
@@ -58,24 +58,61 @@ import { sound } from './game/audio';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
-import { CastleModal } from './components/CastleModal';
-import { TroopBarracksModal } from './components/TroopBarracksModal';
-import { CharacterCreationModal } from './components/CharacterCreationModal';
-import { HeroModal } from './components/HeroModal';
-import { ClanModal } from './components/ClanModal';
-import { WorldBossRallyModal } from './components/WorldBossRallyModal';
-import { ResourceGatherModal } from './components/ResourceGatherModal';
-import { LeaderboardModal } from './components/LeaderboardModal';
-import { CppArchitectureModal } from './components/CppArchitectureModal';
-import { AdminConsoleModal } from './components/AdminConsoleModal';
-import { WeatherModal } from './components/WeatherModal';
-import { CultivationModal } from './components/CultivationModal';
-import { WorldAIDirectorModal } from './components/WorldAIDirectorModal';
-import { DailyLoginModal } from './components/DailyLoginModal';
-import { VipSubscriptionModal } from './components/VipSubscriptionModal';
-import { LoreHistoryModal } from './components/LoreHistoryModal';
-import { CosmologicalAdminModal } from './components/CosmologicalAdminModal';
-import { GmailModal } from './components/GmailModal';
+
+const CastleModal = lazy(() =>
+  import('./components/CastleModal').then((m) => ({ default: m.CastleModal }))
+);
+const TroopBarracksModal = lazy(() =>
+  import('./components/TroopBarracksModal').then((m) => ({ default: m.TroopBarracksModal }))
+);
+const CharacterCreationModal = lazy(() =>
+  import('./components/CharacterCreationModal').then((m) => ({ default: m.CharacterCreationModal }))
+);
+const HeroModal = lazy(() =>
+  import('./components/HeroModal').then((m) => ({ default: m.HeroModal }))
+);
+const ClanModal = lazy(() =>
+  import('./components/ClanModal').then((m) => ({ default: m.ClanModal }))
+);
+const WorldBossRallyModal = lazy(() =>
+  import('./components/WorldBossRallyModal').then((m) => ({ default: m.WorldBossRallyModal }))
+);
+const ResourceGatherModal = lazy(() =>
+  import('./components/ResourceGatherModal').then((m) => ({ default: m.ResourceGatherModal }))
+);
+const LeaderboardModal = lazy(() =>
+  import('./components/LeaderboardModal').then((m) => ({ default: m.LeaderboardModal }))
+);
+const CppArchitectureModal = lazy(() =>
+  import('./components/CppArchitectureModal').then((m) => ({ default: m.CppArchitectureModal }))
+);
+const AdminConsoleModal = lazy(() =>
+  import('./components/AdminConsoleModal').then((m) => ({ default: m.AdminConsoleModal }))
+);
+const WeatherModal = lazy(() =>
+  import('./components/WeatherModal').then((m) => ({ default: m.WeatherModal }))
+);
+const CultivationModal = lazy(() =>
+  import('./components/CultivationModal').then((m) => ({ default: m.CultivationModal }))
+);
+const WorldAIDirectorModal = lazy(() =>
+  import('./components/WorldAIDirectorModal').then((m) => ({ default: m.WorldAIDirectorModal }))
+);
+const DailyLoginModal = lazy(() =>
+  import('./components/DailyLoginModal').then((m) => ({ default: m.DailyLoginModal }))
+);
+const VipSubscriptionModal = lazy(() =>
+  import('./components/VipSubscriptionModal').then((m) => ({ default: m.VipSubscriptionModal }))
+);
+const LoreHistoryModal = lazy(() =>
+  import('./components/LoreHistoryModal').then((m) => ({ default: m.LoreHistoryModal }))
+);
+const CosmologicalAdminModal = lazy(() =>
+  import('./components/CosmologicalAdminModal').then((m) => ({ default: m.CosmologicalAdminModal }))
+);
+const GmailModal = lazy(() =>
+  import('./components/GmailModal').then((m) => ({ default: m.GmailModal }))
+);
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -2181,376 +2218,378 @@ export default function App() {
       )}
 
       {/* Modals */}
-      {activeModal === 'castle' && (
-        <CastleModal
-          castleLevel={castleLevel}
-          resources={resources}
-          vipDiscountPct={vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct}
-          vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
-          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
-          onUpgradeCastle={handleUpgradeCastle}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+      <Suspense fallback={null}>
+        {activeModal === 'castle' && (
+          <CastleModal
+            castleLevel={castleLevel}
+            resources={resources}
+            vipDiscountPct={vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct}
+            vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
+            vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
+            onUpgradeCastle={handleUpgradeCastle}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'troops' && (
-        <TroopBarracksModal
-          troops={troops}
-          resources={resources}
-          castleLevel={castleLevel}
-          maxCapacity={maxTroopCapacity}
-          vipSpeedBonusPct={vipEvaluation.tierConfig.perks.gatherSpeedBonusPct}
-          vipState={vipState}
-          vipEffectiveDateKey={vipEffectiveDateKey}
-          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
-          onTrainTroops={handleTrainTroops}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'troops' && (
+          <TroopBarracksModal
+            troops={troops}
+            resources={resources}
+            castleLevel={castleLevel}
+            maxCapacity={maxTroopCapacity}
+            vipSpeedBonusPct={vipEvaluation.tierConfig.perks.gatherSpeedBonusPct}
+            vipState={vipState}
+            vipEffectiveDateKey={vipEffectiveDateKey}
+            onOpenVipSubscription={() => setActiveModal('vip_subscription')}
+            onTrainTroops={handleTrainTroops}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'character' && (
-        <CharacterCreationModal
-          currentAppearance={playerAppearance}
-          activeAccountEmail={activeAccountEmail}
-          onSaveAppearance={(app) => {
-            setPlayerAppearance(app);
-            const spec = getSpeciesSpec(app.species);
-            setToastMessage(
-              `${spec.icon} Lord Avatar Locked: [${app.clanTag}] ${app.name} (${spec.name})`
-            );
-          }}
-          onRequestSpeciesPermissionTicket={(requestedSpecies) => {
-            const spec = getSpeciesSpec(requestedSpecies);
-            const res = createContactTicket({
-              tickets: supportTickets,
-              category: 'administration',
-              senderName: playerAppearance.name,
-              senderEmail: activeAccountEmail,
-              subject: `[SPECIES REBIRTH] Request to switch to ${spec.name}`,
-              message: `Lord ${playerAppearance.name} requests Admin Permission (${PRIMARY_ADMIN_EMAIL}) to switch species from ${getSpeciesSpec(playerAppearance.species).name} to ${spec.name} (${spec.chineseName}).`,
-              priority: 'high',
-            });
-            if (res.success) {
-              setSupportTickets(res.updatedTickets);
+        {activeModal === 'character' && (
+          <CharacterCreationModal
+            currentAppearance={playerAppearance}
+            activeAccountEmail={activeAccountEmail}
+            onSaveAppearance={(app) => {
+              setPlayerAppearance(app);
+              const spec = getSpeciesSpec(app.species);
               setToastMessage(
-                `📩 Species Rebirth Permission Request sent to Admin (${PRIMARY_ADMIN_EMAIL})`
+                `${spec.icon} Lord Avatar Locked: [${app.clanTag}] ${app.name} (${spec.name})`
               );
-            }
-          }}
-          onOpenAdminConsole={() => setActiveModal('admin_console')}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+            }}
+            onRequestSpeciesPermissionTicket={(requestedSpecies) => {
+              const spec = getSpeciesSpec(requestedSpecies);
+              const res = createContactTicket({
+                tickets: supportTickets,
+                category: 'administration',
+                senderName: playerAppearance.name,
+                senderEmail: activeAccountEmail,
+                subject: `[SPECIES REBIRTH] Request to switch to ${spec.name}`,
+                message: `Lord ${playerAppearance.name} requests Admin Permission (${PRIMARY_ADMIN_EMAIL}) to switch species from ${getSpeciesSpec(playerAppearance.species).name} to ${spec.name} (${spec.chineseName}).`,
+                priority: 'high',
+              });
+              if (res.success) {
+                setSupportTickets(res.updatedTickets);
+                setToastMessage(
+                  `📩 Species Rebirth Permission Request sent to Admin (${PRIMARY_ADMIN_EMAIL})`
+                );
+              }
+            }}
+            onOpenAdminConsole={() => setActiveModal('admin_console')}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'hero' && (
-        <HeroModal
-          heroes={heroes}
-          playerExp={playerExp}
-          diamonds={resources.diamond}
-          onLevelUpHero={handleLevelUpHero}
-          onRecruitHero={handleRecruitHero}
-          onSelectHeroSkin={handleSelectHeroSkin}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'hero' && (
+          <HeroModal
+            heroes={heroes}
+            playerExp={playerExp}
+            diamonds={resources.diamond}
+            onLevelUpHero={handleLevelUpHero}
+            onRecruitHero={handleRecruitHero}
+            onSelectHeroSkin={handleSelectHeroSkin}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'clan' && (
-        <ClanModal
-          clan={clan}
-          members={clanMembers}
-          resources={resources}
-          clanCoins={clanCoins}
-          playerPower={playerPower}
-          chatMessages={clanChat}
-          onDonate={handleClanDonate}
-          onBuyStoreItem={handleBuyClanStore}
-          onSendChatMessage={handleSendClanChat}
-          onActivateBuff={handleActivateClanBuff}
-          onAssaultOutpost={handleAssaultOutpost}
-          onAttackCoopBoss={handleAttackCoopBoss}
-          onClaimCoopChest={handleClaimCoopChest}
-          onUpdateEmblem={handleUpdateClanEmblem}
-          onCreateNewClan={handleCreateNewClan}
-          onPromoteMember={handlePromoteMember}
-          onDemoteMember={handleDemoteMember}
-          onKickMember={handleKickMember}
-          onWithdrawVaultRations={handleWithdrawVaultRations}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'clan' && (
+          <ClanModal
+            clan={clan}
+            members={clanMembers}
+            resources={resources}
+            clanCoins={clanCoins}
+            playerPower={playerPower}
+            chatMessages={clanChat}
+            onDonate={handleClanDonate}
+            onBuyStoreItem={handleBuyClanStore}
+            onSendChatMessage={handleSendClanChat}
+            onActivateBuff={handleActivateClanBuff}
+            onAssaultOutpost={handleAssaultOutpost}
+            onAttackCoopBoss={handleAttackCoopBoss}
+            onClaimCoopChest={handleClaimCoopChest}
+            onUpdateEmblem={handleUpdateClanEmblem}
+            onCreateNewClan={handleCreateNewClan}
+            onPromoteMember={handlePromoteMember}
+            onDemoteMember={handleDemoteMember}
+            onKickMember={handleKickMember}
+            onWithdrawVaultRations={handleWithdrawVaultRations}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'world_boss' && (
-        <WorldBossRallyModal
-          monster={selectedMonster}
-          troops={troops}
-          castleLevel={castleLevel}
-          heroes={heroes}
-          weather={weather}
-          vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
-          onVictoryLoot={handleVictoryLoot}
-          onCasualties={handleCasualties}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'world_boss' && (
+          <WorldBossRallyModal
+            monster={selectedMonster}
+            troops={troops}
+            castleLevel={castleLevel}
+            heroes={heroes}
+            weather={weather}
+            vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
+            onVictoryLoot={handleVictoryLoot}
+            onCasualties={handleCasualties}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'resources' && (
-        <ResourceGatherModal
-          nodes={resourceNodes}
-          weather={weather}
-          maxGatherMarches={1 + vipEvaluation.tierConfig.perks.extraMarchQueues}
-          vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
-          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
-          onDispatchGather={handleDispatchGather}
-          onHarvestCollect={handleHarvestCollect}
-          onFocusNode={handleFocusNode}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'resources' && (
+          <ResourceGatherModal
+            nodes={resourceNodes}
+            weather={weather}
+            maxGatherMarches={1 + vipEvaluation.tierConfig.perks.extraMarchQueues}
+            vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
+            onOpenVipSubscription={() => setActiveModal('vip_subscription')}
+            onDispatchGather={handleDispatchGather}
+            onHarvestCollect={handleHarvestCollect}
+            onFocusNode={handleFocusNode}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'weather' && (
-        <WeatherModal
-          currentWeather={weather}
-          durationRemainingSec={weatherRemainingSec}
-          onCycleWeather={() => {
-            const next = getNextWeather(weather);
-            setWeather(next);
-            setWeatherRemainingSec(60);
-            const conf = WEATHER_CONFIGS[next];
-            setToastMessage(
-              `${conf.icon} Weather ritual invoked: ${conf.name}! ${conf.combatFlavorText}`
-            );
-          }}
-          onSetWeather={(w) => {
-            setWeather(w);
-            setWeatherRemainingSec(60);
-            const conf = WEATHER_CONFIGS[w];
-            setToastMessage(
-              `${conf.icon} Weather altered to ${conf.name}! ${conf.combatFlavorText}`
-            );
-          }}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'weather' && (
+          <WeatherModal
+            currentWeather={weather}
+            durationRemainingSec={weatherRemainingSec}
+            onCycleWeather={() => {
+              const next = getNextWeather(weather);
+              setWeather(next);
+              setWeatherRemainingSec(60);
+              const conf = WEATHER_CONFIGS[next];
+              setToastMessage(
+                `${conf.icon} Weather ritual invoked: ${conf.name}! ${conf.combatFlavorText}`
+              );
+            }}
+            onSetWeather={(w) => {
+              setWeather(w);
+              setWeatherRemainingSec(60);
+              const conf = WEATHER_CONFIGS[w];
+              setToastMessage(
+                `${conf.icon} Weather altered to ${conf.name}! ${conf.combatFlavorText}`
+              );
+            }}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'leaderboard' && (
-        <LeaderboardModal
-          entries={leaderboard}
-          clanEntries={clanLeaderboard}
-          playerPower={playerPower}
-          playerCastleLevel={castleLevel}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'leaderboard' && (
+          <LeaderboardModal
+            entries={leaderboard}
+            clanEntries={clanLeaderboard}
+            playerPower={playerPower}
+            playerCastleLevel={castleLevel}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'cpp_core' && (
-        <CppArchitectureModal
-          targetPlatform={targetPlatform}
-          graphicsQuality={graphicsQuality}
-          hdPackMounted={hdPackMounted}
-          onChangeTargetPlatform={(plat) => {
-            setTargetPlatform(plat);
-            setToastMessage(
-              plat === 'mobile'
-                ? '📱 Platform Override: MOBILE (ASTC Compression · LOD Bias +1 [Skips LOD 0] · Baked Lightmap · Small-Prop Shadow Culling)'
-                : '🖥️ Platform Override: PC / PS5 / Xbox (BC7 4K Master · LOD 0 Hero Meshes · Hybrid GI · Full Uber Shader)'
-            );
-          }}
-          onChangeGraphicsQuality={(q) => setGraphicsQuality(q)}
-          onToggleHdPackMounted={() => {
-            const nextHd = !hdPackMounted;
-            setHdPackMounted(nextHd);
-            setToastMessage(
-              nextHd
-                ? '📦 Addressable Bundle: Mounted HighDefinition_4K_LOD0_Pack (+3.85 GB) for Mobile!'
-                : '📦 Addressable Bundle: Unmounted HighDefinition Pack — Reverted to 640 MB Base Mobile Build!'
-            );
-          }}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'cpp_core' && (
+          <CppArchitectureModal
+            targetPlatform={targetPlatform}
+            graphicsQuality={graphicsQuality}
+            hdPackMounted={hdPackMounted}
+            onChangeTargetPlatform={(plat) => {
+              setTargetPlatform(plat);
+              setToastMessage(
+                plat === 'mobile'
+                  ? '📱 Platform Override: MOBILE (ASTC Compression · LOD Bias +1 [Skips LOD 0] · Baked Lightmap · Small-Prop Shadow Culling)'
+                  : '🖥️ Platform Override: PC / PS5 / Xbox (BC7 4K Master · LOD 0 Hero Meshes · Hybrid GI · Full Uber Shader)'
+              );
+            }}
+            onChangeGraphicsQuality={(q) => setGraphicsQuality(q)}
+            onToggleHdPackMounted={() => {
+              const nextHd = !hdPackMounted;
+              setHdPackMounted(nextHd);
+              setToastMessage(
+                nextHd
+                  ? '📦 Addressable Bundle: Mounted HighDefinition_4K_LOD0_Pack (+3.85 GB) for Mobile!'
+                  : '📦 Addressable Bundle: Unmounted HighDefinition Pack — Reverted to 640 MB Base Mobile Build!'
+              );
+            }}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'admin_console' && (
-        <AdminConsoleModal
-          godmode={godmode}
-          onToggleGodmode={() => setGodmode(!godmode)}
-          castleLevel={castleLevel}
-          onSetCastleLevel={(lvl) => setCastleLevel(lvl)}
-          onGrantResources={(res) => setResources((prev) => ({ ...prev, ...res }))}
-          onSpawnTroops={(type, tier, amt) => {
-            const key = `${type}_t${tier}`;
-            setTroops((prev) => ({ ...prev, [key]: (prev[key] || 0n) + amt }));
-          }}
-          timeSpeedMultiplier={timeSpeedMultiplier}
-          onSetTimeSpeed={(spd) => setTimeSpeedMultiplier(spd)}
-          isTimeFrozen={isTimeFrozen}
-          onToggleTimeFreeze={() => setIsTimeFrozen(!isTimeFrozen)}
-          onTriggerRivalRaid={() => {
-            setToastMessage(
-              '⚠️ [Territory Defense] Rival Lord Chronos vanguard repelled by your fortified citadel!'
-            );
-          }}
-          currentWeather={weather}
-          onSetWeather={(w) => {
-            setWeather(w);
-            setWeatherRemainingSec(60);
-          }}
-          activeAccountEmail={activeAccountEmail}
-          onChangeAccountEmail={(email) => {
-            setActiveAccountEmail(email);
-            setToastMessage(`🛡️ Active Session Bound to: ${email}`);
-          }}
-          moderatedPlayers={moderatedPlayers}
-          onUpdateModeratedPlayers={(updated) => setModeratedPlayers(updated)}
-          supportTickets={supportTickets}
-          onUpdateSupportTickets={(updated) => setSupportTickets(updated)}
-          onBroadcastSystemMessage={(msg, tag) => {
-            handleSendClanChat(msg, true, tag);
-            setToastMessage(`📢 ${msg}`);
-          }}
-          playerAppearance={playerAppearance}
-          onUpdatePlayerAppearance={(updated) => {
-            setPlayerAppearance(updated);
-            const spec = getSpeciesSpec(updated.species);
-            setToastMessage(
-              `⚖️ [Admin Species Governance] ${spec.icon} ${spec.name} · Switch Approved: ${updated.adminSpeciesSwitchApproved ? 'YES' : 'NO'}`
-            );
-          }}
-          omniverseRoster={omniverseRoster}
-          onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
-          onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
-          onOpenOmniverseDirector={() => {
-            setWorldAiInitialTab('omniverse');
-            setActiveModal('world_ai');
-          }}
-          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'admin_console' && (
+          <AdminConsoleModal
+            godmode={godmode}
+            onToggleGodmode={() => setGodmode(!godmode)}
+            castleLevel={castleLevel}
+            onSetCastleLevel={(lvl) => setCastleLevel(lvl)}
+            onGrantResources={(res) => setResources((prev) => ({ ...prev, ...res }))}
+            onSpawnTroops={(type, tier, amt) => {
+              const key = `${type}_t${tier}`;
+              setTroops((prev) => ({ ...prev, [key]: (prev[key] || 0n) + amt }));
+            }}
+            timeSpeedMultiplier={timeSpeedMultiplier}
+            onSetTimeSpeed={(spd) => setTimeSpeedMultiplier(spd)}
+            isTimeFrozen={isTimeFrozen}
+            onToggleTimeFreeze={() => setIsTimeFrozen(!isTimeFrozen)}
+            onTriggerRivalRaid={() => {
+              setToastMessage(
+                '⚠️ [Territory Defense] Rival Lord Chronos vanguard repelled by your fortified citadel!'
+              );
+            }}
+            currentWeather={weather}
+            onSetWeather={(w) => {
+              setWeather(w);
+              setWeatherRemainingSec(60);
+            }}
+            activeAccountEmail={activeAccountEmail}
+            onChangeAccountEmail={(email) => {
+              setActiveAccountEmail(email);
+              setToastMessage(`🛡️ Active Session Bound to: ${email}`);
+            }}
+            moderatedPlayers={moderatedPlayers}
+            onUpdateModeratedPlayers={(updated) => setModeratedPlayers(updated)}
+            supportTickets={supportTickets}
+            onUpdateSupportTickets={(updated) => setSupportTickets(updated)}
+            onBroadcastSystemMessage={(msg, tag) => {
+              handleSendClanChat(msg, true, tag);
+              setToastMessage(`📢 ${msg}`);
+            }}
+            playerAppearance={playerAppearance}
+            onUpdatePlayerAppearance={(updated) => {
+              setPlayerAppearance(updated);
+              const spec = getSpeciesSpec(updated.species);
+              setToastMessage(
+                `⚖️ [Admin Species Governance] ${spec.icon} ${spec.name} · Switch Approved: ${updated.adminSpeciesSwitchApproved ? 'YES' : 'NO'}`
+              );
+            }}
+            omniverseRoster={omniverseRoster}
+            onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+            onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
+            onOpenOmniverseDirector={() => {
+              setWorldAiInitialTab('omniverse');
+              setActiveModal('world_ai');
+            }}
+            onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'cultivation' && (
-        <CultivationModal
-          cultivation={cultivation}
-          resources={resources}
-          playerPower={playerPower}
-          weather={weather}
-          clanBuffActive={clan.activeBuffs.length > 0}
-          vipState={vipState}
-          vipEffectiveDateKey={vipEffectiveDateKey}
-          onOpenVipSubscription={() => setActiveModal('vip_subscription')}
-          onMeditate={handleMeditateQi}
-          onBreakthrough={handleCultivationBreakthrough}
-          onCraftPill={handleCraftPill}
-          onConsumePill={handleConsumePill}
-          onSurviveTribulation={handleSurviveTribulation}
-          onChangeRoot={handleChangeRoot}
-          onEquipManual={handleEquipManual}
-          onUpgradeManual={handleUpgradeManual}
-          onDiscoverManual={handleDiscoverManual}
-          onUnlockManualDirect={handleUnlockManualDirect}
-          onUpdateCultivation={setCultivation}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'cultivation' && (
+          <CultivationModal
+            cultivation={cultivation}
+            resources={resources}
+            playerPower={playerPower}
+            weather={weather}
+            clanBuffActive={clan.activeBuffs.length > 0}
+            vipState={vipState}
+            vipEffectiveDateKey={vipEffectiveDateKey}
+            onOpenVipSubscription={() => setActiveModal('vip_subscription')}
+            onMeditate={handleMeditateQi}
+            onBreakthrough={handleCultivationBreakthrough}
+            onCraftPill={handleCraftPill}
+            onConsumePill={handleConsumePill}
+            onSurviveTribulation={handleSurviveTribulation}
+            onChangeRoot={handleChangeRoot}
+            onEquipManual={handleEquipManual}
+            onUpgradeManual={handleUpgradeManual}
+            onDiscoverManual={handleDiscoverManual}
+            onUnlockManualDirect={handleUnlockManualDirect}
+            onUpdateCultivation={setCultivation}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'world_ai' && (
-        <WorldAIDirectorModal
-          npcs={npcs}
-          monsters={monsters}
-          resourceNodes={resourceNodes}
-          resources={resources}
-          weather={weather}
-          timeOfDayHours={timeOfDayHours}
-          aiLogs={aiLogs}
-          omniverseRoster={omniverseRoster}
-          activeAccountEmail={activeAccountEmail}
-          initialTab={worldAiInitialTab}
-          initialSelectedNpcId={selectedNpcId}
-          onSetNPCDirective={handleSetNPCDirective}
-          onClaimNPCStash={handleClaimNPCStash}
-          onClaimNPCQuest={handleClaimNPCQuest}
-          onExecuteNPCTrade={handleExecuteNPCTrade}
-          onSpawnScaledMonster={handleSpawnScaledMonster}
-          onEngageMonster={(m) => {
-            setSelectedMonster(m);
-            setActiveModal('world_boss');
-          }}
-          onStepWorldAI={handleStepWorldAI}
-          onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
-          onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
-          onOpenAdminConsole={() => setActiveModal('admin_console')}
-          cosmologicalTree={cosmologicalTree}
-          onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
-          onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
-          onClose={() => {
-            setWorldAiInitialTab('npcs');
-            setActiveModal('none');
-          }}
-        />
-      )}
+        {activeModal === 'world_ai' && (
+          <WorldAIDirectorModal
+            npcs={npcs}
+            monsters={monsters}
+            resourceNodes={resourceNodes}
+            resources={resources}
+            weather={weather}
+            timeOfDayHours={timeOfDayHours}
+            aiLogs={aiLogs}
+            omniverseRoster={omniverseRoster}
+            activeAccountEmail={activeAccountEmail}
+            initialTab={worldAiInitialTab}
+            initialSelectedNpcId={selectedNpcId}
+            onSetNPCDirective={handleSetNPCDirective}
+            onClaimNPCStash={handleClaimNPCStash}
+            onClaimNPCQuest={handleClaimNPCQuest}
+            onExecuteNPCTrade={handleExecuteNPCTrade}
+            onSpawnScaledMonster={handleSpawnScaledMonster}
+            onEngageMonster={(m) => {
+              setSelectedMonster(m);
+              setActiveModal('world_boss');
+            }}
+            onStepWorldAI={handleStepWorldAI}
+            onExecuteOmniverseCommand={handleExecuteOmniverseCommand}
+            onExecuteWhitePageDecree={handleExecuteWhitePageDecree}
+            onOpenAdminConsole={() => setActiveModal('admin_console')}
+            cosmologicalTree={cosmologicalTree}
+            onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
+            onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+            onClose={() => {
+              setWorldAiInitialTab('npcs');
+              setActiveModal('none');
+            }}
+          />
+        )}
 
-      {activeModal === 'daily_login' && (
-        <DailyLoginModal
-          evaluation={dailyLoginEvaluation}
-          schedule={dailyRewardSchedule}
-          castleLevel={castleLevel}
-          cultivation={cultivation}
-          onClaimToday={handleClaimDailyLoginReward}
-          onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
-          onComprehendVeteranScroll={handleComprehendVeteranScroll}
-          onOpenCultivationModal={() => setActiveModal('cultivation')}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'daily_login' && (
+          <DailyLoginModal
+            evaluation={dailyLoginEvaluation}
+            schedule={dailyRewardSchedule}
+            castleLevel={castleLevel}
+            cultivation={cultivation}
+            onClaimToday={handleClaimDailyLoginReward}
+            onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
+            onComprehendVeteranScroll={handleComprehendVeteranScroll}
+            onOpenCultivationModal={() => setActiveModal('cultivation')}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'vip_subscription' && (
-        <VipSubscriptionModal
-          vipState={vipState}
-          evaluation={vipEvaluation}
-          playerDiamonds={resources.diamond}
-          onActivateTier={handleActivateVipTier}
-          onClaimDailyStipend={handleClaimVipStipend}
-          onAdvanceSimulatedVipDay={handleAdvanceSimulatedVipDay}
-          onToggleAutoRenew={handleToggleVipAutoRenew}
-          onCancelSubscription={handleCancelVipSubscription}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'vip_subscription' && (
+          <VipSubscriptionModal
+            vipState={vipState}
+            evaluation={vipEvaluation}
+            playerDiamonds={resources.diamond}
+            onActivateTier={handleActivateVipTier}
+            onClaimDailyStipend={handleClaimVipStipend}
+            onAdvanceSimulatedVipDay={handleAdvanceSimulatedVipDay}
+            onToggleAutoRenew={handleToggleVipAutoRenew}
+            onCancelSubscription={handleCancelVipSubscription}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'lore_history' && (
-        <LoreHistoryModal
-          comprehendedEpochIds={comprehendedEpochIds}
-          onComprehendEpoch={handleComprehendLoreEpoch}
-          loreCodexState={loreCodexState}
-          monsters={monsters}
-          onScoutDiscoverCodexEntry={handleScoutDiscoverCodexEntry}
-          onClaimCodexBounty={handleClaimCodexBounty}
-          onOpenOmniverseMatrix={() => {
-            setWorldAiInitialTab('omniverse');
-            setActiveModal('world_ai');
-          }}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'lore_history' && (
+          <LoreHistoryModal
+            comprehendedEpochIds={comprehendedEpochIds}
+            onComprehendEpoch={handleComprehendLoreEpoch}
+            loreCodexState={loreCodexState}
+            monsters={monsters}
+            onScoutDiscoverCodexEntry={handleScoutDiscoverCodexEntry}
+            onClaimCodexBounty={handleClaimCodexBounty}
+            onOpenOmniverseMatrix={() => {
+              setWorldAiInitialTab('omniverse');
+              setActiveModal('world_ai');
+            }}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'cosmological_admin' && (
-        <CosmologicalAdminModal
-          cosmologicalTree={cosmologicalTree}
-          onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
-          omniverseRoster={omniverseRoster}
-          activeAccountEmail={activeAccountEmail}
-          onNotify={(msg) => setToastMessage(msg)}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'cosmological_admin' && (
+          <CosmologicalAdminModal
+            cosmologicalTree={cosmologicalTree}
+            onUpdateCosmologicalTree={(nextTree) => setCosmologicalTree(nextTree)}
+            omniverseRoster={omniverseRoster}
+            activeAccountEmail={activeAccountEmail}
+            onNotify={(msg) => setToastMessage(msg)}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
 
-      {activeModal === 'gmail' && (
-        <GmailModal
-          commanderName={playerAppearance.name || 'Sovereign Vanguard'}
-          castleLevel={castleLevel}
-          allianceTag={clan.tag || 'SOL'}
-          onClose={() => setActiveModal('none')}
-        />
-      )}
+        {activeModal === 'gmail' && (
+          <GmailModal
+            commanderName={playerAppearance.name || 'Sovereign Vanguard'}
+            castleLevel={castleLevel}
+            allianceTag={clan.tag || 'SOL'}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

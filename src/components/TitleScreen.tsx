@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
-import { GoogleSignInButton } from './GmailModal';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface TitleScreenProps {
   onStartGame: () => void;

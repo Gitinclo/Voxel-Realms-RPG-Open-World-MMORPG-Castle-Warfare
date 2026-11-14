@@ -58,6 +58,9 @@ Thumbs.db
 
 # AI Studio, Runtime Persistence and Test Artifacts
 .aistudio/
+.eslintcache
 .playwright-cli/
 data/
+drizzle/
 public/assets/aistudio/
+release-assets/

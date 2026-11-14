@@ -1,18 +1,19 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Regression Tests](<https://img.shields.io/badge/Regression_Tests-136_Passing_(21_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-144_Passing_(24_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
+[![Cloud Persistence](https://img.shields.io/badge/Cloud_Data-Cloud_SQL_%2B_Firestore-6366f1?style=flat-square&logo=firebase&logoColor=white)](#16-️-cloud-sql-postgresql-firebase-auth-hardened-firestore--gmail-dispatch-center)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Release Status Notice:** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch source milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), validated by CI (`npm run validate` + `npm run verify:ops` uploading temporary workflow artifacts). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
+> **Release Status Notice:** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch source milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), validated by CI (`npm run validate` + `npm audit` + `npm run verify:ops` uploading temporary workflow artifacts). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
-A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19**, **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**.
+A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -239,7 +240,7 @@ interface WhitePageRoot {
 
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **88 cross-module invariants** across:
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **89 cross-module invariants** across:
   1. **Root RBAC & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
@@ -251,22 +252,32 @@ interface WhitePageRoot {
   9. **Engineering Transparency (`6 Implemented / 2 Simulated / 0 Planned`), Authoritative 20Hz 50v50 Siege Netcode (`src/game/siegeNetProtocol.ts`) & Live WebGL2 Pipeline Mutations**
 - **Live In-App Validation Diagnostics**: Viewable in real time inside the **C++20 / Software & Hardware Architect Studio (`CppArchitectureModal.tsx`)** alongside C++20 `static_assert` compile-time checks (`cpp/VoxelRealmsGuardrails.hpp`).
 
+### 16. ☁️ Cloud SQL PostgreSQL, Firebase Auth, Hardened Firestore & Gmail Dispatch Center
+
+- **Cloud SQL (PostgreSQL + Drizzle ORM, `src/db/` & `/api/db/*`)**: Uses `pg.Pool` configured via `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, and `SQL_DB_NAME` (`drizzle-orm/node-postgres`) backing `users`, `commander_profiles`, `realm_saves`, and `support_tickets` (`drizzle.config.ts`). All `/api/db/*` endpoints (`GET/PUT /api/db/profile`, `GET/PUT /api/db/save`, `GET/POST /api/db/tickets`) fail closed (`HTTP 401`) without a verified Firebase ID token checked by `requireAuth` (`src/middleware/auth.ts` + `src/lib/firebase-admin.ts`).
+- **Firebase Auth & Hardened Cloud Firestore (`src/lib/firebase.ts`, `src/lib/firestore.ts`, `firestore.rules`, `firebase-blueprint.json`, `security_spec.md`)**:
+  - Unified Google Sign-In (`AuthContext.tsx`, official Google button SVG in `GoogleSignInButton.tsx`) and real-time `onSnapshot` realm save synchronization paired with split public/private user collections (`/users/{userId}/public/profile` non-PII vs. `/users/{userId}/private/account` PII-isolated).
+  - Zero-trust default-deny `firestore.rules` audited via `@firebase/eslint-plugin-security-rules` (`npm run lint:rules`) and adversarial "Dirty Dozen" rule tests (`firestore.rules.test.ts`).
+- **Google Workspace Gmail Dispatch Center (`src/lib/gmail.ts`, `src/components/GmailModal.tsx`)**:
+  - Client-side OAuth token exchange via Firebase `GoogleAuthProvider` (`GMAIL_SCOPES`), storing the Google Workspace `accessToken` strictly in React memory (`AuthContext.tsx`, cleared on sign-out or expiry).
+  - Supports mailbox browsing (`INBOX`, `SENT`, `DRAFT`, `STARRED`, `TRASH`, custom labels), search queries, alliance dispatch templates, draft saving, label creation, mark-read/unread, and trashing—with a **mandatory explicit user confirmation dialog** before any mutating or destructive Gmail API call executes.
+
 ---
 
 ## 🔍 Engineering Transparency Matrix: Implemented vs. Simulated vs. Planned Scope
 
 To ensure complete engineering clarity and prevent over-claiming what runs inside a browser WebGL2 sandbox versus what is modeled for cross-platform/native builds, **Voxel Realms RPG** maintains a first-class, unit-tested **Engineering Transparency Matrix** (`ENGINEERING_TRANSPARENCY_MATRIX` in `src/game/graphicsEngine.ts`, viewable in-app inside `CppArchitectureModal.tsx`):
 
-| Domain                                                                                                                 |                    Classification                    | What Runs Live in Browser Now (Implemented)                                                                                                                                                                                                                                                                                                                                                                                                                 | What Is Analytically / Metadata Modeled (Simulated)                                                                                                                                                                                                                                                           | Planned Native / Cloud Target (Planned)                                                                                                                      |
-| :--------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1. Procedural PBR Textures & Materials** (`src/game/proceduralWorld.ts`)                                             |           **🟢 IMPLEMENTED (Live WebGL2)**           | Dynamically generates & resizes HTML5 `CanvasTexture` maps (`256×256`, `512×512`, `1024×1024`) for grass, stone masonry, wood bark, armor, water, and AO lightmaps; mutates `anisotropy` (`4x`/`8x`/`16x`), `minFilter`, `normalScale`, `bumpScale`, and `clearcoat` on Three.js `MeshPhysicalMaterial`s.                                                                                                                                                   | GPU hardware block compression formats (`BC7 8bpp` vs `ASTC 6×6`) and `4096px` offline Master Source asset import overrides are modeled as cross-platform build metadata because browser `CanvasTexture` uploads RGBA8 buffers to WebGL2.                                                                     | Basis Universal (`.ktx2`) supercompressed texture streaming transcoded to native `BC7` (Desktop) or `ASTC` (Mobile) GPU memory.                              |
-| **2. Geometry, 4-Tier `THREE.LOD` & `InstancedMesh` Foliage** (`src/game/proceduralWorld.ts`)                          |           **🟢 IMPLEMENTED (Live WebGL2)**           | Builds real 4-level `THREE.LOD` hierarchies (`Icosahedron` detail `2 → 1 → 0` → `Octahedron` proxy), chamfered `ExtrudeGeometry` terrain tiles, and `LatheGeometry` torsos; dynamically mutates `THREE.LOD` distance tables, visibility, and `InstancedMesh.count` (`800 → 520 → 320` grass tufts) on preset/platform switch.                                                                                                                               | The `75k–245k` scene polygon budget figures and MB of RAM saved on Mobile (`-68 MB` / `-92.4 MB`) are deterministic analytical estimates derived from the active preset and LOD bias.                                                                                                                         | GPU-driven meshlet / cluster culling via WebGPU compute shaders and `glTF meshopt` decompression.                                                            |
-| **3. Atmospheric Sky, Dynamic Shadows & AO Lightmaps** (`src/components/GameCanvas.tsx`)                               |           **🟢 IMPLEMENTED (Live WebGL2)**           | Runs Three.js Preetham `Sky` shader (Rayleigh/Mie scattering across 24h cycle & 4 weather states), `DirectionalLight` `PCFSoftShadowMap` (resized between `2048×2048` and `1024×1024` or disabled on Mobile), `HemisphereLight`, `FogExp2`, canvas AO lightmap intensity, and per-mesh small-prop `castShadow` culling.                                                                                                                                     | The `realtime_gi_hybrid` mode uses a Three.js `PMREMGenerator` `RoomEnvironment` probe + `HemisphereLight` + directional rim light + canvas AO map rather than hardware ray-traced global illumination (RTGI).                                                                                                | Voxel cone tracing / screen-space global illumination (SSGI) and cascaded shadow maps (CSM) in WebGPU.                                                       |
-| **4. Custom GLSL Shaders & HDR Post-Processing** (`src/game/proceduralWorld.ts`, `GameCanvas.tsx`)                     |           **🟢 IMPLEMENTED (Live WebGL2)**           | Injects custom GLSL vertex/fragment code via `Material.onBeforeCompile` (wind foliage sway, Fresnel rim light, wrap subsurface approximation, Gerstner water waves); runs `EffectComposer` (`RenderPass → UnrealBloomPass → NextGenColorGradeShader → OutputPass`) and toggles shader uniforms (`uUseRimLight`, `uUseDetailNormals`, `uUseParallax`, `uUseSubsurface`) live.                                                                                | Platform shader macro defines (`USE_RIM_LIGHT`, `USE_PARALLAX_OCCLUSION`) are evaluated via uniform branches (`uUseRimLight > 0.5`) in WebGL2 GLSL rather than offline HLSL/SPIR-V preprocessor variant stripping.                                                                                            | WGSL pipeline-overridable constants (`override`) in WebGPU for zero-branch hardware shader specialization.                                                   |
-| **5. Cross-Platform Bundle & Install Size Manifest** (`src/game/graphicsEngine.ts`)                                    |       **🟡 SIMULATED (Build Metadata Model)**        | Interactive cross-platform configuration selector in the Architect Studio & HUD that couples platform selection (`PC/Console` vs `Mobile` + `Optional HD Pack`) to live WebGL2 `THREE.LOD` bias, shadow culling, canvas texture resolution (`256px`–`1024px`), and shader uniform switches.                                                                                                                                                                 | The `68.4 GB` PC/Console install size, `640 MB` Mobile base build size, and `3.85 GB` `HighDefinition_4K_LOD0_Pack` download toggle are simulated deployment manifests for architectural planning; no multi-gigabyte binary pack is downloaded over the network.                                              | Cloud CDN chunked asset streaming with Service Worker cache quotas and native iOS/Android On-Demand Resources (ODR).                                         |
-| **6. C++20 SIMD ISA, SoA Memory & Lock-Free Job DAG** (`src/game/architectOptimization.ts`, `cpp/`)                    |  **🟡 SIMULATED (Analytical Model + C++20 Header)**  | Executes deterministic TypeScript hardware/memory analytical models (`x86_64 AVX-512`, `ARMv9 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup over `AoS`, Chase-Lev work-stealing frame budgets) and provides a standalone C++20 header & CTest suite in `cpp/VoxelRealmsGuardrails.hpp` and `cpp/engine_guardrail_test.cpp`.                                                                                                      | The browser runtime executes the game loop in TypeScript/JavaScript on the main thread; the C++20 files in `cpp/` are reference native guardrails verified by C++20 `static_assert` / CTest and are not compiled into a live WebAssembly module in the Vite dev server.                                       | Compile `cpp/VoxelRealmsGuardrails.hpp` via Emscripten (`-msimd128 -pthread`) into a WebAssembly SIMD128 worker pool backed by `SharedArrayBuffer`.          |
-| **7. Trillion-Scale Warfare, 23 Realms, 6-Layer Cosmology & 100 Omniverses** (`src/game/math.ts`, `omniverse.ts`)      | **🟢 IMPLEMENTED (`BigInt` Engine + 3D Projection)** | All castle capacities (up to `1,000T`), T1–T20 Tri-Branch battles, 23 cultivation realms (`100.0x` suppression), A\* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, and 6-Layer Cosmology / 100 Omniverse NPCs under `creatergame31@gmail.com` are fully implemented in TypeScript using exact 64-bit `BigInt` math and projected as 3D entities in the overworld.                                                                         | Trillion-unit troop clashes and 100-Omniverse tributes are resolved analytically via deterministic `BigInt` combat/economy equations while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.                                                                          | GPU instanced crowd impostor rendering for visualizing `100,000+` simultaneous march units during siege replays.                                             |
-| **8. Authoritative 20Hz 50v50 WebSocket Siege, Server RBAC & Multi-Region Persistence** (`server.ts`, `serverAuth.ts`) |   **🟢 IMPLEMENTED (Live 20Hz WS + Server RBAC)**    | Runs a full-stack Express + RFC 6455 WebSocket server (`/ws/siege` on port 3000) enforcing HMAC-SHA256 `HttpOnly` session cookies (`/api/auth/*`), fail-closed `401`/`403` RBAC (`/api/admin/*`), anti-tamper sync clamping (`/api/online/sync`), authenticated WebSocket commands, 20Hz (`50ms`) bitmasked delta-compression (`CohortDirtyBit`), FNV-1a hashing, 128-frame CSP ring buffer, and durable disk persistence (`data/online_realm_state.json`). | Single-player canvas/`localStorage` state remains an untrusted client preview; the 3 regional cluster nodes (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) replicate within the unified Node.js process without an external PostgreSQL/IdP or hardware TLS terminator in local dev. | Geo-distributed Kubernetes Agones dedicated game server fleet backed by Cloud Spanner / CockroachDB raft shards and external OIDC/OAuth identity federation. |
+| Domain                                                                                                                                    |                       Classification                       | What Runs Live in Browser Now (Implemented)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | What Is Analytically / Metadata Modeled (Simulated)                                                                                                                                                                                                                                                                              | Planned Native / Cloud Target (Planned)                                                                                                             |
+| :---------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Procedural PBR Textures & Materials** (`src/game/proceduralWorld.ts`)                                                                |              **🟢 IMPLEMENTED (Live WebGL2)**              | Dynamically generates & resizes HTML5 `CanvasTexture` maps (`256×256`, `512×512`, `1024×1024`) for grass, stone masonry, wood bark, armor, water, and AO lightmaps; mutates `anisotropy` (`4x`/`8x`/`16x`), `minFilter`, `normalScale`, `bumpScale`, and `clearcoat` on Three.js `MeshPhysicalMaterial`s.                                                                                                                                                                                                                                                                                            | GPU hardware block compression formats (`BC7 8bpp` vs `ASTC 6×6`) and `4096px` offline Master Source asset import overrides are modeled as cross-platform build metadata because browser `CanvasTexture` uploads RGBA8 buffers to WebGL2.                                                                                        | Basis Universal (`.ktx2`) supercompressed texture streaming transcoded to native `BC7` (Desktop) or `ASTC` (Mobile) GPU memory.                     |
+| **2. Geometry, 4-Tier `THREE.LOD` & `InstancedMesh` Foliage** (`src/game/proceduralWorld.ts`)                                             |              **🟢 IMPLEMENTED (Live WebGL2)**              | Builds real 4-level `THREE.LOD` hierarchies (`Icosahedron` detail `2 → 1 → 0` → `Octahedron` proxy), chamfered `ExtrudeGeometry` terrain tiles, and `LatheGeometry` torsos; dynamically mutates `THREE.LOD` distance tables, visibility, and `InstancedMesh.count` (`800 → 520 → 320` grass tufts) on preset/platform switch.                                                                                                                                                                                                                                                                        | The `75k–245k` scene polygon budget figures and MB of RAM saved on Mobile (`-68 MB` / `-92.4 MB`) are deterministic analytical estimates derived from the active preset and LOD bias.                                                                                                                                            | GPU-driven meshlet / cluster culling via WebGPU compute shaders and `glTF meshopt` decompression.                                                   |
+| **3. Atmospheric Sky, Dynamic Shadows & AO Lightmaps** (`src/components/GameCanvas.tsx`)                                                  |              **🟢 IMPLEMENTED (Live WebGL2)**              | Runs Three.js Preetham `Sky` shader (Rayleigh/Mie scattering across 24h cycle & 4 weather states), `DirectionalLight` `PCFSoftShadowMap` (resized between `2048×2048` and `1024×1024` or disabled on Mobile), `HemisphereLight`, `FogExp2`, canvas AO lightmap intensity, and per-mesh small-prop `castShadow` culling.                                                                                                                                                                                                                                                                              | The `realtime_gi_hybrid` mode uses a Three.js `PMREMGenerator` `RoomEnvironment` probe + `HemisphereLight` + directional rim light + canvas AO map rather than hardware ray-traced global illumination (RTGI).                                                                                                                   | Voxel cone tracing / screen-space global illumination (SSGI) and cascaded shadow maps (CSM) in WebGPU.                                              |
+| **4. Custom GLSL Shaders & HDR Post-Processing** (`src/game/proceduralWorld.ts`, `GameCanvas.tsx`)                                        |              **🟢 IMPLEMENTED (Live WebGL2)**              | Injects custom GLSL vertex/fragment code via `Material.onBeforeCompile` (wind foliage sway, Fresnel rim light, wrap subsurface approximation, Gerstner water waves); runs `EffectComposer` (`RenderPass → UnrealBloomPass → NextGenColorGradeShader → OutputPass`) and toggles shader uniforms (`uUseRimLight`, `uUseDetailNormals`, `uUseParallax`, `uUseSubsurface`) live.                                                                                                                                                                                                                         | Platform shader macro defines (`USE_RIM_LIGHT`, `USE_PARALLAX_OCCLUSION`) are evaluated via uniform branches (`uUseRimLight > 0.5`) in WebGL2 GLSL rather than offline HLSL/SPIR-V preprocessor variant stripping.                                                                                                               | WGSL pipeline-overridable constants (`override`) in WebGPU for zero-branch hardware shader specialization.                                          |
+| **5. Cross-Platform Bundle & Install Size Manifest** (`src/game/graphicsEngine.ts`)                                                       |          **🟡 SIMULATED (Build Metadata Model)**           | Interactive cross-platform configuration selector in the Architect Studio & HUD that couples platform selection (`PC/Console` vs `Mobile` + `Optional HD Pack`) to live WebGL2 `THREE.LOD` bias, shadow culling, canvas texture resolution (`256px`–`1024px`), and shader uniform switches.                                                                                                                                                                                                                                                                                                          | The `68.4 GB` PC/Console install size, `640 MB` Mobile base build size, and `3.85 GB` `HighDefinition_4K_LOD0_Pack` download toggle are simulated deployment manifests for architectural planning; no multi-gigabyte binary pack is downloaded over the network.                                                                 | Cloud CDN chunked asset streaming with Service Worker cache quotas and native iOS/Android On-Demand Resources (ODR).                                |
+| **6. C++20 SIMD ISA, SoA Memory & Lock-Free Job DAG** (`src/game/architectOptimization.ts`, `cpp/`)                                       |     **🟡 SIMULATED (Analytical Model + C++20 Header)**     | Executes deterministic TypeScript hardware/memory analytical models (`x86_64 AVX-512`, `ARMv9 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup over `AoS`, Chase-Lev work-stealing frame budgets) and provides a standalone C++20 header & CTest suite in `cpp/VoxelRealmsGuardrails.hpp` and `cpp/engine_guardrail_test.cpp`.                                                                                                                                                                                                                                               | The browser runtime executes the game loop in TypeScript/JavaScript on the main thread; the C++20 files in `cpp/` are reference native guardrails verified by C++20 `static_assert` / CTest and are not compiled into a live WebAssembly module in the Vite dev server.                                                          | Compile `cpp/VoxelRealmsGuardrails.hpp` via Emscripten (`-msimd128 -pthread`) into a WebAssembly SIMD128 worker pool backed by `SharedArrayBuffer`. |
+| **7. Trillion-Scale Warfare, 23 Realms, 6-Layer Cosmology & 100 Omniverses** (`src/game/math.ts`, `omniverse.ts`)                         |    **🟢 IMPLEMENTED (`BigInt` Engine + 3D Projection)**    | All castle capacities (up to `1,000T`), T1–T20 Tri-Branch battles, 23 cultivation realms (`100.0x` suppression), A\* keep pathfinding, 10 playable species 3D meshes, 7 Lore Epochs, and 6-Layer Cosmology / 100 Omniverse NPCs under `creatergame31@gmail.com` are fully implemented in TypeScript using exact 64-bit `BigInt` math and projected as 3D entities in the overworld.                                                                                                                                                                                                                  | Trillion-unit troop clashes and 100-Omniverse tributes are resolved analytically via deterministic `BigInt` combat/economy equations while rendering representative 3D hero/envoy/monster meshes in the viewport to maintain 60 FPS.                                                                                             | GPU instanced crowd impostor rendering for visualizing `100,000+` simultaneous march units during siege replays.                                    |
+| **8. Authoritative 20Hz 50v50 WebSocket Siege, Server RBAC, Cloud SQL & Firestore Sync** (`server.ts`, `src/db/`, `src/lib/firestore.ts`) | **🟢 IMPLEMENTED (Live 20Hz WS + Server RBAC + Cloud DB)** | Runs a full-stack Express + RFC 6455 WebSocket server (`/ws/siege` on port 3000) enforcing HMAC-SHA256 `HttpOnly` session cookies (`/api/auth/*`), fail-closed `401`/`403` RBAC (`/api/admin/*`), Firebase ID token verification on `/api/db/*` (Cloud SQL PostgreSQL + Drizzle ORM), hardened `firestore.rules` cloud sync, Gmail Dispatch Center (`GmailModal.tsx`), anti-tamper sync clamping (`/api/online/sync`), 20Hz (`50ms`) bitmasked delta-compression (`CohortDirtyBit`), FNV-1a hashing, 128-frame CSP ring buffer, and atomic `.bak` disk persistence (`data/online_realm_state.json`). | Single-player canvas/`localStorage` state remains an untrusted client preview; the 3 regional cluster nodes (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) replicate 20Hz sector ticks within the Node.js process while user profiles, saves, and tickets persist to Cloud SQL PostgreSQL & Firestore. | Geo-distributed Kubernetes Agones dedicated game server fleet with Redis pub/sub shard Fan-out across Cloud Run pods.                               |
 
 ---
 
@@ -285,11 +296,12 @@ Clone the repository and install dependencies:
 git clone <repository-url>
 cd <repository-folder>
 npm install
+cp .env.example .env   # Optional: configure VOXEL_SESSION_SECRET, VOXEL_ADMIN_PASSKEY, SQL_*
 ```
 
 ### Development Server
 
-Run the local Vite development server on port `3000`:
+Run the full-stack Express + WebSocket + Vite development server on port `3000`:
 
 ```bash
 npm run dev
@@ -297,21 +309,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?autostart=1](http://localhost:3000/?autostart=1) to skip the title overlay directly into the 3D realm).
 
-### Running Unit & Regression Tests
+### Running Unit, Security & Integration Tests
 
-Execute all **128 unit and regression tests across 19 decoupled TypeScript test suites**:
+Execute all **144 automated tests across 24 suites** (`22` engine/security/netcode suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
+npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial tests standalone
 ```
 
-### Unified Validation, Type Checking, Formatting & Production Build
+### Unified Validation, Type Checking, Rules Linting, Formatting & Production Build
 
 ```bash
-npm run validate      # Run full 4-stage validation gate (lint + format:check + test + build)
+npm run validate      # Run full 5-stage gate (lint + lint:rules + format:check + test + build)
+npm run verify:ops    # Run live production server load, exploit, crash-recovery & SIGTERM harness
 npm run lint          # Validate strict TypeScript (tsc --noEmit)
+npm run lint:rules    # Validate firestore.rules via @firebase/eslint-plugin-security-rules
 npm run format:check  # Check code formatting with Prettier
-npm run build         # Build production bundle into dist/
+npm run build         # Build code-split production bundle into dist/
 npm run preview       # Preview production build locally
 ```
 
@@ -328,12 +343,15 @@ npm run preview       # Preview production build locally
 │   ├── ISSUE_TEMPLATE.md              # Unified issue / bug / feature / moderation template
 │   ├── PULL_REQUEST_TEMPLATE.md       # Pull Request validation & guardrail checklist
 │   └── workflows/
-│       └── build.yml                  # GitHub Actions CI/CD (Web/TS + C++20 Guardrails)
+│       ├── build.yml                  # GitHub Actions CI (Web/TS + Rules ESLint + Live Ops + C++20)
+│       └── release.yml                # Tag-triggered v*.*.* checksummed GitHub Release pipeline
 ├── cpp/
 │   ├── VoxelRealmsGuardrails.hpp      # C++20 RAII smart-pointer & concept guardrail header
 │   └── engine_guardrail_test.cpp      # C++20 CTest static_assert & RAII verification unit test
+├── scripts/
+│   └── verify-readiness.ts            # Live production server load, exploit, crash-recovery & SIGTERM suite
 ├── src/
-│   ├── components/                    # React 19 UI Modals & HUD Overlays
+│   ├── components/                    # React 19 UI Modals (lazy-loaded) & HUD Overlays
 │   │   ├── AdminConsoleModal.tsx      # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
 │   │   ├── CastleModal.tsx            # Citadel Lv 0-100 upgrade & 10-Era progression UI
 │   │   ├── CharacterCreationModal.tsx # 10-Species selector, 3D turntable & Admin permission gate
@@ -346,6 +364,8 @@ npm run preview       # Preview production build locally
 │   │   ├── DailyLoginModal.tsx        # 7-day login decrees & Veteran Scroll sanctum
 │   │   ├── GameCanvas.tsx             # Three.js 3D viewport, voxel renderer & raycaster
 │   │   ├── GameHUD.tsx                # Consolidated top bar, D-pad & 5-tab command dock
+│   │   ├── GmailModal.tsx             # Gmail Dispatch Center (inbox, labels, compose & confirm gates)
+│   │   ├── GoogleSignInButton.tsx     # Official Google Identity Material Sign-In button
 │   │   ├── HeroModal.tsx              # Hero ascension, tavern summons & aesthetic skins
 │   │   ├── LeaderboardModal.tsx       # Global lord & clan power rankings
 │   │   ├── LoreHistoryModal.tsx       # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
@@ -356,7 +376,14 @@ npm run preview       # Preview production build locally
 │   │   ├── WeatherModal.tsx           # Atmospheric observatory & weather ritual controls
 │   │   ├── WorldAIDirectorModal.tsx   # Lv 1-1000 monster AI, NPC roles & 100-Omniverse Matrix
 │   │   └── WorldBossRallyModal.tsx    # 1T troop world boss rally coordination
-│   ├── game/                          # Pure Decoupled Game Engine & Unit Test Suites
+│   ├── contexts/
+│   │   └── AuthContext.tsx            # Firebase Auth + in-memory Google Workspace OAuth token state
+│   ├── db/                            # Cloud SQL PostgreSQL + Drizzle ORM Persistence Layer
+│   │   ├── drizzle.config.ts          # Drizzle Kit schema & migration config
+│   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
+│   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
+│   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
+│   ├── game/                          # Pure Decoupled Game Engine & 22 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── architectOptimization.ts   # 06/11/2026 Software & Hardware Architect optimization engine
@@ -386,11 +413,15 @@ npm run preview       # Preview production build locally
 │   │   ├── proceduralWorld.test.ts    # 3D scene-graph, aura & engine telemetry regression tests
 │   │   ├── serverAuth.ts              # Server-only HMAC-SHA256 session auth, fail-closed RBAC & anti-tamper engine
 │   │   ├── serverAuth.test.ts         # HMAC token signing, 401/403 RBAC & sync sanitization unit tests
+│   │   ├── serverHardening.ts         # Rate limiters, brute-force lockout, CSRF, __proto__ & WS frame limits
+│   │   ├── serverHardening.test.ts    # Exploit defense & bounded WS decoding unit tests
+│   │   ├── serverPersistence.ts       # Atomic fsync+rename + SHA-256 envelope + .bak failover saves
+│   │   ├── serverPersistence.test.ts  # Atomic save corruption recovery & migration unit tests
 │   │   ├── siegeNetProtocol.ts        # Authoritative 20Hz 50v50 WebSocket Siege, Delta, CSP & Multi-Region Engine
 │   │   ├── siegeNetProtocol.test.ts   # 20Hz Siege Protocol, BigInt wire, 128-frame CSP & Quorum unit tests
 │   │   ├── species.ts                 # 10-Species catalog, 3D mesh specs & Admin switch permission gate
-│   │   ├── species.test.ts            # 10-Species catalog, 3D attachments & Admin permission unit tests
-│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine
+│   │   ├── species.test.ts            # 10-Species catalog, 3D stature bounds & Admin permission unit tests
+│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (89 invariants)
 │   │   ├── systemValidation.test.ts   # Cross-System Validation & Integrity unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
@@ -400,14 +431,22 @@ npm run preview       # Preview production build locally
 │   │   ├── weather.test.ts            # Weather system unit tests
 │   │   ├── worldAI.ts                 # A* pathfinding, Lv 1-1000 monsters & NPC state machines
 │   │   └── worldAI.test.ts            # World AI & pathfinding unit tests
+│   ├── lib/                           # Firebase, Firestore, Admin SDK & Gmail Workspace Clients
+│   │   ├── firebase-admin.ts          # Firebase Admin ID token verifier for Express /api/db/*
+│   │   ├── firebase.ts                # Firebase App, Auth (Google + Gmail scopes) & Firestore init
+│   │   ├── firestore.ts               # Sanitized account/save sync & onSnapshot real-time listeners
+│   │   ├── gmail.ts                   # Gmail REST v1 client + MIME/UTF-8 base64url helpers
+│   │   └── gmail.test.ts              # Gmail MIME encoding, header injection & HTML parsing unit tests
+│   ├── middleware/
+│   │   └── auth.ts                    # Express requireAuth Bearer Firebase ID token middleware
 │   ├── types/                         # TypeScript definitions & domain models
-│   ├── App.tsx                        # Root application state container
+│   ├── App.tsx                        # Root application state container & Suspense modal router
 │   ├── index.css                      # Tailwind CSS v4 styling
-│   └── main.tsx                       # Application entry point
+│   └── main.tsx                       # Application entry point wrapped in AuthProvider
 ├── .clang-format                      # C++20 LLVM code formatter rules (IndentWidth: 4, ColumnLimit: 100)
 ├── .clang-tidy                        # C++20 static analyzer rules (enforces smart pointers)
 ├── .env.example                       # Environment variable template (safe placeholders)
-├── .gitignore                         # Git ignore rules (node_modules, dist, build, .env, keystores)
+├── .gitignore                         # Git ignore rules (node_modules, dist, build, data, .env, keystores)
 ├── .prettierignore                    # Excluded paths for Prettier formatting checks
 ├── .prettierrc                        # Prettier code style configuration
 ├── ARCHITECTURE.md                    # System architecture & Functional Core / Imperative Shell guide
@@ -415,39 +454,48 @@ npm run preview       # Preview production build locally
 ├── CMakeLists.txt                     # C++20 strict compiler flags & CTest configuration
 ├── CODE_OF_CONDUCT.md                 # Contributor Covenant Code of Conduct
 ├── CONTRIBUTING.md                    # Developer setup, Guardrails, testing & PR guidelines
+├── eslint.config.js                   # ESLint flat config enforcing @firebase/eslint-plugin-security-rules
+├── firebase-applet-config.json        # Provisioned Firebase project & Firestore database identifiers
+├── firebase-blueprint.json            # Canonical Firestore entity & collection JSON schemas
+├── firestore.rules                    # Zero-trust default-deny Cloud Firestore security rules
+├── firestore.rules.test.ts            # Firestore schema & Dirty Dozen #1–#12 adversarial security tests
 ├── GOVERNANCE.md                      # Project governance, RBAC hierarchy & RFC process
+├── index.html                         # HTML entry point & Google Fonts configuration
 ├── LICENSE                            # Apache License 2.0 (raw text)
 ├── LICENSE.md                         # Apache License 2.0 (formatted legal summary & full terms)
 ├── LORE.md                            # Imperial Lore, Auto-Populating Codex, 12 Annals & 10^100 Akashic Archive
+├── metadata.json                      # Applet configuration & capabilities
 ├── NOTICE                             # Apache 2.0 Section 4(d) mandatory attribution notice
+├── package.json                       # Project dependencies, metadata & npm scripts
 ├── PRIVACY.md                         # User Privacy Policy (GDPR/CCPA, localStorage, payments, ads)
 ├── README.md                          # Project overview & documentation hub (this file)
 ├── ROADMAP.md                         # Long-term product vision & v1.5.0–v2.0.0 milestones
-├── SECURITY.md                        # Private vulnerability disclosure policy
+├── SECURITY.md                        # Server-side enforcement, Firebase/Cloud SQL trust boundaries & disclosure
+├── security_spec.md                   # Firestore data invariants & Dirty Dozen threat matrix
+├── server.ts                          # Full-stack Express + RFC 6455 WS (/ws/siege) + /api/db/* server
 ├── SUPPORT.md                         # Official support channels (creatergame31@gmail.com) & FAQ
 ├── TERMS.md                           # Terms and Conditions of use
-├── metadata.json                      # Applet configuration & metadata
-├── package.json                       # Project dependencies, metadata & npm scripts
-├── server.ts                          # Full-stack Express + RFC 6455 WebSocket (/ws/siege) + Multi-Region server
 ├── tsconfig.json                      # Strict TypeScript configuration (noUnusedLocals/Parameters)
 ├── vcpkg.json                         # Declarative C++20 package manager manifest & baseline lock
-└── vite.config.ts                     # Vite build configuration
+└── vite.config.ts                     # Vite 8 build & Rolldown vendor chunk-splitting configuration
 ```
 
 ---
 
 ## 🧪 Testing Coverage & Anti-Spaghetti Guardrails
 
-To solve the **"Spaghetti Code" risk** across both TypeScript/WebGL and C++20 engine layers (preventing duplicated logic, memory leaks, raw pointers, unused variables, deprecated packages, inconsistent formatting, or silent regressions), Voxel Realms RPG combines **Automated Technical Guardrails** with a disciplined **AI Supervision Process** (detailed in [`ARCHITECTURE.md`](./ARCHITECTURE.md) and [`GOVERNANCE.md`](./GOVERNANCE.md)):
+To solve the **"Spaghetti Code" risk** across TypeScript/WebGL, Cloud Firestore rules, and C++20 engine layers (preventing duplicated logic, memory leaks, raw pointers, unused variables, rule regressions, or silent failures), Voxel Realms RPG combines **Automated Technical Guardrails** with a disciplined **AI Supervision Process** (detailed in [`ARCHITECTURE.md`](./ARCHITECTURE.md) and [`GOVERNANCE.md`](./GOVERNANCE.md)):
 
-### Part 1A: TypeScript / WebGL Guardrails (`.github/workflows/build.yml` -> `quality-check`)
+### Part 1A: TypeScript, Security Rules & WebGL Guardrails (`.github/workflows/build.yml` -> `quality-check`)
 
-Every push and Pull Request automatically runs four strict Web/TypeScript quality gates:
+Every push and Pull Request automatically runs six strict Web/TypeScript/Security quality gates:
 
-1. **The Linter (`npm run lint`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled—failing immediately if an unused variable, dead import, or type error is introduced.
+1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression Test Suite (`npm test`)**: Runs all **128 unit and regression tests across 19 decoupled TypeScript test suites** (`src/game/*.test.ts`) to ensure new features never break existing systems.
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **144 unit, security, and regression tests across 24 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
+5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
+6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
 ### Part 1B: The C++20 Guardrail Stack (`.github/workflows/build.yml` -> `cpp20-guardrails`)
 
@@ -468,7 +516,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`136/136 Passing` across 21 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`144/144 Passing` across 24 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
@@ -486,24 +534,27 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`serverHardening.test.ts`**: Verifies sliding-window rate limits, brute-force login lockout timers, Same-Origin CSRF checks, recursive prototype-pollution detection, fragmented/bounded RFC 6455 WebSocket decoding, 20Hz tick latency percentile tracking, and LRU/oldest commander pruning.
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
-- **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, `createPlayerMesh` 3D procedural attachments (`SpeciesTraitGroup`) and stature scaling, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
+- **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
 - **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **89 invariants** across Root RBAC (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster complexity brackets, A\* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
-- **`scripts/verify-readiness.ts` (`npm run verify:ops`)**: Launches an isolated live production `server.ts` process and verifies 50-way concurrent HTTP load (`200` requests + `12` live 20Hz WS peers with `0` tick overruns), HTTP/WebSocket exploit resistance (`401`/`403`, CSRF, `__proto__`, brute-force `429`, oversized/flood WS drops), truncated primary save failover recovery from `.bak`, and clean `SIGTERM` graceful shutdown.
+- **`src/lib/gmail.test.ts`**: Verifies UTF-8 base64url MIME encoding/decoding round-trips, CRLF header-injection sanitization, HTML script/style tag stripping, and multipart email plain-text extraction.
+- **`firestore.rules.test.ts` (`npm run test:rules`)**: Verifies zero-trust default-deny `firestore.rules` coverage matching `firebase-blueprint.json` and rejects all **Dirty Dozen #1–#12** adversarial payloads (`PERMISSION_DENIED`).
+- **`scripts/verify-readiness.ts` (`npm run verify:ops`)**: Launches an isolated live production `server.ts` process and verifies 50-way concurrent HTTP load (`200` requests + `12` live 20Hz WS peers with `0` tick overruns), HTTP/WebSocket exploit resistance (`401`/`403` across `/api/admin/*`, `/api/online/siege/cmd`, and Firebase-protected `/api/db/*` endpoints, CSRF, `__proto__`, brute-force `429`, oversized/flood WS drops), truncated primary save failover recovery from `.bak`, and clean `SIGTERM` graceful shutdown.
 - **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `WhitePageRootSpec` (`tier5OvervoidCount == 100U`, `tier4OmniverseCount == 100U`), `kGoogolLoreWordExponent == 100U`, `kCanonicalDynasticAnnalsCount == 12U`, `kCanonicalOpenWorldBiomeCount == 8U`, `computeCascadedUniverseQiMultiplier`, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
 
 Run all Guardrail & Operational Readiness checks locally:
 
 ```bash
-npm run validate              # Unified 4-stage check (lint + format:check + test + build)
+npm run validate              # Unified 5-stage check (lint + lint:rules + format:check + test + build)
 npm run verify:ops            # Live production server load, exploit, crash-recovery & SIGTERM harness
-npm run lint                  # 1. Check TypeScript for messy code & unused variables
+npm run lint                  # 1a. Check TypeScript for messy code & unused variables
+npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 136 TypeScript unit & regression tests across 21 suites
+npm test                      # 4. Run all 144 TypeScript unit, Gmail MIME & Firestore rule tests (24 suites)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -517,12 +568,12 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 
 ### 1. Asset & Code Provenance Summary
 
-| Category                     | Implementation Method                                                                                                    | Runtime External AI Calls?                   |
-| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
-| **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)  | **No** (Zero external model assets)          |
-| **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                            | **No**                                       |
-| **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)          | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 122 automated unit tests | **No** (100% deterministic local simulation) |
+| Category                     | Implementation Method                                                                                                         | Runtime External AI Calls?                   |
+| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------- |
+| **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)       | **No** (Zero external model assets)          |
+| **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                 | **No**                                       |
+| **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)               | **No**                                       |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 144 automated unit/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -532,7 +583,7 @@ When completing the **Steamworks Content Survey -> AI Disclosure Section** durin
   - _Disclosure Text for Steam Review_:
     > "AI-assisted software engineering tools were used during development to assist with drafting TypeScript/C++20 game systems, UI layouts, and unit test suites. All 3D voxel models, PBR surface textures, and sound effects are generated deterministically via mathematical procedural algorithms (Three.js geometry primitives, HTML5 Canvas 2D patterns, and Web Audio API oscillators). All code and game content have been human-reviewed, tested, and verified for originality and licensing compliance."
 - **Live-Generated Content: NO**
-  - _Explanation_: The game executes 100% locally in the client runtime using deterministic math, A\* pathfinding, and procedural WebGL/WebAudio synthesis. It does not connect to any generative AI servers or generate unmoderated AI text/images/audio during live gameplay.
+  - _Explanation_: The game executes 100% locally in the client runtime using deterministic math, A\* pathfinding, and procedural WebGL/WebAudio synthesis. It does not generate unmoderated AI text, images, or audio during live gameplay.
 
 ---
 
@@ -541,42 +592,46 @@ When completing the **Steamworks Content Survey -> AI Disclosure Section** durin
 Before tagging or publishing a release, confirm all release gates pass:
 
 - [x] `npm install` completes cleanly with consistent `package-lock.json`
-- [x] `npm run lint` (`tsc --noEmit` with unused-variable guardrails) passes with zero errors
+- [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 128 unit & regression tests across 19 TypeScript test suites
-- [x] `npm run validate` passes the full 4-stage validation gate cleanly
-- [x] `npm run build` succeeds and outputs production bundle under `dist/`
+- [x] `npm test` passes all 144 unit, security, and Firestore rule tests across 24 TypeScript test suites
+- [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
+- [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
-- [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) is green
+- [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) and Release workflow (`.github/workflows/release.yml`) are up to date
 - [x] Steam & Platform AI Disclosure documentation (`README.md`) is up to date
-- [x] No `.env` secrets, API keys, or Android signing keystores (`*.jks`, `*.keystore`) are exposed
+- [x] No `.env` secrets, API keys, OAuth tokens, or Android signing keystores (`*.jks`, `*.keystore`) are exposed
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React 19
+- **Framework**: React 19 (with `React.lazy` & `Suspense` on-demand modal code-splitting)
 - **3D Graphics**: Three.js (WebGL2 with adaptive software fallback support)
 - **Hierarchy & Data Visualization**: D3.js (`d3-hierarchy`, `d3-zoom`, `d3-selection`)
+- **Backend & Real-Time Networking**: Express 4 + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
+- **Cloud Database & Auth**: Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Authentication (Google Sign-In), Firebase Admin SDK, Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
+- **Workspace Integration**: Google Workspace Gmail REST v1 API (`src/lib/gmail.ts` + confirmation-gated `GmailModal.tsx`)
 - **Styling**: Tailwind CSS v4
-- **Language**: TypeScript 7 & C++20
-- **Bundler**: Vite 8
+- **Language**: TypeScript 7 (Strict) & C++20
+- **Bundler**: Vite 8 (Rolldown vendor chunk splitting)
 - **Icons**: Lucide React
 - **Audio**: Web Audio API Procedural Synthesizer
-- **CI/CD**: GitHub Actions
+- **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`), ESLint (`@firebase/eslint-plugin-security-rules`), Prettier, `clang-tidy`, `clang-format`
 
 ---
 
 ## 📚 Documentation, Community & Legal
 
-### Legal & Compliance
+### Legal, Security & Cloud Schemas
 
 - **[Apache-2.0 License (`LICENSE.md`)](./LICENSE.md)** & **[Raw `LICENSE`](./LICENSE)** / **[`NOTICE`](./NOTICE)** — Full Apache 2.0 terms, permissions, and Section 4(d) attribution requirements.
 - **[Code of Conduct (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)** — Community standards, acceptable behavior, and enforcement rules (`creatergame31@gmail.com`).
 - **[Privacy Policy (`PRIVACY.md`)](./PRIVACY.md)** — How user data, `localStorage`, accounts, payments, cookies, and GDPR/CCPA requests are handled.
 - **[Terms & Conditions (`TERMS.md`)](./TERMS.md)** — Rules of conduct, virtual goods policy, subscriptions, and liability disclaimers.
-- **[Security Policy (`SECURITY.md`)](./SECURITY.md)** — Private vulnerability disclosure policy (`creatergame31@gmail.com`).
+- **[Security Policy (`SECURITY.md`)](./SECURITY.md)** — Server-side RBAC, Cloud SQL / Firebase trust boundaries & private vulnerability disclosure (`creatergame31@gmail.com`).
+- **[Firestore Security Spec (`security_spec.md`)](./security_spec.md)** & **[Blueprint (`firebase-blueprint.json`)](./firebase-blueprint.json)** — Data invariants, PII isolation, and Dirty Dozen adversarial threat matrix.
 
 ### Project Tracking & History
 

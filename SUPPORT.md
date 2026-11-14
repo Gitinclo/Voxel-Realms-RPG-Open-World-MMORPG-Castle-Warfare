@@ -55,12 +55,17 @@ Game state is persisted in your browser's `localStorage` under deterministic key
 
 ### Q3: Running unit tests with `node --test` fails on TypeScript imports.
 
-- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts`) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
+- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` across all 24 suites / 144 tests) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
 
 ### Q4: How do I switch my character's Species after initial creation or command the 100 Omniverse Background NPCs?
 
 - **Species Rebirth:** Switching among the 10 playable species after character creation requires authorization from Root Administrator **`creatergame31@gmail.com`** via the **GM / Admin Console (`Godmode & Cheats` → `10-Species / Race Rebirth Governance`)** or by dispatching a `[SPECIES REBIRTH]` ticket.
 - **6-Layer Cosmology & 100 Omniverse NPCs:** Open the **World AI Director (`🌌 Infinite Omniverse & 100 Species NPCs`)** or **GM / Admin Console** while authenticated as **`creatergame31@gmail.com`** to inspect all 6 Cosmic Layers (**1. Universe** → **6. The White Page / The House of Ideas**), project/recall any of the 100 Species Background NPCs in the 3D Overworld, or issue Layer-6 White Page Authorial Decrees.
+
+### Q5: How do I use Google Sign-In, Cloud Persistence, and the Gmail Dispatch Center?
+
+- **Sign In with Google:** Click **`Sign in with Google`** on the Title Screen (or inside the **Gmail Dispatch** modal) to authenticate via Firebase Auth (`GoogleAuthProvider`) and enable persisted player profiles, cloud saves, and support tickets.
+- **Gmail Permissions:** OAuth access tokens remain strictly in browser memory for your active session; if your browser blocks popups or the OAuth token expires, click **`Reconnect Gmail`** inside the **Gmail Dispatch** modal. Mutating actions (`Send`, `Mark Read/Unread`, `Trash`, `Permanent Delete`) always ask for confirmation first.
 
 ---
 

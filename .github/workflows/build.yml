@@ -33,9 +33,9 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit
 
-      # 1. The Linter (catches messy code, syntax errors & unused variables)
+      # 1. Strict TypeScript & Firestore Security Rules Linting
       - name: Run Linter
-        run: npm run lint
+        run: npm run lint && npm run lint:rules
 
       # 2. The Deprecation & Vulnerability Checker (catches vulnerable/old libraries)
       - name: Check for vulnerabilities
@@ -45,7 +45,7 @@ jobs:
       - name: Check Formatting
         run: npx prettier --check .
 
-      # 4. Automated Unit & Regression Tests (ensures old features still work)
+      # 4. Automated Unit, Integration & Firestore Rules Tests
       - name: Run Tests
         run: npm test
 

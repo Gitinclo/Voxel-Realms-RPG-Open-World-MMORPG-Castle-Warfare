@@ -229,9 +229,50 @@ async function runVerification() {
     assert.equal(readyBody.ok, true);
     assert.equal(readyBody.status, 'ready');
 
-    // 1a. Unauthenticated /api/admin/state fails closed (401)
+    // 1a. Unauthenticated /api/admin/state, /api/online/siege/cmd & /api/db/* fail closed (401)
     const anonAdminRes = await fetch(`${BASE_URL}/api/admin/state`);
     assert.equal(anonAdminRes.status, 401);
+
+    const anonSiegeCmdRes = await fetch(`${BASE_URL}/api/online/siege/cmd`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sector: 'B2' }),
+    });
+    assert.equal(anonSiegeCmdRes.status, 401);
+
+    for (const dbCheck of [
+      { path: '/api/db/profile', method: 'GET' },
+      { path: '/api/db/profile', method: 'PUT' },
+      { path: '/api/db/save', method: 'GET' },
+      { path: '/api/db/save', method: 'PUT' },
+      { path: '/api/db/tickets', method: 'GET' },
+      { path: '/api/db/tickets', method: 'POST' },
+    ]) {
+      const missingAuthRes = await fetch(`${BASE_URL}${dbCheck.path}`, {
+        method: dbCheck.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: dbCheck.method === 'GET' ? undefined : JSON.stringify({}),
+      });
+      assert.equal(
+        missingAuthRes.status,
+        401,
+        `Expected ${dbCheck.method} ${dbCheck.path} without Bearer token to fail closed with 401`
+      );
+
+      const forgedAuthRes = await fetch(`${BASE_URL}${dbCheck.path}`, {
+        method: dbCheck.method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer forged.invalid.firebase.jwt.token',
+        },
+        body: dbCheck.method === 'GET' ? undefined : JSON.stringify({}),
+      });
+      assert.equal(
+        forgedAuthRes.status,
+        401,
+        `Expected ${dbCheck.method} ${dbCheck.path} with forged Bearer token to fail closed with 401`
+      );
+    }
 
     // 1b. Player session spoofing root email stays Lv.1 player and gets 403 on /api/admin/state
     const playerSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {

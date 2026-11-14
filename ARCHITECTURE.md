@@ -46,8 +46,9 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **136 unit and regression tests across 21 TypeScript suites** in ~3 seconds, paired with live server operational verification (`npm run verify:ops`).
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **144 unit, MIME, and Firestore security-rule tests across 24 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
+- **Route/Modal Code Splitting**: `src/App.tsx` keeps `GameCanvas`, `GameHUD`, and `TitleScreen` eager while lazy-loading all 18 conditional overlay modals via `React.lazy` + `<Suspense fallback={null}>`, paired with `vite.config.ts` Rolldown `manualChunks` (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-motion`, `vendor-icons`, `vendor-react`) and `GoogleSignInButton.tsx` extraction to reduce the entry JS bundle to `~475 kB` (`~151 kB` gzip).
 
 ---
 
@@ -62,7 +63,9 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   ├── components/
 │   │   ├── GameCanvas.tsx           # Three.js viewport, raycasting, WASD/touch movement, EffectComposer
 │   │   ├── GameHUD.tsx              # Consolidated top bar, virtual joystick, 5-tab bottom command dock
-│   │   ├── TitleScreen.tsx          # Entry screen (?autostart=1 bypass supported for automated testing)
+│   │   ├── TitleScreen.tsx          # Entry screen (?autostart=1 bypass, Google Sign-In & Gmail access)
+│   │   ├── GoogleSignInButton.tsx   # Standalone Google OAuth & Firebase Auth trigger button
+│   │   ├── GmailModal.tsx           # Lazy-loaded Gmail Dispatch Center (inbox, compose, reply, trash/delete gates)
 │   │   ├── AdminConsoleModal.tsx    # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
 │   │   ├── CharacterCreationModal.tsx # 10-Species selector, 3D turntable & Admin permission gate
 │   │   ├── CastleModal.tsx          # Citadel Lv 0-100 upgrade & 10-Era visualization
@@ -72,12 +75,30 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── ClanModal.tsx            # Alliance vault, 9-sector war map, co-op boss, emblem studio
 │   │   ├── VipSubscriptionModal.tsx # VIP Covenant tiers, daily stipends & loyalty progression
-│   │   └── ...                      # HeroModal, DailyLoginModal, WeatherModal, LeaderboardModal, etc.
-│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites
+│   │   └── ...                      # 18 conditional modals lazy-loaded via React.lazy in App.tsx
+│   ├── contexts/
+│   │   └── AuthContext.tsx          # Firebase Auth Google Sign-In + in-memory Gmail OAuth access token
+│   ├── db/
+│   │   ├── index.ts                 # Lazy Cloud SQL pg.Pool (SQL_HOST/SQL_USER/SQL_PASSWORD/SQL_DB_NAME) + Drizzle ORM
+│   │   ├── schema.ts                # PostgreSQL schema (users, player_profiles, game_saves, tickets)
+│   │   ├── users.ts                 # Upsert helper bound to verified Firebase Auth UIDs
+│   │   └── drizzle.config.ts        # Drizzle Kit schema migration configuration
+│   ├── lib/
+│   │   ├── firebase.ts              # Client Firebase Auth + Firestore SDK initialization
+│   │   ├── firebase-admin.ts        # Server-side Firebase Admin ID token verification
+│   │   ├── firestore.ts             # Firestore profile, save & ticket helpers
+│   │   └── gmail.ts                 # Pure RFC 2822 MIME builders, UTF-8 Base64URL & Gmail REST v1 helpers
+│   ├── middleware/
+│   │   └── auth.ts                  # Express `requireAuth` Bearer Firebase ID token middleware
+│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (22 suites)
 │   ├── types/
 │   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, species)
 │   │   └── cultivation.ts           # Four-Path realms, manuals, disciples, karma types
-│   └── App.tsx                      # Root state container & simulation timers
+│   └── App.tsx                      # Root state container, Suspense lazy modals & simulation timers
+├── firestore.rules                  # Hardened Cloud Firestore RBAC, field-type & schema validation rules
+├── firestore.rules.test.ts          # "Dirty Dozen" static & structural security-rule audit suite
+├── firebase-blueprint.json          # Canonical Firestore collection schema & role definitions
+└── server.ts                        # Express + RFC 6455 WS (/ws/siege), /api/admin/*, /api/online/* & /api/db/*
 ```
 
 ---
@@ -170,15 +191,21 @@ Players cultivate four complementary paths simultaneously:
 
 - **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **89 invariants across all 9 foundational pillars** (Root RBAC & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
+### L. Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Auth, Hardened Firestore & Gmail Dispatch (`src/db/*`, `src/lib/*`, `src/middleware/auth.ts`, `firestore.rules`, `GmailModal.tsx`)
+
+- **Cloud SQL PostgreSQL + Drizzle ORM (`src/db/`)**: `src/db/index.ts` lazily initializes a PostgreSQL `pg.Pool` via `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, and `SQL_DB_NAME` wrapping Drizzle ORM (`src/db/schema.ts`: `users`, `player_profiles`, `game_saves`, `tickets`). Server routes `/api/db/profile`, `/api/db/save`, and `/api/db/tickets` are protected by `requireAuth` (`src/middleware/auth.ts`), which verifies Firebase ID tokens via `src/lib/firebase-admin.ts` (`HTTP 401` on missing/invalid/forged tokens) and scopes all queries strictly to `req.uid`.
+- **Firebase Auth + Hardened Cloud Firestore (`src/lib/firebase.ts`, `src/lib/firestore.ts`, `firestore.rules`)**: `AuthContext.tsx` manages Google Sign-In via `GoogleAuthProvider` (`signInWithPopup`), requesting Gmail Workspace OAuth scopes and holding `workspaceAccessToken` strictly in React memory (never persisted to `localStorage`). `firestore.rules` enforces default-deny, field-level immutable UID ownership, strict schema types, role escalation prevention (`role` stays `'player'` except verified admin `creatergame31@gmail.com`), and status-based ticket locks, verified by `eslint firestore.rules` (`npm run lint:rules`) and `firestore.rules.test.ts` (`npm run test:rules`).
+- **Gmail Dispatch Center (`src/lib/gmail.ts`, `src/components/GmailModal.tsx`)**: Lazy-loaded modal integrating Gmail REST v1 directly from the client using the in-memory OAuth Bearer token (`threads.list`, `messages.get`, `messages.send` with CRLF-sanitized RFC 2822 UTF-8 Base64URL MIME encoding, `messages.modify`, `trash`, `untrash`, and permanent `delete`) with explicit confirmation dialogs before mutating actions.
+
 ---
 
 ## 4. Anti-Spaghetti Engineering Guardrails
 
-Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
+Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
-1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 128 deterministic unit tests across 19 TypeScript suites in `src/game/*.test.ts`.
+1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
+2. **Decoupled Test Suite (`npm test`)**: **144 automated tests across 24 suites** (`22` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
-6. **Architect-First Pre-Flight Specification (`CONTRIBUTING.md` & `GOVERNANCE.md`)**: Requires planning pure domain types (`src/types/`), decoupled engine functions (`src/game/`), and 9-Pillar invariants (`src/game/systemValidation.ts`) before UI integration — **helps prevent early design flaws** and eliminates state entanglement.
+6. **Architect-First Pre-Flight Specification (`CONTRIBUTING.md` & `GOVERNANCE.md`)**: Requires planning pure domain types (`src/types/`), decoupled engine functions (`src/game/`), and 9-Pillar invariants (`src/game/systemValidation.ts` — `89` invariants) before UI integration — **helps prevent early design flaws** and eliminates state entanglement.

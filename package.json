@@ -16,11 +16,13 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "lint:rules": "eslint firestore.rules",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "tsx --test src/game/*.test.ts",
+    "test": "tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts",
+    "test:rules": "tsx --test firestore.rules.test.ts",
     "verify:ops": "tsx scripts/verify-readiness.ts",
-    "validate": "npm run lint && npm run format:check && npm test && npm run build"
+    "validate": "npm run lint && npm run lint:rules && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

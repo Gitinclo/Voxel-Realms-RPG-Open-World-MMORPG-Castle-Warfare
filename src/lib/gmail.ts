@@ -58,7 +58,7 @@ interface RawGmailMessage {
   };
 }
 
-function decodeBase64UrlUtf8(encoded: string): string {
+export function decodeBase64UrlUtf8(encoded: string): string {
   if (!encoded) return '';
   const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
@@ -70,7 +70,7 @@ function decodeBase64UrlUtf8(encoded: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-function encodeBase64UrlUtf8(input: string): string {
+export function encodeBase64UrlUtf8(input: string): string {
   const bytes = new TextEncoder().encode(input);
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
@@ -79,7 +79,7 @@ function encodeBase64UrlUtf8(input: string): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function stripHtmlTags(html: string): string {
+export function stripHtmlTags(html: string): string {
   return html
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -88,7 +88,7 @@ function stripHtmlTags(html: string): string {
     .trim();
 }
 
-function extractPlainTextFromPayload(payload?: RawGmailMessage['payload']): string {
+export function extractPlainTextFromPayload(payload?: RawGmailMessage['payload']): string {
   if (!payload) return '';
   const findPart = (parts: RawGmailPart[] | undefined, targetMime: string): string | null => {
     if (!parts) return null;
@@ -213,11 +213,11 @@ export async function listGmailMessages(
   });
 }
 
-function sanitizeHeaderValue(value: string): string {
+export function sanitizeHeaderValue(value: string): string {
   return value.replace(/[\r\n]+/g, ' ').trim();
 }
 
-function buildMimeRaw(to: string, subject: string, body: string): string {
+export function buildMimeRaw(to: string, subject: string, body: string): string {
   const cleanTo = sanitizeHeaderValue(to);
   const cleanSubject = sanitizeHeaderValue(subject);
   const mime = [

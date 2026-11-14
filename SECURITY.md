@@ -40,14 +40,20 @@ Client-side roles, email selectors, React state, and browser `localStorage` **ar
    - Operator logins (`/api/auth/admin-login`) fail closed (`503`) in production unless `VOXEL_ADMIN_PASSKEY` (`>= 12` chars) is explicitly configured in environment secrets.
 5. **Reliable Atomic Saves & Operational Readiness (`src/game/serverPersistence.ts`, `/readyz`, `/api/ops/readiness`)**:
    - Realm saves use write-temp → `fsyncSync` → promote valid primary to `.bak` → atomic POSIX rename wrapped in a SHA-256 integrity envelope (`schemaVersion: 2`). Truncated or tampered primary snapshots automatically fail over to `.bak` on boot, and `SIGTERM`/`SIGINT` triggers peer draining plus a final atomic disk flush before exit.
-   - Liveness (`/healthz`), readiness (`/readyz`), and live telemetry (`/api/ops/readiness`: 20Hz tick p50/p95/max latency, storage health, RSS/heap memory, exploit blocks) are verifiable end-to-end via `npm run verify:ops` (`scripts/verify-readiness.ts`).
+   - Liveness (`/healthz`), readiness (`/readyz`), and live telemetry (`/api/ops/readiness`: 20Hz tick p50/p95/max latency, storage health, RSS/heap memory, exploit blocks) are verifiable end-to-end via `npm run verify:ops` (`scripts/verify-readiness.ts`), which also asserts fail-closed `HTTP 401` on unauthenticated or forged-token requests to `/api/db/*` and `/api/online/siege/cmd`.
+6. **Firebase ID Token Enforcement (`/api/db/*`) & Hardened Cloud Firestore Rules (`firestore.rules`)**:
+   - Cloud SQL Drizzle persistence endpoints (`GET/PUT /api/db/profile`, `GET/PUT /api/db/save`, `GET/POST /api/db/tickets`) pass through `requireAuth` (`src/middleware/auth.ts`), which validates Firebase ID tokens server-side via `firebase-admin` (`src/lib/firebase-admin.ts`), binds `req.uid`, and rejects missing or forged Bearer tokens with `HTTP 401`.
+   - Cloud Firestore (`firestore.rules`, audited by `npm run lint:rules` and `firestore.rules.test.ts`) enforces default-deny access, strict schema & string-length bounds, immutable creator UID ownership, non-escalation on user roles (`role == 'player'` unless authenticated root admin `creatergame31@gmail.com`), and status-gated ticket modification locks (`security_spec.md`).
+7. **Google Workspace Gmail OAuth Security (`AuthContext.tsx`, `GmailModal.tsx`)**:
+   - Gmail access uses client-side Google Sign-In OAuth (`GoogleAuthProvider`) without embedded client secrets or server-side token storage; `workspaceAccessToken` is held strictly in React memory (never written to `localStorage` or `sessionStorage`).
+   - All outbound/destructive Gmail actions (`messages.send`, mark read/unread, move to trash, and permanent delete) gate behind explicit in-UI confirmation dialogs, and MIME header builders (`src/lib/gmail.ts`) strip `\r`/`\n` characters to prevent header injection.
 
 ---
 
 ## Explicit Trust & Operational Boundary Disclosure
 
-- **Untrusted Client Sandbox**: Single-player 3D canvas progression, local resource counters, local `verifyAccountPrivileges(..., 'UNTRUSTED_CLIENT_PREVIEW')`, and `localStorage` caches run in the user's browser for offline convenience and sandbox testing only. Browser DevTools modifications to React state or `localStorage` **do not** bypass server `/api/admin/*` or `/api/online/*` checks.
-- **Single-Instance Scope vs. Horizontal Scaling**: `server.ts` guarantees single-instance reliability up to its bounded limits (`<=250` concurrent WebSocket peers, `<=5,000` cached commander records) on local POSIX storage. Horizontal multi-instance Cloud Run scaling or multi-region high availability requires externalizing state to Cloud SQL / Spanner and Redis pub/sub so replicas do not maintain isolated disk files.
+- **Untrusted Client Sandbox**: Single-player 3D canvas progression, local resource counters, local `verifyAccountPrivileges(..., 'UNTRUSTED_CLIENT_PREVIEW')`, and `localStorage` caches run in the user's browser for offline convenience and sandbox testing only. Browser DevTools modifications to React state or `localStorage` **do not** bypass server `/api/admin/*`, `/api/online/*`, `/api/db/*`, or Firestore security rules checks.
+- **Persistence & Multi-Instance Scope**: Durable player profiles, game saves, and support tickets are persisted externally via Cloud SQL PostgreSQL (`SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, `SQL_DB_NAME` + Drizzle ORM) and Cloud Firestore (`firestore.rules`), whereas live `server.ts` 20Hz `/ws/siege` cohort ticks and POSIX snapshots (`data/online_realm_state.json`) remain bounded to single-instance limits (`<=250` concurrent WebSocket peers, `<=5,000` cached commander records) unless paired with shared Redis pub/sub across Cloud Run replicas.
 
 ---
 
