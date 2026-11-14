@@ -37,13 +37,14 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/graphicsEngine.ts    (Cross-Platform Pipeline & Transparency)   │
 │  • src/game/systemValidation.ts  (9-Pillar Cross-System Validation Engine)  │
 │  • src/game/proceduralWorld.ts   (Deterministic 3D mesh & PBR builders)    │
+│  • src/game/serverAuth.ts        (Server-only HMAC-SHA256 Auth & RBAC)     │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **122 unit and regression tests across 18 TypeScript suites** in ~2.5 seconds.
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts`) to execute **128 unit and regression tests across 19 TypeScript suites** in ~2.5 seconds.
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 
 ---
@@ -120,10 +121,10 @@ Players cultivate four complementary paths simultaneously:
   - On dedicated GPUs (`pc_console` / `ultra` preset), `EffectComposer` runs `RenderPass` + `UnrealBloomPass` + `OutputPass` with ACES Filmic tone mapping and `PCFSoftShadowMap` cascades.
   - On headless browsers (SwiftShader / llvmpipe) or `balanced` / `mobile` overrides, the renderer automatically bypasses heavy post-processing passes and caps pixel ratio to `1.0` to guarantee responsive frame times.
 
-### E. Administration, GM & Moderator RBAC (`src/game/adminModeration.ts`)
+### E. Server-Enforced Administration, GM & Moderator RBAC (`server.ts`, `src/game/serverAuth.ts`, `src/game/adminModeration.ts`)
 
-- Binds **`creatergame31@gmail.com`** as the Root Owner (`owner_admin`, Clearance Level `999`) with full `Administration`, `Game Master (GM)`, `Admin`, `Moderator`, and `Official Contact` permissions.
-- Enforces immutable root protection (`isPrimaryAdminAccount`) so the root account can never be sanctioned or demoted, while providing pure state transitions for player warnings, chat mutes, temporary/permanent bans, role grants, and support ticket triage.
+- **Cryptographic Server-Side Enforcement (`serverAuth.ts`)**: All privileged routes (`/api/admin/state`, `/api/admin/moderation`, `/api/admin/tickets/resolve`, `/api/admin/decree`, `/api/admin/species-rebirth`) and multiplayer writes (`/api/online/sync`, `/api/online/siege/cmd`, WebSocket `C2S_*` commands) fail closed (`401`/`403`) unless authenticated via HMAC-SHA256 `HttpOnly` session cookies verified with `crypto.timingSafeEqual`.
+- **Trust Boundary Separation**: `verifyAccountPrivileges` in `src/game/adminModeration.ts` explicitly tags browser-side checks as `UNTRUSTED_CLIENT_PREVIEW`, while `server.ts` binds actor identity from verified sessions, clamps/strips untrusted stat fields on `/api/online/sync`, enforces immutable root protection for **`creatergame31@gmail.com`** (Clearance Lv. `999`), and writes all security events to `securityAuditLog` (`data/online_realm_state.json`).
 
 ### F. Software Architect & Hardware Architect Compatibility & Optimization (`src/game/architectOptimization.ts` · `06/11/2026`)
 
@@ -165,7 +166,7 @@ Players cultivate four complementary paths simultaneously:
 
 ### K. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **88 invariants across all 9 foundational pillars** (Root RBAC `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **89 invariants across all 9 foundational pillars** (Root RBAC & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ---
 
@@ -174,7 +175,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against five automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript Linter (`npm run lint`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`.
-2. **Decoupled Unit Test Suite (`npm test`)**: 122 deterministic unit tests across 18 TypeScript suites in `src/game/*.test.ts`.
+2. **Decoupled Unit Test Suite (`npm test`)**: 128 deterministic unit tests across 19 TypeScript suites in `src/game/*.test.ts`.
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

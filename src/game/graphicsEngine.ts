@@ -835,21 +835,23 @@ export const ENGINEERING_TRANSPARENCY_MATRIX: EngineeringTransparencyEntry[] = [
   {
     id: 'multiplayer_persistence_and_cloud_sync',
     category: 'persistence_networking',
-    featureName: 'Authoritative 20Hz 50v50 WebSocket Siege Server & Multi-Region Persistence',
+    featureName:
+      'Authoritative 20Hz 50v50 WebSocket Siege, Server-Side RBAC & Multi-Region Persistence',
     status: 'implemented',
-    statusBadgeLabel: 'IMPLEMENTED · LIVE 20Hz WEBSOCKET + MULTI-REGION SERVER',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE 20Hz WS + SERVER RBAC ENFORCEMENT',
     whatRunsInBrowserNow:
-      'Runs a real full-stack Express + RFC 6455 WebSocket server (/ws/siege on port 3000) and /api/online/* REST endpoints with 20Hz (50ms) bitmasked delta-compression (CohortDirtyBit), FNV-1a 32-bit state hashing, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation, 1T War Rally assembly, durable server-side disk persistence (data/online_realm_state.json), and browser localStorage caching.',
+      'Runs a full-stack Express + RFC 6455 WebSocket server (/ws/siege on port 3000) enforcing HMAC-SHA256 HttpOnly session cookies (/api/auth/*), fail-closed 401/403 RBAC checks (/api/admin/*), anti-tamper sync sanitization (/api/online/sync), authenticated WebSocket command identity binding, 20Hz bitmasked delta-compression (CohortDirtyBit), FNV-1a 32-bit hashing, 128-frame CSP ring buffer, and disk persistence (data/online_realm_state.json).',
     whatIsSimulatedOrModeled:
-      'The 3 regional cluster nodes (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1) replicate state and quorum checksums within the unified Node.js server process and local JSON store rather than across separate physical data centers.',
+      'Single-player canvas/localStorage state remains an untrusted client preview; the 3 regional cluster nodes (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1) replicate within the unified Node.js server process without an external PostgreSQL/IdP or hardware TLS terminator in local dev.',
     plannedNativeTarget:
-      'Geo-distributed Kubernetes Agones dedicated game server fleet backed by globally replicated Cloud Spanner / CockroachDB raft shards.',
+      'Geo-distributed Kubernetes Agones dedicated game server fleet backed by Cloud Spanner / CockroachDB raft shards and external OIDC/OAuth identity federation.',
     sourceFiles: [
       'src/game/siegeNetProtocol.ts',
+      'src/game/serverAuth.ts',
       'server.ts',
       'src/components/ClanTerritoryMap.tsx',
+      'src/components/AdminConsoleModal.tsx',
       'src/game/adminModeration.ts',
-      'src/game/clanMath.ts',
     ],
   },
 ];

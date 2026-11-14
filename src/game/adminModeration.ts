@@ -24,6 +24,8 @@ export type ModerationActionType =
 export type ContactCategory =
   'administration' | 'gm_intervention' | 'moderation_report' | 'ban_appeal' | 'security_disclosure';
 
+export type SecurityTrustBoundary = 'UNTRUSTED_CLIENT_PREVIEW' | 'VERIFIED_SERVER_SESSION';
+
 export interface AdminPermissions {
   canAccessGmConsole: boolean;
   canUseGodmodeAndCheats: boolean;
@@ -45,7 +47,41 @@ export interface AccountPrivilegeProfile {
   clearanceLevel: number;
   isRootOwner: boolean;
   contactEmail: string;
+  trustBoundary: SecurityTrustBoundary;
   permissions: AdminPermissions;
+}
+
+export interface ServerSessionInfo {
+  sessionId: string;
+  commanderId: string;
+  displayName: string;
+  email: string;
+  role: StaffRole;
+  clearanceLevel: number;
+  isRootOwner: boolean;
+  permissions: AdminPermissions;
+  issuedAtIso: string;
+  expiresAtIso: string;
+}
+
+export interface SecurityAuditEntry {
+  id: string;
+  timestampIso: string;
+  eventType:
+    | 'PLAYER_SESSION_ISSUED'
+    | 'ADMIN_LOGIN_SUCCESS'
+    | 'ADMIN_LOGIN_FAILED'
+    | 'SESSION_LOGOUT'
+    | 'AUTHZ_DENIED'
+    | 'MODERATION_EXECUTED'
+    | 'TICKET_CREATED'
+    | 'TICKET_UPDATED'
+    | 'SYNC_SANITIZED'
+    | 'WS_COMMAND_REJECTED';
+  actorEmail: string;
+  actorRole: StaffRole | 'anonymous';
+  outcome: 'allowed' | 'denied' | 'clamped';
+  detail: string;
 }
 
 export interface ModeratedPlayerRecord {
@@ -326,9 +362,19 @@ export function getPermissionsForRole(role: StaffRole, isRoot: boolean = false):
   }
 }
 
+/**
+ * Resolves UI permission flags from an email string against a moderation roster.
+ *
+ * SECURITY BOUNDARY NOTICE:
+ * When invoked in the browser (`trustBoundary = 'UNTRUSTED_CLIENT_PREVIEW'`), this result
+ * is strictly for local UI previews / offline single-player sandbox controls and MUST NOT be
+ * treated as authoritative security enforcement. Authoritative server routes in `server.ts`
+ * enforce HMAC-SHA256 signed sessions via `src/game/serverAuth.ts`.
+ */
 export function verifyAccountPrivileges(
   email: string,
-  roster: ModeratedPlayerRecord[] = INITIAL_MODERATED_PLAYERS
+  roster: ModeratedPlayerRecord[] = INITIAL_MODERATED_PLAYERS,
+  trustBoundary: SecurityTrustBoundary = 'UNTRUSTED_CLIENT_PREVIEW'
 ): AccountPrivilegeProfile {
   const normalized = normalizeAccountEmail(email);
 
@@ -348,6 +394,7 @@ export function verifyAccountPrivileges(
       clearanceLevel: 999,
       isRootOwner: true,
       contactEmail: PRIMARY_ADMIN_EMAIL,
+      trustBoundary,
       permissions: getPermissionsForRole('owner_admin', true),
     };
   }
@@ -380,6 +427,7 @@ export function verifyAccountPrivileges(
     clearanceLevel: clearanceMap[role],
     isRootOwner: false,
     contactEmail: PRIMARY_ADMIN_EMAIL,
+    trustBoundary,
     permissions: getPermissionsForRole(role, false),
   };
 }

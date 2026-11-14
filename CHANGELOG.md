@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Procedural dungeon delves with ancient Dao relics and heavenly tribulations (`src/game/dungeons.ts` & `src/game/dungeons.test.ts`).
 - WebGPU compute shader upgrade for 10,000+ simultaneous flocking entities.
 
+### Implemented Security Hardening — Server-Side HMAC-SHA256 Session Auth, Fail-Closed RBAC & Trust Boundaries (`src/game/serverAuth.ts`, `server.ts`, `SECURITY.md`)
+
+- Implemented cryptographic HMAC-SHA256 `HttpOnly` session authentication (`/api/auth/player-session`, `/api/auth/admin-login`, `/api/auth/session`, `/api/auth/logout`) backed by timing-safe `VOXEL_ADMIN_PASSKEY` verification and fail-closed production secret enforcement (`src/game/serverAuth.ts` + `src/game/serverAuth.test.ts`).
+- Enforced fail-closed `401`/`403` RBAC authorization on `/api/admin/state`, `/api/admin/moderation`, `/api/admin/tickets/resolve`, `/api/admin/decree`, and `/api/admin/species-rebirth`, persistent server security audit logs (`securityAuditLog`), anti-tamper `/api/online/sync` sanitization, email redaction on `/api/online/status`, and authenticated WebSocket command identity binding on `/ws/siege`.
+- Explicitly tagged client-side `verifyAccountPrivileges` checks as `UNTRUSTED_CLIENT_PREVIEW` in `src/game/adminModeration.ts` and added verified server session status + operator sign-in UI in `src/components/AdminConsoleModal.tsx`.
+
 ### Implemented Specification — `v1.5.0` Authoritative 20Hz 50v50 Castle Siege WebSocket Network Protocol & Multi-Region Persistence (`src/game/siegeNetProtocol.ts` & `server.ts`)
 
 In accordance with the **Architect-First** guardrail in `CONTRIBUTING.md` (which **• helps prevent early design flaws**), this specification defines the deterministic client-server WebSocket protocol implemented in `src/game/siegeNetProtocol.ts`, `src/game/siegeNetProtocol.test.ts`, `server.ts` (`/ws/siege` & `/api/online/*`), and `src/components/ClanTerritoryMap.tsx` for 50v50 clan territory castle sieges (`TerritoryGridSector` `A1`–`C3`), reconciling up to `1,000T` (`10^15`) total troops and `1T` (`10^12`) coordinated rallies without IEEE-754 floating-point precision loss.

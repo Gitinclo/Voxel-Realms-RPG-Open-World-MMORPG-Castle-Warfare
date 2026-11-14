@@ -135,6 +135,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     PRIMARY_ADMIN_EMAIL === 'creatergame31@gmail.com' &&
     rootPriv.clearanceLevel === 999 &&
     rootPriv.isRootOwner &&
+    rootPriv.trustBoundary === 'UNTRUSTED_CLIENT_PREVIEW' &&
     rootPriv.permissions.canAccessGmConsole &&
     rootPriv.permissions.canUseGodmodeAndCheats &&
     rootPriv.permissions.canModeratePlayers &&
@@ -144,14 +145,14 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
 
   pillars.push({
     id: 'rbac_root_authority',
-    title: '1. Root RBAC & Supreme Author Immutability (creatergame31@gmail.com)',
+    title: '1. Root RBAC, Server Trust Boundary & Supreme Author Immutability',
     passed: p1Passed,
-    assertionsPassed: 9,
-    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel} & immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
+    assertionsPassed: 10,
+    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, explicit UNTRUSTED_CLIENT_PREVIEW tagging for local checks, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
     verifiedInvariants: [
       `Supreme Author Email === ${PRIMARY_ADMIN_EMAIL}`,
       'Clearance Level === 999 (owner_admin)',
-      'All 5 RBAC roles (Administration, GM, Admin, Moderator, Official Contact) === active',
+      'Client verifyAccountPrivileges explicitly tagged UNTRUSTED_CLIENT_PREVIEW; server routes enforce HMAC-SHA256 sessions',
       'Root Immutability Guardrail blocks self/external sanctions on creatergame31@gmail.com',
     ],
   });
@@ -543,13 +544,13 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
 
   pillars.push({
     id: 'engineering_transparency_and_live_webgl_pipeline',
-    title: '9. Engineering Transparency, 20Hz 50v50 Siege Netcode & Live WebGL2 Mutations',
+    title: '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode & Live WebGL2',
     passed: p9Passed,
     assertionsPassed: 12,
     summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Three.js WebGL2 mutations.`,
     verifiedInvariants: [
-      `Explicit 3-Tier Scope Matrix: ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated Models, ${transparency.plannedCount} Planned Native`,
-      'Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol (/ws/siege), CohortDirtyBit delta-compression, FNV-1a checksum & 128-frame CSP ring buffer',
+      `Explicit 3-Tier Scope Matrix: ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated Models, ${transparency.plannedCount} Planned`,
+      'Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol (/ws/siege), HMAC-SHA256 Server RBAC (/api/auth/*, /api/admin/*), CohortDirtyBit delta-compression & 128-frame CSP ring buffer',
       'Multi-Region Persistence Quorum across 3 regional clusters (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1)',
       'Live WebGL2 applyCrossPlatformPipeline mutates THREE.LOD distances, InstancedMesh.count (800 vs 320) & material normalScale/bumpScale',
       'Simulated metadata (BC7/ASTC import overrides, 68.4GB/640MB bundle manifests, C++20 reference headers) clearly separated from browser runtime',

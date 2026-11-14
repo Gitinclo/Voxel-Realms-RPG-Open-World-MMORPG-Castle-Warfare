@@ -153,99 +153,126 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
   const clientSeqRef = useRef<number>(1);
   const cspRingRef = useRef<ClientPredictionRingBuffer>(new ClientPredictionRingBuffer());
 
-  // Connect to /ws/siege WebSocket and fallback local 20Hz ticker if offline
+  // Ensure a valid server-issued HMAC session cookie exists before connecting /ws/siege
   useEffect(() => {
     let isMounted = true;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/siege?sector=${selectedSectorCode}`;
-
-    try {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        if (!isMounted) return;
-        setWsConnected(true);
-      };
-
-      ws.onmessage = (event) => {
-        if (!isMounted || typeof event.data !== 'string') return;
-        try {
-          const env = JSON.parse(event.data) as SiegeNetEnvelope<unknown>;
-          if (env.opcode === SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT) {
-            const payload = env.payload as { sectorState: AuthoritativeSiegeSectorState };
-            if (payload?.sectorState) {
-              setSiegeState(payload.sectorState);
-              setReplicationSnapshot((prev) =>
-                buildMultiRegionReplicationStatus(
-                  prev.primaryClusterId,
-                  payload.sectorState,
-                  prev.persistedCommandersCount,
-                  prev.lastDiskFlushIso
-                )
-              );
-            }
-          } else if (env.opcode === SiegeNetOpcode.S2C_DELTA_SIEGE_UPDATE) {
-            const deltaEnv = env as SiegeNetEnvelope<SiegeDeltaUpdatePacket>;
-            setLastDeltaBytes({
-              raw: deltaEnv.payload.uncompressedBytesEstimate,
-              compressed: deltaEnv.payload.compressedBytesEstimate,
-            });
-            setSiegeState((prev) => {
-              const updated = applySiegeDeltaUpdate(prev, deltaEnv);
-              const c0 = updated.cohorts[0];
-              if (c0) {
-                const rec = reconcileClientPrediction(
-                  cspRingRef.current,
-                  deltaEnv.ackClientSeq,
-                  c0,
-                  c0.posXQuantized,
-                  c0.posZQuantized
-                );
-                setCspModeLabel(rec.mode);
-              }
-              setReplicationSnapshot((rep) =>
-                buildMultiRegionReplicationStatus(
-                  rep.primaryClusterId,
-                  updated,
-                  rep.persistedCommandersCount,
-                  rep.lastDiskFlushIso
-                )
-              );
-              return updated;
-            });
-          }
-        } catch {
-          // Ignore malformed WS frame
+    const initOnlineSiegeSession = async () => {
+      try {
+        const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
+        const sessionData = sessionRes.ok
+          ? ((await sessionRes.json()) as { authenticated?: boolean })
+          : null;
+        if (!sessionData?.authenticated) {
+          await fetch('/api/auth/player-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              commanderId: 'player-commander-01',
+              displayName: 'Sovereign Vanguard',
+              email: 'player@voxelrealms.example',
+            }),
+          });
         }
-      };
+      } catch {
+        // Offline fallback continues cleanly below
+      }
 
-      ws.onclose = () => {
-        if (!isMounted) return;
+      if (!isMounted) return;
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/siege?sector=${selectedSectorCode}`;
+
+      try {
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (!isMounted) return;
+          setWsConnected(true);
+        };
+
+        ws.onmessage = (event) => {
+          if (!isMounted || typeof event.data !== 'string') return;
+          try {
+            const env = JSON.parse(event.data) as SiegeNetEnvelope<unknown>;
+            if (env.opcode === SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT) {
+              const payload = env.payload as { sectorState: AuthoritativeSiegeSectorState };
+              if (payload?.sectorState) {
+                setSiegeState(payload.sectorState);
+                setReplicationSnapshot((prev) =>
+                  buildMultiRegionReplicationStatus(
+                    prev.primaryClusterId,
+                    payload.sectorState,
+                    prev.persistedCommandersCount,
+                    prev.lastDiskFlushIso
+                  )
+                );
+              }
+            } else if (env.opcode === SiegeNetOpcode.S2C_DELTA_SIEGE_UPDATE) {
+              const deltaEnv = env as SiegeNetEnvelope<SiegeDeltaUpdatePacket>;
+              setLastDeltaBytes({
+                raw: deltaEnv.payload.uncompressedBytesEstimate,
+                compressed: deltaEnv.payload.compressedBytesEstimate,
+              });
+              setSiegeState((prev) => {
+                const updated = applySiegeDeltaUpdate(prev, deltaEnv);
+                const c0 = updated.cohorts[0];
+                if (c0) {
+                  const rec = reconcileClientPrediction(
+                    cspRingRef.current,
+                    deltaEnv.ackClientSeq,
+                    c0,
+                    c0.posXQuantized,
+                    c0.posZQuantized
+                  );
+                  setCspModeLabel(rec.mode);
+                }
+                setReplicationSnapshot((rep) =>
+                  buildMultiRegionReplicationStatus(
+                    rep.primaryClusterId,
+                    updated,
+                    rep.persistedCommandersCount,
+                    rep.lastDiskFlushIso
+                  )
+                );
+                return updated;
+              });
+            }
+          } catch {
+            // Ignore malformed WS frame
+          }
+        };
+
+        ws.onclose = () => {
+          if (!isMounted) return;
+          setWsConnected(false);
+        };
+
+        ws.onerror = () => {
+          if (!isMounted) return;
+          setWsConnected(false);
+        };
+      } catch {
         setWsConnected(false);
-      };
+      }
 
-      ws.onerror = () => {
-        if (!isMounted) return;
-        setWsConnected(false);
-      };
-    } catch {
-      setWsConnected(false);
-    }
+      // Fetch initial multi-region status via REST
+      fetch(`/api/online/status?sector=${selectedSectorCode}`, { credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!isMounted || !data?.ok) return;
+          if (data.sectorState) setSiegeState(data.sectorState);
+          if (data.replication) setReplicationSnapshot(data.replication);
+        })
+        .catch(() => {
+          // Fallback ticker keeps deterministic 50v50 siege advancing if offline
+        });
+    };
 
-    // Also fetch initial multi-region status via REST
-    fetch(`/api/online/status?sector=${selectedSectorCode}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!isMounted || !data?.ok) return;
-        if (data.sectorState) setSiegeState(data.sectorState);
-        if (data.replication) setReplicationSnapshot(data.replication);
-      })
-      .catch(() => {
-        // Fallback ticker keeps deterministic 50v50 siege advancing if offline
-      });
+    void initOnlineSiegeSession();
 
     fallbackInterval = setInterval(() => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -337,6 +364,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
       fetch('/api/online/siege/cmd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ sector: selectedSectorCode, troopCmd }),
       }).catch(() => {});
     }
@@ -375,6 +403,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
       fetch('/api/online/siege/cmd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ sector: selectedSectorCode, rallyCmd }),
       }).catch(() => {});
     }
@@ -393,6 +422,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
       const resp = await fetch('/api/online/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           primaryClusterId: clusterId,
           sector: selectedSectorCode,

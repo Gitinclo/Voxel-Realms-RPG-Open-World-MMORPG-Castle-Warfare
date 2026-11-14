@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Shield,
@@ -23,6 +23,9 @@ import {
   Copy,
   Send,
   Gavel,
+  Lock,
+  LogOut,
+  KeyRound,
 } from 'lucide-react';
 import { CharacterAppearance, CharacterSpeciesId, GameResources, TroopType } from '../types/game';
 import { WeatherType } from '../game/weather';
@@ -42,6 +45,8 @@ import {
   OFFICIAL_CONTACT_DIRECTORY,
   ModeratedPlayerRecord,
   ModerationActionType,
+  SecurityAuditEntry,
+  ServerSessionInfo,
   SupportTicket,
   ContactCategory,
   verifyAccountPrivileges,
@@ -120,15 +125,23 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs'
   >(initialTab);
   const [consoleLogs, setConsoleLogs] = useState<string[]>([
-    `[AdminAuth] Root account ${PRIMARY_ADMIN_EMAIL} authenticated with Administration, GM, Admin & Moderator control (Clearance Lv.999).`,
-    `[WhitePage/HouseOfIdeas] Layer 6 Supreme Author ${PRIMARY_ADMIN_EMAIL} verified over 5. Overvoid/Exoverse, 4. Omniverse, 3. Megaverse/Hyperverse, 2. Multiverse, 1. Universe & Nothingness (Oblivion).`,
-    `[OmniverseMatrix] 100 Fictional Species Background NPCs & 100+∞ Sovereign Omniverses bound to Super Admin ${PRIMARY_ADMIN_EMAIL}.`,
+    '[SecurityBoundary] Checking HMAC-SHA256 server session on /api/auth/session...',
+    '[TrustModel] Client-side RBAC email checks are preview-only; /api/admin/* & /api/online/* require verified server sessions.',
+    `[WhitePage/HouseOfIdeas] Layer 6 Reference Authority: ${PRIMARY_ADMIN_EMAIL}.`,
     '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
-    '[AdminConsole] Causality tick & RBAC moderation guardrails hooked into Game::update(float dt).',
   ]);
 
-  // Account verification state
+  // Account & server authentication state
   const [emailInput, setEmailInput] = useState<string>(activeAccountEmail);
+  const [operatorPasskeyInput, setOperatorPasskeyInput] = useState<string>('');
+  const [serverSession, setServerSession] = useState<ServerSessionInfo | null>(null);
+  const [serverAuditLog, setServerAuditLog] = useState<SecurityAuditEntry[]>([]);
+  const [serverAuthFeedback, setServerAuthFeedback] = useState<{
+    type: 'success' | 'error' | 'info';
+    text: string;
+  } | null>(null);
+  const [isAuthBusy, setIsAuthBusy] = useState<boolean>(false);
+
   const [moderationReason, setModerationReason] = useState<string>(
     'Code of Conduct & Realm Fair-Play Enforcement'
   );
@@ -147,10 +160,125 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   } | null>(null);
   const [copiedEmailBadge, setCopiedEmailBadge] = useState<boolean>(false);
 
-  const privilegeProfile = verifyAccountPrivileges(activeAccountEmail, moderatedPlayers);
+  const clientPreviewProfile = verifyAccountPrivileges(
+    activeAccountEmail,
+    moderatedPlayers,
+    'UNTRUSTED_CLIENT_PREVIEW'
+  );
+
+  // Authoritative view prefers server-verified session when present; otherwise marks UI as client sandbox preview
+  const isServerStaffVerified = Boolean(serverSession?.permissions?.canAccessGmConsole);
+  const privilegeProfile =
+    isServerStaffVerified && serverSession
+      ? verifyAccountPrivileges(serverSession.email, moderatedPlayers, 'VERIFIED_SERVER_SESSION')
+      : clientPreviewProfile;
 
   const addLog = (msg: string) => {
-    setConsoleLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 24)]);
+    setConsoleLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 30)]);
+  };
+
+  const refreshServerSessionAndAdminState = async () => {
+    try {
+      const res = await fetch('/api/auth/session', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        authenticated: boolean;
+        session: ServerSessionInfo | null;
+      };
+      setServerSession(data.session);
+      if (data.session?.permissions?.canAccessGmConsole) {
+        const adminRes = await fetch('/api/admin/state', { credentials: 'same-origin' });
+        if (adminRes.ok) {
+          const adminData = (await adminRes.json()) as {
+            roster?: ModeratedPlayerRecord[];
+            tickets?: SupportTicket[];
+            auditLog?: SecurityAuditEntry[];
+          };
+          if (adminData.roster) onUpdateModeratedPlayers?.(adminData.roster);
+          if (adminData.tickets) onUpdateSupportTickets?.(adminData.tickets);
+          if (adminData.auditLog) setServerAuditLog(adminData.auditLog);
+        }
+        addLog(
+          `[SERVER SESSION VERIFIED] Authenticated as ${data.session.email} (Role: ${data.session.role} · Clearance Lv.${data.session.clearanceLevel}).`
+        );
+      } else {
+        addLog(
+          '[UNAUTHENTICATED PREVIEW] No verified server operator session active — server /api/admin/* endpoints fail closed with HTTP 401/403.'
+        );
+      }
+    } catch {
+      addLog(
+        '[OFFLINE SANDBOX] Server auth endpoint unreachable; operating in local client sandbox preview.'
+      );
+    }
+  };
+
+  useEffect(() => {
+    void refreshServerSessionAndAdminState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleServerOperatorLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAuthBusy(true);
+    setServerAuthFeedback(null);
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          email: emailInput.trim(),
+          passkey: operatorPasskeyInput,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        session?: ServerSessionInfo;
+      };
+      if (!res.ok || !data.ok || !data.session) {
+        const errMsg = `HTTP ${res.status}: ${data.error || 'Server operator authentication failed.'}`;
+        setServerAuthFeedback({ type: 'error', text: errMsg });
+        addLog(`[AUTH REJECTED] ${errMsg}`);
+        return;
+      }
+      setOperatorPasskeyInput('');
+      setServerSession(data.session);
+      onChangeAccountEmail?.(data.session.email);
+      setServerAuthFeedback({
+        type: 'success',
+        text: `Verified HMAC-SHA256 HttpOnly session active for ${data.session.email} (Clearance Lv.${data.session.clearanceLevel}).`,
+      });
+      sound.playUpgradeFanfare();
+      await refreshServerSessionAndAdminState();
+    } catch {
+      setServerAuthFeedback({
+        type: 'error',
+        text: 'Network error reaching /api/auth/admin-login.',
+      });
+    } finally {
+      setIsAuthBusy(false);
+    }
+  };
+
+  const handleServerLogout = async () => {
+    setIsAuthBusy(true);
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+      setServerSession(null);
+      setServerAuditLog([]);
+      setServerAuthFeedback({
+        type: 'info',
+        text: 'Signed out of verified server session. Server /api/admin/* now rejects requests (401).',
+      });
+      addLog('[SERVER LOGOUT] Signed out of verified operator session.');
+    } finally {
+      setIsAuthBusy(false);
+    }
   };
 
   const handleCopyAdminEmail = () => {
@@ -168,9 +296,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     const cleaned = targetEmail.trim() || PRIMARY_ADMIN_EMAIL;
     setEmailInput(cleaned);
     onChangeAccountEmail?.(cleaned);
-    const verified = verifyAccountPrivileges(cleaned, moderatedPlayers);
+    const preview = verifyAccountPrivileges(cleaned, moderatedPlayers, 'UNTRUSTED_CLIENT_PREVIEW');
     addLog(
-      `[AuthSwitch] Active session bound to ${verified.email} — Roles: [${verified.assignedRoles.join(', ')}] (Clearance Lv.${verified.clearanceLevel}).`
+      `[CLIENT PREVIEW ONLY] UI preview email set to ${preview.email} (Roles: ${preview.assignedRoles.join(', ')}). Does NOT elevate server /api/admin/* authority without Operator Sign-In.`
     );
   };
 
@@ -181,7 +309,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     }
     onSetCastleLevel(100);
     sound.playUpgradeFanfare();
-    addLog('CMD: Castle level set to 100 (Era X: Celestial Imperium, 1000T capacity unlocked).');
+    addLog(
+      'CMD [CLIENT SANDBOX]: Local single-player Castle level set to 100 (untrusted by multiplayer server unless verified GM).'
+    );
   };
 
   const handleGrantSupplies = () => {
@@ -198,7 +328,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
       diamond: 1_000_000n,
     });
     sound.playGather();
-    addLog('CMD: Granted +100M Wood/Steel/Copper/Grain/Oil & +1M Diamonds.');
+    addLog(
+      'CMD [CLIENT SANDBOX]: Granted +100M Wood/Steel/Copper/Grain/Oil & +1M Diamonds to local React state.'
+    );
   };
 
   const handleSpawnT20Troops = (type: TroopType, amount: bigint) => {
@@ -209,91 +341,205 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     onSpawnTroops(type, 20, amount);
     sound.playSwing();
     addLog(
-      `CMD: Spawned +${amount.toLocaleString()} T20 ${type.toUpperCase()} cohort into garrison.`
+      `CMD [CLIENT SANDBOX]: Spawned +${amount.toLocaleString()} T20 ${type.toUpperCase()} cohort into local garrison.`
     );
   };
 
-  const handleExecuteModeration = (targetPlayerId: string, action: ModerationActionType) => {
-    const result = applyModerationAction({
-      roster: moderatedPlayers,
-      targetPlayerId,
-      action,
-      reason: moderationReason,
-      actorEmail: privilegeProfile.email,
-    });
-    addLog(result.logMessage);
-    if (result.success) {
+  const handleExecuteModeration = async (targetPlayerId: string, action: ModerationActionType) => {
+    try {
+      const res = await fetch('/api/admin/moderation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          targetPlayerId,
+          action,
+          reason: moderationReason,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        logMessage?: string;
+        roster?: ModeratedPlayerRecord[];
+        auditLog?: SecurityAuditEntry[];
+      };
+
+      if (!res.ok || !data.ok) {
+        const deniedMsg = `SERVER ENFORCED HTTP ${res.status}: ${data.error || 'Moderation action rejected.'}`;
+        addLog(deniedMsg);
+        setServerAuthFeedback({ type: 'error', text: deniedMsg });
+        return;
+      }
+
+      if (data.roster) onUpdateModeratedPlayers?.(data.roster);
+      if (data.auditLog) setServerAuditLog(data.auditLog);
+      if (data.logMessage) {
+        addLog(`[SERVER VERIFIED] ${data.logMessage}`);
+        onBroadcastSystemMessage?.(data.logMessage, 'MODERATION');
+      }
       sound.playSwing();
-      onUpdateModeratedPlayers?.(result.updatedRoster);
-      onBroadcastSystemMessage?.(result.logMessage, 'MODERATION');
+    } catch {
+      // Offline fallback clearly marked as local sandbox only
+      const fallback = applyModerationAction({
+        roster: moderatedPlayers,
+        targetPlayerId,
+        action,
+        reason: moderationReason,
+        actorEmail: privilegeProfile.email,
+      });
+      addLog(`[OFFLINE SANDBOX] ${fallback.logMessage}`);
+      if (fallback.success) {
+        sound.playSwing();
+        onUpdateModeratedPlayers?.(fallback.updatedRoster);
+      }
     }
   };
 
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = broadcastInput.trim();
     if (!trimmed) return;
-    if (!privilegeProfile.permissions.canModerateChat) {
-      addLog(`DENIED: ${privilegeProfile.email} cannot broadcast official GM/Moderator notices.`);
-      return;
-    }
-    const formatted = `[${privilegeProfile.email} · GM/ADMIN DECREE]: ${trimmed}`;
-    onBroadcastSystemMessage?.(formatted, 'GM DECREE');
-    addLog(`BROADCAST: ${formatted}`);
-    setBroadcastInput('');
-    sound.playUpgradeFanfare();
-  };
-
-  const handleSubmitContactTicket = (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = createContactTicket({
-      tickets: supportTickets,
-      category: ticketCategory,
-      senderName: privilegeProfile.displayName,
-      senderEmail: privilegeProfile.email,
-      subject: ticketSubject,
-      message: ticketMessage,
-      priority: ticketPriority,
-    });
-
-    if (!result.success || !result.ticket) {
-      setTicketFormFeedback({
-        type: 'error',
-        text: result.error || 'Please provide both a subject and message.',
+    try {
+      const res = await fetch('/api/admin/decree', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ message: trimmed }),
       });
-      return;
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        auditLog?: SecurityAuditEntry[];
+      };
+      if (!res.ok || !data.ok) {
+        const deniedMsg = `SERVER ENFORCED HTTP ${res.status}: ${data.error || 'Broadcast rejected.'}`;
+        addLog(deniedMsg);
+        setServerAuthFeedback({ type: 'error', text: deniedMsg });
+        return;
+      }
+      if (data.auditLog) setServerAuditLog(data.auditLog);
+      const formatted = `[${serverSession?.email || privilegeProfile.email} · VERIFIED GM DECREE]: ${trimmed}`;
+      onBroadcastSystemMessage?.(formatted, 'GM DECREE');
+      addLog(`BROADCAST [SERVER VERIFIED]: ${formatted}`);
+      setBroadcastInput('');
+      sound.playUpgradeFanfare();
+    } catch {
+      addLog('ERROR: Failed to reach /api/admin/decree.');
     }
-
-    onUpdateSupportTickets?.(result.updatedTickets);
-    setTicketSubject('');
-    setTicketMessage('');
-    setTicketFormFeedback({
-      type: 'success',
-      text: `Ticket ${result.ticket.id} routed directly to Official Admin/GM/Moderator (${PRIMARY_ADMIN_EMAIL}).`,
-    });
-    addLog(
-      `[CONTACT DISPATCH] Ticket ${result.ticket.id} ("${result.ticket.subject}") assigned to ${PRIMARY_ADMIN_EMAIL}.`
-    );
-    sound.playGather();
   };
 
-  const handleTicketStatusUpdate = (
+  const handleSubmitContactTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          category: ticketCategory,
+          subject: ticketSubject,
+          message: ticketMessage,
+          priority: ticketPriority,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        ticket?: SupportTicket;
+        tickets?: SupportTicket[];
+      };
+      if (!res.ok || !data.ok || !data.ticket) {
+        setTicketFormFeedback({
+          type: 'error',
+          text:
+            res.status === 401
+              ? 'Server requires an active player/operator session (HTTP 401). Open Territory Map or sign in above.'
+              : data.error || 'Please provide both a subject and message.',
+        });
+        return;
+      }
+      if (data.tickets) onUpdateSupportTickets?.(data.tickets);
+      setTicketSubject('');
+      setTicketMessage('');
+      setTicketFormFeedback({
+        type: 'success',
+        text: `Ticket ${data.ticket.id} persisted on server & routed to ${PRIMARY_ADMIN_EMAIL}.`,
+      });
+      addLog(
+        `[SERVER TICKET] Ticket ${data.ticket.id} ("${data.ticket.subject}") persisted and assigned to ${PRIMARY_ADMIN_EMAIL}.`
+      );
+      sound.playGather();
+    } catch {
+      const result = createContactTicket({
+        tickets: supportTickets,
+        category: ticketCategory,
+        senderName: privilegeProfile.displayName,
+        senderEmail: privilegeProfile.email,
+        subject: ticketSubject,
+        message: ticketMessage,
+        priority: ticketPriority,
+      });
+      if (!result.success || !result.ticket) {
+        setTicketFormFeedback({
+          type: 'error',
+          text: result.error || 'Please provide both a subject and message.',
+        });
+        return;
+      }
+      onUpdateSupportTickets?.(result.updatedTickets);
+      setTicketSubject('');
+      setTicketMessage('');
+      setTicketFormFeedback({
+        type: 'success',
+        text: `[Offline Preview] Ticket ${result.ticket.id} staged locally.`,
+      });
+    }
+  };
+
+  const handleTicketStatusUpdate = async (
     ticketId: string,
     status: 'investigating' | 'resolved',
     note: string
   ) => {
-    const result = resolveContactTicket({
-      tickets: supportTickets,
-      ticketId,
-      status,
-      resolutionNote: note,
-      actorEmail: privilegeProfile.email,
-      roster: moderatedPlayers,
-    });
-    addLog(result.logMessage);
-    if (result.success) {
+    try {
+      const res = await fetch('/api/admin/tickets/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ ticketId, status, resolutionNote: note }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        logMessage?: string;
+        tickets?: SupportTicket[];
+        auditLog?: SecurityAuditEntry[];
+      };
+      if (!res.ok || !data.ok) {
+        const deniedMsg = `SERVER ENFORCED HTTP ${res.status}: ${data.error || 'Ticket update rejected.'}`;
+        addLog(deniedMsg);
+        setServerAuthFeedback({ type: 'error', text: deniedMsg });
+        return;
+      }
+      if (data.tickets) onUpdateSupportTickets?.(data.tickets);
+      if (data.auditLog) setServerAuditLog(data.auditLog);
+      if (data.logMessage) addLog(`[SERVER VERIFIED] ${data.logMessage}`);
       sound.playSwing();
-      onUpdateSupportTickets?.(result.updatedTickets);
+    } catch {
+      const result = resolveContactTicket({
+        tickets: supportTickets,
+        ticketId,
+        status,
+        resolutionNote: note,
+        actorEmail: privilegeProfile.email,
+        roster: moderatedPlayers,
+      });
+      addLog(`[OFFLINE SANDBOX] ${result.logMessage}`);
+      if (result.success) {
+        sound.playSwing();
+        onUpdateSupportTickets?.(result.updatedTickets);
+      }
     }
   };
 
@@ -317,12 +563,19 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                 </span>
               </h2>
               <p className="text-[11px] text-slate-300 font-mono truncate">
-                Active Session:{' '}
-                <span className="text-emerald-300 font-bold" data-testid="admin-active-email">
+                {isServerStaffVerified
+                  ? 'Verified Server Session: '
+                  : 'Client Preview (Unverified): '}
+                <span
+                  className={`font-bold ${isServerStaffVerified ? 'text-emerald-300' : 'text-amber-300'}`}
+                  data-testid="admin-active-email"
+                >
                   {privilegeProfile.email}
                 </span>{' '}
-                · Clearance Lv.{privilegeProfile.clearanceLevel} · Roles:{' '}
-                {privilegeProfile.assignedRoles.join(' / ')}
+                ·{' '}
+                {isServerStaffVerified
+                  ? `Server Clearance Lv.${privilegeProfile.clearanceLevel} · Roles: ${privilegeProfile.assignedRoles.join(' / ')}`
+                  : 'Server Clearance: Locked (Sign In Below for /api/admin/* Authority)'}
               </p>
             </div>
           </div>
@@ -351,52 +604,129 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           </div>
         </div>
 
-        {/* Account Privilege & RBAC Status Bar */}
-        <div className="px-4 sm:px-6 py-2 bg-slate-950/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-slate-400 font-mono text-[11px]">Granted Privileges:</span>
-            {privilegeProfile.assignedRoles.map((roleName) => (
-              <span
-                key={roleName}
-                className="px-2 py-0.5 rounded-md bg-red-500/20 border border-red-500/40 text-red-200 font-mono font-bold text-[10px]"
-              >
-                {roleName}
-              </span>
-            ))}
-          </div>
+        {/* Server-Side Trust Boundary & Operator Authentication Bar */}
+        <div
+          data-testid="server-auth-status-bar"
+          className="px-4 sm:px-6 py-2.5 bg-slate-950 border-b border-slate-800 space-y-2 text-xs"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {isServerStaffVerified && serverSession ? (
+                <span
+                  data-testid="server-session-verified-badge"
+                  className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 font-mono font-bold text-[10px] flex items-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  <span>
+                    VERIFIED SERVER SESSION (HMAC-SHA256 · Lv.{serverSession.clearanceLevel})
+                  </span>
+                </span>
+              ) : (
+                <span
+                  data-testid="server-session-unverified-badge"
+                  className="px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-200 font-mono font-bold text-[10px] flex items-center gap-1"
+                >
+                  <Lock className="w-3 h-3" />
+                  <span>
+                    UNAUTHENTICATED CLIENT PREVIEW · /api/admin/* Enforces Fail-Closed 401/403
+                  </span>
+                </span>
+              )}
+              {privilegeProfile.assignedRoles.map((roleName) => (
+                <span
+                  key={roleName}
+                  className="px-2 py-0.5 rounded-md bg-red-500/20 border border-red-500/40 text-red-200 font-mono font-bold text-[10px]"
+                >
+                  {roleName}
+                </span>
+              ))}
+            </div>
 
-          <div className="flex items-center gap-1.5 w-full sm:w-auto">
-            <label htmlFor="admin-account-email-input" className="sr-only">
-              Active Account Email
-            </label>
-            <input
-              id="admin-account-email-input"
-              data-testid="admin-account-email-input"
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="Verify account email..."
-              className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400 w-48 sm:w-56"
-            />
-            <button
-              type="button"
-              data-testid="verify-account-email-btn"
-              onClick={() => handleSwitchAccountEmail(emailInput)}
-              className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono font-bold text-[11px] cursor-pointer"
-            >
-              Bind Account
-            </button>
-            {privilegeProfile.email !== PRIMARY_ADMIN_EMAIL && (
+            {isServerStaffVerified && (
               <button
                 type="button"
-                data-testid="restore-root-admin-btn"
-                onClick={() => handleSwitchAccountEmail(PRIMARY_ADMIN_EMAIL)}
-                className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-[11px] cursor-pointer"
+                data-testid="server-logout-btn"
+                disabled={isAuthBusy}
+                onClick={handleServerLogout}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-mono font-bold text-[11px] flex items-center gap-1 cursor-pointer"
               >
-                Restore Root GM
+                <LogOut className="w-3 h-3" />
+                <span>Sign Out Server Session</span>
               </button>
             )}
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Local Client Preview Switcher (Explicitly non-authoritative) */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="admin-account-email-input" className="sr-only">
+                Operator or Preview Email
+              </label>
+              <input
+                id="admin-account-email-input"
+                data-testid="admin-account-email-input"
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="Operator email..."
+                className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white focus:outline-none focus:border-amber-400 w-44 sm:w-52"
+              />
+              <button
+                type="button"
+                data-testid="verify-account-email-btn"
+                onClick={() => handleSwitchAccountEmail(emailInput)}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-mono font-bold text-[11px] cursor-pointer"
+                title="Sets local single-player UI preview only (does NOT authenticate server APIs)"
+              >
+                Preview Email
+              </button>
+            </div>
+
+            {/* Real Server Operator Login Form -> POST /api/auth/admin-login */}
+            {!isServerStaffVerified && (
+              <form
+                onSubmit={handleServerOperatorLogin}
+                className="flex flex-wrap items-center gap-1.5"
+              >
+                <label htmlFor="admin-operator-passkey-input" className="sr-only">
+                  Server Operator Passkey
+                </label>
+                <input
+                  id="admin-operator-passkey-input"
+                  data-testid="admin-operator-passkey-input"
+                  type="password"
+                  value={operatorPasskeyInput}
+                  onChange={(e) => setOperatorPasskeyInput(e.target.value)}
+                  placeholder="Server VOXEL_ADMIN_PASSKEY..."
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-cyan-500/40 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 w-48"
+                />
+                <button
+                  type="submit"
+                  data-testid="server-operator-login-btn"
+                  disabled={isAuthBusy}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  <span>Authenticate Server</span>
+                </button>
+              </form>
+            )}
+          </div>
+
+          {serverAuthFeedback && (
+            <div
+              data-testid="server-auth-feedback"
+              className={`px-2.5 py-1.5 rounded-lg font-mono text-[11px] border ${
+                serverAuthFeedback.type === 'success'
+                  ? 'bg-emerald-950/70 border-emerald-500/40 text-emerald-200'
+                  : serverAuthFeedback.type === 'error'
+                    ? 'bg-rose-950/70 border-rose-500/40 text-rose-200'
+                    : 'bg-slate-900 border-slate-700 text-slate-300'
+              }`}
+            >
+              {serverAuthFeedback.text}
+            </div>
+          )}
         </div>
 
         {/* Tab Strip */}
@@ -1503,16 +1833,68 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           )}
 
           {activeTab === 'logs' && (
-            <div className="space-y-2">
-              <div className="text-xs font-mono text-slate-400">
-                Native Engine & GM/Moderator Audit Event Stream ({PRIMARY_ADMIN_EMAIL})
-              </div>
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-emerald-400 space-y-1.5 max-h-[340px] overflow-y-auto">
-                {consoleLogs.map((log, i) => (
-                  <div key={i} className="leading-relaxed">
-                    {log}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono text-slate-300">
+                  <span>Server-Enforced Security & RBAC Audit Log (/api/admin/state)</span>
+                  <span className="text-[11px] text-cyan-300">
+                    {isServerStaffVerified
+                      ? `${serverAuditLog.length} Server Events`
+                      : 'Locked (Requires Verified Server Session)'}
+                  </span>
+                </div>
+                {isServerStaffVerified ? (
+                  <div
+                    data-testid="server-audit-log-list"
+                    className="p-3.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-[11px] font-mono space-y-1.5 max-h-[200px] overflow-y-auto"
+                  >
+                    {serverAuditLog.length === 0 ? (
+                      <div className="text-slate-400">No server audit events recorded yet.</div>
+                    ) : (
+                      serverAuditLog.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="flex flex-wrap items-center gap-2 border-b border-slate-900 pb-1"
+                        >
+                          <span className="text-slate-400">{entry.timestampIso}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              entry.outcome === 'allowed'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : entry.outcome === 'clamped'
+                                  ? 'bg-amber-500/20 text-amber-300'
+                                  : 'bg-rose-500/20 text-rose-300'
+                            }`}
+                          >
+                            {entry.eventType} ({entry.outcome})
+                          </span>
+                          <span className="text-cyan-300">
+                            {entry.actorEmail} [{entry.actorRole}]
+                          </span>
+                          <span className="text-slate-200">{entry.detail}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
-                ))}
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 text-xs font-mono text-amber-200">
+                    Server audit log is fail-closed (HTTP 401/403). Authenticate with your server
+                    operator passkey above to inspect authoritative persisted audit records.
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-xs font-mono text-slate-400">
+                  Client Console & Trust-Boundary Trace ({PRIMARY_ADMIN_EMAIL})
+                </div>
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-emerald-400 space-y-1.5 max-h-[240px] overflow-y-auto">
+                  {consoleLogs.map((log, i) => (
+                    <div key={i} className="leading-relaxed">
+                      {log}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

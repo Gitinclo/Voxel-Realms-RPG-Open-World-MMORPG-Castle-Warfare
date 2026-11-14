@@ -1,6 +1,6 @@
-# Security Policy
+# Security Policy & Server-Side Architecture
 
-The **Voxel Realms RPG** team takes security issues seriously. We appreciate the efforts of security researchers and community members who help keep our players, contributors, and systems safe.
+The **Voxel Realms RPG** team takes security seriously. This document explains our **server-side enforcement architecture**, **explicit client vs. server trust boundaries**, **production deployment requirements**, and how to responsibly disclose vulnerabilities.
 
 ---
 
@@ -18,6 +18,35 @@ We provide security updates and critical patches for the following versions of t
 
 ---
 
+## Server-Side Enforcement Architecture (`server.ts` + `src/game/serverAuth.ts`)
+
+Client-side roles, email selectors, React state, and browser `localStorage` **are never treated as security boundaries**. Privileged RBAC actions and multiplayer state mutations are enforced by the Express + RFC 6455 WebSocket backend (`server.ts`):
+
+1. **Cryptographic HMAC-SHA256 Sessions (`/api/auth/*`)**:
+   - `POST /api/auth/player-session`: Mints an `HttpOnly; SameSite=Lax` HMAC-SHA256 signed session cookie scoped strictly to `role: 'player'` (Clearance `Lv.1`). Passing a staff email (including `creatergame31@gmail.com`) to `/api/auth/player-session` **never** grants staff or admin privileges.
+   - `POST /api/auth/admin-login`: Verifies staff roster membership plus timing-safe SHA-256 comparison (`crypto.timingSafeEqual`) against `VOXEL_ADMIN_PASSKEY` before issuing an operator session token. Failed logins return `HTTP 401`/`403` and are recorded in the persistent security audit log.
+   - `GET /api/auth/session` & `POST /api/auth/logout`: Validates session signatures with `crypto.timingSafeEqual`, checks token expiration (`exp`), and re-evaluates live server roster status on every request so role revocations or bans take effect immediately.
+2. **Fail-Closed RBAC Authorization (`/api/admin/*`)**:
+   - `GET /api/admin/state`, `POST /api/admin/moderation`, `POST /api/admin/tickets/resolve`, `POST /api/admin/decree`, and `POST /api/admin/species-rebirth` fail closed with `HTTP 401` when unauthenticated and `HTTP 403` when the verified session lacks the required RBAC capability (`canAccessGmConsole`, `canModeratePlayers`, `canManageRoles`, `canHandleSupportTickets`, `canModerateChat`).
+   - All moderation actions ignore client-supplied `actorEmail` fields and bind the actor strictly from the verified server session (`session.email`), enforcing root immutability protection for `creatergame31@gmail.com` server-side.
+   - All allow/deny/clamped security events are written to the server-persisted `securityAuditLog` inside `data/online_realm_state.json`.
+3. **Anti-Tamper State Validation & WebSocket Session Binding (`/api/online/*`, `/ws/siege`)**:
+   - `POST /api/online/sync` and `POST /api/online/siege/cmd` require a valid HMAC-signed session (`HTTP 401` otherwise). Non-staff sessions cannot use `/api/online/sync` to spoof `commanderId`, `email`, `castleLevel`, `cultivationRealmIndex`, `vipTier`, `karma`, or `garrisonTroopsWire`; restricted or out-of-range fields are stripped/clamped server-side and logged (`SYNC_SANITIZED`).
+   - `GET /api/online/status` redacts account email addresses (`emailRedacted: true`) from public responses unless requested by a verified staff session.
+   - WebSocket connections on `/ws/siege` allow read-only telemetry streaming for spectating peers, but reject unauthenticated `C2S_TROOP_POSITION_CMD` and `C2S_RALLY_ACTION_CMD` mutations with `S2C_AUTH_ERROR` (`401`) and bind authenticated commands to `peer.session.commanderId`.
+4. **Security Response Headers & Fail-Closed Production Config**:
+   - `server.ts` disables `x-powered-by`, enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Cache-Control: no-store` on `/api/*`.
+   - When `NODE_ENV=production`, `resolveServerRuntimeSecurityConfig` fails closed on startup unless `VOXEL_SESSION_SECRET` is configured with at least 32 characters; operator logins fail closed unless `VOXEL_ADMIN_PASSKEY` is set. In local non-production dev mode, an ephemeral CSPRNG secret/passkey is generated per boot in memory (and never hardcoded into client bundles or `.env.example`).
+
+---
+
+## Explicit Trust Boundary Disclosure
+
+- **Untrusted Client Sandbox**: Single-player 3D canvas progression, local resource counters, local `verifyAccountPrivileges(..., 'UNTRUSTED_CLIENT_PREVIEW')`, and `localStorage` caches run in the user's browser for offline convenience and sandbox testing only. Browser DevTools modifications to React state or `localStorage` **do not** bypass server `/api/admin/*` or `/api/online/*` checks.
+- **Production Hardening Checklist**: Before exposing `server.ts` on the public internet, deploy behind a TLS-terminating reverse proxy (`HTTPS`/`WSS` so `HttpOnly; Secure` session cookies are encrypted in transit), set high-entropy `VOXEL_SESSION_SECRET` and `VOXEL_ADMIN_PASSKEY` environment secrets, and place rate limiting at your ingress/load balancer.
+
+---
+
 ## Reporting a Vulnerability
 
 **Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
@@ -31,7 +60,7 @@ If you believe you have discovered a security vulnerability in this project, ple
 
 To help us investigate and resolve the issue quickly, please include as much of the following information as possible:
 
-1. **Vulnerability Type:** (e.g., Cross-Site Scripting [XSS], Prototype Pollution, Insecure Dependency, Authentication/State Bypass, Client-side State Tampering).
+1. **Vulnerability Type:** (e.g., Auth/RBAC Bypass, Session Forgery, Cross-Site Scripting [XSS], WebSocket Impersonation, Server-Side State Tampering).
 2. **Impact Assessment:** A description of what an attacker could accomplish by exploiting this vulnerability.
 3. **Affected Components:** The specific files, functions, routes, or modules involved.
 4. **Step-by-Step Reproduction:** Exact steps, payload samples, or a minimal proof of concept (PoC) demonstrating the issue.

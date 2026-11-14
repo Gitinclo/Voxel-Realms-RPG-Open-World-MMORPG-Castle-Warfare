@@ -3,13 +3,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import express from 'express';
+import 'dotenv/config';
+import express, { Request, Response } from 'express';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Duplex } from 'node:stream';
 import { createServer as createViteServer } from 'vite';
+import {
+  AdminPermissions,
+  ContactCategory,
+  INITIAL_MODERATED_PLAYERS,
+  INITIAL_SUPPORT_TICKETS,
+  ModerationActionType,
+  ModeratedPlayerRecord,
+  SecurityAuditEntry,
+  ServerSessionInfo,
+  SupportTicket,
+  applyModerationAction,
+  createContactTicket,
+  resolveContactTicket,
+} from './src/game/adminModeration';
 import {
   ALL_TERRITORY_SECTORS,
   AuthoritativeSiegeSectorState,
@@ -26,11 +41,35 @@ import {
   createInitialAuthoritativeSiegeSectorState,
   stepAuthoritativeSiegeTick,
 } from './src/game/siegeNetProtocol';
+import {
+  ALLOWED_CLUSTER_IDS,
+  authorizeStaffPermission,
+  bindSiegeCommandToSession,
+  buildClearSessionCookieHeader,
+  buildSessionSetCookieHeader,
+  createAuditEntry,
+  extractSessionTokenFromHeaders,
+  issueSessionTokenForOperator,
+  issueSessionTokenForPlayer,
+  redactCommanderForPublicStatus,
+  resolveAuthenticatedSession,
+  resolveServerRuntimeSecurityConfig,
+  sanitizeAndValidateSyncPayload,
+} from './src/game/serverAuth';
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const DATA_DIR = path.resolve(import.meta.dirname, 'data');
 const STATE_FILE_PATH = path.join(DATA_DIR, 'online_realm_state.json');
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const MAX_AUDIT_LOG_ENTRIES = 200;
+
+interface ServerDecreeRecord {
+  id: string;
+  authorEmail: string;
+  authorRole: string;
+  message: string;
+  createdAtIso: string;
+}
 
 interface PersistedMultiRegionStore {
   primaryClusterId: MultiRegionClusterId;
@@ -38,6 +77,18 @@ interface PersistedMultiRegionStore {
   lastDiskFlushIso: string;
   sectors: Record<TerritorySectorCode, AuthoritativeSiegeSectorState>;
   commanders: Record<string, PersistedRealmPlayerSnapshot>;
+  moderatedPlayers: ModeratedPlayerRecord[];
+  supportTickets: SupportTicket[];
+  securityAuditLog: SecurityAuditEntry[];
+  activeDecrees: ServerDecreeRecord[];
+  speciesSwitchGlobalApproved: boolean;
+}
+
+function appendAuditEntry(store: PersistedMultiRegionStore, entry: SecurityAuditEntry): void {
+  store.securityAuditLog.unshift(entry);
+  if (store.securityAuditLog.length > MAX_AUDIT_LOG_ENTRIES) {
+    store.securityAuditLog.length = MAX_AUDIT_LOG_ENTRIES;
+  }
 }
 
 function loadOrInitializeStore(): PersistedMultiRegionStore {
@@ -47,9 +98,27 @@ function loadOrInitializeStore(): PersistedMultiRegionStore {
     }
     if (fs.existsSync(STATE_FILE_PATH)) {
       const raw = fs.readFileSync(STATE_FILE_PATH, 'utf8');
-      const parsed = JSON.parse(raw) as PersistedMultiRegionStore;
+      const parsed = JSON.parse(raw) as Partial<PersistedMultiRegionStore>;
       if (parsed && parsed.sectors && parsed.sectors.B2) {
-        return parsed;
+        // Hydrate security collections smoothly when upgrading older disk snapshots
+        return {
+          primaryClusterId: parsed.primaryClusterId || 'us-east-solara-1',
+          activeSector: parsed.activeSector || 'B2',
+          lastDiskFlushIso: parsed.lastDiskFlushIso || new Date().toISOString(),
+          sectors: parsed.sectors as Record<TerritorySectorCode, AuthoritativeSiegeSectorState>,
+          commanders: parsed.commanders || {},
+          moderatedPlayers:
+            Array.isArray(parsed.moderatedPlayers) && parsed.moderatedPlayers.length > 0
+              ? parsed.moderatedPlayers
+              : [...INITIAL_MODERATED_PLAYERS],
+          supportTickets:
+            Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0
+              ? parsed.supportTickets
+              : [...INITIAL_SUPPORT_TICKETS],
+          securityAuditLog: Array.isArray(parsed.securityAuditLog) ? parsed.securityAuditLog : [],
+          activeDecrees: Array.isArray(parsed.activeDecrees) ? parsed.activeDecrees : [],
+          speciesSwitchGlobalApproved: Boolean(parsed.speciesSwitchGlobalApproved),
+        };
       }
     }
   } catch {
@@ -71,18 +140,23 @@ function loadOrInitializeStore(): PersistedMultiRegionStore {
       'player-commander-01': {
         commanderId: 'player-commander-01',
         commanderName: 'Sovereign Vanguard',
-        email: 'creatergame31@gmail.com',
+        email: 'player01@voxelrealms.example',
         allianceTag: 'SOL',
-        castleLevel: 100,
-        cultivationRealmIndex: 7,
-        vipTier: 3,
-        karma: 250,
-        garrisonTroopsWire: '1000000000000000',
-        discoveredCodexCount: 16,
+        castleLevel: 12,
+        cultivationRealmIndex: 2,
+        vipTier: 0,
+        karma: 50,
+        garrisonTroopsWire: '250000',
+        discoveredCodexCount: 4,
         preferredRegion: 'us-east-solara-1',
         updatedAtIso: nowIso,
       },
     },
+    moderatedPlayers: [...INITIAL_MODERATED_PLAYERS],
+    supportTickets: [...INITIAL_SUPPORT_TICKETS],
+    securityAuditLog: [],
+    activeDecrees: [],
+    speciesSwitchGlobalApproved: false,
   };
 
   persistStoreToDisk(initialStore);
@@ -110,6 +184,7 @@ interface ConnectedSiegePeer {
   socket: Duplex;
   subscribedSector: TerritorySectorCode;
   connectedAtIso: string;
+  session: ServerSessionInfo | null;
 }
 
 function encodeWsTextFrame(jsonText: string): Buffer {
@@ -189,11 +264,100 @@ function decodeWsFrames(buffer: Buffer): {
 }
 
 async function startServer() {
+  const securityConfig = resolveServerRuntimeSecurityConfig(process.env);
+  if (securityConfig.failClosedMisconfigured) {
+    console.error(`[SECURITY FATAL] ${securityConfig.misconfigurationReason}`);
+    process.exit(1);
+  }
+
+  if (securityConfig.ephemeralDevPasskeyGenerated && securityConfig.adminPasskey) {
+    console.info(
+      `[Voxel Realms Security] Development mode: generated ephemeral operator passkey for this boot: ${securityConfig.adminPasskey} (set VOXEL_ADMIN_PASSKEY in .env to override).`
+    );
+  } else if (securityConfig.misconfigurationReason) {
+    console.warn(`[Voxel Realms Security] ${securityConfig.misconfigurationReason}`);
+  }
+
   const app = express();
-  app.use(express.json({ limit: '1mb' }));
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '512kb' }));
+
+  // Baseline Security Response Headers
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    if (req.path.startsWith('/api/')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+    next();
+  });
 
   const store = loadOrInitializeStore();
   const peers = new Map<string, ConnectedSiegePeer>();
+
+  const resolveRequestSession = (req: Request): ServerSessionInfo | null => {
+    const token = extractSessionTokenFromHeaders({
+      cookieHeader: req.headers.cookie,
+      authorizationHeader: req.headers.authorization,
+    });
+    const resolved = resolveAuthenticatedSession({
+      token,
+      secret: securityConfig.sessionSecret,
+      roster: store.moderatedPlayers,
+    });
+    return resolved.authenticated ? resolved.session : null;
+  };
+
+  const requireAuthenticatedSession = (req: Request, res: Response): ServerSessionInfo | null => {
+    const session = resolveRequestSession(req);
+    if (!session) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'AUTHZ_DENIED',
+          actorEmail: 'anonymous',
+          actorRole: 'anonymous',
+          outcome: 'denied',
+          detail: `Unauthenticated request blocked on ${req.method} ${req.path}`,
+        })
+      );
+      res.status(401).json({
+        ok: false,
+        error: 'Unauthorized: valid HMAC-signed server session required.',
+      });
+      return null;
+    }
+    return session;
+  };
+
+  const requireStaffPermission = (
+    req: Request,
+    res: Response,
+    permission: keyof AdminPermissions
+  ): ServerSessionInfo | null => {
+    const session = resolveRequestSession(req);
+    const authz = authorizeStaffPermission(session, permission);
+    if (!authz.authorized) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'AUTHZ_DENIED',
+          actorEmail: session?.email ?? 'anonymous',
+          actorRole: session?.role ?? 'anonymous',
+          outcome: 'denied',
+          detail: `${req.method} ${req.path} rejected (${authz.statusCode}): ${authz.error}`,
+        })
+      );
+      persistStoreToDisk(store);
+      res.status(authz.statusCode).json({
+        ok: false,
+        error: authz.error,
+      });
+      return null;
+    }
+    return authz.session;
+  };
 
   const broadcastToSector = <TPayload>(
     sector: TerritorySectorCode,
@@ -222,11 +386,9 @@ async function startServer() {
     const { nextState, deltaPacket } = stepAuthoritativeSiegeTick(currentSectorState);
     store.sectors[activeSector] = nextState;
 
-    // Broadcast 20Hz delta update to connected WebSocket peers
     if (peers.size > 0) {
       broadcastToSector(activeSector, deltaPacket);
 
-      // Every 100 ticks (5.0 seconds), broadcast full keyframe & multi-region replication status
       if (nextState.serverTick % 100 === 0) {
         broadcastToSector(activeSector, {
           opcode: SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT,
@@ -239,11 +401,390 @@ async function startServer() {
       }
     }
 
-    // Flush multi-region state to disk every 200 ticks (10.0 seconds)
     if (tickCounter % 200 === 0) {
       persistStoreToDisk(store);
     }
   }, 50);
+
+  // ==========================================================================
+  // SERVER-SIDE AUTHENTICATION & SESSION MANAGEMENT ROUTES (/api/auth/*)
+  // ==========================================================================
+
+  app.get('/api/auth/session', (req, res) => {
+    const session = resolveRequestSession(req);
+    res.json({
+      ok: true,
+      authenticated: Boolean(session),
+      session,
+      securityMode: {
+        isProduction: securityConfig.isProduction,
+        operatorLoginConfigured: Boolean(securityConfig.adminPasskey),
+        ephemeralDevPasskeyActive: securityConfig.ephemeralDevPasskeyGenerated,
+      },
+    });
+  });
+
+  app.post('/api/auth/player-session', (req, res) => {
+    const body = (req.body || {}) as {
+      commanderId?: string;
+      displayName?: string;
+      email?: string;
+    };
+
+    const issued = issueSessionTokenForPlayer({
+      commanderId: body.commanderId || `player-${crypto.randomUUID().slice(0, 8)}`,
+      displayName: body.displayName || 'Sovereign Vanguard',
+      email: body.email || 'player@voxelrealms.example',
+      secret: securityConfig.sessionSecret,
+    });
+
+    res.setHeader(
+      'Set-Cookie',
+      buildSessionSetCookieHeader(issued.token, securityConfig.isProduction)
+    );
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'PLAYER_SESSION_ISSUED',
+        actorEmail: issued.session.email,
+        actorRole: 'player',
+        outcome: 'allowed',
+        detail: `Issued scoped player session (Clearance Lv.1) for commander ${issued.session.commanderId}`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      authenticated: true,
+      session: issued.session,
+    });
+  });
+
+  app.post('/api/auth/admin-login', (req, res) => {
+    const body = (req.body || {}) as { email?: string; passkey?: string };
+    const result = issueSessionTokenForOperator({
+      email: body.email || '',
+      passkey: body.passkey || '',
+      configuredPasskey: securityConfig.adminPasskey,
+      roster: store.moderatedPlayers,
+      secret: securityConfig.sessionSecret,
+    });
+
+    if (!result.ok) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'ADMIN_LOGIN_FAILED',
+          actorEmail: (body.email || 'anonymous').trim().toLowerCase() || 'anonymous',
+          actorRole: 'anonymous',
+          outcome: 'denied',
+          detail: result.error,
+        })
+      );
+      persistStoreToDisk(store);
+      res.status(result.statusCode).json({
+        ok: false,
+        error: result.error,
+      });
+      return;
+    }
+
+    res.setHeader(
+      'Set-Cookie',
+      buildSessionSetCookieHeader(result.token, securityConfig.isProduction)
+    );
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'ADMIN_LOGIN_SUCCESS',
+        actorEmail: result.session.email,
+        actorRole: result.session.role,
+        outcome: 'allowed',
+        detail: `Operator session minted for ${result.session.email} (Clearance Lv.${result.session.clearanceLevel})`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      authenticated: true,
+      session: result.session,
+    });
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    const session = resolveRequestSession(req);
+    res.setHeader('Set-Cookie', buildClearSessionCookieHeader(securityConfig.isProduction));
+    if (session) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'SESSION_LOGOUT',
+          actorEmail: session.email,
+          actorRole: session.role,
+          outcome: 'allowed',
+          detail: `Signed out verified session ${session.sessionId}`,
+        })
+      );
+      persistStoreToDisk(store);
+    }
+    res.json({ ok: true, authenticated: false, session: null });
+  });
+
+  // ==========================================================================
+  // PROTECTED SERVER-SIDE ADMIN, RBAC & MODERATION ROUTES (/api/admin/*)
+  // ==========================================================================
+
+  app.get('/api/admin/state', (req, res) => {
+    const session = requireStaffPermission(req, res, 'canAccessGmConsole');
+    if (!session) return;
+
+    res.json({
+      ok: true,
+      session,
+      roster: store.moderatedPlayers,
+      tickets: store.supportTickets,
+      auditLog: store.securityAuditLog,
+      activeDecrees: store.activeDecrees,
+      speciesSwitchGlobalApproved: store.speciesSwitchGlobalApproved,
+    });
+  });
+
+  app.post('/api/admin/moderation', (req, res) => {
+    const body = (req.body || {}) as {
+      targetPlayerId?: string;
+      action?: ModerationActionType;
+      reason?: string;
+    };
+
+    const action = body.action;
+    const isRoleAction =
+      action === 'grant_moderator' ||
+      action === 'grant_admin' ||
+      action === 'grant_gm' ||
+      action === 'revoke_staff';
+
+    const requiredPermission: keyof AdminPermissions = isRoleAction
+      ? 'canManageRoles'
+      : 'canModeratePlayers';
+
+    const session = requireStaffPermission(req, res, requiredPermission);
+    if (!session) return;
+
+    if (!body.targetPlayerId || !action) {
+      res.status(400).json({ ok: false, error: 'Missing targetPlayerId or action.' });
+      return;
+    }
+
+    // Strictly bind actorEmail from verified HMAC session, never from request body!
+    const result = applyModerationAction({
+      roster: store.moderatedPlayers,
+      targetPlayerId: body.targetPlayerId,
+      action,
+      reason: body.reason || '',
+      actorEmail: session.email,
+    });
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'MODERATION_EXECUTED',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: result.success ? 'allowed' : 'denied',
+        detail: result.logMessage,
+      })
+    );
+
+    if (!result.success) {
+      persistStoreToDisk(store);
+      res.status(403).json({
+        ok: false,
+        error: result.logMessage,
+        roster: store.moderatedPlayers,
+        auditLog: store.securityAuditLog,
+      });
+      return;
+    }
+
+    store.moderatedPlayers = result.updatedRoster;
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      logMessage: result.logMessage,
+      roster: store.moderatedPlayers,
+      auditLog: store.securityAuditLog,
+    });
+  });
+
+  app.post('/api/admin/tickets', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const body = (req.body || {}) as {
+      category?: ContactCategory;
+      subject?: string;
+      message?: string;
+      priority?: 'low' | 'normal' | 'high' | 'critical';
+    };
+
+    const result = createContactTicket({
+      tickets: store.supportTickets,
+      category: body.category || 'administration',
+      senderName: session.displayName,
+      senderEmail: session.email,
+      subject: body.subject || '',
+      message: body.message || '',
+      priority: body.priority || 'normal',
+    });
+
+    if (!result.success || !result.ticket) {
+      res.status(400).json({ ok: false, error: result.error || 'Invalid ticket payload.' });
+      return;
+    }
+
+    store.supportTickets = result.updatedTickets;
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'TICKET_CREATED',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: 'allowed',
+        detail: `Created ticket ${result.ticket.id} ("${result.ticket.subject}")`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      ticket: result.ticket,
+      tickets: store.supportTickets,
+    });
+  });
+
+  app.post('/api/admin/tickets/resolve', (req, res) => {
+    const session = requireStaffPermission(req, res, 'canHandleSupportTickets');
+    if (!session) return;
+
+    const body = (req.body || {}) as {
+      ticketId?: string;
+      status?: 'investigating' | 'resolved';
+      resolutionNote?: string;
+    };
+
+    if (!body.ticketId || (body.status !== 'investigating' && body.status !== 'resolved')) {
+      res.status(400).json({ ok: false, error: 'Invalid ticketId or status.' });
+      return;
+    }
+
+    const result = resolveContactTicket({
+      tickets: store.supportTickets,
+      ticketId: body.ticketId,
+      status: body.status,
+      resolutionNote: body.resolutionNote || '',
+      actorEmail: session.email,
+      roster: store.moderatedPlayers,
+    });
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'TICKET_UPDATED',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: result.success ? 'allowed' : 'denied',
+        detail: result.logMessage,
+      })
+    );
+
+    if (!result.success) {
+      persistStoreToDisk(store);
+      res.status(400).json({ ok: false, error: result.logMessage });
+      return;
+    }
+
+    store.supportTickets = result.updatedTickets;
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      logMessage: result.logMessage,
+      tickets: store.supportTickets,
+      auditLog: store.securityAuditLog,
+    });
+  });
+
+  app.post('/api/admin/decree', (req, res) => {
+    const session = requireStaffPermission(req, res, 'canModerateChat');
+    if (!session) return;
+
+    const body = (req.body || {}) as { message?: string };
+    const cleanMsg = (body.message || '').trim().slice(0, 280);
+    if (!cleanMsg) {
+      res.status(400).json({ ok: false, error: 'Decree message cannot be empty.' });
+      return;
+    }
+
+    const decree: ServerDecreeRecord = {
+      id: `dec_${crypto.randomUUID().slice(0, 8)}`,
+      authorEmail: session.email,
+      authorRole: session.role,
+      message: cleanMsg,
+      createdAtIso: new Date().toISOString(),
+    };
+    store.activeDecrees.unshift(decree);
+    if (store.activeDecrees.length > 50) store.activeDecrees.length = 50;
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'MODERATION_EXECUTED',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: 'allowed',
+        detail: `Published official decree: "${cleanMsg}"`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      decree,
+      activeDecrees: store.activeDecrees,
+      auditLog: store.securityAuditLog,
+    });
+  });
+
+  app.post('/api/admin/species-rebirth', (req, res) => {
+    const session = requireStaffPermission(req, res, 'canManageRoles');
+    if (!session) return;
+
+    const body = (req.body || {}) as { approved?: boolean };
+    store.speciesSwitchGlobalApproved = Boolean(body.approved);
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'MODERATION_EXECUTED',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: 'allowed',
+        detail: `Set server speciesSwitchGlobalApproved = ${store.speciesSwitchGlobalApproved}`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      speciesSwitchGlobalApproved: store.speciesSwitchGlobalApproved,
+      auditLog: store.securityAuditLog,
+    });
+  });
 
   // ==========================================================================
   // MULTI-REGION PERSISTENCE & SIEGE REST API ROUTES (/api/online/*)
@@ -264,6 +805,11 @@ async function startServer() {
       store.lastDiskFlushIso
     );
 
+    const session = resolveRequestSession(req);
+    const commandersPublic = Object.values(store.commanders).map((c) =>
+      session?.permissions.canAccessGmConsole ? c : redactCommanderForPublicStatus(c)
+    );
+
     res.json({
       ok: true,
       engine: 'Voxel Realms Authoritative 20Hz Siege & Multi-Region Persistence Server',
@@ -271,55 +817,52 @@ async function startServer() {
       activeSector: validSector,
       sectorState,
       replication,
-      commanders: Object.values(store.commanders),
+      commanders: commandersPublic,
     });
   });
 
   app.post('/api/online/sync', (req, res) => {
-    const body = req.body as Partial<PersistedRealmPlayerSnapshot> & {
-      primaryClusterId?: MultiRegionClusterId;
-      sector?: TerritorySectorCode;
-    };
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const body = (req.body || {}) as Record<string, unknown>;
 
     if (
-      body.primaryClusterId &&
-      ['us-east-solara-1', 'eu-central-valhalla-1', 'ap-southeast-celestia-1'].includes(
-        body.primaryClusterId
-      )
+      typeof body.primaryClusterId === 'string' &&
+      ALLOWED_CLUSTER_IDS.includes(body.primaryClusterId as MultiRegionClusterId)
     ) {
-      store.primaryClusterId = body.primaryClusterId;
+      store.primaryClusterId = body.primaryClusterId as MultiRegionClusterId;
     }
 
-    if (body.sector && ALL_TERRITORY_SECTORS.includes(body.sector)) {
-      store.activeSector = body.sector;
+    if (
+      typeof body.sector === 'string' &&
+      ALL_TERRITORY_SECTORS.includes(body.sector as TerritorySectorCode)
+    ) {
+      store.activeSector = body.sector as TerritorySectorCode;
     }
 
-    const commanderId = body.commanderId || 'player-commander-01';
-    const existing = store.commanders[commanderId] ?? store.commanders['player-commander-01'];
-    const updatedProfile: PersistedRealmPlayerSnapshot = {
-      commanderId,
-      commanderName: body.commanderName ?? existing?.commanderName ?? 'Sovereign Vanguard',
-      email: body.email ?? existing?.email ?? 'creatergame31@gmail.com',
-      allianceTag: body.allianceTag ?? existing?.allianceTag ?? 'SOL',
-      castleLevel:
-        typeof body.castleLevel === 'number' ? body.castleLevel : (existing?.castleLevel ?? 100),
-      cultivationRealmIndex:
-        typeof body.cultivationRealmIndex === 'number'
-          ? body.cultivationRealmIndex
-          : (existing?.cultivationRealmIndex ?? 7),
-      vipTier: typeof body.vipTier === 'number' ? body.vipTier : (existing?.vipTier ?? 3),
-      karma: typeof body.karma === 'number' ? body.karma : (existing?.karma ?? 250),
-      garrisonTroopsWire:
-        body.garrisonTroopsWire ?? existing?.garrisonTroopsWire ?? '1000000000000000',
-      discoveredCodexCount:
-        typeof body.discoveredCodexCount === 'number'
-          ? body.discoveredCodexCount
-          : (existing?.discoveredCodexCount ?? 16),
-      preferredRegion: body.preferredRegion ?? store.primaryClusterId,
-      updatedAtIso: new Date().toISOString(),
-    };
+    const existing = store.commanders[session.commanderId];
+    const { snapshot: updatedProfile, sanitizedFields } = sanitizeAndValidateSyncPayload({
+      existing,
+      incomingBody: body,
+      session,
+      defaultClusterId: store.primaryClusterId,
+    });
 
-    store.commanders[commanderId] = updatedProfile;
+    if (sanitizedFields.length > 0) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'SYNC_SANITIZED',
+          actorEmail: session.email,
+          actorRole: session.role,
+          outcome: 'clamped',
+          detail: `Server rejected/clamped untrusted fields [${sanitizedFields.join(', ')}] on /api/online/sync`,
+        })
+      );
+    }
+
+    store.commanders[session.commanderId] = updatedProfile;
     persistStoreToDisk(store);
 
     const sectorState = store.sectors[store.activeSector];
@@ -332,6 +875,7 @@ async function startServer() {
 
     res.json({
       ok: true,
+      sanitizedFields,
       syncedProfile: updatedProfile,
       replication,
       sectorState,
@@ -339,22 +883,27 @@ async function startServer() {
   });
 
   app.post('/api/online/siege/cmd', (req, res) => {
-    const { sector, troopCmd, rallyCmd } = req.body as {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const { sector, troopCmd, rallyCmd } = (req.body || {}) as {
       sector?: TerritorySectorCode;
       troopCmd?: TroopPositionCommandPacket;
       rallyCmd?: RallyActionCommandPacket;
     };
+
+    const bound = bindSiegeCommandToSession({ session, troopCmd, rallyCmd });
 
     const targetSector: TerritorySectorCode =
       sector && ALL_TERRITORY_SECTORS.includes(sector) ? sector : store.activeSector;
     store.activeSector = targetSector;
 
     let current = store.sectors[targetSector];
-    if (troopCmd) {
-      current = applyTroopPositionCommand(current, troopCmd);
+    if (bound.troopCmd) {
+      current = applyTroopPositionCommand(current, bound.troopCmd);
     }
-    if (rallyCmd) {
-      current = applyRallyActionCommand(current, rallyCmd);
+    if (bound.rallyCmd) {
+      current = applyRallyActionCommand(current, bound.rallyCmd);
     }
     store.sectors[targetSector] = current;
     persistStoreToDisk(store);
@@ -377,12 +926,12 @@ async function startServer() {
   const httpServer = http.createServer(app);
 
   // ==========================================================================
-  // RFC 6455 WEBSOCKET UPGRADE HANDLER ON /ws/siege
+  // RFC 6455 WEBSOCKET UPGRADE HANDLER ON /ws/siege (SESSION-VERIFIED WRITES)
   // ==========================================================================
   httpServer.on('upgrade', (req, socket, head) => {
     const url = req.url || '';
     if (!url.startsWith('/ws/siege')) {
-      return; // Allow Vite middleware to handle any other upgrades if needed
+      return;
     }
 
     const wsKey = req.headers['sec-websocket-key'];
@@ -408,7 +957,7 @@ async function startServer() {
       socket.unshift(head);
     }
 
-    const parsedUrl = new URL(url, 'http://localhost:3000');
+    const parsedUrl = new URL(url, `http://localhost:${PORT}`);
     const sectorParam = (parsedUrl.searchParams.get('sector') ||
       store.activeSector) as TerritorySectorCode;
     const validSector: TerritorySectorCode = ALL_TERRITORY_SECTORS.includes(sectorParam)
@@ -416,16 +965,27 @@ async function startServer() {
       : store.activeSector;
     store.activeSector = validSector;
 
+    const wsToken = extractSessionTokenFromHeaders({
+      cookieHeader: req.headers.cookie,
+      authorizationHeader: req.headers.authorization,
+      queryToken: parsedUrl.searchParams.get('token'),
+    });
+    const resolvedWsSession = resolveAuthenticatedSession({
+      token: wsToken,
+      secret: securityConfig.sessionSecret,
+      roster: store.moderatedPlayers,
+    });
+
     const peerId = `peer-${crypto.randomUUID().slice(0, 8)}`;
     const peer: ConnectedSiegePeer = {
       id: peerId,
       socket,
       subscribedSector: validSector,
       connectedAtIso: new Date().toISOString(),
+      session: resolvedWsSession.authenticated ? resolvedWsSession.session : null,
     };
     peers.set(peerId, peer);
 
-    // Immediately send authoritative S2C_FULL_SIEGE_SNAPSHOT upon connection
     const initialState = store.sectors[validSector];
     const snapshotEnvelope: SiegeNetEnvelope<{ sectorState: AuthoritativeSiegeSectorState }> = {
       opcode: SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT,
@@ -465,21 +1025,62 @@ async function startServer() {
             store.activeSector = parsed.sector;
           }
 
+          const isMutatingCommand =
+            parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD ||
+            parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD;
+
+          if (isMutatingCommand && !peer.session) {
+            appendAuditEntry(
+              store,
+              createAuditEntry({
+                eventType: 'WS_COMMAND_REJECTED',
+                actorEmail: 'anonymous',
+                actorRole: 'anonymous',
+                outcome: 'denied',
+                detail: `Rejected unauthenticated WebSocket command (${parsed.opcode}) from ${peerId}`,
+              })
+            );
+            socket.write(
+              encodeWsTextFrame(
+                JSON.stringify({
+                  opcode: 'S2C_AUTH_ERROR',
+                  code: 401,
+                  error: 'WebSocket state mutations require an authenticated server session.',
+                })
+              )
+            );
+            continue;
+          }
+
           const targetSector = peer.subscribedSector;
           let sectorState = store.sectors[targetSector];
 
-          if (parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD && parsed.payload) {
-            sectorState = applyTroopPositionCommand(
-              sectorState,
-              parsed.payload as TroopPositionCommandPacket
-            );
-            store.sectors[targetSector] = sectorState;
-          } else if (parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD && parsed.payload) {
-            sectorState = applyRallyActionCommand(
-              sectorState,
-              parsed.payload as RallyActionCommandPacket
-            );
-            store.sectors[targetSector] = sectorState;
+          if (
+            peer.session &&
+            parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD &&
+            parsed.payload
+          ) {
+            const bound = bindSiegeCommandToSession({
+              session: peer.session,
+              troopCmd: parsed.payload as TroopPositionCommandPacket,
+            });
+            if (bound.troopCmd) {
+              sectorState = applyTroopPositionCommand(sectorState, bound.troopCmd);
+              store.sectors[targetSector] = sectorState;
+            }
+          } else if (
+            peer.session &&
+            parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD &&
+            parsed.payload
+          ) {
+            const bound = bindSiegeCommandToSession({
+              session: peer.session,
+              rallyCmd: parsed.payload as RallyActionCommandPacket,
+            });
+            if (bound.rallyCmd) {
+              sectorState = applyRallyActionCommand(sectorState, bound.rallyCmd);
+              store.sectors[targetSector] = sectorState;
+            }
           }
 
           broadcastToSector(targetSector, {
@@ -507,7 +1108,7 @@ async function startServer() {
   // ==========================================================================
   // VITE MIDDLEWARE (DEV) OR STATIC ASSET SERVING (PRODUCTION)
   // ==========================================================================
-  if (process.env.NODE_ENV !== 'production') {
+  if (!securityConfig.isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -523,7 +1124,7 @@ async function startServer() {
 
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(
-      `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege & Multi-Region Persistence listening on http://0.0.0.0:${PORT}`
+      `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Multi-Region Persistence listening on http://0.0.0.0:${PORT}`
     );
   });
 }
