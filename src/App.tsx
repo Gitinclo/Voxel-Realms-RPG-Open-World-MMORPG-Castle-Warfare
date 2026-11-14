@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import { useAuth } from './contexts/AuthContext';
 import {
   CharacterAppearance,
   Clan,
@@ -170,6 +171,17 @@ type ActiveModal =
   | 'cosmological_admin';
 
 export default function App() {
+  const {
+    user: authUser,
+    loading: authLoading,
+    authError,
+    clearAuthError,
+    signInWithGoogle,
+    logout: signOutGoogle,
+    getFreshIdToken,
+  } = useAuth();
+  const [isSyncingAccount, setIsSyncingAccount] = useState<boolean>(false);
+
   // Query param check for ?autostart=1
   const [gameState, setGameState] = useState<'title' | 'playing'>(() => {
     if (typeof window !== 'undefined') {
@@ -1818,6 +1830,118 @@ export default function App() {
     setToastMessage(res.message);
   };
 
+  const handleSyncCloudAccount = useCallback(async () => {
+    const token = await getFreshIdToken();
+    if (!token) {
+      setToastMessage('Sign in with Google to save and sync your commander profile.');
+      return;
+    }
+
+    setIsSyncingAccount(true);
+    try {
+      const totalTroops = (Object.values(troops) as bigint[]).reduce((sum, n) => sum + n, 0n);
+      const discoveredCodexCount = Object.keys(loreCodexState.discoveredRecords).length;
+      const profileRes = await fetch('/api/db/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          commanderName: authUser?.displayName || playerAppearance.name || 'Sovereign Vanguard',
+          allianceTag: clan.tag || 'SOL',
+          castleLevel,
+          cultivationRealmIndex: cultivation.currentRealmIndex,
+          vipTier: vipEvaluation.tierConfig.rank,
+          karma: cultivation.karma?.karmaValue ?? 0,
+          garrisonTroopsWire: totalTroops.toString(),
+          discoveredCodexCount,
+        }),
+      });
+
+      if (!profileRes.ok) {
+        const errPayload = (await profileRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errPayload.error || 'Unable to sync commander profile.');
+      }
+
+      const saveRes = await fetch('/api/db/save', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          version: 1,
+          snapshot: {
+            castleLevel,
+            cultivationRealmIndex: cultivation.currentRealmIndex,
+            allianceTag: clan.tag,
+            garrisonTroopsWire: totalTroops.toString(),
+            savedAtIso: new Date().toISOString(),
+          },
+        }),
+      });
+
+      if (!saveRes.ok) {
+        const errPayload = (await saveRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errPayload.error || 'Unable to save realm snapshot.');
+      }
+
+      setToastMessage(`Commander progress synced for ${authUser?.email || 'your account'}.`);
+    } catch (err) {
+      setToastMessage(
+        err instanceof Error ? err.message : 'Unable to sync commander progress right now.'
+      );
+    } finally {
+      setIsSyncingAccount(false);
+    }
+  }, [
+    authUser,
+    castleLevel,
+    clan.tag,
+    cultivation.currentRealmIndex,
+    cultivation.karma?.karmaValue,
+    getFreshIdToken,
+    loreCodexState.discoveredRecords,
+    playerAppearance.name,
+    troops,
+    vipEvaluation.tierConfig.rank,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!authUser) return;
+
+    const loadAuthenticatedProfile = async () => {
+      const token = await getFreshIdToken();
+      if (!token || cancelled) return;
+      try {
+        const res = await fetch('/api/db/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          ok?: boolean;
+          user?: { email?: string };
+          profile?: { castleLevel?: number } | null;
+        };
+        if (data.user?.email && !cancelled) {
+          setActiveAccountEmail(data.user.email);
+        }
+        if (data.profile && typeof data.profile.castleLevel === 'number' && !cancelled) {
+          setCastleLevel((prev) => Math.max(prev, data.profile?.castleLevel ?? prev));
+        }
+      } catch (err) {
+        console.error('Failed to load authenticated profile:', err);
+      }
+    };
+
+    loadAuthenticatedProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser, getFreshIdToken]);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">
       {/* 3D WebGL Canvas Viewport */}
@@ -1923,6 +2047,20 @@ export default function App() {
           onOpenAdminConsole={() => setActiveModal('admin_console')}
           onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+          authUserEmail={authUser?.email ?? null}
+          authLoading={authLoading}
+          isSyncingAccount={isSyncingAccount}
+          authError={authError}
+          onSignInGoogle={() => {
+            void signInWithGoogle();
+          }}
+          onSignOutGoogle={() => {
+            void signOutGoogle();
+          }}
+          onSyncAccount={() => {
+            void handleSyncCloudAccount();
+          }}
+          onDismissAuthError={clearAuthError}
         />
       )}
 

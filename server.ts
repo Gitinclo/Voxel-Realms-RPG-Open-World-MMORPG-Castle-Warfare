@@ -68,6 +68,16 @@ import {
   verifySameOriginRequest,
 } from './src/game/serverHardening';
 import { AtomicRealmPersistence } from './src/game/serverPersistence';
+import { AuthRequest, requireAuth } from './src/middleware/auth.ts';
+import {
+  createSupportTicketForUid,
+  getCommanderProfileForUid,
+  getOrCreateUser,
+  getRealmSaveForUid,
+  listSupportTicketsForUid,
+  upsertCommanderProfileForUid,
+  upsertRealmSaveForUid,
+} from './src/db/users.ts';
 
 const parsedPort = Number.parseInt(process.env.PORT || '', 10);
 const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
@@ -957,6 +967,194 @@ async function startServer() {
       speciesSwitchGlobalApproved: store.speciesSwitchGlobalApproved,
       auditLog: store.securityAuditLog,
     });
+  });
+
+  // ==========================================================================
+  // FIREBASE-AUTHENTICATED CLOUD ACCOUNT & REALM PERSISTENCE ROUTES (/api/db/*)
+  // ==========================================================================
+
+  app.get('/api/db/profile', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const email = req.user!.email || `${uid}@voxelrealms.local`;
+      const displayName =
+        typeof req.user!.name === 'string' && req.user!.name.trim()
+          ? req.user!.name.trim()
+          : 'Sovereign Vanguard';
+
+      const user = await getOrCreateUser(uid, email, displayName);
+      const profileRecord = await getCommanderProfileForUid(uid);
+      const realmSave = await getRealmSaveForUid(uid);
+
+      res.json({
+        ok: true,
+        user: {
+          id: user.id,
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+        },
+        profile: profileRecord?.profile ?? null,
+        hasRealmSave: Boolean(realmSave),
+        realmSaveUpdatedAt: realmSave?.updatedAt ?? null,
+      });
+    } catch (error) {
+      console.error('Failed to fetch authenticated commander profile:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to load commander profile.',
+      });
+    }
+  });
+
+  app.put('/api/db/profile', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const email = req.user!.email || `${uid}@voxelrealms.local`;
+      const displayName =
+        typeof req.user!.name === 'string' && req.user!.name.trim()
+          ? req.user!.name.trim()
+          : undefined;
+      const body = (req.body || {}) as Record<string, unknown>;
+
+      const saved = await upsertCommanderProfileForUid(uid, email, displayName, {
+        commanderName: typeof body.commanderName === 'string' ? body.commanderName : undefined,
+        allianceTag: typeof body.allianceTag === 'string' ? body.allianceTag : undefined,
+        castleLevel: typeof body.castleLevel === 'number' ? body.castleLevel : undefined,
+        cultivationRealmIndex:
+          typeof body.cultivationRealmIndex === 'number' ? body.cultivationRealmIndex : undefined,
+        vipTier: typeof body.vipTier === 'number' ? body.vipTier : undefined,
+        karma: typeof body.karma === 'number' ? body.karma : undefined,
+        garrisonTroopsWire:
+          typeof body.garrisonTroopsWire === 'string' ? body.garrisonTroopsWire : undefined,
+        discoveredCodexCount:
+          typeof body.discoveredCodexCount === 'number' ? body.discoveredCodexCount : undefined,
+        preferredRegion:
+          typeof body.preferredRegion === 'string' ? body.preferredRegion : undefined,
+        activeSector: typeof body.activeSector === 'string' ? body.activeSector : undefined,
+      });
+
+      res.json({
+        ok: true,
+        user: saved.user,
+        profile: saved.profile,
+      });
+    } catch (error) {
+      console.error('Failed to save authenticated commander profile:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to save commander profile.',
+      });
+    }
+  });
+
+  app.get('/api/db/save', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const save = await getRealmSaveForUid(uid);
+      if (!save) {
+        res.json({ ok: true, exists: false, snapshot: null, version: 0, updatedAt: null });
+        return;
+      }
+      res.json({
+        ok: true,
+        exists: true,
+        snapshot: JSON.parse(save.snapshotJson),
+        version: save.version,
+        updatedAt: save.updatedAt,
+      });
+    } catch (error) {
+      console.error('Failed to load realm save:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to load realm save.',
+      });
+    }
+  });
+
+  app.put('/api/db/save', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const email = req.user!.email || `${uid}@voxelrealms.local`;
+      const displayName =
+        typeof req.user!.name === 'string' && req.user!.name.trim()
+          ? req.user!.name.trim()
+          : undefined;
+      const body = (req.body || {}) as { snapshot?: unknown; version?: number };
+      if (!body.snapshot || typeof body.snapshot !== 'object') {
+        res.status(400).json({ ok: false, error: 'Invalid realm snapshot payload.' });
+        return;
+      }
+
+      const serialized = JSON.stringify(body.snapshot);
+      if (serialized.length > 262_144) {
+        res.status(413).json({ ok: false, error: 'Realm snapshot exceeds 256 KB limit.' });
+        return;
+      }
+
+      const save = await upsertRealmSaveForUid(
+        uid,
+        email,
+        displayName,
+        serialized,
+        typeof body.version === 'number' ? body.version : 1
+      );
+
+      res.json({
+        ok: true,
+        version: save.version,
+        updatedAt: save.updatedAt,
+      });
+    } catch (error) {
+      console.error('Failed to persist realm save:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to save realm progress.',
+      });
+    }
+  });
+
+  app.get('/api/db/tickets', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const tickets = await listSupportTicketsForUid(req.user!.uid);
+      res.json({ ok: true, tickets });
+    } catch (error) {
+      console.error('Failed to list support tickets:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to load support tickets.',
+      });
+    }
+  });
+
+  app.post('/api/db/tickets', requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const uid = req.user!.uid;
+      const email = req.user!.email || `${uid}@voxelrealms.local`;
+      const displayName =
+        typeof req.user!.name === 'string' && req.user!.name.trim()
+          ? req.user!.name.trim()
+          : undefined;
+      const body = (req.body || {}) as { category?: string; subject?: string; message?: string };
+      if (!body.subject?.trim() || !body.message?.trim()) {
+        res.status(400).json({ ok: false, error: 'Subject and message are required.' });
+        return;
+      }
+
+      const ticket = await createSupportTicketForUid(uid, email, displayName, {
+        category: body.category || 'general',
+        subject: body.subject,
+        message: body.message,
+      });
+      res.status(201).json({ ok: true, ticket });
+    } catch (error) {
+      console.error('Failed to create support ticket:', error);
+      res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unable to submit support ticket.',
+      });
+    }
   });
 
   // ==========================================================================
