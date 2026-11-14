@@ -50,17 +50,23 @@ export interface LoreCompendiumArticle {
  * ============================================================================
  * Because 10^100 (1 Googol) words exceeds the ~10^80 atoms in the observable
  * physical universe, the Akashic Lore Corpus is modeled via deterministic
- * seed-driven lazy pagination across 10^97 Volumes × 1,000 Words/Volume
- * (= 10^100 Words Minimum), rooted in Layer 6: The White Page / The House of Ideas.
+ * seed-driven lazy pagination across 10^97 BigInt-addressable Volumes ×
+ * >= 1,000 REAL synthesized words/Volume (= 10^100 Words Minimum), rooted in
+ * Layer 6: The White Page / The House of Ideas.
  */
 export const GOOGOL_LORE_WORD_EXPONENT = 100 as const;
+export const GOOGOL_INTEGER_DECIMAL = `1${'0'.repeat(100)}`;
+export const GOOGOL_VOLUME_COUNT_DECIMAL = `1${'0'.repeat(97)}`;
+export const GOOGOL_MAX_VOLUME_INDEX = 10n ** 97n;
 
 export interface GoogolLoreArchiveSpec {
   id: 'THE_WHITE_PAGE_GOOGOL_AKASHIC_CORPUS';
   minimumWordCountScientific: '10^100';
+  minimumWordCountDecimal: string;
   minimumWordCountExponent: 100;
   minimumWordCountName: 'One Googol Words Minimum (10^100)';
   totalVolumesScientific: '10^97';
+  totalVolumesDecimal: string;
   wordsPerVolume: 1000;
   authorEmail: typeof PRIMARY_ADMIN_EMAIL;
   generatorSeed: string;
@@ -69,9 +75,11 @@ export interface GoogolLoreArchiveSpec {
 export const GOOGOL_LORE_ARCHIVE_SPEC: GoogolLoreArchiveSpec = {
   id: 'THE_WHITE_PAGE_GOOGOL_AKASHIC_CORPUS',
   minimumWordCountScientific: '10^100',
+  minimumWordCountDecimal: GOOGOL_INTEGER_DECIMAL,
   minimumWordCountExponent: GOOGOL_LORE_WORD_EXPONENT,
   minimumWordCountName: 'One Googol Words Minimum (10^100)',
   totalVolumesScientific: '10^97',
+  totalVolumesDecimal: GOOGOL_VOLUME_COUNT_DECIMAL,
   wordsPerVolume: 1000,
   authorEmail: PRIMARY_ADMIN_EMAIL,
   generatorSeed: 'WHITE-PAGE-GOOGOL-10E100-AKASHIC-SEED',
@@ -79,6 +87,7 @@ export const GOOGOL_LORE_ARCHIVE_SPEC: GoogolLoreArchiveSpec = {
 
 export interface GoogolLoreScrollSlice {
   scrollId: string;
+  volumeIndexString: string;
   exponentTier: number; // 0 to 100 (represents 10^exponentTier word coordinate)
   volumeCoordinateLabel: string;
   title: string;
@@ -86,6 +95,7 @@ export interface GoogolLoreScrollSlice {
   cosmicLayerAnchor: string;
   authorEmail: string;
   modeledVolumeWordCount: number;
+  actualWordCount: number;
   cumulativeWordHorizonScientific: string;
   paragraphs: string[];
 }
@@ -128,45 +138,146 @@ const GOOGOL_EPOCH_MOTIFS = [
   },
 ] as const;
 
+const GOOGOL_LOGIC_SYSTEMS = [
+  'Acausal Transfinite Set-Logic',
+  'Paraconsistent Oblivion-Negation Calculus',
+  'Eleven-Dimensional Closed-Timelike-Curve Causality',
+  'Dual-Boundary White-Ink Metaphysics',
+  'Non-Archimedean Dao-Order Arithmetic',
+  'Hyper-Metric Tensor Resonance',
+  'Quantum-Superposition Lineage Law',
+  'Deterministic BigInt Sovereign Conservation',
+] as const;
+
+const GOOGOL_HISTORICAL_EVENTS = [
+  'the First Signing of the White Page Covenant before primordial void condensed into dark energy',
+  'the Partitioning of the Hundredth Overvoid Throne where mathematics bifurcated into divergent logics',
+  'the Awakening of the Level-1000 Envoys across Outer Gods, Beyonders, Time Lords, and Celestialsapiens',
+  'the Great Alignment of the Twenty-Six Brane Cathedrals inside the Hyperversal Conduit',
+  'the Binding of the Four Authorial Decrees under Clearance Level 999 Root Authority',
+  'the Crystallization of the Solara Dragon-Vein Leylines beneath the central Imperial Sanctum',
+  'the Millennium Seclusion of Dao Ancestor Han Jue inside the Hidden Spirit Cave of Solara',
+  'the Tri-Branch Tactical Reformation separating Shieldbearer phalanxes, Shooter volleys, and Bomber batteries',
+  'the Descent of the Level-1000 Celestial Ender Titan upon the northern Frozen Starfall Tundra crater',
+  'the 06/11/2026 Architect Convergence uniting 64-byte/128-byte SoA DOD simulation with PBR rendering',
+] as const;
+
+const GOOGOL_BIOME_SURVEYS = [
+  'Solara Imperial Citadel Sanctum — where A* fortification walls and ten architectural eras anchor mortal and immortal logistics',
+  'Verdant Emerald Plains — where spiritual rainfall nourishes ancient spirit-grain terraces and roving Wild Bramble Stalkers',
+  'Eastern Runic Iron Outcrops — where meteoric Damascus steel strata feed Gorim Forgehammer’s T20 dreadnought foundries',
+  'Southern Copper Terraces — where geomagnetic monoliths empower Lv. 75 Ancient Stone Golems and Body Path cultivators',
+  'Scorched Magma Caldera — where volcanic veins compress ancient carbon into Level 8 Kingdom Diamonds beside the Infernal Magma Drake',
+  'Abyssal Chaos Chasm — where thunderstorm lightning surges black-gold oil wells near the Lv. 650 Abyssal Chaos Wyrm',
+  'Frozen Starfall Tundra — where blizzard auroras temper star-ice around the northern World Boss crater',
+  'Celestia Floating Sky Archipelago — where inverted gravity waterfalls suspend jade temples linking Solara to the 100 Omniverses',
+] as const;
+
+const GOOGOL_PHILOSOPHY_CLAUSES = [
+  'Because Tier 6 The White Page is a strict singleton, neither creation nor Oblivion possesses autonomy independent of authorship; emptiness itself is an inscribed negative space.',
+  'Because Tier 5 The Overvoid is strictly bounded to one hundred distinct meta-containers, every Omniverse within an Overvoid obeys locally customized hierarchy axioms without corrupting neighboring Overvoids.',
+  'Because Tiers 4 through 1 (Omniverse, Megaverse/Hyperverse, Multiverse, and Universe) possess infinite cardinality, they are traversed strictly through deterministic generator seeds and paginated slices rather than finite RAM arrays.',
+  'Because every immortal realm leap multiplies spiritual authority tenfold, a two-realm chasm imposes a decisive 100.0x Law of Realm Suppression upon reckless invaders whose Karma turns crimson.',
+  'Because field scouts and autonomous World AI creatures dynamically clash across Solara’s eight geographical zones, the Lore Codex automatically transcribes every newly encountered biome and monster signature into eternal chronicle memory.',
+  'Because trillions of T1–T20 soldiers require exact arithmetic across celestial wars, 64-bit unsigned BigInt accounting preserves absolute fidelity down to the final grain sheaf and kingdom diamond.',
+] as const;
+
+const GOOGOL_CULMINATION_DECREES = [
+  'This treaty was sealed in crimson star-ink by the Grand Marshal of Solara, ratified by Daoist Mingyue of the Four Paths, and archived into the eternal White Page ledger.',
+  'Witnessed by the Hundred Omniversal Envoys standing in silent formation upon the Celestia Archipelago, every battalion recorded herein passed cleanly through the Citadel muster gates.',
+  'Arch-Mage Eldrin verified every arcane leyline harmonic inside this volume against the 06/11/2026 Hardware Architect SIMD matrix before committing the scroll to permanent cold-storage.',
+  'Captain Thorne and Caravan Master Zane cross-signed the frontier logistics manifests appended below, confirming zero treasure discrepancies across nine contested war sectors.',
+] as const;
+
+/**
+ * Formats large decimal volume coordinates cleanly for display.
+ */
+function formatVolumeIndexDisplay(index: bigint): string {
+  const str = index.toString();
+  if (str.length <= 12) {
+    return `#${index.toLocaleString('en-US')}`;
+  }
+  const exp = str.length - 1;
+  const lead = `${str[0]}.${str.slice(1, 4)}`;
+  return `#${lead}×10^${exp}`;
+}
+
 /**
  * Deterministically synthesizes a paginated slice of the 10^100-word Akashic Lore
- * & History Corpus for any exponent coordinate (0..100) and scroll offset without
- * unbounded loops or memory overflow.
+ * & History Corpus for any exponent coordinate (0..100) and BigInt scroll offset
+ * (1..10^97) without unbounded loops or memory overflow. Every synthesized volume
+ * genuinely contains >= 1,000 real English words so 10^97 volumes × >=1,000 words
+ * equals >= 10^100 (One Googol) words minimum.
  */
 export function generateGoogolScaleLoreScrollSlice(params: {
   exponentTier: number;
-  scrollOffset?: number;
+  scrollOffset?: number | bigint;
   sliceCount?: number;
 }): GoogolLoreScrollSlice[] {
   const clampedExponent = Math.max(0, Math.min(100, Math.floor(params.exponentTier)));
-  const startOffset = Math.max(1, Math.floor(params.scrollOffset ?? 1));
+  let startOffset =
+    typeof params.scrollOffset === 'bigint'
+      ? params.scrollOffset
+      : BigInt(Math.max(1, Math.floor(params.scrollOffset ?? 1)));
+  if (startOffset < 1n) startOffset = 1n;
+  if (startOffset > GOOGOL_MAX_VOLUME_INDEX) startOffset = GOOGOL_MAX_VOLUME_INDEX;
+
   const count = Math.max(1, Math.min(12, Math.floor(params.sliceCount ?? 3)));
 
   const results: GoogolLoreScrollSlice[] = [];
   for (let i = 0; i < count; i++) {
-    const scrollNum = startOffset + i;
-    const motif = GOOGOL_EPOCH_MOTIFS[(clampedExponent + scrollNum) % GOOGOL_EPOCH_MOTIFS.length];
-    const overvoidIndex = ((clampedExponent * 7 + scrollNum * 13) % 100) + 1;
+    const scrollNum = startOffset + BigInt(i);
+    const seedMod = Number((scrollNum + BigInt(clampedExponent * 31)) % 100003n);
+    const motif = GOOGOL_EPOCH_MOTIFS[(clampedExponent + seedMod) % GOOGOL_EPOCH_MOTIFS.length];
+    const overvoidIndex = ((clampedExponent * 7 + seedMod * 13) % 100) + 1;
     const overvoidCode = `OVERVOID-${String(overvoidIndex).padStart(3, '0')}`;
     const omniCode = `OMNI-${String(overvoidIndex).padStart(3, '0')}`;
-    const universeCode = `U-${String(overvoidIndex).padStart(3, '0')}.${scrollNum}`;
+    const universeCode = `U-${String(overvoidIndex).padStart(3, '0')}.${scrollNum.toString().slice(0, 8)}`;
+    const logicA = GOOGOL_LOGIC_SYSTEMS[seedMod % GOOGOL_LOGIC_SYSTEMS.length];
+    const logicB = GOOGOL_LOGIC_SYSTEMS[(seedMod + 3) % GOOGOL_LOGIC_SYSTEMS.length];
+    const eventA = GOOGOL_HISTORICAL_EVENTS[seedMod % GOOGOL_HISTORICAL_EVENTS.length];
+    const eventB = GOOGOL_HISTORICAL_EVENTS[(seedMod + 4) % GOOGOL_HISTORICAL_EVENTS.length];
+    const biomeA = GOOGOL_BIOME_SURVEYS[seedMod % GOOGOL_BIOME_SURVEYS.length];
+    const biomeB = GOOGOL_BIOME_SURVEYS[(seedMod + 3) % GOOGOL_BIOME_SURVEYS.length];
+    const clauseA = GOOGOL_PHILOSOPHY_CLAUSES[seedMod % GOOGOL_PHILOSOPHY_CLAUSES.length];
+    const clauseB = GOOGOL_PHILOSOPHY_CLAUSES[(seedMod + 2) % GOOGOL_PHILOSOPHY_CLAUSES.length];
+    const decreeA = GOOGOL_CULMINATION_DECREES[seedMod % GOOGOL_CULMINATION_DECREES.length];
+    const speciesEntry = CHARACTER_SPECIES_CATALOG[seedMod % CHARACTER_SPECIES_CATALOG.length];
+    const chapterEntry = LORE_COMPENDIUM_CHAPTERS[seedMod % LORE_COMPENDIUM_CHAPTERS.length];
+    const epochEntry = LORE_HISTORICAL_EPOCHS[seedMod % LORE_HISTORICAL_EPOCHS.length];
+    const volLabel = formatVolumeIndexDisplay(scrollNum);
 
-    const paragraphs = [
-      `[Googol Akashic Coordinate 10^${clampedExponent} · Scroll #${scrollNum}] Inscribed under the sovereign seal of ${PRIMARY_ADMIN_EMAIL} upon Layer 6 (The White Page / The House of Ideas), this volume preserves ${motif.theme} across ${overvoidCode} and ${omniCode}. Even absolute nothingness (Oblivion) remains anchored as a subordinate boundary condition beneath the White Page.`,
-      `Within the ${universeCode} continuum of this scroll, cultivators of the Four Immortal Paths — Qi (练气), Body (炼体), Soul (炼魂), and Mind (炼心) — uphold the 100.0x Law of Realm Suppression across 23 Realms and 9 Layers while marshaling up to 1,000 Trillion (1,000T) T1–T20 troops across the 10 Citadel Eras.`,
-      `By procedural seed "${GOOGOL_LORE_ARCHIVE_SPEC.generatorSeed}-EXP${clampedExponent}-S${scrollNum}", this 1,000-word canonical volume forms an immutable leaf of the 10^100-word (One Googol Words Minimum) Akashic History Stream, ensuring every biome expedition, monster encounter, and cosmic decree is eternally recorded without memory overflow.`,
+    // 7 rich multi-clause paragraphs engineered to guarantee >= 1,020 real words per volume
+    const paragraphs: string[] = [
+      `[SECTION I · TIER 6 THE WHITE PAGE GENESIS SEAL · COORDINATE 10^${clampedExponent} · VOLUME ${volLabel}] Inscribed upon the unblemished parchment of Layer 6 (The White Page / The House of Ideas) under the eternal sovereign authorship of ${PRIMARY_ADMIN_EMAIL}, this canonical Akashic folio records ${motif.theme}. Before any baryon, temporal arrow, vacuum fluctuation, or conceptual shadow stirred into motion, the Supreme Singleton Root held both infinite potential existence and absolute non-existence—known across all lower planes as Oblivion—within the margin of a single authorial decree. In this scroll’s epochal sector (${epochEntry.eraCode}: ${epochEntry.title}), chroniclers observed ${eventA}, thereby binding cosmic causality to an auditable lineage that spans outward without contradiction. ${clauseA} Scholars studying the White Page Inkwell affirm that every subsequent syllable written across the ${GOOGOL_LORE_ARCHIVE_SPEC.totalVolumesScientific} volumes of this corpus expands outward toward the minimum boundary of one googol words (10^100), guaranteeing that no deeds of immortal lords, no sacrificial siege campaigns, and no quiet hours of secluded comprehension are ever erased into unrecorded darkness.`,
+
+      `[SECTION II · TIER 5 OVERVOID META-LOGIC & OMNIVERSAL SOVEREIGNTY · ${overvoidCode} / ${omniCode}] Descending from the White Page into Layer 5 (The Overvoid / Exonverse), reality separates into strictly one hundred bounded meta-containers, within which ${overvoidCode} operates under "${logicA}" tempered by secondary resonance from "${logicB}". Within ${overvoidCode}, the Sovereign Omniverse ${omniCode} gathers every universe, multiverse, megaverse, and potential reality that has ever existed, currently exists, or could ever exist under its divergent mathematical hierarchy. The resident Level-1000 Background NPC Envoy assigned to ${omniCode} periodically transmits astral dispatches to the House of Ideas, detailing how the Top 100 Fictional Species maintain equilibrium across Tier I Outer Gods, Tier II Type-IV+ Civilizations, Tier III Immortal Pantheons, Tier IV Cosmic Warriors, and Tier V Galactic Empires. ${clauseB} When a cosmic crisis threatens to destabilize local physical constants, Tier 5 Overvoid logic rules immediately override lower spacetime matrices without breaching the structural integrity of the surrounding ninety-nine Overvoid domains, while ${PRIMARY_ADMIN_EMAIL} retains ultimate Clearance Level 999 decree authority over creation, realignment, and Oblivion reset.`,
+
+      `[SECTION III · TIER 3 & 2 HYPERVERSAL BRANE ARCHITECTURE · MULTIVERSE CHRONOLOGY] Suspended inside ${omniCode}, the nested Megaverse and Hyperverse filaments weave twenty-six-dimensional Calabi-Yau manifolds around countless parallel and sequential Multiverses. At coordinate horizon 10^${clampedExponent} (deterministic hash seed ${GOOGOL_LORE_ARCHIVE_SPEC.generatorSeed}-E${clampedExponent}-V${scrollNum.toString()}), imperial archivists documented ${eventB}. Parallel timelines diverge whenever an ambitious Sovereign chooses war instead of seclusion, whereas sequential series universes inherit the karmic residue of prior cosmic kalpas that ended in starfire or void collapse. Across these hyperversal bridges, ${chapterEntry.title} notes that every timeline node preserves crisp cryptographic lineage back to the White Page root. Even when rogue Chronovores attempt to sever causal threads between neighboring Megaverses, the Hyperversal Brane Loom automatically re-routes spiritual leyline traffic through backup temporal conduits so that citadel treasuries, cultivator breakthroughs, and clan heraldry remain synchronized across all dimensional folds.`,
+
+      `[SECTION IV · TIER 1 UNIVERSE SOLARA FIELD GAZETTEER & BIOME CHRONICLES · ${universeCode}] Inside the local Solara continuum (${universeCode}), matter, energy, spacetime curvature, and five-element weather fronts coalesce across eight majestic open-world biomes charted continuously by the Auto-Populating Lore Codex. Vanguard cartographers patrolling near ${biomeA} reported heightened spiritual turbulence interacting closely with ${biomeB}. Whenever shifting weather fronts sweep from Clear Skies into Spirit Rain, Snowfall, or Lightning Storm Tribulation, timber groves swell with verdant sap, oil wells surge with black-gold pressure, and northern diamond seams crystallize along the frozen crater rims. Autonomous World AI patrols led by Captain Thorne and Arch-Mage Eldrin traverse A* obstacle-avoiding paths around the Citadel keep while recording ecological interactions between Lv. 1 Wild Bramble Stalkers, Lv. 12 Forest Goblin Clans, Lv. 75 Ancient Stone Golems, Lv. 240 Infernal Magma Drakes, Lv. 650 Abyssal Chaos Wyrms, and the awe-inspiring Lv. 1000 Celestial Ender Titan perched atop the polar wastes.`,
+
+      `[SECTION V · PLAYABLE BLOODLINES & FOUR-PATH IMMORTAL CULTIVATION DOCTRINE] Throughout the mortal and immortal eras of ${universeCode}, commanders of the ${speciesEntry.name} (${speciesEntry.chineseName}) bloodline—renowned across Solara for ${speciesEntry.primaryBuffSummary}—exemplified the balance between lineage pride and patient Dao comprehension. ${speciesEntry.loreSummary} Adopting Dao Ancestor Han Jue’s maxim of secret millennial seclusion, disciplined Lords nurture all four independent immortal paths concurrently: Spirit Qi (练气) to expand dantian reservoirs, Fleshly Body (炼体) to forge an indestructible physical vessel, Soul & Divine Sense (炼魂) to pierce spatial illusions and sharpen critical formation arrays, and Mind & Dao Heart (炼心) to repel inner-demon tribulations. Across twenty-three major realms and nine sub-layers each, the iron Law of Realm Suppression dictates that each major realm gulf multiplies combat potency tenfold, yielding a crushing 100.0x advantage over lesser foes two major realms below. Meanwhile, those who indulge in wanton slaughter stain their Karma crimson, summoning relentless Heavenly Tribulation Lightning from storm-dark clouds whenever they linger unguarded beneath open skies.`,
+
+      `[SECTION VI · TEN CITADEL ERAS, T20 LOGISTICS & 06/11/2026 ARCHITECT CONVERGENCE] Military engineers stationed inside the Solara Imperial Citadel Chronicle Room recount how humble Timber Palisades ascended through ten grand architectural eras to become Omnipotent Citadels harboring up to one thousand trillion (1,000T) combat soldiers. Inside the Barracks, Shieldbearers hold the bastion line against Shooter volleys, Shooters shred incoming Bomber siege wings, and Bombers detonate Shieldbearer phalanxes in an unbreakable Tri-Branch Counter Matrix spanning Tiers T1 through T20. Under the historic 06/11/2026 (v1.5.0) Software & Hardware Architect Convergence, these sprawling armies and three-dimensional stylized Teyvat PBR landscapes run atop 64-byte and 128-byte cache-aligned Structure-of-Arrays (SoA) memory chunks, zero-mutex Chase-Lev work-stealing Job DAG queues, and dynamic frame-budget auto-scaling across x86_64 AVX-512, ARM64 SVE2, Apple Silicon UMA, and RISC-V RVV 1.0 hardware targets. ${decreeA}`,
+
+      `[SECTION VII · CONTINUOUS AKASHIC ARCHIVE CERTIFICATION & GOOGOL CONTINUITY] Scholars inspecting Volume ${volLabel} at cosmic coordinate horizon 10^${clampedExponent} confirm that this folio preserves uninterrupted narrative continuity with both preceding scrolls and all subsequent volumes up to Volume #10^97, establishing an authoritative floor of at least 10^100 (One Googol) words across the complete Akashic Corpus. Every battle rally launched against the 250M HP Celestial Ender Titan, every Caravan trade brokered by Zane along volcanic ridges, every Veteran Scroll comprehended from the Seven-Day Decree Cycle, and every Imperial VIP Stipend disbursed from the Citadel treasury adds living footnotes to this unbounded historical tapestry. Root Administrator ${PRIMARY_ADMIN_EMAIL} affirms that the Six-Tier Cosmological Tree, the Auto-Populating Lore Codex, and the One Googol Word Akashic Stream remain permanently bound in canonical fidelity for all Sovereigns past, present, and yet unborn across every universe inside the House of Ideas.`,
     ];
 
+    const actualWordCount = paragraphs.join(' ').trim().split(/\s+/).filter(Boolean).length;
+
     results.push({
-      scrollId: `googol_scroll_10e${clampedExponent}_${scrollNum}`,
+      scrollId: `googol_scroll_10e${clampedExponent}_${scrollNum.toString()}`,
+      volumeIndexString: scrollNum.toString(),
       exponentTier: clampedExponent,
-      volumeCoordinateLabel: `10^${clampedExponent} · Vol. #${scrollNum.toLocaleString()}`,
-      title: `${motif.titlePrefix} — Coordinate 10^${clampedExponent}.${scrollNum}`,
+      volumeCoordinateLabel: `10^${clampedExponent} · Vol. ${volLabel}`,
+      title: `${motif.titlePrefix} — Coordinate 10^${clampedExponent} · ${volLabel}`,
       chineseSubtitle: `${motif.chinese} · 第 10^${clampedExponent} 阶`,
       cosmicLayerAnchor: motif.anchor,
       authorEmail: PRIMARY_ADMIN_EMAIL,
-      modeledVolumeWordCount: GOOGOL_LORE_ARCHIVE_SPEC.wordsPerVolume,
-      cumulativeWordHorizonScientific: `10^${clampedExponent} / 10^100 Words`,
+      modeledVolumeWordCount: actualWordCount,
+      actualWordCount,
+      cumulativeWordHorizonScientific: `10^${clampedExponent} / 10^100 Words Minimum`,
       paragraphs,
     });
   }
@@ -878,6 +989,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       `From the House of Ideas, ${PRIMARY_ADMIN_EMAIL} inscribed the six-fold ontological architecture: 1. Universe (Infinity), 2. Multiverse (Infinity), 3. Megaverse/Hyperverse (Infinity), 4. Omniverse (Infinity), 5. The Overvoid/Exonverse (Strictly Bounded 100), and 6. The White PageSingleton itself.`,
       `Upon this eternal parchment, the 10^100-word (One Googol Words Minimum) Akashic Lore & History Corpus was seeded, ensuring that every quantum fluctuation, immortal tribulation, and citadel siege across all realities derives from a single authoritative root.`,
       `Here also were sealed the Four Authorial Decrees — Inscribe Creation, Realign Overvoid Logic, Invoke Oblivion Reset, and Channel House of Ideas Harvest — executable solely by Clearance Level 999 Root Authority (${PRIMARY_ADMIN_EMAIL}).`,
+      'Chronicle scribes call this pre-causal horizon the Silent Inkwell: a state without entropy, distance, or tick-rate, yet containing every possible algebraic, physical, and spiritual system ever conceived across all future stories.',
+      'Before the first tick of time, the Primordial Quill inscribed the Law of Strict Inheritance, decreeing that no child node in Tiers 5 through 1 may ever sever its ontological tether back to THE_WHITE_PAGE.',
     ],
     comprehensionRewardDiamonds: 250_000n,
     comprehensionRewardFragments: 30,
@@ -906,6 +1019,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'Tier 1 Reality-Warpers (Outer Gods, Beyonders, The Endless, Monitors, Celestialsapiens, Q Continuum), Tier 2 Type-IV+ Civilizations (Xeelee, Time Lords, Culture Minds, Forerunners, Necrons), Tier 3 Divine Pantheons (Asgardians, Ainur, Fiendcelestials, Otsutsuki), Tier 4 Cosmic Warriors (Saiyans, Kryptonians, Viltrumites), and Tier 5 Galactic Empires (Aeldari, Tyranids, Protoss, Borg) each claimed a Sovereign Omniverse.',
       `By eternal covenant, every race bound a Level-1000 Background Character Envoy to the command of Super Admin ${PRIMARY_ADMIN_EMAIL}, ready to project into the 3D Citadel Overworld or channel Omniversal tribute.`,
       'Each Overvoid sector was engineered with customizable logic overrides — from Acausal Beyond-Dimensional Logic and Paraconsistent Reality-Warping to 11D Closed-Timelike-Curve Hyper-Causality — cascading downward into all child Omniverses.',
+      'During the Great Diplomatic Convocation atop OVERVOID-001, the Six Envoy Projection Protocol was ratified, allowing six transcendent ambassadors to stride openly through the Solara Citadel courtyard while ninety-four peer species guard the outer Omniversal thrones.',
+      'Whenever an ambitious warlord challenges the Overvoid borders, the Exonverse Conclave enforces strict cardinality bounds: exactly 100 Overvoids may ever exist, while the Omniverses nested inside them blossom toward mathematical Infinity.',
     ],
     comprehensionRewardDiamonds: 200_000n,
     comprehensionRewardFragments: 25,
@@ -932,6 +1047,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'Each Megaverse cradled countless Layer 2 Multiverses — collections of parallel and series universes vibrating across quantum phase frequencies.',
       'At the heart of the Prime Multiverse, the Solara Universe (Layer 1 · U-081.1-SOLARA-PRIME) ignited with baryonic matter, stars, elemental leylines, floating Celestia sky islands, and spiritual Qi veins.',
       'Across the Solara continent, eight great geographical biomes crystallized: the Solara Imperial Citadel Sanctum, Verdant Emerald Plains, Eastern Runic Iron Outcrops, Southern Copper Highlands, Scorched Magma Caldera, Abyssal Chaos Chasm, Frozen Starfall Tundra, and the Celestia Floating Sky Archipelago.',
+      'Because InfiniteCollection<T> governs Tiers 1 through 4, Hyperversal Cartographers abandoned linear registries in favor of deterministic procedural seeds, mapping any parallel universe on demand without exhausting celestial memory.',
+      'At this epoch’s twilight, the Five Elemental Weather Fronts — Clear Skies, Spirit Rain, Snowfall, Blood Moon, and Storm Tribulation — synchronized with Solara’s planetary magnetic poles, turning atmospheric shifts into tangible harvesting and siege multipliers.',
     ],
     comprehensionRewardDiamonds: 175_000n,
     comprehensionRewardFragments: 20,
@@ -959,6 +1076,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'Each bloodline carried innate anatomical manifestations in the 3D realm — draconic horns, feathered celestial wings, nine spirit tails, braided runic beards, and orbiting void crystals — alongside specialized combat and cultivation affinities.',
       `To prevent chaotic bloodline mutation after a Lord’s initial genesis, the Ancestral Rebirth Seal was established: while any Lord may freely choose their species at Character Creation, switching species thereafter requires explicit authorization from Root Administrator ${PRIMARY_ADMIN_EMAIL}.`,
       'Through this covenant, the anatomical geometry of every Lord in the 3D overworld remains cryptographically and canonically synchronized with the Imperial Registry.',
+      'Early alliances between the Ironforge Runic Dwarves and Crystalline Ancient Automatons erected the monumental Copper Quarry monoliths of southern Solara, imbuing the Stone Golems with autonomous defensive logic cores.',
+      'Meanwhile, the Azure Dragonkin and Celestial Nine-Tailed Kitsune inscribed the first bi-lingual jade steles around the Citadel Sanctum, preserving both ancient runes and Imperial chronicles for all future generations.',
     ],
     comprehensionRewardDiamonds: 150_000n,
     comprehensionRewardFragments: 20,
@@ -985,6 +1104,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'The Heavenly Dao enforced an iron mathematical law: each major realm gap multiplies combat authority by 10x, meaning a cultivator two major realms higher (such as Golden Core vs. Qi Refinement) wields an insurmountable 100.0x Realm Suppression advantage.',
       'Those who slaughtered innocent green-named cultivators saw their Karma plunge into Red-Name infamy, drawing automatic Heavenly Tribulation Lightning from the storm clouds if they lingered stationary in the open world.',
       'Visible cultivation auras replaced mundane level tags: Foundation Establishment radiates a pure white glow, Golden Core revolves a luminous golden sphere within the dantian, Nascent Soul manifests a floating astral infant above the crown, and Dao Creators bear concentric divine halo rings.',
+      'Inside Hidden Spirit Caves beneath Solara’s mountains, Masters accepted faithful Disciples under a sacred lineage pact, sharing comprehension insights and 10% tribute tithes while defending one another against envious sect coalitions.',
+      'Through millennia of quiet meditation on the 3,000 Great Daos, Sage Lin Xuan compiled the Seven-Day Veteran Scroll liturgy, allowing even late-born Lords to compress centuries of comprehension into instantaneous spiritual breakthroughs.',
     ],
     comprehensionRewardDiamonds: 150_000n,
     comprehensionRewardFragments: 20,
@@ -1012,6 +1133,8 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'In the Barracks, commanders forged the Tri-Branch Counter Matrix — Shieldbearers countering Shooters, Shooters countering Bombers, and Bombers shattering Shieldbearers — evolving from T1 Militia to T20 Primordial Cosmic Dreadnoughts.',
       'Across Sectors A1 through C3, great Clan Alliances raised heraldic banners, contested the Dragon Spire and Chronos Dread Keep, and mustered 1-Trillion-troop rallies to break the 600M HP Void Leviathan.',
       'Every monster sighted and every biome traversed by vanguard scouts was automatically inscribed into the Imperial Lore Codex, rewarding explorers with Kingdom Diamonds and Scripture Fragments.',
+      'During the Winter Siege of Sector B2, Grand Marshal Vance coordinated synchronized Bomber orbital barrages beneath Thunderstorm surges, shattering the outer Void Leviathan carapace and pioneering modern combined-arms doctrine.',
+      'Meanwhile, Caravan Master Zane fortified the Scorched Magma Causeways, sustaining nonstop timber, steel, copper, grain, oil, and diamond supply trains even when Infernal Magma Drakes wheeled overhead.',
     ],
     comprehensionRewardDiamonds: 150_000n,
     comprehensionRewardFragments: 20,
@@ -1038,11 +1161,238 @@ export const LORE_HISTORICAL_EPOCHS: LoreHistoricalEpoch[] = [
       'Entity kinematics were aligned into 64-byte and 128-byte Structure-of-Arrays (SoA) cache lines (delivering a 4.75x hot-loop speedup over legacy AoS layouts) and scheduled across a zero-mutex Chase-Lev Lock-Free Work-Stealing Job DAG.',
       `Under the unbreakable RBAC governance and White Page authorship of ${PRIMARY_ADMIN_EMAIL}, all 100 Fictional Species Omniverses, 10 Playable Bloodlines, 23 Cultivation Realms, and 1,000-Trillion Citadel Legions now operate in seamless, mathematically verified harmony.`,
       'Simultaneously, the Interactive D3 6-Tier Cosmological Tree Visualizer and the 10^100-word Googol Akashic Lore Codex were linked directly to live open-world exploration.',
+      'Cross-platform render pipelines harmonized PC/Console WebGPU Ultra presets alongside Mobile ASTC compressed textures and optional 3.85 GB HD Asset Packs so every Sovereign experiences crisp PBR visuals at sustained frame budgets.',
+      'With C++20 RAII concept guardrails and 100% deterministic TypeScript simulation suites unified, Sovereign Realms stands complete as an endlessly extensible living chronicle anchored in The White Page.',
     ],
     comprehensionRewardDiamonds: 300_000n,
     comprehensionRewardFragments: 35,
     icon: '🖥️',
     accentColor: 'from-amber-500/20 via-cyan-950/70 to-fuchsia-950/60 border-amber-400/60',
+  },
+];
+
+/**
+ * 12 Canonical Dynastic Annals, Sacred Treaties & Legendary Artifact Histories
+ * expanding the written lore corpus across all 6 Cosmic Tiers.
+ */
+export interface LoreDynasticAnnalsEntry {
+  id: string;
+  scrollCode: string;
+  eraReference: string;
+  title: string;
+  chineseTitle: string;
+  cosmicLayer: string;
+  chronicler: string;
+  icon: string;
+  summary: string;
+  fullTextParagraphs: string[];
+  relatedKeywords: string[];
+}
+
+export const LORE_DYNASTIC_ANNALS: LoreDynasticAnnalsEntry[] = [
+  {
+    id: 'annal_01_oblivion_shadow_paradox',
+    scrollCode: 'ANNAL I · Ω-0',
+    eraReference: 'Epoch Ω-0 (Before Time)',
+    title: 'The Oblivion Shadow-Ink Paradox Upon The White Page',
+    chineseTitle: '太初白页·虚无墨影悖论录',
+    cosmicLayer: '6. The White Page / The House of Ideas',
+    chronicler: PRIMARY_ADMIN_EMAIL,
+    icon: '✒️',
+    summary:
+      'Explains how absolute non-existence (Oblivion) was drafted as a dependent shadow on The White Page so existence could have boundary, contrast, and story.',
+    fullTextParagraphs: [
+      'Ancient metaphysicians once debated whether Oblivion preceded creation as a rival primeval force. The House of Ideas Archives resolve this permanently: Oblivion is not an independent sovereign above creation, but the deliberate un-inked silence authored beneath The White Page.',
+      `Only Supreme Author ${PRIMARY_ADMIN_EMAIL} may invoke the Oblivion Reset Decree, proving across every Overvoid that nothingness answers to authorship rather than the reverse.`,
+    ],
+    relatedKeywords: ['Oblivion', 'White Page', 'House of Ideas', PRIMARY_ADMIN_EMAIL],
+  },
+  {
+    id: 'annal_02_treaty_100_overvoid_thrones',
+    scrollCode: 'ANNAL II · Ω-I',
+    eraReference: 'Epoch Ω-I',
+    title: 'Treaty of the Hundred Overvoid Thrones & Six Projected Envoys',
+    chineseTitle: '百界超虚盟约·六使降世志',
+    cosmicLayer: '5. The Overvoid / Exonverse → 4. Omniverse',
+    chronicler: 'Beyonder & Mar Novu Conclave',
+    icon: '🌌',
+    summary:
+      'Chronicles the compact binding exactly 100 Overvoid meta-containers and dispatching 6 iconic Level-1000 species ambassadors into Solara Prime.',
+    fullTextParagraphs: [
+      'When reality-warping Beyonders, Outer Gods, Celestialsapiens, and Time Lords first compared their divergent logic systems, dimensional friction threatened to fracture all neighboring Omniverses.',
+      'By segregating creation into exactly one hundred Overvoid domains (OVERVOID-001 through OVERVOID-100) and posting six Level-1000 Envoys inside Solara Citadel, infinite diversity was achieved without structural collapse.',
+    ],
+    relatedKeywords: ['Overvoid', 'Exonverse', 'Beyonder', '100', 'Omniverse'],
+  },
+  {
+    id: 'annal_03_26d_brane_cathedral',
+    scrollCode: 'ANNAL III · Ω-II',
+    eraReference: 'Epoch Ω-II',
+    title: 'Weaving of the 26-Dimensional Brane Cathedral & Infinite Streams',
+    chineseTitle: '二十六维超膜圣殿编年史',
+    cosmicLayer: '3. Megaverse / Hyperverse → 2. Multiverse',
+    chronicler: 'Chronovore & Time Lord Concordat',
+    icon: '🕸️',
+    summary:
+      'Details how infinite Multiverses, Megaverses, and Universes are streamed via procedural generator seeds rather than static allocation.',
+    fullTextParagraphs: [
+      'Because infinite numbers of universes and multiverses can never fit inside finite physical vessels, the Architects of Epoch Ω-II encoded creation as InfiniteCollection<T> generator streams.',
+      'Each Hyperversal node stores only a compact cryptographic seed, unfolding entire galaxies, timelines, and physical constants instantaneously whenever an explorer or Overvoid decree inspects that coordinate.',
+    ],
+    relatedKeywords: ['Hyperverse', 'Megaverse', 'Multiverse', 'InfiniteCollection'],
+  },
+  {
+    id: 'annal_04_admin_rebirth_seal',
+    scrollCode: 'ANNAL IV · III',
+    eraReference: 'Epoch III',
+    title: 'The Ancestral Species Charter & The Immutable Rebirth Seal',
+    chineseTitle: '十族血脉宪章·转生封印纪',
+    cosmicLayer: '1. Universe (Solara Prime)',
+    chronicler: `Root Registry of ${PRIMARY_ADMIN_EMAIL}`,
+    icon: '🧬',
+    summary:
+      'Records the founding pact of the 10 playable bloodlines and the Admin Permission Gate governing post-creation species rebirth.',
+    fullTextParagraphs: [
+      'Whether a Lord awakens with Azure Dragonkin horns, Empyrean Celestial wings, Kitsune spirit tails, or Void Walker crystals, their bone structure shapes how ambient Qi condenses around them in the 3D overworld.',
+      `To protect karmic accountability across kingdoms, bloodline rebirth after initial genesis requires verified authorization from ${PRIMARY_ADMIN_EMAIL}, preventing war criminals from shedding their ancestral identity overnight.`,
+    ],
+    relatedKeywords: ['Species', 'Rebirth', 'Dragonkin', 'Kitsune', PRIMARY_ADMIN_EMAIL],
+  },
+  {
+    id: 'annal_05_han_jue_millennium_cave',
+    scrollCode: 'ANNAL V · IV',
+    eraReference: 'Epoch IV',
+    title: 'Han Jue’s Ten-Thousand-Year Seclusion Inside the Hidden Spirit Cave',
+    chineseTitle: '韩绝万年闭关·隐灵洞天录',
+    cosmicLayer: '1. Universe → Four Immortal Paths',
+    chronicler: 'Daoist Mingyue',
+    icon: '🏔️',
+    summary:
+      'Tells how Dao Ancestor Han Jue quietly cultivated all four paths while reckless sects wiped each other out across Solara.',
+    fullTextParagraphs: [
+      'While impulsive prodigies duelled over mortal mines and accumulated deadly Red-Name Karma, Han Jue sealed his mountain abode and refined Qi, Body, Soul, and Mind in unison across quiet centuries.',
+      'When he finally stepped onto the Citadel terrace bearing concentric Dao Creator halos, his 100.0x Realm Suppression quelled an entire coalition of invading Fiends without drawing a sword.',
+    ],
+    relatedKeywords: ['Han Jue', 'Seclusion', 'Four Paths', 'Realm Suppression'],
+  },
+  {
+    id: 'annal_06_gorim_celestial_anvil',
+    scrollCode: 'ANNAL VI · III–V',
+    eraReference: 'Epochs III–V',
+    title: 'Gorim Forgehammer’s Celestial Anvil & The Damascus Iron Veins',
+    chineseTitle: '高林神匠·天陨玄铁砧记',
+    cosmicLayer: '1. Universe (Eastern Runic Iron Outcrops)',
+    chronicler: 'Gorim Forgehammer',
+    icon: '⚒️',
+    summary:
+      'Relates how meteoric alloy shards from a shattered Hyperverse forged Solara’s T10–T20 siege dreadnoughts.',
+    fullTextParagraphs: [
+      'When hyperversal war-steel struck eastern Solara, Runic Dwarves erected great bellows beside the impact ridges, taming star-metal heated to ten thousand degrees.',
+      'Even today, Gorim leads armored smelting escorts past Forest Goblin ambushes to temper Shieldbearer towershields and Bomber siege barrels capable of denting World Boss carapaces.',
+    ],
+    relatedKeywords: ['Gorim', 'Iron', 'Steel', 'Bomber', 'Shieldbearer'],
+  },
+  {
+    id: 'annal_07_eldrin_astral_astrolabe',
+    scrollCode: 'ANNAL VII · V',
+    eraReference: 'Epoch V',
+    title: 'Arch-Mage Eldrin’s Astral Astrolabe & Five Elemental Fronts',
+    chineseTitle: '大法师埃尔德林·星象天机仪',
+    cosmicLayer: '1. Universe (Weather & Leylines)',
+    chronicler: 'Arch-Mage Eldrin',
+    icon: '🔮',
+    summary:
+      'Documents how Solara’s dynamic weather engine couples spiritual rain, snow, and thunder storms directly to combat and resource output.',
+    fullTextParagraphs: [
+      'Perched atop the highest arcane spire of Solara Citadel, Eldrin calibrated crystalline lenses to forecast incoming Spirit Rain, Snowfall, Blood Moon, and Storm Tribulation fronts.',
+      'Seasoned Marshals consult his weather charts before launching major campaigns — withholding Shooter volleys during heavy rain while unleashing Bomber siege salvos under roaring thunderstorms.',
+    ],
+    relatedKeywords: ['Eldrin', 'Weather', 'Rain', 'Storm', 'Snow'],
+  },
+  {
+    id: 'annal_08_vance_trillion_rally',
+    scrollCode: 'ANNAL VIII · V',
+    eraReference: 'Epoch V',
+    title: 'Grand Marshal Vance & The First One-Trillion-Troop Rally',
+    chineseTitle: '万斯元帅·万亿神军首战纪',
+    cosmicLayer: '1. Universe (Sector B2 & Polar Crater)',
+    chronicler: 'Captain Thorne',
+    icon: '⚔️',
+    summary:
+      'Chronicles the historic combined-arms rally that broke the Void Leviathan and mapped the Northern Starfall Crater.',
+    fullTextParagraphs: [
+      'Before the BigInt Military Logistics Reform, commanders could barely coordinate ten million troops without logistical arithmetic overflowing. Marshal Vance standardized unified Shieldbearer-Shooter-Bomber ratios up to 1,000 Trillion reserves.',
+      'At the Battle of Starfall Rim, one trillion synchronized soldiers marched in interlocking A* formations, shattering the 250M HP Ender Titan’s opening meteor shield.',
+    ],
+    relatedKeywords: ['Vance', 'Thorne', 'Trillion', 'Rally', 'Ender Titan'],
+  },
+  {
+    id: 'annal_09_zane_diamond_caravans',
+    scrollCode: 'ANNAL IX · V',
+    eraReference: 'Epoch V',
+    title: 'Caravan Master Zane & The Volcanic Diamond Road',
+    chineseTitle: '泽恩商团·熔岩星钻商道志',
+    cosmicLayer: '1. Universe (Scorched Magma Caldera)',
+    chronicler: 'Caravan Master Zane',
+    icon: '💎',
+    summary:
+      'Follows the hazardous trade routes between Solara Citadel and the southeastern Diamond mines guarded by Infernal Magma Drakes.',
+    fullTextParagraphs: [
+      'Every glittering Kingdom Diamond in the Citadel treasury travels across obsidian switchbacks chilled only by enchanted frost-wagons.',
+      'Whenever Zane’s horns sound along the southern gate, citizens pour out to exchange grain and timber for crystallized fire-diamonds mined within earshot of the Level-240 Magma Drake.',
+    ],
+    relatedKeywords: ['Zane', 'Diamond', 'Magma', 'Caravan', 'Drake'],
+  },
+  {
+    id: 'annal_10_celestia_sky_archipelago',
+    scrollCode: 'ANNAL X · IV–V',
+    eraReference: 'Epochs IV–V',
+    title: 'Ascent to the Celestia Floating Sky Archipelago & Jade Pillars',
+    chineseTitle: '九天浮空仙岛·飞升玉柱记',
+    cosmicLayer: '1. Universe → 4. Omniverse Conduit',
+    chronicler: 'Sage Lin Xuan',
+    icon: '☁️',
+    summary:
+      'Describes the anti-gravity islands drifting above Solara where Dao Creators commune with Omniversal Envoys.',
+    fullTextParagraphs: [
+      'Only three artifacts survive from the ancient Celestia bridge-builders: inverted lodestone obelisks, golden cloud-waterfalls that never evaporate, and jade teleportation waypoints.',
+      'Lords who complete their Golden Core and Nascent Soul tribulations ascend to these sky islands to witness the cosmic shimmer connecting Solara to the Outer Overvoids.',
+    ],
+    relatedKeywords: ['Celestia', 'Sky', 'Archipelago', 'Sage Lin Xuan'],
+  },
+  {
+    id: 'annal_11_red_name_tribulation_law',
+    scrollCode: 'ANNAL XI · IV',
+    eraReference: 'Epoch IV',
+    title: 'Jurisprudence of Heavenly Karma & The Red-Name Lightning Code',
+    chineseTitle: '天道因果律·红名天劫法典',
+    cosmicLayer: '1. Universe (Karmic Law)',
+    chronicler: 'Elder Xuanzang',
+    icon: '⚡',
+    summary:
+      'Codifies why aggressive PK tyranny triggers red-name aura markers and merciless sky-tribulation bolts.',
+    fullTextParagraphs: [
+      'In times before the Karmic Code, high-realm tyrants preyed endlessly on nascent disciples outside safe zones. The Heavenly Dao answered by burning crimson halos around every murderer’s silhouette.',
+      'Should any Red-Name cultivator stand idle for mere heartbeats outside sanctuary walls, violet tribulation arcs descend from zenith clouds to sear their cultivation foundation.',
+    ],
+    relatedKeywords: ['Karma', 'Red Name', 'Tribulation', 'Lightning'],
+  },
+  {
+    id: 'annal_12_silicon_harmony_2026',
+    scrollCode: 'ANNAL XII · VI',
+    eraReference: '06/11/2026 (v1.5.0)',
+    title: 'The 128-Byte Silicon Harmony Pact & 10^100-Word Akashic Pledge',
+    chineseTitle: '零六一一·软硬合道百亿兆言誓',
+    cosmicLayer: 'All 6 Tiers Unified (Hardware + Software)',
+    chronicler: PRIMARY_ADMIN_EMAIL,
+    icon: '🖥️',
+    summary:
+      'Documents the v1.5.0 engineering convergence uniting SoA SIMD kernels, D3 tree inspection, Auto-Populating Lore Codex, and the 10^100-word archive.',
+    fullTextParagraphs: [
+      'On 06/11/2026, the Hardware and Software Architects swore the Silicon Harmony Pact: simulation kernels run lock-free across Chase-Lev job queues while visual PBR shaders adapt smoothly between desktop WebGPU Ultra and mobile ASTC tiers.',
+      'At the center of this living architecture sits the 10^100-Word Akashic Lore Archive and Auto-Populating Field Codex, guaranteeing that every discovery across infinite universes is forever remembered.',
+    ],
+    relatedKeywords: ['06/11/2026', 'Architect', '10^100', 'SoA', 'D3'],
   },
 ];
 
@@ -1182,7 +1532,8 @@ export function comprehendLoreEpoch(params: {
 }
 
 /**
- * Searches across the 7 Historical Epochs, 6 Compendium Chapters, and Open-World Lore Codex entries.
+ * Searches across the 7 Historical Epochs, 6 Compendium Chapters, 12 Dynastic Annals,
+ * and Open-World Lore Codex entries.
  */
 export function searchLoreHistory(
   query: string,
@@ -1191,6 +1542,7 @@ export function searchLoreHistory(
   matchingEpochs: LoreHistoricalEpoch[];
   matchingChapters: LoreCompendiumArticle[];
   matchingCodexEntries: LoreCodexEntry[];
+  matchingAnnals: LoreDynasticAnnalsEntry[];
 } {
   const allCodexEntries = getCompleteLoreCodexCatalog(monsters);
   const q = query.trim().toLowerCase();
@@ -1199,6 +1551,7 @@ export function searchLoreHistory(
       matchingEpochs: LORE_HISTORICAL_EPOCHS,
       matchingChapters: LORE_COMPENDIUM_CHAPTERS,
       matchingCodexEntries: allCodexEntries,
+      matchingAnnals: LORE_DYNASTIC_ANNALS,
     };
   }
 
@@ -1231,5 +1584,17 @@ export function searchLoreHistory(
       entry.loreParagraphs.some((p) => p.toLowerCase().includes(q))
   );
 
-  return { matchingEpochs, matchingChapters, matchingCodexEntries };
+  const matchingAnnals = LORE_DYNASTIC_ANNALS.filter(
+    (annal) =>
+      annal.title.toLowerCase().includes(q) ||
+      annal.chineseTitle.toLowerCase().includes(q) ||
+      annal.scrollCode.toLowerCase().includes(q) ||
+      annal.cosmicLayer.toLowerCase().includes(q) ||
+      annal.chronicler.toLowerCase().includes(q) ||
+      annal.summary.toLowerCase().includes(q) ||
+      annal.fullTextParagraphs.some((p) => p.toLowerCase().includes(q)) ||
+      annal.relatedKeywords.some((k) => k.toLowerCase().includes(q))
+  );
+
+  return { matchingEpochs, matchingChapters, matchingCodexEntries, matchingAnnals };
 }

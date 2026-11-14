@@ -21,7 +21,9 @@ import {
 } from 'lucide-react';
 import {
   LORE_HISTORICAL_EPOCHS,
+  LORE_DYNASTIC_ANNALS,
   GOOGOL_LORE_ARCHIVE_SPEC,
+  GOOGOL_MAX_VOLUME_INDEX,
   OPEN_WORLD_BIOME_CODEX_CATALOG,
   LoreCodexEntry,
   PersistedLoreCodexState,
@@ -59,9 +61,10 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'timeline' | 'codex' | 'googol' | 'cosmology' | 'compendium'
+    'timeline' | 'codex' | 'annals' | 'googol' | 'cosmology' | 'compendium'
   >('timeline');
   const [selectedEpochId, setSelectedEpochId] = useState<string>(LORE_HISTORICAL_EPOCHS[0].id);
+  const [selectedAnnalId, setSelectedAnnalId] = useState<string>(LORE_DYNASTIC_ANNALS[0].id);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Lore Codex Filter & Selection State
@@ -74,13 +77,15 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
   // 10^100 Googol Akashic Archive State
   const [googolExponent, setGoogolExponent] = useState<number>(100);
   const [googolScrollCount, setGoogolScrollCount] = useState<number>(3);
+  const [googolVolumeOffset, setGoogolVolumeOffset] = useState<bigint>(1n);
+  const [expandedGoogolScrolls, setExpandedGoogolScrolls] = useState<Record<string, boolean>>({});
 
   const selectedEpoch =
     LORE_HISTORICAL_EPOCHS.find((e) => e.id === selectedEpochId) || LORE_HISTORICAL_EPOCHS[0];
-  const { matchingEpochs, matchingChapters, matchingCodexEntries } = searchLoreHistory(
-    searchQuery,
-    monsters
-  );
+  const selectedAnnal =
+    LORE_DYNASTIC_ANNALS.find((a) => a.id === selectedAnnalId) || LORE_DYNASTIC_ANNALS[0];
+  const { matchingEpochs, matchingChapters, matchingCodexEntries, matchingAnnals } =
+    searchLoreHistory(searchQuery, monsters);
 
   const filteredCodexEntries = allCodexEntries.filter((entry) => {
     if (codexFilter === 'biome') return entry.kind === 'biome';
@@ -107,9 +112,11 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
 
   const googolScrolls = generateGoogolScaleLoreScrollSlice({
     exponentTier: googolExponent,
-    scrollOffset: 1,
+    scrollOffset: googolVolumeOffset,
     sliceCount: googolScrollCount,
   });
+
+  const totalActualWordsRendered = googolScrolls.reduce((acc, s) => acc + s.actualWordCount, 0);
 
   const totalPossibleDiamonds = LORE_HISTORICAL_EPOCHS.reduce(
     (acc, e) => acc + e.comprehensionRewardDiamonds,
@@ -210,6 +217,23 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 🧭 Lore Codex ({discoveredBiomeCount + discoveredMonsterCount}/
                 {allCodexEntries.length})
               </span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="lore-tab-annals"
+              onClick={() => {
+                sound.playButton();
+                setActiveTab('annals');
+              }}
+              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'annals'
+                  ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/25'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'
+              }`}
+            >
+              <ScrollText className="w-4 h-4" />
+              <span>🏛️ Annals &amp; Relics ({LORE_DYNASTIC_ANNALS.length})</span>
             </button>
 
             <button
@@ -722,6 +746,113 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
             </div>
           )}
 
+          {/* TAB 2B: 12 DYNASTIC ANNALS, TREATIES & LEGENDARY RELICS */}
+          {activeTab === 'annals' && (
+            <div
+              data-testid="lore-annals-section"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-5"
+            >
+              <div className="lg:col-span-5 space-y-2 max-h-[580px] overflow-y-auto pr-1">
+                <div className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider px-1">
+                  12 Imperial Dynastic Annals &amp; Artifact Histories
+                </div>
+                {LORE_DYNASTIC_ANNALS.map((annal) => {
+                  const isSelected = annal.id === selectedAnnal.id;
+                  return (
+                    <button
+                      key={annal.id}
+                      type="button"
+                      data-testid={`lore-annal-btn-${annal.id}`}
+                      onClick={() => {
+                        sound.playSwing();
+                        setSelectedAnnalId(annal.id);
+                      }}
+                      className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-start gap-3 cursor-pointer ${
+                        isSelected
+                          ? 'bg-gradient-to-r from-amber-500/20 via-slate-900 to-cyan-500/15 border-amber-400 shadow-lg'
+                          : 'bg-slate-950/85 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="text-2xl p-1.5 rounded-xl bg-slate-900 border border-slate-700 shrink-0">
+                        {annal.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {annal.scrollCode}
+                          </span>
+                          <span className="text-[10px] font-mono text-fuchsia-300 truncate">
+                            {annal.chineseTitle}
+                          </span>
+                        </div>
+                        <div className="text-xs font-bold text-white mt-1 line-clamp-1">
+                          {annal.title}
+                        </div>
+                        <div className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
+                          {annal.eraReference} · Chronicler: {annal.chronicler}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="lg:col-span-7">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-950 to-slate-900 border border-amber-500/40 space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-xs font-mono font-black">
+                        {selectedAnnal.scrollCode}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-900 border border-cyan-400/40 text-cyan-300 text-[11px] font-mono">
+                        {selectedAnnal.cosmicLayer}
+                      </span>
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-black font-cinzel text-white pt-1">
+                      {selectedAnnal.icon} {selectedAnnal.title}
+                    </h3>
+                    <div className="text-xs font-mono text-fuchsia-300">
+                      {selectedAnnal.chineseTitle} · {selectedAnnal.eraReference}
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/90 border border-amber-500/30 text-xs text-amber-100 leading-relaxed">
+                    {selectedAnnal.summary}
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {selectedAnnal.fullTextParagraphs.map((para, i) => (
+                      <p
+                        key={i}
+                        className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed"
+                      >
+                        <span className="text-amber-400 font-mono font-bold mr-2">§{i + 1}</span>
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800 text-xs font-mono">
+                    <span className="text-slate-400">
+                      Inscribed by:{' '}
+                      <strong className="text-amber-300">{selectedAnnal.chronicler}</strong>
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedAnnal.relatedKeywords.map((kw) => (
+                        <span
+                          key={kw}
+                          className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] text-cyan-300"
+                        >
+                          #{kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* TAB 3: 10^100 GOOGOL-SCALE AKASHIC LORE & HISTORY STREAM */}
           {activeTab === 'googol' && (
             <div data-testid="googol-lore-archive-section" className="space-y-4">
@@ -732,22 +863,27 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                       <span className="px-2.5 py-0.5 rounded-full bg-indigo-400 text-slate-950 text-xs font-mono font-black">
                         ♾️ 10^100 WORDS MINIMUM (ONE GOOGOL WORDS) AKASHIC ARCHIVE
                       </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-emerald-400/50 text-emerald-300 text-xs font-mono font-bold">
+                        Live Rendered: {totalActualWordsRendered.toLocaleString()} Real Words
+                      </span>
                       <span className="px-2.5 py-0.5 rounded-full bg-slate-950 border border-amber-400/50 text-amber-300 text-xs font-mono">
                         Seed: {GOOGOL_LORE_ARCHIVE_SPEC.generatorSeed}
                       </span>
                     </div>
                     <h3 className="text-base sm:text-lg font-bold font-cinzel text-white">
                       Layer 6 White Page Procedural Lore Stream (
-                      {GOOGOL_LORE_ARCHIVE_SPEC.totalVolumesScientific} Volumes ×{' '}
-                      {GOOGOL_LORE_ARCHIVE_SPEC.wordsPerVolume.toLocaleString()} Words = 10^100
-                      Words)
+                      {GOOGOL_LORE_ARCHIVE_SPEC.totalVolumesScientific} BigInt Volumes × 1,000+ Real
+                      Words = 10^100 Words Minimum)
                     </h3>
                     <p className="text-xs text-slate-300">
-                      Because <strong className="text-amber-300">10^100 (1 Googol) words</strong>{' '}
-                      exceeds the ~10^80 atoms in the observable universe, the Akashic Archive uses
-                      deterministic seed pagination to synthesize canonical historical volumes at
-                      any exponent coordinate from <span className="font-mono">10^0</span> to{' '}
-                      <span className="font-mono">10^100</span> on demand without memory overflow.
+                      Every synthesized volume produces{' '}
+                      <strong className="text-emerald-300">1,000+ real English words</strong> across
+                      7 structural chapters (The White Page, Overvoid Meta-Logic, Hyperversal
+                      Branes, Solara Biomes, 4-Path Cultivation, Citadel Legions, and 06/11/2026
+                      Silicon Architecture). Address any volume from{' '}
+                      <span className="font-mono text-amber-300">Vol. #1</span> up to{' '}
+                      <span className="font-mono text-amber-300">Vol. #10^97</span> for a guaranteed
+                      corpus floor of <strong className="text-amber-300">10^100 words</strong>.
                     </p>
                   </div>
 
@@ -764,94 +900,154 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                   </button>
                 </div>
 
-                {/* Exponent Coordinate Dial (10^0 to 10^100) */}
-                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-1 space-y-1">
-                    <label
-                      htmlFor="googol-exponent-range"
-                      className="text-xs font-mono font-bold text-indigo-300 flex items-center justify-between"
-                    >
-                      <span>Akashic Word Coordinate Horizon: 10^{googolExponent} Words</span>
-                      <span className="text-amber-300">
-                        Minimum Corpus Bound: 10^100 Words (1 Googol)
-                      </span>
-                    </label>
-                    <input
-                      id="googol-exponent-range"
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={googolExponent}
-                      onChange={(e) => setGoogolExponent(Number(e.target.value))}
-                      className="w-full accent-indigo-400 cursor-pointer"
-                    />
+                {/* Exponent Coordinate Dial (10^0 to 10^100) + BigInt Volume Jump Bar */}
+                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <label
+                        htmlFor="googol-exponent-range"
+                        className="text-xs font-mono font-bold text-indigo-300 flex items-center justify-between"
+                      >
+                        <span>Akashic Word Coordinate Horizon: 10^{googolExponent} Words</span>
+                        <span className="text-amber-300">
+                          Minimum Corpus Bound: 10^100 Words (1 Googol)
+                        </span>
+                      </label>
+                      <input
+                        id="googol-exponent-range"
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={googolExponent}
+                        onChange={(e) => setGoogolExponent(Number(e.target.value))}
+                        className="w-full accent-indigo-400 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[10, 25, 50, 80, 100].map((exp) => (
+                        <button
+                          key={exp}
+                          type="button"
+                          data-testid={`googol-exp-btn-${exp}`}
+                          onClick={() => {
+                            sound.playButton();
+                            setGoogolExponent(exp);
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer ${
+                            googolExponent === exp
+                              ? 'bg-amber-400 text-slate-950'
+                              : 'bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800'
+                          }`}
+                        >
+                          10^{exp}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[10, 25, 50, 80, 100].map((exp) => (
-                      <button
-                        key={exp}
-                        type="button"
-                        data-testid={`googol-exp-btn-${exp}`}
-                        onClick={() => {
-                          sound.playButton();
-                          setGoogolExponent(exp);
-                        }}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer ${
-                          googolExponent === exp
-                            ? 'bg-amber-400 text-slate-950'
-                            : 'bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800'
-                        }`}
-                      >
-                        10^{exp}
-                      </button>
-                    ))}
+                  {/* BigInt Volume Address Jumps (1 .. 10^97) */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                    <div className="text-[11px] font-mono text-slate-400">
+                      Current BigInt Volume Cursor:{' '}
+                      <strong className="text-cyan-300">
+                        {googolScrolls[0]?.volumeCoordinateLabel}
+                      </strong>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[
+                        { label: 'Vol #1', offset: 1n },
+                        { label: 'Vol #10^25', offset: 10n ** 25n },
+                        { label: 'Vol #10^50', offset: 10n ** 50n },
+                        { label: 'Vol #10^97 (10^100th Word)', offset: GOOGOL_MAX_VOLUME_INDEX },
+                        {
+                          label: '+3 Volumes →',
+                          offset:
+                            googolVolumeOffset + 3n <= GOOGOL_MAX_VOLUME_INDEX
+                              ? googolVolumeOffset + 3n
+                              : 1n,
+                        },
+                      ].map((jump) => (
+                        <button
+                          key={jump.label}
+                          type="button"
+                          onClick={() => {
+                            sound.playButton();
+                            setGoogolVolumeOffset(jump.offset);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-indigo-500/30 text-[11px] font-mono text-indigo-200 cursor-pointer"
+                        >
+                          {jump.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Synthesized Googol Lore Scroll Volumes */}
               <div className="grid grid-cols-1 gap-4">
-                {googolScrolls.map((scroll) => (
-                  <div
-                    key={scroll.scrollId}
-                    data-testid={`googol-scroll-card-${scroll.scrollId}`}
-                    className="p-4 rounded-2xl bg-slate-950/90 border border-indigo-500/30 space-y-3"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-[11px] font-mono font-bold">
-                            {scroll.volumeCoordinateLabel}
-                          </span>
-                          <span className="text-xs font-mono text-fuchsia-300">
-                            {scroll.chineseSubtitle}
-                          </span>
-                          <span className="text-[11px] font-mono text-cyan-300">
-                            Anchor: {scroll.cosmicLayerAnchor}
-                          </span>
+                {googolScrolls.map((scroll) => {
+                  const isExpanded = Boolean(expandedGoogolScrolls[scroll.scrollId]);
+                  const visibleParagraphs = isExpanded
+                    ? scroll.paragraphs
+                    : scroll.paragraphs.slice(0, 3);
+                  return (
+                    <div
+                      key={scroll.scrollId}
+                      data-testid={`googol-scroll-card-${scroll.scrollId}`}
+                      className="p-4 rounded-2xl bg-slate-950/90 border border-indigo-500/30 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-[11px] font-mono font-bold">
+                              {scroll.volumeCoordinateLabel}
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-mono font-bold">
+                              {scroll.actualWordCount.toLocaleString()} Real Words
+                            </span>
+                            <span className="text-xs font-mono text-fuchsia-300">
+                              {scroll.chineseSubtitle}
+                            </span>
+                            <span className="text-[11px] font-mono text-cyan-300">
+                              Anchor: {scroll.cosmicLayerAnchor}
+                            </span>
+                          </div>
+                          <h4 className="text-sm sm:text-base font-bold font-cinzel text-amber-300 mt-1">
+                            📜 {scroll.title}
+                          </h4>
                         </div>
-                        <h4 className="text-sm sm:text-base font-bold font-cinzel text-amber-300 mt-1">
-                          📜 {scroll.title}
-                        </h4>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono font-bold">
-                        {scroll.cumulativeWordHorizonScientific} · Author: {scroll.authorEmail}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {scroll.paragraphs.map((p, idx) => (
-                        <p
-                          key={idx}
-                          className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playButton();
+                            setExpandedGoogolScrolls((prev) => ({
+                              ...prev,
+                              [scroll.scrollId]: !prev[scroll.scrollId],
+                            }));
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-indigo-400/40 text-indigo-200 text-[11px] font-mono font-bold cursor-pointer"
                         >
-                          {p}
-                        </p>
-                      ))}
+                          {isExpanded
+                            ? 'Collapse Sections (3/7)'
+                            : `Read Full ${scroll.actualWordCount.toLocaleString()}-Word Volume (7 Sections)`}
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {visibleParagraphs.map((p, idx) => (
+                          <p
+                            key={idx}
+                            className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs sm:text-sm text-slate-200 leading-relaxed"
+                          >
+                            {p}
+                          </p>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1017,7 +1213,8 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                 <div className="text-xs font-mono text-slate-400 shrink-0">
                   Showing <strong className="text-cyan-300">{matchingChapters.length}</strong>{' '}
                   Codices, <strong className="text-amber-300">{matchingEpochs.length}</strong>{' '}
-                  Epochs &amp;{' '}
+                  Epochs, <strong className="text-fuchsia-300">{matchingAnnals.length}</strong>{' '}
+                  Annals &amp;{' '}
                   <strong className="text-emerald-300">{matchingCodexEntries.length}</strong> Field
                   Entries
                 </div>

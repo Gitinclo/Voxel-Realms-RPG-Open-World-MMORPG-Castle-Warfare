@@ -168,3 +168,38 @@ interface WhitePageRoot {
 - **Historical Chronicle**:
   On the canonical convergence date **`06/11/2026`**, the Software & Hardware Architects unified the **3D WebGL / Three.js Stylized Teyvat PBR Renderer** with the **C++20 / Rust Engine Core Architecture**.
   PC/Console (`BC7 4K Master Override · LOD 0 Hero Meshes · Hybrid Real-Time GI`) and Mobile (`ASTC 6x6 1024px · LOD Bias +1 · 640 MB Base Build + 3.85 GB Optional HD Pack`) pipelines were synchronized alongside the **7-Day Daily Login Cycle (Veteran Scrolls)** and **4-Tier VIP Imperial Covenant**.
+
+---
+
+## 🏛️ The 12 Imperial Dynastic Annals & Legendary Relics (`LORE_DYNASTIC_ANNALS`)
+
+Beyond the 7 Grand Historical Epochs, the **Sacred Archives** preserve **12 Imperial Dynastic Annals & Relic Histories** spanning Layer 6 down to Layer 1:
+
+1. **ANNAL I · Ω-0**: _The Oblivion Shadow-Ink Paradox Upon The White Page_ (`creatergame31@gmail.com`)
+2. **ANNAL II · Ω-I**: _Treaty of the Hundred Overvoid Thrones & Six Projected Envoys_
+3. **ANNAL III · Ω-II**: _Weaving of the 26-Dimensional Brane Cathedral & Infinite Streams_
+4. **ANNAL IV · III**: _The Ancestral Species Charter & The Immutable Rebirth Seal_ (`creatergame31@gmail.com`)
+5. **ANNAL V · IV**: _Han Jue’s Ten-Thousand-Year Seclusion Inside the Hidden Spirit Cave_
+6. **ANNAL VI · III–V**: _Gorim Forgehammer’s Celestial Anvil & The Damascus Iron Veins_
+7. **ANNAL VII · V**: _Arch-Mage Eldrin’s Astral Astrolabe & Five Elemental Fronts_
+8. **ANNAL VIII · V**: _Grand Marshal Vance & The First One-Trillion-Troop Rally_
+9. **ANNAL IX · V**: _Caravan Master Zane & The Volcanic Diamond Road_
+10. **ANNAL X · IV–V**: _Ascent to the Celestia Floating Sky Archipelago & Jade Pillars_
+11. **ANNAL XI · IV**: _Jurisprudence of Heavenly Karma & The Red-Name Lightning Code_
+12. **ANNAL XII · VI**: _The 128-Byte Silicon Harmony Pact & `10^100`-Word Akashic Pledge_
+
+---
+
+## 🧭 Auto-Populating Open-World Lore Codex (`Biomes & Monster Bestiary`)
+
+As players traverse the 3D world of Solara Prime (`onPlayerPositionChange`), click/engage/spawn monsters, or dispatch field scouts inside `LoreHistoryModal`:
+
+- **8 Open-World Biomes**: _Solara Imperial Citadel Sanctum_, _Verdant Emerald Plains_, _Eastern Runic Iron Outcrops_, _Southern Copper Terraces_, _Scorched Magma Caldera_, _Abyssal Chaos Chasm_, _Frozen Starfall Tundra_, and _Celestia Floating Sky Archipelago_.
+- **Monster Bestiary (Lv. 1 – Lv. 1000)**: Automatically unlocks canonical monsters (_Wild Bramble Stalker_, _Forest Goblin Clan_, _Ancient Stone Golem_, _Infernal Magma Drake_, _Abyssal Chaos Wyrm_, _Celestial Ender Titan_) and dynamically spawned Lv. 1–1000 creatures (`buildDynamicMonsterCodexEntry`), granting one-time **Kingdom Diamond (`💎`)** and **Scripture Fragment** research bounties.
+
+---
+
+## ♾️ The `10^100` Words Minimum (One Googol Words) Akashic Lore & History Stream
+
+- **Spec (`GOOGOL_LORE_ARCHIVE_SPEC`)**: `10^97` BigInt-addressable volumes (`1` through `10n ** 97n`) × **`>= 1,000` real synthesized English words per volume** = **`10^100` Words Minimum** (`One Googol Words Minimum`).
+- **Deterministic Synthesis (`generateGoogolScaleLoreScrollSlice`)**: Synthesizes 7 structured sections per volume covering _The White Page_, _Overvoid Meta-Logic_, _Hyperversal Branes_, _Solara Biomes_, _Four-Path Cultivation_, _Citadel Legions_, and _`06/11/2026` Silicon Architecture_ at any exponent horizon (`10^0`–`10^100`) and any BigInt volume coordinate (`Vol #1` to `Vol #10^97`) without memory overflow.
