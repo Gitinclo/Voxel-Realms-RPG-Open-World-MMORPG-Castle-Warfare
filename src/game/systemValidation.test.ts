@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.ok(report.totalAssertionsPassed >= 80);
+  assert.ok(report.totalAssertionsPassed >= 88);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -26,7 +26,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   }
 });
 
-test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus & Transparency Matrix', () => {
+test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus, 20Hz Siege Netcode & Transparency Matrix', () => {
   const report = runFullSystemValidationReport();
   const cosmologyPillar = report.pillars.find(
     (p) => p.id === 'six_layer_cosmology_and_100_omniverses'
@@ -58,7 +58,12 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
   assert.equal(transparencyPillar.passed, true);
   assert.ok(
     transparencyPillar.verifiedInvariants.some((inv) =>
-      inv.includes('Explicit 3-Tier Scope Matrix')
+      inv.includes('Explicit 3-Tier Scope Matrix: 6 Implemented, 2 Simulated Models, 0 Planned')
+    )
+  );
+  assert.ok(
+    transparencyPillar.verifiedInvariants.some((inv) =>
+      inv.includes('Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol')
     )
   );
 });

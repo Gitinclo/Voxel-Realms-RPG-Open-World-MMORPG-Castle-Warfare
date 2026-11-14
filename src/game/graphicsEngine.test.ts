@@ -192,9 +192,9 @@ test('6. Engineering Transparency Matrix clearly separates Implemented, Simulate
   const summary = getImplementationTransparencySummary();
 
   assert.equal(summary.totalEntries, 8);
-  assert.equal(summary.implementedCount, 5);
+  assert.equal(summary.implementedCount, 6);
   assert.equal(summary.simulatedCount, 2);
-  assert.equal(summary.plannedCount, 1);
+  assert.equal(summary.plannedCount, 0);
 
   for (const entry of summary.entries) {
     assert.ok(entry.whatRunsInBrowserNow.length > 20);

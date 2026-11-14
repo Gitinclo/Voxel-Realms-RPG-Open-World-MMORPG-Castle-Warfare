@@ -9,15 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned (`v1.5.1+` Roadmap)
+### Planned (`v1.6.0+` Roadmap)
 
-- Multiplayer WebSocket synchronization for guild-scale 50v50 castle sieges (`src/game/siegeNetProtocol.ts` & `src/game/siegeNetProtocol.test.ts`).
 - Procedural dungeon delves with ancient Dao relics and heavenly tribulations (`src/game/dungeons.ts` & `src/game/dungeons.test.ts`).
 - WebGPU compute shader upgrade for 10,000+ simultaneous flocking entities.
 
-### Architecture Draft — `v1.5.1` Castle Siege WebSocket Network Protocol Schema
+### Implemented Specification — `v1.5.0` Authoritative 20Hz 50v50 Castle Siege WebSocket Network Protocol & Multi-Region Persistence (`src/game/siegeNetProtocol.ts` & `server.ts`)
 
-In accordance with the **Architect-First** guardrail in `CONTRIBUTING.md`, this specification defines the deterministic client-server WebSocket protocol for 50v50 clan territory castle sieges (`TerritoryGridSector` `A1`–`C3`), reconciling up to `1,000T` (`10^15`) total troops and `1T` (`10^12`) coordinated rallies without IEEE-754 floating-point precision loss.
+In accordance with the **Architect-First** guardrail in `CONTRIBUTING.md` (which **• helps prevent early design flaws**), this specification defines the deterministic client-server WebSocket protocol implemented in `src/game/siegeNetProtocol.ts`, `src/game/siegeNetProtocol.test.ts`, `server.ts` (`/ws/siege` & `/api/online/*`), and `src/components/ClanTerritoryMap.tsx` for 50v50 clan territory castle sieges (`TerritoryGridSector` `A1`–`C3`), reconciling up to `1,000T` (`10^15`) total troops and `1T` (`10^12`) coordinated rallies without IEEE-754 floating-point precision loss.
 
 #### 1. Transport Layer & Tick Topology
 

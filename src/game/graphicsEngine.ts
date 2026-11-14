@@ -835,16 +835,22 @@ export const ENGINEERING_TRANSPARENCY_MATRIX: EngineeringTransparencyEntry[] = [
   {
     id: 'multiplayer_persistence_and_cloud_sync',
     category: 'persistence_networking',
-    featureName: 'Authoritative Multi-Region Server Sync & Cloud Database Persistence',
-    status: 'planned',
-    statusBadgeLabel: 'PLANNED · NATIVE ROADMAP',
+    featureName: 'Authoritative 20Hz 50v50 WebSocket Siege Server & Multi-Region Persistence',
+    status: 'implemented',
+    statusBadgeLabel: 'IMPLEMENTED · LIVE 20Hz WEBSOCKET + MULTI-REGION SERVER',
     whatRunsInBrowserNow:
-      'Persists VIP covenants, Daily Login Decrees, character customization, and Admin Moderation audit logs locally in browser localStorage with full deterministic unit test coverage.',
+      'Runs a real full-stack Express + RFC 6455 WebSocket server (/ws/siege on port 3000) and /api/online/* REST endpoints with 20Hz (50ms) bitmasked delta-compression (CohortDirtyBit), FNV-1a 32-bit state hashing, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation, 1T War Rally assembly, durable server-side disk persistence (data/online_realm_state.json), and browser localStorage caching.',
     whatIsSimulatedOrModeled:
-      'Clan territory raids, leaderboard rankings, and moderation roster sanctions operate against deterministic local state and seeded alliance rosters within the single-player/local sandbox.',
+      'The 3 regional cluster nodes (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1) replicate state and quorum checksums within the unified Node.js server process and local JSON store rather than across separate physical data centers.',
     plannedNativeTarget:
-      'Authoritative WebSocket/gRPC realm cluster with cloud relational/document persistence and cross-player real-time siege synchronization.',
-    sourceFiles: ['src/game/adminModeration.ts', 'src/game/clanMath.ts'],
+      'Geo-distributed Kubernetes Agones dedicated game server fleet backed by globally replicated Cloud Spanner / CockroachDB raft shards.',
+    sourceFiles: [
+      'src/game/siegeNetProtocol.ts',
+      'server.ts',
+      'src/components/ClanTerritoryMap.tsx',
+      'src/game/adminModeration.ts',
+      'src/game/clanMath.ts',
+    ],
   },
 ];
 
