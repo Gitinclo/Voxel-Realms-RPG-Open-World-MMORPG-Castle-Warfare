@@ -23,7 +23,7 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 161 unit, EULA, security, and rule tests across all 27 test suites
+- [ ] `npm test` passes all 162 unit, EULA/Legal, security, and rule tests across all 27 test suites
 - [ ] `npm run verify:ops` passes live server load, exploit, crash-recovery & `SIGTERM` checks
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
@@ -49,7 +49,7 @@ labels: ['release']
 
 - [ ] `README.md` reflects actual setup, features, and project structure
 - [ ] `CHANGELOG.md` and `ROADMAP.md` are updated with release notes and upcoming milestones
-- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LORE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
+- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LEGAL.md`, `LORE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
 
 ## 6. ⚙️ CI/CD & Final Signoff Gate
 

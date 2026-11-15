@@ -283,3 +283,245 @@ export function searchEulaArticles(
     return haystack.includes(normalizedQuery);
   });
 }
+
+export type LegalDocumentGroup = 'core_user_website' | 'software_licensing' | 'enterprise_service';
+
+export interface LegalStackDocument {
+  id: string;
+  name: string;
+  shortCode: string;
+  group: LegalDocumentGroup;
+  groupTitle: string;
+  canonicalFile: string;
+  primaryFocus: string;
+  typicalContext: string;
+  voxelRealmsImplementation: string[];
+}
+
+export interface LegalQuickComparisonRow {
+  agreementType: string;
+  primaryFocus: string;
+  typicalContext: string;
+  canonicalReference: string;
+}
+
+/**
+ * Complete 10-Document Legal & Compliance Stack for Voxel Realms RPG
+ * (Downloadable/3D Video Game + Hosted Web/Cloud Multiplayer Platform + VIP SaaS + Enterprise SLA/DPA/MSA).
+ */
+export const LEGAL_DOCUMENT_STACK: readonly LegalStackDocument[] = [
+  {
+    id: 'legal_tos',
+    name: 'Terms of Service (ToS / Terms & Conditions)',
+    shortCode: 'ToS',
+    group: 'core_user_website',
+    groupTitle: 'Core User & Website Agreements',
+    canonicalFile: 'TERMS.md',
+    primaryFocus:
+      'Broad rules for using the web platform, user accounts, conduct, payment terms & dispute resolution',
+    typicalContext: 'Websites, social networks, online portals & e-commerce',
+    voxelRealmsImplementation: [
+      'Governs Commander accounts, online conduct, virtual goods & VIP subscription payment rules.',
+      'Establishes account suspension/termination rules and informal dispute resolution via creatergame31@gmail.com.',
+    ],
+  },
+  {
+    id: 'legal_privacy',
+    name: 'Privacy Policy (GDPR, CCPA & India DPDP Act)',
+    shortCode: 'Privacy',
+    group: 'core_user_website',
+    groupTitle: 'Core User & Website Agreements',
+    canonicalFile: 'PRIVACY.md',
+    primaryFocus:
+      'Legally required disclosure of how personal user data is collected, stored, used, and shared',
+    typicalContext:
+      'Any app or website collecting personal data under GDPR, CCPA/CPRA, or India DPDP Act 2023',
+    voxelRealmsImplementation: [
+      'Discloses Firebase Auth UID/email collection, Cloud SQL PostgreSQL & PII-isolated Cloud Firestore storage.',
+      'Provides a 30-day Right to Delete / Right to be Forgotten workflow via creatergame31@gmail.com.',
+    ],
+  },
+  {
+    id: 'legal_cookies',
+    name: 'Cookie & LocalStorage Policy',
+    shortCode: 'Cookies',
+    group: 'core_user_website',
+    groupTitle: 'Core User & Website Agreements',
+    canonicalFile: 'LEGAL.md (§3) & PRIVACY.md (§6)',
+    primaryFocus:
+      'Specific disclosure of active cookies, localStorage keys, tracking technologies & opt-out controls',
+    typicalContext: 'Web platforms, authenticated single-page applications (SPAs)',
+    voxelRealmsImplementation: [
+      'Documents the strictly necessary HMAC-SHA256 HttpOnly session cookie (voxel_session) and deterministic localStorage keys (voxel_realms_eula_acceptance_v1, voxel_realms_daily_login_v1, voxel_realms_vip_subscription_v1, voxel_realms_lore_codex_state_v1).',
+      'Confirms Google Workspace Gmail OAuth tokens are held strictly in volatile React memory and never stored in cookies or localStorage.',
+    ],
+  },
+  {
+    id: 'legal_eula',
+    name: 'End User License Agreement (EULA)',
+    shortCode: 'EULA',
+    group: 'software_licensing',
+    groupTitle: 'Software & Licensing Variations',
+    canonicalFile: 'EULA.md',
+    primaryFocus:
+      'Software installation, game client usage rights, anti-cheat consent & virtual economy license',
+    typicalContext: 'Desktop apps, mobile apps, 3D video games',
+    voxelRealmsImplementation: [
+      'Grants a personal, revocable license to use the 3D WebGL2/Desktop/Android game client while preserving Apache-2.0 source code rights.',
+      'Records cryptographic FNV-1a acceptance receipts (EULA-ACK-...) in src/game/eula.ts and EulaModal.tsx.',
+    ],
+  },
+  {
+    id: 'legal_saas',
+    name: 'Software as a Service (SaaS) Cloud Agreement',
+    shortCode: 'SaaS',
+    group: 'software_licensing',
+    groupTitle: 'Software & Licensing Variations',
+    canonicalFile: 'LEGAL.md (§4)',
+    primaryFocus:
+      'Cloud-hosted software access, multi-region WebSocket realm access & recurring VIP subscription terms',
+    typicalContext: 'Web-based cloud platforms, recurring subscription services',
+    voxelRealmsImplementation: [
+      'Governs cloud-hosted access to /ws/siege (20Hz), /api/online/*, /api/db/*, and 3 regional replication clusters.',
+      'Defines Monthly (30d) and Annual (365d) VIP Member Covenant (Tiers 0–3) subscription terms and cancellation rights.',
+    ],
+  },
+  {
+    id: 'legal_oss',
+    name: 'Open-Source Software (OSS) License (Apache-2.0)',
+    shortCode: 'Apache-2.0',
+    group: 'software_licensing',
+    groupTitle: 'Software & Licensing Variations',
+    canonicalFile: 'LICENSE.md, LICENSE & NOTICE',
+    primaryFocus:
+      'Public source code inspection, modification, distribution, patent grant & Section 4(d) attribution',
+    typicalContext: 'Open-source repositories, engines & developer SDKs',
+    voxelRealmsImplementation: [
+      'Licenses all TypeScript, React 19, Three.js, and C++20 source code under Apache License 2.0.',
+      'Requires preservation of copyright notices and NOTICE attribution while reserving official service trademarks under Section 6.',
+    ],
+  },
+  {
+    id: 'legal_aup',
+    name: 'Acceptable Use Policy (AUP)',
+    shortCode: 'AUP',
+    group: 'software_licensing',
+    groupTitle: 'Software & Licensing Variations',
+    canonicalFile: 'LEGAL.md (§5) & CODE_OF_CONDUCT.md',
+    primaryFocus: 'Strictly prohibited network, cloud, anti-cheat, exploit & community actions',
+    typicalContext: 'Cloud platforms, multiplayer game networks & API services',
+    voxelRealmsImplementation: [
+      'Prohibits HTTP/WS flooding (>120 req/min or >30 msg/s), packet replay, speed-hacks, cohort hijacking, CSRF, and __proto__ injection.',
+      'Enforced in real time by src/game/antiCheat.ts (AntiCheatGuard) and src/game/serverHardening.ts.',
+    ],
+  },
+  {
+    id: 'legal_sla',
+    name: 'Service Level Agreement (SLA)',
+    shortCode: 'SLA',
+    group: 'enterprise_service',
+    groupTitle: 'Enterprise & Service Commitments',
+    canonicalFile: 'LEGAL.md (§6) & SUPPORT.md',
+    primaryFocus:
+      'Expected uptime guarantees, 20Hz simulation benchmarks, support response SLAs & service-credit remedies',
+    typicalContext: 'Enterprise software, cloud hosting & live-ops multiplayer servers',
+    voxelRealmsImplementation: [
+      'Targets >= 99.5% monthly uptime monitored via /healthz, /readyz, and /api/ops/readiness (20Hz / 50ms siege tick budget).',
+      'Commits to 4h Moderation, 12h GM Live-Ops, 24h Administration, and 48h Security/Privacy ticket response SLAs with Diamond/VIP compensation decrees.',
+    ],
+  },
+  {
+    id: 'legal_dpa',
+    name: 'Data Processing Agreement (DPA)',
+    shortCode: 'DPA',
+    group: 'enterprise_service',
+    groupTitle: 'Enterprise & Service Commitments',
+    canonicalFile: 'LEGAL.md (§7) & security_spec.md',
+    primaryFocus:
+      'Binding data controller / processor contract ensuring secure third-party vendor handling & PII isolation',
+    typicalContext: 'Cloud database sub-processors, GDPR Art. 28 / CCPA / DPDP Act compliance',
+    voxelRealmsImplementation: [
+      'Documents sub-processors: Google Cloud SQL PostgreSQL (ai-studio-416287a7), Firebase Auth & Cloud Firestore (dev-ivy-6v0ns), and client-only Gmail REST v1.',
+      'Enforces strict PII isolation between /users/{userId}/public/profile and /users/{userId}/private/account via firestore.rules.',
+    ],
+  },
+  {
+    id: 'legal_msa',
+    name: 'Master Services Agreement (MSA) & SOW Framework',
+    shortCode: 'MSA',
+    group: 'enterprise_service',
+    groupTitle: 'Enterprise & Service Commitments',
+    canonicalFile: 'LEGAL.md (§8)',
+    primaryFocus:
+      'Overarching B2B commercial contract enabling modular Statements of Work (SOW) for custom deployments',
+    typicalContext:
+      'Enterprise realm hosting, sponsored esports tournaments & institutional partnerships',
+    voxelRealmsImplementation: [
+      'Establishes baseline commercial terms for dedicated clan clusters (>250 peers via Redis/Agones), custom voxel maps, and tournament events.',
+      'Administered by Sovereign Root Owner creatergame31@gmail.com.',
+    ],
+  },
+] as const;
+
+export const LEGAL_QUICK_COMPARISON_MATRIX: readonly LegalQuickComparisonRow[] = [
+  {
+    agreementType: 'EULA',
+    primaryFocus: 'Software installation and usage rights',
+    typicalContext: 'Desktop apps, mobile apps, video games',
+    canonicalReference: 'EULA.md & src/game/eula.ts',
+  },
+  {
+    agreementType: 'Terms of Service',
+    primaryFocus: 'General rules for platform access and conduct',
+    typicalContext: 'Websites, social networks, e-commerce',
+    canonicalReference: 'TERMS.md',
+  },
+  {
+    agreementType: 'SaaS Agreement',
+    primaryFocus: 'Cloud software access and subscription terms',
+    typicalContext: 'Web-based business tools, cloud apps & VIP passes',
+    canonicalReference: 'LEGAL.md (§4)',
+  },
+  {
+    agreementType: 'SLA',
+    primaryFocus: 'Uptime guarantees and support benchmarks',
+    typicalContext: 'Enterprise software, cloud hosting & live-ops servers',
+    canonicalReference: 'LEGAL.md (§6) & SUPPORT.md',
+  },
+  {
+    agreementType: 'Privacy Policy',
+    primaryFocus: 'Personal data collection and handling (GDPR / CCPA / DPDP)',
+    typicalContext: 'Any app or website collecting user data',
+    canonicalReference: 'PRIVACY.md',
+  },
+  {
+    agreementType: 'Cookie Policy',
+    primaryFocus: 'Active session cookies, localStorage & opt-out controls',
+    typicalContext: 'Web platforms & authenticated SPAs',
+    canonicalReference: 'LEGAL.md (§3) & PRIVACY.md (§6)',
+  },
+  {
+    agreementType: 'OSS License (Apache-2.0)',
+    primaryFocus: 'Public source code inspection, modification & redistribution',
+    typicalContext: 'Open-source repositories & C++20/TS engines',
+    canonicalReference: 'LICENSE.md, LICENSE & NOTICE',
+  },
+  {
+    agreementType: 'AUP',
+    primaryFocus: 'Prohibited network abuse, cheating & packet exploits',
+    typicalContext: 'Cloud platforms & authoritative multiplayer servers',
+    canonicalReference: 'LEGAL.md (§5) & src/game/antiCheat.ts',
+  },
+  {
+    agreementType: 'DPA',
+    primaryFocus: 'Data controller / processor security & sub-processors',
+    typicalContext: 'Cloud SQL, Firebase Firestore & enterprise compliance',
+    canonicalReference: 'LEGAL.md (§7) & security_spec.md',
+  },
+  {
+    agreementType: 'MSA & SOW',
+    primaryFocus: 'Overarching B2B commercial contract & Statements of Work',
+    typicalContext: 'Dedicated tournament realms & enterprise partnerships',
+    canonicalReference: 'LEGAL.md (§8)',
+  },
+] as const;

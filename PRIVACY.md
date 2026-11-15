@@ -2,19 +2,19 @@
 
 **Last updated:** November 15, 2026 (`15/11/2026`)
 
-Welcome to **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", or "us"). Your privacy is important to us. This Privacy Policy explains what information we collect, how we use and protect it, when it may be shared with third-party processors, and your legal rights regarding your personal data.
+Welcome to **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", or "us"). Your privacy is important to us. This Privacy Policy explains what information we collect, how we use and protect it, when it may be shared with third-party sub-processors (see our [Data Processing Agreement & Legal Stack in `LEGAL.md`](./LEGAL.md)), and your legal rights regarding your personal data under the **EU/UK General Data Protection Regulation (GDPR)**, the **California Consumer Privacy Act (CCPA/CPRA)**, and **India's Digital Personal Data Protection Act, 2023 (DPDP Act)**.
 
 ---
 
 ## 1. Information We Collect
 
-- **Account & Registration Data:** While basic single-session or local play is supported, if you create a user account, link a profile, or contact us for support, we may collect:
-  - Username or display name, email address, and authentication credentials.
-  - Cloud-synced gameplay data associated with your account.
+- **Account & Registration Data:** While basic single-session or local play is supported, if you sign in via Firebase Authentication (`GoogleAuthProvider`), synchronize cloud saves to Cloud Firestore (`firestore.rules`) or Cloud SQL PostgreSQL (`src/db/`), or contact us for support, we may collect:
+  - Username or display name, email address, Firebase Auth UID, and authentication credentials. Note: Google Workspace Gmail OAuth tokens (`workspaceAccessToken`) are held strictly in volatile browser memory (`AuthContext.tsx`) for your active session and are never persisted to `localStorage` or external servers.
+  - Cloud-synced gameplay data associated with your account (`/users/{userId}/public/profile` and `/users/{userId}/private/account`).
 - **Local & Cloud Game State Data:** The App generates and stores gameplay progression data, including:
   - Character level, Cultivation Realm status, Karma score, and Master/Disciple hierarchy state.
   - Kingdom resources (Wood, Steel, Copper, Grain, Oil, Diamonds, Spirit Stones, and Veteran Scrolls).
-  - Daily Login Reward streak progress (`voxel_realms_daily_login_v1`), VIP Covenant subscription state (`voxel_realms_vip_subscription_v1`), Administration/Moderation state (`voxel_realms_admin_moderation_v1`), and audio preferences (`voxel_rpg_sound_muted`).
+  - Daily Login Reward streak progress (`voxel_realms_daily_login_v1`), VIP Covenant subscription state (`voxel_realms_vip_subscription_v1`), Open-World Lore Codex progress (`voxel_realms_lore_codex_state_v1`), End User License Agreement (`EULA.md`) acceptance receipt (`voxel_realms_eula_acceptance_v1`), Administration/Moderation state (`voxel_realms_admin_moderation_v1`), and audio preferences (`voxel_rpg_sound_muted`).
 - **Payment & Transaction Information:** If you make in-app purchases or subscribe to premium features, transaction records (such as item purchased, timestamp, currency, and transaction ID) are collected. Full payment card details are processed directly by our third-party payment processors and are never stored on our servers.
 - **Usage & Advertising Data:** When accessing the App, technical metadata (such as IP address, browser type, operating system, device identifiers/Advertising IDs, WebGL capabilities, and interaction logs) may be collected automatically by our hosting infrastructure or integrated analytics and advertising SDKs.
 
@@ -32,11 +32,11 @@ We use the information collected to:
 
 ---
 
-## 3. Data Storage, Retention & Right to Delete Data ("Right to be Forgotten")
+## 3. Data Storage, Retention & Right to Delete Data ("Right to be Forgotten" — GDPR, CCPA & India DPDP Act)
 
 - **Local Storage:** By default, game save states and user preferences are stored in your browser's local storage (`localStorage`) on your device. You can erase local data at any time via the in-game reset option or by clearing your browser's site data.
 - **Account Data Retention:** If you register an account, we retain your account information and cloud save data for as long as your account remains active or as needed to provide you with the App's services and comply with legal, tax, or accounting obligations.
-- **Right to Delete Data (GDPR / CCPA Compliance):** You have the right to request the permanent deletion of your account and all associated personal data ("Right to be Forgotten"). To request data deletion, access, or export:
+- **Right to Delete Data (GDPR / CCPA / India DPDP Act Compliance):** You have the right to request the permanent deletion, correction, or export of your account and all associated personal data ("Right to be Forgotten" / Data Principal erasure rights). To request data deletion, access, or export:
   1. Use the in-app account deletion option (if signed in), or
   2. Email us at **[creatergame31@gmail.com](mailto:creatergame31@gmail.com)** with the subject line `"Data Deletion Request"`.
   3. We will verify your identity and permanently purge your personal account records within **30 days** (except where limited transaction records must be retained by law for tax or fraud-prevention purposes).

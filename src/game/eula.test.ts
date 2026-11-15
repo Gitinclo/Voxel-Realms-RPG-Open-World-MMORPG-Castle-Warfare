@@ -11,6 +11,8 @@ import {
   EULA_EFFECTIVE_DATE_ISO,
   EULA_LICENSOR_EMAIL,
   EULA_VERSION,
+  LEGAL_DOCUMENT_STACK,
+  LEGAL_QUICK_COMPARISON_MATRIX,
   acceptEulaVersion,
   computeEulaReceiptHash,
   createInitialEulaAcceptanceState,
@@ -92,4 +94,22 @@ test('4. searchEulaArticles filters by keyword and category accurately', () => {
   const gmailQuery = searchEulaArticles('GMAIL_SCOPES', 'cloud_privacy');
   assert.equal(gmailQuery.length, 1);
   assert.equal(gmailQuery[0].articleNumber, 4);
+});
+
+test('5. LEGAL_DOCUMENT_STACK and LEGAL_QUICK_COMPARISON_MATRIX cover all 10 agreements across Core User, Software/Licensing, and Enterprise tiers', () => {
+  assert.equal(LEGAL_DOCUMENT_STACK.length, 10);
+  assert.equal(LEGAL_QUICK_COMPARISON_MATRIX.length, 10);
+
+  const coreDocs = LEGAL_DOCUMENT_STACK.filter((d) => d.group === 'core_user_website');
+  const licensingDocs = LEGAL_DOCUMENT_STACK.filter((d) => d.group === 'software_licensing');
+  const enterpriseDocs = LEGAL_DOCUMENT_STACK.filter((d) => d.group === 'enterprise_service');
+
+  assert.equal(coreDocs.length, 3); // ToS, Privacy, Cookies
+  assert.equal(licensingDocs.length, 4); // EULA, SaaS, Apache-2.0, AUP
+  assert.equal(enterpriseDocs.length, 3); // SLA, DPA, MSA
+
+  assert.ok(LEGAL_DOCUMENT_STACK.some((d) => d.shortCode === 'SLA'));
+  assert.ok(LEGAL_DOCUMENT_STACK.some((d) => d.shortCode === 'DPA'));
+  assert.ok(LEGAL_DOCUMENT_STACK.some((d) => d.shortCode === 'MSA'));
+  assert.ok(LEGAL_DOCUMENT_STACK.some((d) => d.name.includes('DPDP Act')));
 });

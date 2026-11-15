@@ -58,6 +58,11 @@ jobs:
             src/db \
             src/middleware \
             src/lib/firebase-admin.ts \
+            README.md \
+            LEGAL.md \
+            EULA.md \
+            TERMS.md \
+            PRIVACY.md \
             SECURITY.md \
             CHANGELOG.md \
             LICENSE \

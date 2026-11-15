@@ -6,9 +6,9 @@ Please read these Terms and Conditions ("Terms") carefully before downloading, r
 
 ---
 
-## 1. Acceptance of Terms & EULA
+## 1. Acceptance of Terms, EULA & Legal Stack
 
-By downloading, creating an account, accessing, or using the App, you agree to be bound by these Terms, our [End User License Agreement (`EULA.md`)](./EULA.md), and our [Privacy Policy (`PRIVACY.md`)](./PRIVACY.md). If you do not agree to these Terms or the EULA, do not access or use the App.
+By downloading, creating an account, accessing, or using the App, you agree to be bound by these Terms, our [End User License Agreement (`EULA.md`)](./EULA.md), our [Complete 10-Agreement Legal Stack (`LEGAL.md` — SaaS, AUP, SLA, DPA, Cookie & MSA)](./LEGAL.md), and our [Privacy Policy (`PRIVACY.md`)](./PRIVACY.md). If you do not agree to these Terms or the EULA, do not access or use the App.
 
 ---
 
