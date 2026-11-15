@@ -10,7 +10,7 @@ We provide security updates and critical patches for the following versions of t
 
 | Version | Supported | Status                                         |
 | :------ | :-------: | :--------------------------------------------- |
-| `1.5.x` |    ✅     | Active support & security updates (06/11/2026) |
+| `1.5.x` |    ✅     | Active support & security updates (15/11/2026) |
 | `1.4.x` |    ✅     | Active support & security updates              |
 | `1.3.x` |    ✅     | Critical security patches only                 |
 | `1.2.x` |    ❌     | End of Life (upgrade recommended)              |

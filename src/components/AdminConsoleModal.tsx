@@ -107,7 +107,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onTriggerRivalRaid,
   currentWeather = 'clear',
   onSetWeather,
-  activeAccountEmail = 'guest@voxelrealms.example',
+  activeAccountEmail = PRIMARY_ADMIN_EMAIL,
   onChangeAccountEmail,
   moderatedPlayers = [],
   onUpdateModeratedPlayers,
@@ -131,7 +131,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     '[SecurityBoundary] Checking HMAC-SHA256 server session on /api/auth/session...',
     '[TrustModel] Client-side RBAC email checks are preview-only; /api/admin/* & /api/online/* require verified server sessions.',
     `[WhitePage/HouseOfIdeas] Layer 6 Reference Authority: ${PRIMARY_ADMIN_EMAIL}.`,
-    '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
+    '[Architect 15/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
   ]);
 
   const {
@@ -795,6 +795,15 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                 title="Sets local single-player UI preview only (does NOT authenticate server APIs)"
               >
                 Preview Email
+              </button>
+              <button
+                type="button"
+                data-testid="bind-root-admin-email-btn"
+                onClick={() => handleSwitchAccountEmail(PRIMARY_ADMIN_EMAIL)}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 font-mono font-bold text-[11px] cursor-pointer"
+                title={`Bind active session to ${PRIMARY_ADMIN_EMAIL}`}
+              >
+                Bind {PRIMARY_ADMIN_EMAIL}
               </button>
             </div>
 

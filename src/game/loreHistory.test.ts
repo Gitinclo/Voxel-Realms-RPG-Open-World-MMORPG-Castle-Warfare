@@ -28,7 +28,7 @@ import {
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 import { INITIAL_MONSTERS } from './initialData';
 
-test('LORE_HISTORICAL_EPOCHS defines all 7 chronological epochs with expanded 6+ section chronicles from White Page to 06/11/2026 Architect Convergence', () => {
+test('LORE_HISTORICAL_EPOCHS defines all 7 chronological epochs with expanded 6+ section chronicles from White Page to 15/11/2026 Architect Convergence', () => {
   assert.equal(LORE_HISTORICAL_EPOCHS.length, 7);
   assert.equal(LORE_HISTORICAL_EPOCHS[0].epochNumber, 0);
   assert.ok(LORE_HISTORICAL_EPOCHS[0].title.includes('The White Page'));
@@ -36,7 +36,7 @@ test('LORE_HISTORICAL_EPOCHS defines all 7 chronological epochs with expanded 6+
   assert.ok(LORE_HISTORICAL_EPOCHS[0].summary.includes('Oblivion'));
 
   assert.equal(LORE_HISTORICAL_EPOCHS[6].epochNumber, 6);
-  assert.ok(LORE_HISTORICAL_EPOCHS[6].title.includes('06/11/2026'));
+  assert.ok(LORE_HISTORICAL_EPOCHS[6].title.includes('15/11/2026'));
 
   for (const epoch of LORE_HISTORICAL_EPOCHS) {
     assert.ok(epoch.comprehensionRewardDiamonds > 0n);

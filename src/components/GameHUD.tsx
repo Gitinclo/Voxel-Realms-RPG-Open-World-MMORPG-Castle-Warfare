@@ -576,7 +576,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               className="absolute right-0 top-full mt-2 w-72 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl z-50 space-y-2.5"
             >
               <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 border-b border-slate-800 pb-1.5">
-                <span>ARCHITECT PIPELINE (06/11/2026)</span>
+                <span>ARCHITECT PIPELINE (15/11/2026)</span>
                 <span className="text-emerald-400">v1.5.0 · 60 FPS</span>
               </div>
 

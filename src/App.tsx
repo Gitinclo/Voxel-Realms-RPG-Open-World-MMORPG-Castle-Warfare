@@ -385,7 +385,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
-  const [activeAccountEmail, setActiveAccountEmail] = useState<string>('guest@voxelrealms.example');
+  const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
   const [moderatedPlayers, setModeratedPlayers] =
     useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
@@ -1970,12 +1970,10 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    if (serverSession?.email) {
+    if (serverSession?.email && serverSession.email !== 'guest@voxelrealms.example') {
       setActiveAccountEmail(serverSession.email);
     } else if (!authLoading && authUser?.email) {
       setActiveAccountEmail(authUser.email);
-    } else if (!authLoading && !authUser && !serverSession) {
-      setActiveAccountEmail('guest@voxelrealms.example');
     }
   }, [authLoading, authUser, serverSession]);
 
@@ -2629,6 +2627,7 @@ export default function App() {
             commanderName={playerAppearance.name || 'Sovereign Vanguard'}
             castleLevel={castleLevel}
             allianceTag={clan.tag || 'SOL'}
+            activeAccountEmail={activeAccountEmail}
             onClose={() => setActiveModal('none')}
           />
         )}

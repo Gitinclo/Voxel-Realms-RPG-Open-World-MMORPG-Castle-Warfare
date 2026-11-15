@@ -308,7 +308,7 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
               {/* Left Column: Chronological Epoch Selector (Epoch 0 -> Epoch VI) */}
               <div className="lg:col-span-5 space-y-2.5">
                 <div className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider px-1">
-                  Chronological Epochs (Origin → 06/11/2026)
+                  Chronological Epochs (Origin → 15/11/2026)
                 </div>
                 {LORE_HISTORICAL_EPOCHS.map((epoch) => {
                   const isSelected = epoch.id === selectedEpoch.id;
@@ -879,7 +879,7 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
                       Every synthesized volume produces{' '}
                       <strong className="text-emerald-300">1,000+ real English words</strong> across
                       7 structural chapters (The White Page, Overvoid Meta-Logic, Hyperversal
-                      Branes, Solara Biomes, 4-Path Cultivation, Citadel Legions, and 06/11/2026
+                      Branes, Solara Biomes, 4-Path Cultivation, Citadel Legions, and 15/11/2026
                       Silicon Architecture). Address any volume from{' '}
                       <span className="font-mono text-amber-300">Vol. #1</span> up to{' '}
                       <span className="font-mono text-amber-300">Vol. #10^97</span> for a guaranteed

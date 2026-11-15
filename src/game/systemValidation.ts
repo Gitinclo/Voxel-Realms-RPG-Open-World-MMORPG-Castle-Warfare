@@ -90,7 +90,7 @@ export interface ValidationPillarResult {
 
 export interface FullSystemValidationReport {
   releaseVersion: 'v1.5.0';
-  releaseDate: '06/11/2026';
+  releaseDate: '15/11/2026';
   supremeAuthorEmail: string;
   allPassed: boolean;
   totalPillars: number;
@@ -282,7 +282,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     summary:
       'Verified 7 Historical Epochs (6+ sections each), 12 Dynastic Annals, 6 Sacred Codices, Auto-Populating Open-World Lore Codex (8 Biomes & Monsters), and 10^100-Word Lazy Akashic Archive.',
     verifiedInvariants: [
-      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (06/11/2026 v1.5.0) & 12 Dynastic Annals',
+      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (15/11/2026 v1.5.0) & 12 Dynastic Annals',
       '6 Sacred Compendium Codices covering Cosmology, Omniverse, Species, Dao, Warfare & Architect',
       'Auto-Populating Open-World Lore Codex: 8 Spatial Biomes + Canonical & Dynamic Lv. 1–1000 Monster Bestiary with one-time bounties',
       '10^100 Words Minimum (One Googol Words) Akashic Stream: 10^97 BigInt-addressable Volumes × >= 1,000 real synthesized words/volume',
@@ -339,7 +339,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
 
-  // Pillar 5: 06/11/2026 Software & Hardware Architect Compatibility & Optimization
+  // Pillar 5: 15/11/2026 Software & Hardware Architect Compatibility & Optimization
   const archEval = generateArchitectCompatibilityDiagnostic({
     isaId: 'apple_silicon_m',
     gpuBackendId: 'metal_3',
@@ -354,13 +354,13 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     Object.keys(HARDWARE_ISA_PROFILES).length === 4 &&
     Object.keys(GPU_BACKEND_COMPATIBILITY).length === 6 &&
     Object.keys(THERMAL_TDP_ENVELOPES).length === 4 &&
-    archEval.releaseDateDisplay === '06/11/2026' &&
+    archEval.releaseDateDisplay === '15/11/2026' &&
     archEval.memoryComparison.speedupVsAosMultiplier >= 4.5 &&
     archEval.overallOptimizationScore >= 90;
 
   pillars.push({
     id: 'architect_hardware_software_06_11_2026',
-    title: '5. 06/11/2026 Software & Hardware Architect Engine (v1.5.0)',
+    title: '5. 15/11/2026 Software & Hardware Architect Engine (v1.5.0)',
     passed: p5Passed,
     assertionsPassed: 7,
     summary: `Verified 4 CPU ISAs, 6 GPU Backends, 4 TDP Envelopes, SoA (${archEval.memoryComparison.speedupVsAosMultiplier}x speedup) & Lock-Free Job DAG.`,
@@ -562,7 +562,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
 
   return {
     releaseVersion: 'v1.5.0',
-    releaseDate: '06/11/2026',
+    releaseDate: '15/11/2026',
     supremeAuthorEmail: PRIMARY_ADMIN_EMAIL,
     allPassed: passedPillars === pillars.length,
     totalPillars: pillars.length,

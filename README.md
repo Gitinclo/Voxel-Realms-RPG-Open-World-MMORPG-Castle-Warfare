@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-156_Passing_(26_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-157_Passing_(26_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/openWorld3DEngine.ts)
@@ -13,7 +13,7 @@
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`06/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **3D Open-World Spatial BVH Raycasting (`three-mesh-bvh`), Multi-Octave Simplex Biome Heightmaps (`simplex-noise`), 3D Rigid-Body Physics (`cannon-es`) & Camera Interpolation (`@tweenjs/tween.js`) (`src/game/openWorld3DEngine.ts`)**, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server, Server-Authoritative Anti-Cheat (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **10-Species / Race Character Creation & 3D Procedural Meshes**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`15/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -98,7 +98,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Server-Side Cryptographic & Exploit Hardening (`server.ts`, `src/game/serverAuth.ts`, `src/game/serverHardening.ts`)**: Privileged RBAC actions (`GET /api/admin/state`, `POST /api/admin/moderation`, `POST /api/admin/tickets/resolve`, `POST /api/admin/decree`, `POST /api/admin/species-rebirth`) and online mutations (`/api/online/sync`, `/api/online/siege/cmd`, WebSocket `C2S_*`) fail closed (`401`/`403`) without an HMAC-SHA256 `HttpOnly` session cookie, guarded by sliding-window API write rate limits (`120/min`), 5-attempt admin login brute-force lockouts (`429` + `Retry-After`), Same-Origin CSRF checks, recursive `__proto__` payload filtering (`400`), WS frame/flood caps (`32 KiB` frame / `30 msg/s`), and slow-consumer backpressure disconnects.
 - **Explicit Client Trust Boundary (`src/game/adminModeration.ts`, `AdminConsoleModal.tsx`)**: Client-side email switches, `localStorage` caches, and single-player canvas cheats are explicitly marked **`UNTRUSTED_CLIENT_PREVIEW`** and cannot escalate server permissions or spoof multiplayer state. Root account **`creatergame31@gmail.com`** retains immutable Clearance `Lv. 999` protection on the server, with all security events persisted to `securityAuditLog` and verified end-to-end against a live server via `npm run verify:ops` (`scripts/verify-readiness.ts`). See [`SECURITY.md`](./SECURITY.md) for deployment hardening requirements.
 
-### 11. 🖥️ Software Architect & Hardware Architect Compatibility & Optimization (`06/11/2026` — `v1.5.0`)
+### 11. 🖥️ Software Architect & Hardware Architect Compatibility & Optimization (`15/11/2026` — `v1.5.0`)
 
 - **Hardware Architect Matrix (`src/game/architectOptimization.ts`)**: Full CPU ISA vector & cache-line profiles for **`x86_64 AVX-512F/BW`** (512-bit, 64B cache line), **`ARMv9-A NEON + SVE2`** (heterogeneous core pinning), **`Apple Silicon M-Series`** (128B cache line + zero-copy Unified Memory Architecture), and **`RISC-V RV64GC + RVV 1.0`**, paired with GPU tiers (`Vulkan 1.3`, `DX12 Ultimate`, `Metal 3`, `WebGPU`, `WebGL 2.0`, `Software Rasterizer`) and Thermal TDP envelopes (`350W Desktop` down to `8W Mobile Passive`).
 - **Software Architect Engine Optimization**: Interactive **Structure-of-Arrays (`SoA`) vs Array-of-Structures (`AoS`)** memory layout profiler (`4.75x` hot-loop speedup), zero-mutex **Lock-Free Work-Stealing Job Scheduler** across 2–64 logical cores, and a deterministic **Frame-Budget Auto-Scaler (`60Hz` / `120Hz` / `240Hz`)**.
@@ -230,7 +230,7 @@ interface WhitePageRoot {
   - **Epoch III — Awakening of the 10 Playable Species & Admin Rebirth Seal**: Chronicles the rise of the 10 Sovereign Playable Bloodlines and the Admin Rebirth Governance Seal (`creatergame31@gmail.com`).
   - **Epoch IV — The Han Jue Four-Path Immortal Revelation & 100x Realm Suppression**: Chronicles Han Jue's Secluded Providence doctrine, the 4 Cultivation Paths, and `100x` Realm Suppression.
   - **Epoch V — The Ten Citadel Eras & Trillion-Scale Siege Wars**: Chronicles the 10 Citadel Eras, T1–T20 Legions, and `1T` World Boss Rallies.
-  - **Epoch VI — The `06/11/2026` Software & Hardware Architect Convergence (`v1.5.0`)**: Chronicles the unification of the Three.js PBR renderer with the C++20 SIMD/SoA Architect Engine.
+  - **Epoch VI — The `15/11/2026` Software & Hardware Architect Convergence (`v1.5.0`)**: Chronicles the unification of the Three.js PBR renderer with the C++20 SIMD/SoA Architect Engine.
 - **Auto-Populating Open-World Lore Codex (`OPEN_WORLD_BIOME_CODEX_CATALOG` & `OPEN_WORLD_MONSTER_CODEX_CATALOG`)**:
   - Automatically unlocks and persists entries (`localStorage` key `voxel_realms_lore_codex_state_v1`) as the player explores Solara's **8 Spatial Biomes** (`resolveBiomeAtWorldPosition`) or encounters/selects/spawns **Canonical & Dynamic Lv. 1–1000 Monsters** (`evaluateOpenWorldLoreDiscovery`, `buildDynamicMonsterCodexEntry`), awarding one-time Kingdom Diamond (`💎`) and Scripture Fragment discovery bounties (`claimLoreCodexReward`).
 - **12 Imperial Dynastic Annals & Legendary Artifact Histories (`LORE_DYNASTIC_ANNALS`)**:
@@ -246,7 +246,7 @@ interface WhitePageRoot {
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
   4. **10 Playable Species, 3D Procedural Anatomy & Admin Rebirth Permission Gate**
-  5. **`06/11/2026` Software & Hardware Architect Engine (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup)**
+  5. **`15/11/2026` Software & Hardware Architect Engine (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`, `SoA` `4.75x` speedup)**
   6. **Castle Lv. 0–100 (`1,000T` Cap), `1T` World Boss Rally & T1–T20 Tri-Branch Counter Matrix (`1.5x`)**
   7. **Four-Path Cultivation (`23` Realms × `9` Layers) & `100.0x` Realm Suppression**
   8. **Autonomous World AI (Lv. 1–1000), A\* Keep Avoidance, Dynamic Weather & VIP Covenant**
@@ -256,11 +256,11 @@ interface WhitePageRoot {
 ### 16. ☁️ Cloud SQL PostgreSQL, Firebase Auth, Hardened Firestore & Gmail Dispatch Center
 
 - **Cloud SQL (PostgreSQL + Drizzle ORM, `src/db/` & `/api/db/*`)**: Uses `pg.Pool` configured via `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, and `SQL_DB_NAME` (`drizzle-orm/node-postgres`) backing `users`, `commander_profiles`, `realm_saves`, and `support_tickets` (`drizzle.config.ts`). All `/api/db/*` endpoints (`GET/PUT /api/db/profile`, `GET/PUT /api/db/save`, `GET/POST /api/db/tickets`) fail closed (`HTTP 401`) without a verified Firebase ID token checked by `requireAuth` (`src/middleware/auth.ts` + `src/lib/firebase-admin.ts`).
-- **Firebase Auth & Hardened Cloud Firestore (`src/lib/firebase.ts`, `src/lib/firestore.ts`, `firestore.rules`, `firebase-blueprint.json`, `security_spec.md`)**:
-  - Unified Google Sign-In (`AuthContext.tsx`, official Google button SVG in `GoogleSignInButton.tsx`) and real-time `onSnapshot` realm save synchronization paired with split public/private user collections (`/users/{userId}/public/profile` non-PII vs. `/users/{userId}/private/account` PII-isolated).
+- **Firebase Auth, Dual-Tier Google OAuth & Hardened Cloud Firestore (`src/lib/firebase.ts`, `src/lib/firestore.ts`, `firestore.rules`, `firebase-blueprint.json`, `security_spec.md`)**:
+  - **Default Sovereign Identity (`creatergame31@gmail.com`) & Dual-Tier OAuth (`basicGoogleAuthProvider` vs `googleAuthProvider`)**: The client session (`App.tsx`) and Sovereign Admin Console (`AdminConsoleModal.tsx`) default to `creatergame31@gmail.com` (`PRIMARY_ADMIN_EMAIL`) with a one-click `Bind creatergame31@gmail.com` toggle. Standard Commander & Admin Console Google Sign-In uses non-restricted `BASIC_IDENTITY_SCOPES` (`openid`, `email`, `profile`) so login never triggers Google's restricted-scope warning screen, while real-time `onSnapshot` realm save synchronization pairs with split public/private user collections (`/users/{userId}/public/profile` non-PII vs. `/users/{userId}/private/account` PII-isolated).
   - Zero-trust default-deny `firestore.rules` audited via `@firebase/eslint-plugin-security-rules` (`npm run lint:rules`) and adversarial "Dirty Dozen" rule tests (`firestore.rules.test.ts`).
 - **Google Workspace Gmail Dispatch Center (`src/lib/gmail.ts`, `src/components/GmailModal.tsx`)**:
-  - Client-side OAuth token exchange via Firebase `GoogleAuthProvider` (`GMAIL_SCOPES`), storing the Google Workspace `accessToken` strictly in React memory (`AuthContext.tsx`, cleared on sign-out or expiry).
+  - Dedicated Gmail OAuth token exchange (`signInWithGoogle({ includeGmailScopes: true })`) via Firebase `GoogleAuthProvider` (`GMAIL_SCOPES`), storing the Google Workspace `accessToken` strictly in React memory (`AuthContext.tsx`, cleared on sign-out or expiry), complete with an in-modal **Google Cloud Testing Mode OAuth Consent Guide (`dev-ivy-6v0ns` / `creatergame31@gmail.com`)**.
   - Supports mailbox browsing (`INBOX`, `SENT`, `DRAFT`, `STARRED`, `TRASH`, custom labels), search queries, alliance dispatch templates, draft saving, label creation, mark-read/unread, and trashing—with a **mandatory explicit user confirmation dialog** before any mutating or destructive Gmail API call executes.
 
 ---
@@ -312,7 +312,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **156 automated tests across 26 suites** (`24` engine/security/netcode/anti-cheat/3D-physics suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
+Execute all **157 automated tests across 26 suites** (`24` engine/security/netcode/anti-cheat/3D-physics suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -389,7 +389,7 @@ npm run preview       # Preview production build locally
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
 │   │   ├── antiCheat.test.ts          # Speed-hack, teleport, economy inflation, sequence replay & quarantine tests
-│   │   ├── architectOptimization.ts   # 06/11/2026 Software & Hardware Architect optimization engine
+│   │   ├── architectOptimization.ts   # 15/11/2026 Software & Hardware Architect optimization engine
 │   │   ├── architectOptimization.test.ts # CPU ISA, GPU, TDP, SoA memory & Lock-Free Job unit tests
 │   │   ├── audio.ts                   # Procedural Web Audio API sound FX synthesizer
 │   │   ├── clanMath.ts                # Clan buffs, vault rations & outpost assault math
@@ -498,7 +498,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **144 unit, security, and regression tests across 24 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **157 unit, security, and regression tests across 26 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -521,12 +521,12 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`156/156 Passing` across 26 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`157/157 Passing` across 26 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
 - **`openWorld3DEngine.test.ts`**: Verifies deterministic 2D/3D/4D `simplex-noise` multi-octave fBm biome & subterranean cavern synthesis, `three-mesh-bvh` (`MeshBVH`, `acceleratedRaycast`) O(log N) 3D picking & tree disposal, `cannon-es` rigid-body siege artillery trajectory & Citadel keep collision resolution, and `@tweenjs/tween.js` camera orbit interpolation.
-- **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
+- **`architectOptimization.test.ts`**: Verifies `15/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
 - **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
 - **`cosmologicalTreeD3.test.ts`**: Verifies D3 hierarchy construction (`buildCosmologicalD3TreeData`) and Horizontal/Radial layout coordinate projection (`computeCosmologicalD3Layout`) from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) to leaf `Universe` (`Tier 1`) nodes.
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
@@ -542,12 +542,12 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **89 invariants** across Root RBAC (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **89 invariants** across Root RBAC (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster complexity brackets, A\* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
-- **`src/lib/gmail.test.ts`**: Verifies UTF-8 base64url MIME encoding/decoding round-trips, CRLF header-injection sanitization, HTML script/style tag stripping, and multipart email plain-text extraction.
+- **`src/lib/gmail.test.ts`**: Verifies UTF-8 base64url MIME encoding/decoding round-trips, CRLF header-injection sanitization, HTML script/style tag stripping, multipart email plain-text extraction, and Dual-Tier OAuth scope isolation (`BASIC_IDENTITY_SCOPES` vs 14 `GMAIL_SCOPES` for `creatergame31@gmail.com`).
 - **`firestore.rules.test.ts` (`npm run test:rules`)**: Verifies zero-trust default-deny `firestore.rules` coverage matching `firebase-blueprint.json` and rejects all **Dirty Dozen #1–#12** adversarial payloads (`PERMISSION_DENIED`).
 - **`scripts/verify-readiness.ts` (`npm run verify:ops`)**: Launches an isolated live production `server.ts` process and verifies 50-way concurrent HTTP load (`200` requests + `12` live 20Hz WS peers with `0` tick overruns), HTTP/WebSocket exploit resistance (`401`/`403` across `/api/admin/*`, `/api/online/siege/cmd`, and Firebase-protected `/api/db/*` endpoints, CSRF, `__proto__`, brute-force `429`, oversized/flood WS drops), truncated primary save failover recovery from `.bak`, and clean `SIGTERM` graceful shutdown.
 - **`cpp/engine_guardrail_test.cpp`**: Validates C++20 `constexpr` `100.0x` Realm Suppression `static_assert`, `100,000x` Layer-6 `TheWhitePage_HouseOfIdeas` Cosmological Scale `static_assert`, `WhitePageRootSpec` (`tier5OvervoidCount == 100U`, `tier4OmniverseCount == 100U`), `kGoogolLoreWordExponent == 100U`, `kCanonicalDynasticAnnalsCount == 12U`, `kCanonicalOpenWorldBiomeCount == 8U`, `computeCascadedUniverseQiMultiplier`, `alignas(64)` `SoaEntityKinematicChunk`, and RAII `std::unique_ptr` / `std::shared_ptr` ownership in `SectHierarchyManager`.
@@ -561,7 +561,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 144 TypeScript unit, Gmail MIME & Firestore rule tests (24 suites)
+npm test                      # 4. Run all 157 TypeScript unit, Gmail MIME & Firestore rule tests (26 suites)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -580,7 +580,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)       | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                 | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)               | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 144 automated unit/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 157 automated unit/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -602,7 +602,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 144 unit, security, and Firestore rule tests across 24 TypeScript test suites
+- [x] `npm test` passes all 157 unit, security, and Firestore rule tests across 26 TypeScript test suites
 - [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
@@ -643,7 +643,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 ### Project Tracking & History
 
 - **[Imperial Lore & Cosmological History Codex (`LORE.md`)](./LORE.md)** — Complete 6-Layer Cosmic Ontology (`COSMIC_LIMITS`: `1` White Page Singleton → `100` Overvoids → `∞` Realities), 7 Grand Historical Epochs (`Epoch Ω-0`–`VI`), 12 Imperial Dynastic Annals, Auto-Populating Open-World Lore Codex (`Biomes` & `Monsters`), and `10^100`-Word Akashic Archive.
-- **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.5.0` · `06/11/2026`).
+- **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.5.0` · `15/11/2026`).
 - **[Project Roadmap (`ROADMAP.md`)](./ROADMAP.md)** — High-level vision and upcoming milestones (`v1.5.0` Software & Hardware Architect, `v1.5.1` 50v50 WebSocket Sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU Flocking, `v2.0.0` Native C++20/Vulkan).
 
 ### Support & Technical Guidance

@@ -12,7 +12,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   const report = runFullSystemValidationReport();
 
   assert.equal(report.releaseVersion, 'v1.5.0');
-  assert.equal(report.releaseDate, '06/11/2026');
+  assert.equal(report.releaseDate, '15/11/2026');
   assert.equal(report.supremeAuthorEmail, PRIMARY_ADMIN_EMAIL);
   assert.equal(report.totalPillars, 9);
   assert.equal(report.passedPillars, 9);

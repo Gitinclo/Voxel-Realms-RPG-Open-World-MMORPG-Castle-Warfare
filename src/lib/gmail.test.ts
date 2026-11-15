@@ -6,6 +6,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  BASIC_IDENTITY_SCOPES,
+  GMAIL_SCOPES,
+  SCOPES,
   buildMimeRaw,
   decodeBase64UrlUtf8,
   encodeBase64UrlUtf8,
@@ -13,6 +16,7 @@ import {
   sanitizeHeaderValue,
   stripHtmlTags,
 } from './gmail';
+import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
 
 test('1. Base64URL UTF-8 encoding and decoding round-trips multibyte CJK & emoji text safely', () => {
   const original = 'War Dispatch — 太古龙族 Citadel Lv.100 🐉⚔️';
@@ -64,4 +68,21 @@ test('3. stripHtmlTags & extractPlainTextFromPayload strip scripts/styles and pr
     ],
   });
   assert.equal(nestedHtmlOnly, 'Nested HTML');
+});
+
+test('4. Dual-Tier OAuth scopes separate basic identity login from restricted Gmail scopes for creatergame31@gmail.com', () => {
+  assert.equal(PRIMARY_ADMIN_EMAIL, 'creatergame31@gmail.com');
+  assert.deepEqual([...BASIC_IDENTITY_SCOPES], ['openid', 'email', 'profile']);
+  assert.equal(GMAIL_SCOPES.length, 14);
+  assert.ok(GMAIL_SCOPES.includes('https://mail.google.com/'));
+  assert.ok(GMAIL_SCOPES.includes('https://www.googleapis.com/auth/gmail.send'));
+  assert.ok(GMAIL_SCOPES.includes('https://www.googleapis.com/auth/gmail.readonly'));
+  for (const basicScope of BASIC_IDENTITY_SCOPES) {
+    assert.equal(
+      (GMAIL_SCOPES as readonly string[]).includes(basicScope),
+      false,
+      'Basic identity scopes must remain isolated from restricted Gmail scopes'
+    );
+  }
+  assert.equal(SCOPES.length, BASIC_IDENTITY_SCOPES.length + GMAIL_SCOPES.length);
 });

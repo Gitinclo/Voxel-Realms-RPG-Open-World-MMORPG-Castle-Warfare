@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // VoxelRealmsGuardrails.hpp - C++20 RAII, Architect & Concept Guardrail Header
-// Synchronized Release: v1.5.0 (06/11/2026 / 2026-11-06)
+// Synchronized Release: v1.5.0 (15/11/2026 / 2026-11-15)
 
 #pragma once
 
@@ -14,7 +14,7 @@
 namespace voxel::guardrails {
 
 inline constexpr std::string_view kEngineReleaseVersion = "v1.5.0";
-inline constexpr std::string_view kEngineReleaseDate = "06/11/2026";
+inline constexpr std::string_view kEngineReleaseDate = "15/11/2026";
 inline constexpr std::size_t kX86CacheLineBytes = 64U;
 inline constexpr std::size_t kAppleSiliconCacheLineBytes = 128U;
 inline constexpr std::size_t kSoaSimdChunkCapacity = 64U;

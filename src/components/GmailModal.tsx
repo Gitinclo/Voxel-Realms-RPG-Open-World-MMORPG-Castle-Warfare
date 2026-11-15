@@ -38,6 +38,7 @@ interface GmailModalProps {
   commanderName: string;
   castleLevel: number;
   allianceTag: string;
+  activeAccountEmail?: string;
   onClose: () => void;
 }
 
@@ -87,6 +88,7 @@ export const GmailModal: React.FC<GmailModalProps> = ({
   commanderName,
   castleLevel,
   allianceTag,
+  activeAccountEmail = 'creatergame31@gmail.com',
   onClose,
 }) => {
   const {
@@ -331,7 +333,7 @@ export const GmailModal: React.FC<GmailModalProps> = ({
               <p className="text-xs text-slate-400">
                 {user?.email
                   ? `Connected account: ${user.email}`
-                  : 'Connect your Google account to read, compose, and manage Gmail'}
+                  : `Commander Identity: ${activeAccountEmail} · Connect Google OAuth to access live Gmail`}
               </p>
             </div>
           </div>
@@ -414,7 +416,7 @@ export const GmailModal: React.FC<GmailModalProps> = ({
 
         {/* Body */}
         {needsWorkspaceAuth || !workspaceAccessToken ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-5 overflow-y-auto">
             <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
               <Mail className="w-10 h-10 text-amber-400" />
             </div>
@@ -430,11 +432,40 @@ export const GmailModal: React.FC<GmailModalProps> = ({
             </div>
             <GoogleSignInButton
               onClick={() => {
-                void signInWithGoogle();
+                void signInWithGoogle({ includeGmailScopes: true });
               }}
               disabled={isSigningIn}
               label={isSigningIn ? 'Signing in...' : 'Sign in with Google'}
             />
+            <div className="max-w-lg rounded-xl bg-slate-950/80 border border-amber-500/30 p-4 text-left space-y-2">
+              <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Seeing &ldquo;Google hasn&rsquo;t verified this app&rdquo;?</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Because Gmail uses restricted mailbox scopes and your Google Cloud OAuth consent
+                screen (<span className="font-mono text-amber-200">dev-ivy-6v0ns</span> /{' '}
+                <span className="font-mono text-amber-200">creatergame31@gmail.com</span>) is in{' '}
+                <span className="font-semibold text-white">Testing mode</span>, Google displays a
+                developer test notice.
+              </p>
+              <ol className="text-xs text-slate-300 list-decimal list-inside space-y-1">
+                <li>
+                  Click <span className="font-bold text-amber-300">Continue</span> (or{' '}
+                  <span className="font-semibold text-slate-200">Advanced &rarr; Go to app</span>)
+                  on the Google popup.
+                </li>
+                <li>
+                  Check <span className="font-bold text-amber-300">Select all</span> to grant Gmail
+                  permissions and click <span className="font-bold text-amber-300">Continue</span>.
+                </li>
+              </ol>
+              <p className="text-[11px] text-slate-400 pt-1">
+                Note: Standard game &amp; Admin Console sign-in on the Title Screen now uses basic
+                profile scopes so you can sign into your Commander account without triggering this
+                screen.
+              </p>
+            </div>
           </div>
         ) : activeTab === 'compose' ? (
           <div className="flex-1 overflow-y-auto p-6 space-y-4">

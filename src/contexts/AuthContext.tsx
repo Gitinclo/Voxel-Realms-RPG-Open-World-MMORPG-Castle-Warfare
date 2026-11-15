@@ -11,8 +11,12 @@ import {
   signInWithPopup,
   signOut,
 } from 'firebase/auth';
-import { auth, googleAuthProvider } from '../lib/firebase';
+import { auth, basicGoogleAuthProvider, googleAuthProvider } from '../lib/firebase';
 import type { ServerSessionInfo } from '../game/adminModeration';
+
+export interface GoogleSignInOptions {
+  includeGmailScopes?: boolean;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -25,7 +29,9 @@ interface AuthContextValue {
   authError: string | null;
   clearAuthError: () => void;
   clearWorkspaceAccessToken: () => void;
-  signInWithGoogle: () => Promise<{ user: User; accessToken: string | null } | null>;
+  signInWithGoogle: (
+    options?: GoogleSignInOptions
+  ) => Promise<{ user: User; accessToken: string | null } | null>;
   logout: () => Promise<void>;
   getFreshIdToken: () => Promise<string | null>;
   refreshServerSession: () => Promise<ServerSessionInfo | null>;
@@ -98,41 +104,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = useCallback(async (): Promise<{
-    user: User;
-    accessToken: string | null;
-  } | null> => {
-    setAuthError(null);
-    isSigningInRef.current = true;
-    setIsSigningIn(true);
-    try {
-      const result = await signInWithPopup(auth, googleAuthProvider);
-      const token = await result.user.getIdToken();
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const oauthAccessToken = credential?.accessToken ?? null;
+  const signInWithGoogle = useCallback(
+    async (
+      options?: GoogleSignInOptions
+    ): Promise<{
+      user: User;
+      accessToken: string | null;
+    } | null> => {
+      setAuthError(null);
+      isSigningInRef.current = true;
+      setIsSigningIn(true);
+      try {
+        const provider = options?.includeGmailScopes ? googleAuthProvider : basicGoogleAuthProvider;
+        const result = await signInWithPopup(auth, provider);
+        const token = await result.user.getIdToken();
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const oauthAccessToken = options?.includeGmailScopes
+          ? (credential?.accessToken ?? null)
+          : workspaceTokenRef.current;
 
-      idTokenRef.current = token;
-      workspaceTokenRef.current = oauthAccessToken;
-      setIdToken(token);
-      setWorkspaceAccessToken(oauthAccessToken);
-      setUser(result.user);
+        idTokenRef.current = token;
+        workspaceTokenRef.current = oauthAccessToken;
+        setIdToken(token);
+        setWorkspaceAccessToken(oauthAccessToken);
+        setUser(result.user);
 
-      const exchanged = await exchangeIdTokenForServerSession(token);
-      setServerSession(exchanged);
+        const exchanged = await exchangeIdTokenForServerSession(token);
+        setServerSession(exchanged);
 
-      return { user: result.user, accessToken: oauthAccessToken };
-    } catch (err) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : 'Google sign-in was cancelled or blocked by your browser.';
-      setAuthError(message);
-      return null;
-    } finally {
-      isSigningInRef.current = false;
-      setIsSigningIn(false);
-    }
-  }, []);
+        return { user: result.user, accessToken: oauthAccessToken };
+      } catch (err) {
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Google sign-in was cancelled or blocked by your browser.';
+        setAuthError(message);
+        return null;
+      } finally {
+        isSigningInRef.current = false;
+        setIsSigningIn(false);
+      }
+    },
+    []
+  );
 
   const logout = useCallback(async () => {
     setAuthError(null);

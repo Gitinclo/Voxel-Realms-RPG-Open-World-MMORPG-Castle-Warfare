@@ -7,30 +7,17 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { doc, getDocFromServer, getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { BASIC_IDENTITY_SCOPES, GMAIL_SCOPES, SCOPES } from './gmail';
 
-export const GMAIL_SCOPES = [
-  'https://mail.google.com/',
-  'https://www.googleapis.com/auth/gmail.addons.current.action.compose',
-  'https://www.googleapis.com/auth/gmail.addons.current.message.action',
-  'https://www.googleapis.com/auth/gmail.addons.current.message.metadata',
-  'https://www.googleapis.com/auth/gmail.addons.current.message.readonly',
-  'https://www.googleapis.com/auth/gmail.compose',
-  'https://www.googleapis.com/auth/gmail.insert',
-  'https://www.googleapis.com/auth/gmail.labels',
-  'https://www.googleapis.com/auth/gmail.metadata',
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.settings.basic',
-  'https://www.googleapis.com/auth/gmail.settings.sharing',
-] as const;
-
-export const SCOPES: string[] = ['openid', 'email', 'profile', ...GMAIL_SCOPES];
+export { BASIC_IDENTITY_SCOPES, GMAIL_SCOPES, SCOPES };
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 export const googleAuthProvider = new GoogleAuthProvider();
+export const basicGoogleAuthProvider = new GoogleAuthProvider();
+basicGoogleAuthProvider.addScope('email');
+basicGoogleAuthProvider.addScope('profile');
 
 for (const scope of GMAIL_SCOPES) {
   googleAuthProvider.addScope(scope);

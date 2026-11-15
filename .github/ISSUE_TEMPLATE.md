@@ -45,7 +45,7 @@ Paste any relevant browser console errors, screenshots, or stack traces here.
 - **Browser & Version:** (e.g., Chrome 134, Firefox 135, Safari 18)
 - **Graphics Quality Preset:** (`NEXT-GEN ULTRA` / `HIGH` / `BALANCED`)
 - **Platform Override Mode:** (`PC/PS5 [BC7 · LOD 0]` / `MOBILE [ASTC · LOD BIAS +1]`)
-- **Game Version / Commit:** (e.g., `v1.5.0` · `06/11/2026`)
+- **Game Version / Commit:** (e.g., `v1.5.0` · `15/11/2026`)
 
 ---
 

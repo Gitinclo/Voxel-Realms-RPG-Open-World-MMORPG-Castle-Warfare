@@ -46,7 +46,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **144 unit, MIME, and Firestore security-rule tests across 24 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **157 unit, MIME, and Firestore security-rule tests across 26 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 - **Route/Modal Code Splitting**: `src/App.tsx` keeps `GameCanvas`, `GameHUD`, and `TitleScreen` eager while lazy-loading all 18 conditional overlay modals via `React.lazy` + `<Suspense fallback={null}>`, paired with `vite.config.ts` Rolldown `manualChunks` (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-motion`, `vendor-icons`, `vendor-react`) and `GoogleSignInButton.tsx` extraction to reduce the entry JS bundle to `~475 kB` (`~151 kB` gzip).
 
@@ -90,7 +90,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   └── gmail.ts                 # Pure RFC 2822 MIME builders, UTF-8 Base64URL & Gmail REST v1 helpers
 │   ├── middleware/
 │   │   └── auth.ts                  # Express `requireAuth` Bearer Firebase ID token middleware
-│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (22 suites)
+│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (24 suites)
 │   ├── types/
 │   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, species)
 │   │   └── cultivation.ts           # Four-Path realms, manuals, disciples, karma types
@@ -149,7 +149,7 @@ Players cultivate four complementary paths simultaneously:
 - **Cryptographic Server-Side Enforcement (`serverAuth.ts`)**: All privileged routes (`/api/admin/state`, `/api/admin/moderation`, `/api/admin/tickets/resolve`, `/api/admin/decree`, `/api/admin/species-rebirth`) and multiplayer writes (`/api/online/sync`, `/api/online/siege/cmd`, WebSocket `C2S_*` commands) fail closed (`401`/`403`) unless authenticated via HMAC-SHA256 `HttpOnly` session cookies verified with `crypto.timingSafeEqual`.
 - **Trust Boundary Separation**: `verifyAccountPrivileges` in `src/game/adminModeration.ts` explicitly tags browser-side checks as `UNTRUSTED_CLIENT_PREVIEW`, while `server.ts` binds actor identity from verified sessions, clamps/strips untrusted stat fields on `/api/online/sync`, enforces immutable root protection for **`creatergame31@gmail.com`** (Clearance Lv. `999`), and writes all security events to `securityAuditLog` (`data/online_realm_state.json`).
 
-### F. Software Architect & Hardware Architect Compatibility & Optimization (`src/game/architectOptimization.ts` · `06/11/2026`)
+### F. Software Architect & Hardware Architect Compatibility & Optimization (`src/game/architectOptimization.ts` · `15/11/2026`)
 
 - **Hardware Architect ISA & Cache-Line Alignment**: Profiles `x86_64 AVX-512F/BW` (512-bit, 16× float32, 64B cache lines), `ARMv9-A NEON + SVE2` (heterogeneous Prime/Performance/Efficiency core pinning), `Apple Silicon M-Series` (`alignas(128)` 128B cache lines + zero-copy Unified Memory Architecture), and `RISC-V RV64GC + RVV 1.0`.
 - **GPU Compute & Thermal TDP Envelopes**: Evaluates `Vulkan 1.3`, `DirectX 12 Ultimate`, `Apple Metal 3`, `WebGPU`, `WebGL 2.0`, and `CPU Software Rasterizer (SwiftShader)` alongside thermal governors (`350W Desktop`, `200W Console`, `25W Handheld`, `8W Mobile Passive`).
@@ -177,7 +177,7 @@ Players cultivate four complementary paths simultaneously:
 
 ### I. Imperial Lore, Auto-Populating Open-World Codex, 12 Dynastic Annals & `10^100`-Word Akashic Corpus (`src/game/loreHistory.ts`, `src/components/LoreHistoryModal.tsx`)
 
-- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`, 6–7 Sections Each)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 06/11/2026 Software & Hardware Architect Convergence_).
+- **7 Grand Historical Epochs (`LORE_HISTORICAL_EPOCHS`, 6–7 Sections Each)**: Models the chronological history of the cosmos from `Epoch Ω-0` (_Pre-Genesis: The White Page & The House of Ideas_ under `creatergame31@gmail.com`) through `Epoch VI` (_The 15/11/2026 Software & Hardware Architect Convergence_).
 - **12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`) & 6 Sacred Compendium Codices (`LORE_COMPENDIUM_CHAPTERS`)**: Twelve multi-paragraph primary chronicles paired with one-time epoch comprehension (`comprehendLoreEpoch`) and unified full-text lore search (`searchLoreHistory`).
 - **Auto-Populating Open-World Lore Codex (`evaluateOpenWorldLoreDiscovery`)**: Automatically populates `localStorage`-persisted Codex entries (`OPEN_WORLD_BIOME_CODEX_CATALOG`, `OPEN_WORLD_MONSTER_CODEX_CATALOG`, and `buildDynamicMonsterCodexEntry`) whenever the player explores any of Solara's 8 spatial biomes or encounters/selects/spawns monsters, granting one-time Kingdom Diamond and Scripture Fragment bounties (`claimLoreCodexReward`).
 - **`10^100` Words Minimum (One Googol Words) Procedural Akashic Stream (`GOOGOL_LORE_ARCHIVE_SPEC`)**: Deterministically synthesizes `>= 1,000` real English words per volume across `10^97` `BigInt`-addressable volume coordinates (`generateGoogolScaleLoreScrollSlice`) without blocking RAM.
@@ -189,7 +189,7 @@ Players cultivate four complementary paths simultaneously:
 
 ### K. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **89 invariants across all 9 foundational pillars** (Root RBAC & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `06/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **89 invariants across all 9 foundational pillars** (Root RBAC & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ### L. Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Auth, Hardened Firestore & Gmail Dispatch (`src/db/*`, `src/lib/*`, `src/middleware/auth.ts`, `firestore.rules`, `GmailModal.tsx`)
 
@@ -204,7 +204,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **144 automated tests across 24 suites** (`22` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **157 automated tests across 26 suites** (`24` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
