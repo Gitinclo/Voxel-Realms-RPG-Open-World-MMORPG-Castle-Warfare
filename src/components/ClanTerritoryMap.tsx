@@ -51,6 +51,7 @@ import {
 } from '../game/siegeNetProtocol';
 import { ClanEmblemView } from './ClanEmblemView';
 import { sound } from '../game/audio';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ClanTerritoryMapProps {
   playerClanName: string;
@@ -149,6 +150,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
     compressed: 156,
   });
 
+  const { user: authUser, getFreshIdToken } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
   const clientSeqRef = useRef<number>(1);
   const cspRingRef = useRef<ClientPredictionRingBuffer>(new ClientPredictionRingBuffer());
@@ -165,16 +167,26 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
           ? ((await sessionRes.json()) as { authenticated?: boolean })
           : null;
         if (!sessionData?.authenticated) {
-          await fetch('/api/auth/player-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-              commanderId: 'player-commander-01',
-              displayName: 'Sovereign Vanguard',
-              email: 'player@voxelrealms.example',
-            }),
-          });
+          const idToken = authUser ? await getFreshIdToken() : null;
+          if (idToken) {
+            await fetch('/api/auth/firebase-exchange', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+              },
+              credentials: 'same-origin',
+            });
+          } else {
+            await fetch('/api/auth/player-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                displayName: 'Sovereign Vanguard',
+              }),
+            });
+          }
         }
       } catch {
         // Offline fallback continues cleanly below

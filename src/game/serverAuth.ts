@@ -38,7 +38,7 @@ export interface SignedSessionTokenPayload {
   email: string;
   displayName: string;
   role: StaffRole;
-  authMethod: 'player_session' | 'operator_passkey';
+  authMethod: 'player_session' | 'operator_passkey' | 'firebase_id_token';
   iat: number;
   exp: number;
 }
@@ -208,24 +208,24 @@ export function verifySessionToken(
 export function issueSessionTokenForPlayer(params: {
   commanderId: string;
   displayName: string;
-  email: string;
   secret: string;
   nowMs?: number;
   ttlMs?: number;
 }): { token: string; payload: SignedSessionTokenPayload; session: ServerSessionInfo } {
   const nowMs = params.nowMs ?? Date.now();
   const ttlMs = params.ttlMs ?? DEFAULT_SESSION_TTL_MS;
-  // Standard player sessions NEVER grant staff roles regardless of claimed email
-  const safeEmail = normalizeAccountEmail(params.email) || 'guest@voxelrealms.example';
-  const safeName = (params.displayName || 'Realm Sovereign').trim().slice(0, 48);
-  const safeCommanderId =
-    (params.commanderId || 'player-commander-01').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48) ||
-    'player-commander-01';
+  // Unauthenticated guest sessions NEVER claim real user emails or staff roles
+  const guestEmail = 'guest@voxelrealms.example';
+  const safeName = (params.displayName || 'Guest Vanguard').trim().slice(0, 48);
+  const rawId = (params.commanderId || 'guest-commander-01')
+    .replace(/[^a-zA-Z0-9_-]/g, '')
+    .slice(0, 40);
+  const safeCommanderId = rawId.startsWith('guest-') ? rawId : `guest-${rawId || 'commander-01'}`;
 
   const payload: SignedSessionTokenPayload = {
     jti: crypto.randomUUID(),
     sub: safeCommanderId,
-    email: safeEmail,
+    email: guestEmail,
     displayName: safeName,
     role: 'player',
     authMethod: 'player_session',
@@ -234,17 +234,13 @@ export function issueSessionTokenForPlayer(params: {
   };
 
   const token = signSessionToken(payload, params.secret);
-  const playerPrivs = verifyAccountPrivileges(
-    'guest@voxelrealms.example',
-    [],
-    'VERIFIED_SERVER_SESSION'
-  );
+  const playerPrivs = verifyAccountPrivileges(guestEmail, [], 'VERIFIED_SERVER_SESSION');
 
   const session: ServerSessionInfo = {
     sessionId: payload.jti,
     commanderId: payload.sub,
     displayName: safeName,
-    email: safeEmail,
+    email: guestEmail,
     role: 'player',
     clearanceLevel: 1,
     isRootOwner: false,
@@ -254,6 +250,81 @@ export function issueSessionTokenForPlayer(params: {
   };
 
   return { token, payload, session };
+}
+
+export function issueSessionTokenFromVerifiedFirebaseUser(params: {
+  uid: string;
+  email: string | undefined | null;
+  emailVerified: boolean;
+  displayName?: string;
+  roster: ModeratedPlayerRecord[];
+  secret: string;
+  nowMs?: number;
+  ttlMs?: number;
+}):
+  | {
+      ok: true;
+      token: string;
+      payload: SignedSessionTokenPayload;
+      session: ServerSessionInfo;
+    }
+  | { ok: false; statusCode: 401 | 403; error: string } {
+  if (!params.uid || !params.email || !params.emailVerified) {
+    return {
+      ok: false,
+      statusCode: 401,
+      error:
+        'A verified Google / Firebase account email is required to establish a server session.',
+    };
+  }
+
+  const normalized = normalizeAccountEmail(params.email);
+  const liveProfile = verifyAccountPrivileges(normalized, params.roster, 'VERIFIED_SERVER_SESSION');
+  const matchedRecord = params.roster.find((r) => normalizeAccountEmail(r.email) === normalized);
+
+  if (
+    matchedRecord &&
+    !liveProfile.isRootOwner &&
+    (matchedRecord.status === 'temp_banned' || matchedRecord.status === 'perm_banned')
+  ) {
+    return {
+      ok: false,
+      statusCode: 403,
+      error: `Account ${normalized} is currently suspended (${matchedRecord.status}).`,
+    };
+  }
+
+  const nowMs = params.nowMs ?? Date.now();
+  const ttlMs = params.ttlMs ?? DEFAULT_SESSION_TTL_MS;
+  const safeSub = params.uid.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'firebase-user';
+  const safeDisplayName = (params.displayName || '').trim().slice(0, 48) || liveProfile.displayName;
+
+  const payload: SignedSessionTokenPayload = {
+    jti: crypto.randomUUID(),
+    sub: safeSub,
+    email: liveProfile.normalizedEmail,
+    displayName: safeDisplayName,
+    role: liveProfile.primaryRole,
+    authMethod: 'firebase_id_token',
+    iat: nowMs,
+    exp: nowMs + ttlMs,
+  };
+
+  const token = signSessionToken(payload, params.secret);
+  const session: ServerSessionInfo = {
+    sessionId: payload.jti,
+    commanderId: payload.sub,
+    displayName: safeDisplayName,
+    email: liveProfile.normalizedEmail,
+    role: liveProfile.primaryRole,
+    clearanceLevel: liveProfile.clearanceLevel,
+    isRootOwner: liveProfile.isRootOwner,
+    permissions: liveProfile.permissions,
+    issuedAtIso: new Date(payload.iat).toISOString(),
+    expiresAtIso: new Date(payload.exp).toISOString(),
+  };
+
+  return { ok: true, token, payload, session };
 }
 
 export function issueSessionTokenForOperator(params: {

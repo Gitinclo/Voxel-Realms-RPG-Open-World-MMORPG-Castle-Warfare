@@ -213,6 +213,7 @@ type ActiveModal =
 export default function App() {
   const {
     user: authUser,
+    serverSession,
     loading: authLoading,
     authError,
     clearAuthError,
@@ -384,7 +385,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
-  const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
+  const [activeAccountEmail, setActiveAccountEmail] = useState<string>('guest@voxelrealms.example');
   const [moderatedPlayers, setModeratedPlayers] =
     useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
@@ -1915,7 +1916,7 @@ export default function App() {
         }),
       });
 
-      if (!profileRes.ok) {
+      if (!profileRes.ok && profileRes.status !== 503) {
         const errPayload = (await profileRes.json().catch(() => ({}))) as { error?: string };
         throw new Error(errPayload.error || 'Unable to sync commander profile.');
       }
@@ -1938,7 +1939,7 @@ export default function App() {
         }),
       });
 
-      if (!saveRes.ok) {
+      if (!saveRes.ok && saveRes.status !== 503) {
         const errPayload = (await saveRes.json().catch(() => ({}))) as { error?: string };
         throw new Error(errPayload.error || 'Unable to save realm snapshot.');
       }
@@ -1969,6 +1970,16 @@ export default function App() {
   ]);
 
   useEffect(() => {
+    if (serverSession?.email) {
+      setActiveAccountEmail(serverSession.email);
+    } else if (!authLoading && authUser?.email) {
+      setActiveAccountEmail(authUser.email);
+    } else if (!authLoading && !authUser && !serverSession) {
+      setActiveAccountEmail('guest@voxelrealms.example');
+    }
+  }, [authLoading, authUser, serverSession]);
+
+  useEffect(() => {
     let cancelled = false;
     if (authLoading || !authUser) return;
 
@@ -1977,6 +1988,9 @@ export default function App() {
       (save) => {
         if (!save || cancelled) return;
         setCastleLevel((prev) => Math.max(prev, save.castleLevel));
+        if (save.allianceTag) {
+          setClan((prev) => ({ ...prev, tag: save.allianceTag || prev.tag }));
+        }
       },
       (err) => {
         if (!cancelled && err.message.includes('Quota exceeded')) {
@@ -1989,20 +2003,49 @@ export default function App() {
       const token = await getFreshIdToken();
       if (!token || cancelled) return;
       try {
-        const res = await fetch('/api/db/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as {
-          ok?: boolean;
-          user?: { email?: string };
-          profile?: { castleLevel?: number } | null;
-        };
-        if (data.user?.email && !cancelled) {
-          setActiveAccountEmail(data.user.email);
+        const [profileRes, saveRes] = await Promise.all([
+          fetch('/api/db/profile', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch('/api/db/save', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if (profileRes.ok && !cancelled) {
+          const data = (await profileRes.json()) as {
+            ok?: boolean;
+            user?: { email?: string };
+            profile?: { castleLevel?: number; allianceTag?: string } | null;
+          };
+          if (data.user?.email && !cancelled) {
+            setActiveAccountEmail(data.user.email);
+          }
+          if (data.profile && typeof data.profile.castleLevel === 'number' && !cancelled) {
+            setCastleLevel((prev) => Math.max(prev, data.profile?.castleLevel ?? prev));
+          }
+          if (data.profile?.allianceTag && !cancelled) {
+            setClan((prev) => ({ ...prev, tag: data.profile?.allianceTag || prev.tag }));
+          }
         }
-        if (data.profile && typeof data.profile.castleLevel === 'number' && !cancelled) {
-          setCastleLevel((prev) => Math.max(prev, data.profile?.castleLevel ?? prev));
+
+        if (saveRes.ok && !cancelled) {
+          const saveData = (await saveRes.json()) as {
+            ok?: boolean;
+            exists?: boolean;
+            snapshot?: { castleLevel?: number; allianceTag?: string } | null;
+          };
+          if (
+            saveData.exists &&
+            saveData.snapshot &&
+            typeof saveData.snapshot.castleLevel === 'number' &&
+            !cancelled
+          ) {
+            setCastleLevel((prev) => Math.max(prev, saveData.snapshot?.castleLevel ?? prev));
+          }
+          if (saveData.exists && saveData.snapshot?.allianceTag && !cancelled) {
+            setClan((prev) => ({ ...prev, tag: saveData.snapshot?.allianceTag || prev.tag }));
+          }
         }
       } catch (err) {
         console.error('Failed to load authenticated profile:', err);

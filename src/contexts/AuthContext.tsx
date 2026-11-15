@@ -12,10 +12,12 @@ import {
   signOut,
 } from 'firebase/auth';
 import { auth, googleAuthProvider } from '../lib/firebase';
+import type { ServerSessionInfo } from '../game/adminModeration';
 
 interface AuthContextValue {
   user: User | null;
   idToken: string | null;
+  serverSession: ServerSessionInfo | null;
   workspaceAccessToken: string | null;
   needsWorkspaceAuth: boolean;
   loading: boolean;
@@ -26,13 +28,37 @@ interface AuthContextValue {
   signInWithGoogle: () => Promise<{ user: User; accessToken: string | null } | null>;
   logout: () => Promise<void>;
   getFreshIdToken: () => Promise<string | null>;
+  refreshServerSession: () => Promise<ServerSessionInfo | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function exchangeIdTokenForServerSession(idToken: string): Promise<ServerSessionInfo | null> {
+  try {
+    const res = await fetch('/api/auth/firebase-exchange', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      credentials: 'same-origin',
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      ok?: boolean;
+      authenticated?: boolean;
+      session?: ServerSessionInfo | null;
+    };
+    return data.ok && data.authenticated ? (data.session ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [serverSession, setServerSession] = useState<ServerSessionInfo | null>(null);
   const [workspaceAccessToken, setWorkspaceAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSigningIn, setIsSigningIn] = useState<boolean>(false);
@@ -49,10 +75,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const token = await nextUser.getIdToken();
           idTokenRef.current = token;
           setIdToken(token);
+          const exchanged = await exchangeIdTokenForServerSession(token);
+          setServerSession(exchanged);
         } catch (err) {
           console.error('Failed to retrieve auth token:', err);
           idTokenRef.current = null;
           setIdToken(null);
+          setServerSession(null);
         }
         if (!workspaceTokenRef.current && !isSigningInRef.current) {
           setWorkspaceAccessToken(null);
@@ -62,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         workspaceTokenRef.current = null;
         setIdToken(null);
         setWorkspaceAccessToken(null);
+        setServerSession(null);
       }
       setLoading(false);
     });
@@ -87,6 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setWorkspaceAccessToken(oauthAccessToken);
       setUser(result.user);
 
+      const exchanged = await exchangeIdTokenForServerSession(token);
+      setServerSession(exchanged);
+
       return { user: result.user, accessToken: oauthAccessToken };
     } catch (err) {
       const message =
@@ -104,11 +137,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     setAuthError(null);
     try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(
+        () => {}
+      );
       await signOut(auth);
       idTokenRef.current = null;
       workspaceTokenRef.current = null;
       setIdToken(null);
       setWorkspaceAccessToken(null);
+      setServerSession(null);
       setUser(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to sign out right now.';
@@ -137,6 +174,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const refreshServerSession = useCallback(async (): Promise<ServerSessionInfo | null> => {
+    try {
+      if (auth.currentUser) {
+        const token = await auth.currentUser.getIdToken();
+        const exchanged = await exchangeIdTokenForServerSession(token);
+        if (exchanged) {
+          setServerSession(exchanged);
+          return exchanged;
+        }
+      }
+      const res = await fetch('/api/auth/session', { credentials: 'same-origin' });
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        authenticated?: boolean;
+        session?: ServerSessionInfo | null;
+      };
+      const sess = data.authenticated ? (data.session ?? null) : null;
+      setServerSession(sess);
+      return sess;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
   return (
@@ -144,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         idToken,
+        serverSession,
         workspaceAccessToken,
         needsWorkspaceAuth: !workspaceAccessToken,
         loading,
@@ -154,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         logout,
         getFreshIdToken,
+        refreshServerSession,
       }}
     >
       {children}

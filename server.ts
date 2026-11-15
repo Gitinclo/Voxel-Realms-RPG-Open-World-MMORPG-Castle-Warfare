@@ -51,6 +51,7 @@ import {
   extractSessionTokenFromHeaders,
   issueSessionTokenForOperator,
   issueSessionTokenForPlayer,
+  issueSessionTokenFromVerifiedFirebaseUser,
   parseCookieHeader,
   redactCommanderForPublicStatus,
   resolveAuthenticatedSession,
@@ -68,7 +69,7 @@ import {
   verifySameOriginRequest,
 } from './src/game/serverHardening';
 import { AtomicRealmPersistence } from './src/game/serverPersistence';
-import { AuthRequest, requireAuth } from './src/middleware/auth.ts';
+import { AuthRequest, requireAuth, verifyFirebaseBearerToken } from './src/middleware/auth.ts';
 import {
   createSupportTicketForUid,
   getCommanderProfileForUid,
@@ -594,17 +595,91 @@ async function startServer() {
     });
   });
 
+  app.post('/api/auth/firebase-exchange', async (req, res) => {
+    const verified = await verifyFirebaseBearerToken(req.headers.authorization);
+    if (!verified.ok) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'ADMIN_LOGIN_FAILED',
+          actorEmail: 'anonymous',
+          actorRole: 'anonymous',
+          outcome: 'denied',
+          detail: `Firebase ID token exchange rejected: ${verified.error}`,
+        })
+      );
+      res.status(401).json({ ok: false, error: verified.error });
+      return;
+    }
+
+    const decoded = verified.decoded;
+    const result = issueSessionTokenFromVerifiedFirebaseUser({
+      uid: decoded.uid,
+      email: decoded.email,
+      emailVerified: Boolean(decoded.email_verified),
+      displayName: typeof decoded.name === 'string' ? decoded.name : undefined,
+      roster: store.moderatedPlayers,
+      secret: securityConfig.sessionSecret,
+    });
+
+    if (!result.ok) {
+      appendAuditEntry(
+        store,
+        createAuditEntry({
+          eventType: 'ADMIN_LOGIN_FAILED',
+          actorEmail: (decoded.email || 'anonymous').toLowerCase(),
+          actorRole: 'anonymous',
+          outcome: 'denied',
+          detail: result.error,
+        })
+      );
+      persistStoreToDisk(store);
+      res.status(result.statusCode).json({ ok: false, error: result.error });
+      return;
+    }
+
+    // Best-effort sync to PostgreSQL user table when Cloud SQL runtime variables are active
+    if (process.env.SQL_HOST && process.env.SQL_USER && process.env.SQL_DB_NAME) {
+      getOrCreateUser(decoded.uid, result.session.email, result.session.displayName).catch(
+        (err) => {
+          console.warn('Non-fatal PostgreSQL user sync warning during auth exchange:', err);
+        }
+      );
+    }
+
+    res.setHeader('Set-Cookie', buildSessionSetCookieHeader(result.token, isHttpsRequest(req)));
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: result.session.permissions.canAccessGmConsole
+          ? 'ADMIN_LOGIN_SUCCESS'
+          : 'PLAYER_SESSION_ISSUED',
+        actorEmail: result.session.email,
+        actorRole: result.session.role,
+        outcome: 'allowed',
+        detail: `Verified Firebase Google session exchanged for ${result.session.email} (Clearance Lv.${result.session.clearanceLevel})`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.json({
+      ok: true,
+      authenticated: true,
+      authSource: 'firebase_id_token',
+      session: result.session,
+    });
+  });
+
   app.post('/api/auth/player-session', (req, res) => {
     const body = (req.body || {}) as {
       commanderId?: string;
       displayName?: string;
-      email?: string;
     };
 
     const issued = issueSessionTokenForPlayer({
-      commanderId: body.commanderId || `player-${crypto.randomUUID().slice(0, 8)}`,
-      displayName: body.displayName || 'Sovereign Vanguard',
-      email: body.email || 'player@voxelrealms.example',
+      commanderId: body.commanderId || `guest-${crypto.randomUUID().slice(0, 8)}`,
+      displayName: body.displayName || 'Guest Vanguard',
       secret: securityConfig.sessionSecret,
     });
 
@@ -617,7 +692,7 @@ async function startServer() {
         actorEmail: issued.session.email,
         actorRole: 'player',
         outcome: 'allowed',
-        detail: `Issued scoped player session (Clearance Lv.1) for commander ${issued.session.commanderId}`,
+        detail: `Issued scoped guest session (Clearance Lv.1) for ${issued.session.commanderId}`,
       })
     );
     persistStoreToDisk(store);
@@ -973,6 +1048,12 @@ async function startServer() {
   // FIREBASE-AUTHENTICATED CLOUD ACCOUNT & REALM PERSISTENCE ROUTES (/api/db/*)
   // ==========================================================================
 
+  function isSqlConnectionUnavailable(error: unknown): boolean {
+    if (!process.env.SQL_HOST) return true;
+    const msg = error instanceof Error ? error.message : String(error);
+    return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|Connection terminated/i.test(msg);
+  }
+
   app.get('/api/db/profile', requireAuth, async (req: AuthRequest, res) => {
     try {
       const uid = req.user!.uid;
@@ -1000,10 +1081,17 @@ async function startServer() {
         realmSaveUpdatedAt: realmSave?.updatedAt ?? null,
       });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to fetch authenticated commander profile:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to load commander profile.',
+        error: 'Unable to load commander profile.',
       });
     }
   });
@@ -1041,10 +1129,17 @@ async function startServer() {
         profile: saved.profile,
       });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to save authenticated commander profile:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to save commander profile.',
+        error: 'Unable to save commander profile.',
       });
     }
   });
@@ -1065,10 +1160,17 @@ async function startServer() {
         updatedAt: save.updatedAt,
       });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to load realm save:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to load realm save.',
+        error: 'Unable to load realm save.',
       });
     }
   });
@@ -1107,10 +1209,17 @@ async function startServer() {
         updatedAt: save.updatedAt,
       });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to persist realm save:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to save realm progress.',
+        error: 'Unable to save realm progress.',
       });
     }
   });
@@ -1120,10 +1229,17 @@ async function startServer() {
       const tickets = await listSupportTicketsForUid(req.user!.uid);
       res.json({ ok: true, tickets });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to list support tickets:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to load support tickets.',
+        error: 'Unable to load support tickets.',
       });
     }
   });
@@ -1149,10 +1265,17 @@ async function startServer() {
       });
       res.status(201).json({ ok: true, ticket });
     } catch (error) {
+      if (isSqlConnectionUnavailable(error)) {
+        res.status(503).json({
+          ok: false,
+          error: 'Persistent storage service temporarily unavailable.',
+        });
+        return;
+      }
       console.error('Failed to create support ticket:', error);
       res.status(500).json({
         ok: false,
-        error: error instanceof Error ? error.message : 'Unable to submit support ticket.',
+        error: 'Unable to submit support ticket.',
       });
     }
   });

@@ -44,7 +44,11 @@ function buildMaskedWsFrame(opcode: number, payload: Buffer): Buffer {
   return Buffer.concat([header, mask, masked]);
 }
 
-function countIncomingWsFrames(chunk: Buffer): { texts: string[]; closed: boolean } {
+function countIncomingWsFrames(chunk: Buffer): {
+  texts: string[];
+  closed: boolean;
+  remaining: Buffer;
+} {
   const texts: string[] = [];
   let closed = false;
   let offset = 0;
@@ -67,7 +71,11 @@ function countIncomingWsFrames(chunk: Buffer): { texts: string[]; closed: boolea
     else if (opcode === 0x01) texts.push(payload.toString('utf8'));
     offset += headerLen + len;
   }
-  return { texts, closed };
+  return {
+    texts,
+    closed,
+    remaining: offset < chunk.length ? Buffer.from(chunk.subarray(offset)) : Buffer.alloc(0),
+  };
 }
 
 function connectRawWebSocket(params: { port: number; sector?: string; cookie?: string }): Promise<{
@@ -81,7 +89,7 @@ function connectRawWebSocket(params: { port: number; sector?: string; cookie?: s
     const receivedTexts: string[] = [];
     let closed = false;
     let upgraded = false;
-    let buffer = Buffer.alloc(0);
+    let buffer: Buffer = Buffer.alloc(0);
 
     const timer = setTimeout(() => {
       socket.destroy();
@@ -122,6 +130,7 @@ function connectRawWebSocket(params: { port: number; sector?: string; cookie?: s
         buffer = Buffer.alloc(0);
         if (remainder.length > 0) {
           const parsed = countIncomingWsFrames(remainder);
+          buffer = parsed.remaining;
           receivedTexts.push(...parsed.texts);
           if (parsed.closed) closed = true;
         }
@@ -130,7 +139,7 @@ function connectRawWebSocket(params: { port: number; sector?: string; cookie?: s
       }
 
       const parsed = countIncomingWsFrames(buffer);
-      buffer = Buffer.alloc(0);
+      buffer = parsed.remaining;
       receivedTexts.push(...parsed.texts);
       if (parsed.closed) closed = true;
     });
@@ -155,8 +164,7 @@ async function startLiveServer(
   logs: () => string;
 }> {
   let output = '';
-  const tsxBin = path.resolve('node_modules/.bin/tsx');
-  const proc = spawn(tsxBin, ['server.ts'], {
+  const proc = spawn(process.execPath, ['--import', 'tsx', 'server.ts'], {
     env: {
       ...process.env,
       NODE_ENV: 'production',
@@ -241,6 +249,7 @@ async function runVerification() {
     assert.equal(anonSiegeCmdRes.status, 401);
 
     for (const dbCheck of [
+      { path: '/api/auth/firebase-exchange', method: 'POST' },
       { path: '/api/db/profile', method: 'GET' },
       { path: '/api/db/profile', method: 'PUT' },
       { path: '/api/db/save', method: 'GET' },
@@ -274,7 +283,7 @@ async function runVerification() {
       );
     }
 
-    // 1b. Player session spoofing root email stays Lv.1 player and gets 403 on /api/admin/state
+    // 1b. Player session spoofing root email is clamped to guest@voxelrealms.example (Lv.1) and gets 403 on /api/admin/state
     const playerSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -285,6 +294,13 @@ async function runVerification() {
       }),
     });
     assert.equal(playerSessRes.status, 200);
+    const playerSessBody = (await playerSessRes.json()) as {
+      ok: boolean;
+      session: { email: string; role: string; clearanceLevel: number };
+    };
+    assert.equal(playerSessBody.session.email, 'guest@voxelrealms.example');
+    assert.equal(playerSessBody.session.role, 'player');
+    assert.equal(playerSessBody.session.clearanceLevel, 1);
     const playerCookie = playerSessRes.headers.get('set-cookie')?.split(';')[0] || '';
     assert.ok(playerCookie.includes('vr_session='));
 

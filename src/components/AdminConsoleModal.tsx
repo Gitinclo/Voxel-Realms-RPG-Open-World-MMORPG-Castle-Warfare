@@ -55,6 +55,9 @@ import {
   resolveContactTicket,
   buildMailtoHref,
 } from '../game/adminModeration';
+import { useAuth } from '../contexts/AuthContext';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import { createSupportTicketDocument } from '../lib/firestore';
 
 interface AdminConsoleModalProps {
   godmode: boolean;
@@ -104,7 +107,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onTriggerRivalRaid,
   currentWeather = 'clear',
   onSetWeather,
-  activeAccountEmail = PRIMARY_ADMIN_EMAIL,
+  activeAccountEmail = 'guest@voxelrealms.example',
   onChangeAccountEmail,
   moderatedPlayers = [],
   onUpdateModeratedPlayers,
@@ -131,10 +134,22 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     '[Architect 06/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
   ]);
 
+  const {
+    user: firebaseUser,
+    serverSession: contextServerSession,
+    isSigningIn: isGoogleSigningIn,
+    signInWithGoogle,
+    logout: signOutGoogle,
+    getFreshIdToken,
+    refreshServerSession,
+  } = useAuth();
+
   // Account & server authentication state
   const [emailInput, setEmailInput] = useState<string>(activeAccountEmail);
   const [operatorPasskeyInput, setOperatorPasskeyInput] = useState<string>('');
-  const [serverSession, setServerSession] = useState<ServerSessionInfo | null>(null);
+  const [serverSession, setServerSession] = useState<ServerSessionInfo | null>(
+    contextServerSession
+  );
   const [serverAuditLog, setServerAuditLog] = useState<SecurityAuditEntry[]>([]);
   const [serverAuthFeedback, setServerAuthFeedback] = useState<{
     type: 'success' | 'error' | 'info';
@@ -218,6 +233,21 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (contextServerSession) {
+      setServerSession(contextServerSession);
+      setEmailInput(contextServerSession.email);
+      if (contextServerSession.permissions?.canAccessGmConsole) {
+        void refreshServerSessionAndAdminState();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contextServerSession]);
+
+  useEffect(() => {
+    setEmailInput(activeAccountEmail);
+  }, [activeAccountEmail]);
+
   const handleServerOperatorLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthBusy(true);
@@ -262,15 +292,52 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     }
   };
 
+  const handleGoogleOperatorSignIn = async () => {
+    setIsAuthBusy(true);
+    setServerAuthFeedback(null);
+    try {
+      const signedIn = await signInWithGoogle();
+      if (!signedIn) {
+        setServerAuthFeedback({
+          type: 'error',
+          text: 'Google sign-in was cancelled or blocked. Allow popups or try again.',
+        });
+        return;
+      }
+      const nextSession = await refreshServerSession();
+      if (nextSession) {
+        setServerSession(nextSession);
+        onChangeAccountEmail?.(nextSession.email);
+        setEmailInput(nextSession.email);
+        setServerAuthFeedback({
+          type: nextSession.permissions?.canAccessGmConsole ? 'success' : 'info',
+          text: nextSession.permissions?.canAccessGmConsole
+            ? `Verified Google + HMAC-SHA256 session active for ${nextSession.email} (Clearance Lv.${nextSession.clearanceLevel}).`
+            : `Signed in via Google as ${nextSession.email} (Player Clearance Lv.${nextSession.clearanceLevel}). Staff clearance is reserved for authorized operators.`,
+        });
+        sound.playUpgradeFanfare();
+        await refreshServerSessionAndAdminState();
+      }
+    } finally {
+      setIsAuthBusy(false);
+    }
+  };
+
   const handleServerLogout = async () => {
     setIsAuthBusy(true);
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-      });
+      if (firebaseUser) {
+        await signOutGoogle();
+      } else {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
+      }
       setServerSession(null);
       setServerAuditLog([]);
+      setEmailInput('guest@voxelrealms.example');
+      onChangeAccountEmail?.('guest@voxelrealms.example');
       setServerAuthFeedback({
         type: 'info',
         text: 'Signed out of verified server session. Server /api/admin/* now rejects requests (401).',
@@ -293,12 +360,12 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   };
 
   const handleSwitchAccountEmail = (targetEmail: string) => {
-    const cleaned = targetEmail.trim() || PRIMARY_ADMIN_EMAIL;
+    const cleaned = targetEmail.trim() || 'guest@voxelrealms.example';
     setEmailInput(cleaned);
     onChangeAccountEmail?.(cleaned);
     const preview = verifyAccountPrivileges(cleaned, moderatedPlayers, 'UNTRUSTED_CLIENT_PREVIEW');
     addLog(
-      `[CLIENT PREVIEW ONLY] UI preview email set to ${preview.email} (Roles: ${preview.assignedRoles.join(', ')}). Does NOT elevate server /api/admin/* authority without Operator Sign-In.`
+      `[CLIENT PREVIEW ONLY] UI preview email set to ${preview.email} (Roles: ${preview.assignedRoles.join(', ')}). Does NOT elevate server /api/admin/* authority without Verified Sign-In.`
     );
   };
 
@@ -431,7 +498,31 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
 
   const handleSubmitContactTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    let cloudTicketId: string | null = null;
     try {
+      if (firebaseUser) {
+        cloudTicketId = await createSupportTicketDocument(firebaseUser, {
+          category: ticketCategory,
+          subject: ticketSubject,
+          message: ticketMessage,
+        });
+        const idToken = await getFreshIdToken();
+        if (idToken) {
+          await fetch('/api/db/tickets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({
+              category: ticketCategory,
+              subject: ticketSubject,
+              message: ticketMessage,
+            }),
+          }).catch(() => {});
+        }
+      }
+
       const res = await fetch('/api/admin/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -449,28 +540,53 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
         ticket?: SupportTicket;
         tickets?: SupportTicket[];
       };
-      if (!res.ok || !data.ok || !data.ticket) {
+
+      if (res.ok && data.ok && data.ticket) {
+        if (data.tickets) onUpdateSupportTickets?.(data.tickets);
+        setTicketSubject('');
+        setTicketMessage('');
+        setTicketFormFeedback({
+          type: 'success',
+          text: cloudTicketId
+            ? `Ticket ${data.ticket.id} synced to Cloud & server, routed to ${PRIMARY_ADMIN_EMAIL}.`
+            : `Ticket ${data.ticket.id} persisted on server & routed to ${PRIMARY_ADMIN_EMAIL}.`,
+        });
+        addLog(
+          `[SERVER TICKET] Ticket ${data.ticket.id} ("${data.ticket.subject}") persisted and assigned to ${PRIMARY_ADMIN_EMAIL}.`
+        );
+        sound.playGather();
+        return;
+      }
+
+      if (cloudTicketId) {
+        setTicketSubject('');
+        setTicketMessage('');
+        setTicketFormFeedback({
+          type: 'success',
+          text: `Ticket ${cloudTicketId} saved to your verified Google cloud account & routed to ${PRIMARY_ADMIN_EMAIL}.`,
+        });
+        sound.playGather();
+        return;
+      }
+
+      setTicketFormFeedback({
+        type: 'error',
+        text:
+          res.status === 401
+            ? 'Please sign in with Google or authenticate a session to submit a verified support ticket (HTTP 401).'
+            : data.error || 'Please provide both a subject and message.',
+      });
+    } catch (err) {
+      if (firebaseUser) {
         setTicketFormFeedback({
           type: 'error',
           text:
-            res.status === 401
-              ? 'Server requires an active player/operator session (HTTP 401). Open Territory Map or sign in above.'
-              : data.error || 'Please provide both a subject and message.',
+            err instanceof Error
+              ? err.message
+              : 'Unable to submit support ticket. Please check your connection.',
         });
         return;
       }
-      if (data.tickets) onUpdateSupportTickets?.(data.tickets);
-      setTicketSubject('');
-      setTicketMessage('');
-      setTicketFormFeedback({
-        type: 'success',
-        text: `Ticket ${data.ticket.id} persisted on server & routed to ${PRIMARY_ADMIN_EMAIL}.`,
-      });
-      addLog(
-        `[SERVER TICKET] Ticket ${data.ticket.id} ("${data.ticket.subject}") persisted and assigned to ${PRIMARY_ADMIN_EMAIL}.`
-      );
-      sound.playGather();
-    } catch {
       const result = createContactTicket({
         tickets: supportTickets,
         category: ticketCategory,
@@ -682,34 +798,55 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
               </button>
             </div>
 
-            {/* Real Server Operator Login Form -> POST /api/auth/admin-login */}
+            {/* Real Server & Google Authentication -> /api/auth/firebase-exchange or /api/auth/admin-login */}
             {!isServerStaffVerified && (
-              <form
-                onSubmit={handleServerOperatorLogin}
-                className="flex flex-wrap items-center gap-1.5"
-              >
-                <label htmlFor="admin-operator-passkey-input" className="sr-only">
-                  Server Operator Passkey
-                </label>
-                <input
-                  id="admin-operator-passkey-input"
-                  data-testid="admin-operator-passkey-input"
-                  type="password"
-                  value={operatorPasskeyInput}
-                  onChange={(e) => setOperatorPasskeyInput(e.target.value)}
-                  placeholder="Server VOXEL_ADMIN_PASSKEY..."
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-cyan-500/40 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 w-48"
-                />
-                <button
-                  type="submit"
-                  data-testid="server-operator-login-btn"
-                  disabled={isAuthBusy}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+              <div className="flex flex-wrap items-center gap-2">
+                {firebaseUser ? (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-cyan-500/40 text-[11px] font-mono text-cyan-200">
+                    <span>Google: {firebaseUser.email}</span>
+                    <button
+                      type="button"
+                      onClick={handleServerLogout}
+                      disabled={isAuthBusy}
+                      className="text-rose-300 hover:text-rose-200 underline ml-1 cursor-pointer"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <GoogleSignInButton
+                    onClick={handleGoogleOperatorSignIn}
+                    disabled={isAuthBusy || isGoogleSigningIn}
+                    label={isGoogleSigningIn ? 'Signing in...' : 'Sign in with Google'}
+                  />
+                )}
+                <form
+                  onSubmit={handleServerOperatorLogin}
+                  className="flex flex-wrap items-center gap-1.5"
                 >
-                  <KeyRound className="w-3 h-3" />
-                  <span>Authenticate Server</span>
-                </button>
-              </form>
+                  <label htmlFor="admin-operator-passkey-input" className="sr-only">
+                    Server Operator Passkey
+                  </label>
+                  <input
+                    id="admin-operator-passkey-input"
+                    data-testid="admin-operator-passkey-input"
+                    type="password"
+                    value={operatorPasskeyInput}
+                    onChange={(e) => setOperatorPasskeyInput(e.target.value)}
+                    placeholder="Server VOXEL_ADMIN_PASSKEY..."
+                    className="px-2.5 py-1 rounded-lg bg-slate-900 border border-cyan-500/40 text-xs font-mono text-white focus:outline-none focus:border-cyan-400 w-44 sm:w-48"
+                  />
+                  <button
+                    type="submit"
+                    data-testid="server-operator-login-btn"
+                    disabled={isAuthBusy}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-[11px] flex items-center gap-1 cursor-pointer"
+                  >
+                    <KeyRound className="w-3 h-3" />
+                    <span>Authenticate Server</span>
+                  </button>
+                </form>
+              </div>
             )}
           </div>
 

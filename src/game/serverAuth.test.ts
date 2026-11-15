@@ -17,6 +17,7 @@ import {
   extractSessionTokenFromHeaders,
   issueSessionTokenForOperator,
   issueSessionTokenForPlayer,
+  issueSessionTokenFromVerifiedFirebaseUser,
   redactCommanderForPublicStatus,
   resolveAuthenticatedSession,
   resolveServerRuntimeSecurityConfig,
@@ -60,13 +61,14 @@ test('HMAC-SHA256 session tokens verify cleanly and reject tampering or expiry',
   const issued = issueSessionTokenForPlayer({
     commanderId: 'player-commander-99',
     displayName: 'Rogue Vanguard',
-    email: PRIMARY_ADMIN_EMAIL, // Even claiming root email cannot escalate player_session!
     secret: TEST_SECRET,
     nowMs: now,
     ttlMs: 60_000,
   });
 
-  // Token must remain strictly player-scoped (Lv.1, no staff access)
+  // Guest token always enforces anonymized guest identity & Lv.1 player scope
+  assert.equal(issued.session.email, 'guest@voxelrealms.example');
+  assert.equal(issued.session.commanderId, 'guest-player-commander-99');
   assert.equal(issued.session.role, 'player');
   assert.equal(issued.session.clearanceLevel, 1);
   assert.equal(issued.session.isRootOwner, false);
@@ -166,7 +168,6 @@ test('authorizeStaffPermission fails closed on anonymous, player, and revoked st
   const playerIssued = issueSessionTokenForPlayer({
     commanderId: 'plr-1',
     displayName: 'Mortal',
-    email: 'mortal@voxelrealms.example',
     secret: TEST_SECRET,
   });
   const playerAuthz = authorizeStaffPermission(playerIssued.session, 'canModeratePlayers');
@@ -219,9 +220,8 @@ test('authorizeStaffPermission fails closed on anonymous, player, and revoked st
 
 test('sanitizeAndValidateSyncPayload blocks stat spoofing by non-staff and binds session identity', () => {
   const playerIssued = issueSessionTokenForPlayer({
-    commanderId: 'player-legit-07',
+    commanderId: 'legit-07',
     displayName: 'Legit Cultivator',
-    email: 'legit@voxelrealms.example',
     secret: TEST_SECRET,
   });
 
@@ -256,8 +256,8 @@ test('sanitizeAndValidateSyncPayload blocks stat spoofing by non-staff and binds
     defaultClusterId: 'us-east-solara-1',
   });
 
-  assert.equal(playerAttempt.snapshot.commanderId, 'player-legit-07');
-  assert.equal(playerAttempt.snapshot.email, 'legit@voxelrealms.example');
+  assert.equal(playerAttempt.snapshot.commanderId, 'guest-legit-07');
+  assert.equal(playerAttempt.snapshot.email, 'guest@voxelrealms.example');
   assert.equal(playerAttempt.snapshot.castleLevel, 12);
   assert.equal(playerAttempt.snapshot.vipTier, 1);
   assert.equal(playerAttempt.snapshot.garrisonTroopsWire, '250000');
@@ -295,7 +295,6 @@ test('bindSiegeCommandToSession, extractSessionTokenFromHeaders & redactCommande
   const playerIssued = issueSessionTokenForPlayer({
     commanderId: 'real-session-cmdr',
     displayName: 'Verified Commander',
-    email: 'private.secret@example.com',
     secret: TEST_SECRET,
   });
 
@@ -325,9 +324,9 @@ test('bindSiegeCommandToSession, extractSessionTokenFromHeaders & redactCommande
     },
   });
 
-  assert.equal(bound.troopCmd?.commanderId, 'real-session-cmdr');
+  assert.equal(bound.troopCmd?.commanderId, 'guest-real-session-cmdr');
   assert.equal(bound.troopCmd?.cohortId, 99);
-  assert.equal(bound.rallyCmd?.commanderId, 'real-session-cmdr');
+  assert.equal(bound.rallyCmd?.commanderId, 'guest-real-session-cmdr');
   assert.equal(bound.rallyCmd?.commanderName, 'Verified Commander');
   assert.equal(bound.rallyCmd?.shieldbearersWire, MAX_RALLY_CAPACITY.toString());
   assert.equal(bound.rallyCmd?.shootersWire, '0');
@@ -361,4 +360,47 @@ test('bindSiegeCommandToSession, extractSessionTokenFromHeaders & redactCommande
   });
   assert.equal('email' in redacted, false);
   assert.equal(redacted.emailRedacted, true);
+});
+
+test('issueSessionTokenFromVerifiedFirebaseUser requires verified email and derives live RBAC', () => {
+  const unverified = issueSessionTokenFromVerifiedFirebaseUser({
+    uid: 'uid_unverified_1',
+    email: PRIMARY_ADMIN_EMAIL,
+    emailVerified: false,
+    roster: INITIAL_MODERATED_PLAYERS,
+    secret: TEST_SECRET,
+  });
+  assert.equal(unverified.ok, false);
+  if (!unverified.ok) assert.equal(unverified.statusCode, 401);
+
+  const verifiedRoot = issueSessionTokenFromVerifiedFirebaseUser({
+    uid: 'uid_root_google_1',
+    email: PRIMARY_ADMIN_EMAIL,
+    emailVerified: true,
+    displayName: 'Supreme Sovereign',
+    roster: INITIAL_MODERATED_PLAYERS,
+    secret: TEST_SECRET,
+  });
+  assert.equal(verifiedRoot.ok, true);
+  if (verifiedRoot.ok) {
+    assert.equal(verifiedRoot.session.role, 'owner_admin');
+    assert.equal(verifiedRoot.session.clearanceLevel, 999);
+    assert.equal(verifiedRoot.session.isRootOwner, true);
+    assert.equal(verifiedRoot.session.commanderId, 'uid_root_google_1');
+  }
+
+  const verifiedPlayer = issueSessionTokenFromVerifiedFirebaseUser({
+    uid: 'uid_player_google_2',
+    email: 'regular.adventurer@gmail.com',
+    emailVerified: true,
+    displayName: 'Adventurer',
+    roster: INITIAL_MODERATED_PLAYERS,
+    secret: TEST_SECRET,
+  });
+  assert.equal(verifiedPlayer.ok, true);
+  if (verifiedPlayer.ok) {
+    assert.equal(verifiedPlayer.session.role, 'player');
+    assert.equal(verifiedPlayer.session.clearanceLevel, 1);
+    assert.equal(verifiedPlayer.session.permissions.canAccessGmConsole, false);
+  }
 });

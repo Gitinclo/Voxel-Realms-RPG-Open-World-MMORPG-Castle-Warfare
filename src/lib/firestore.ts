@@ -277,3 +277,58 @@ export function subscribeToCommanderSave(
     }
   );
 }
+
+export async function createSupportTicketDocument(
+  user: User,
+  input: {
+    category: string;
+    subject: string;
+    message: string;
+  }
+): Promise<string> {
+  if (!ID_PATTERN.test(user.uid) || user.uid.length > 128) {
+    throw new Error('Invalid authenticated user identifier.');
+  }
+  if (!user.emailVerified) {
+    throw new Error('A verified Google account email is required to submit a cloud ticket.');
+  }
+
+  const allowedCategories = new Set(['general', 'bug', 'abuse', 'billing']);
+  const mappedCategory = allowedCategories.has(input.category)
+    ? input.category
+    : input.category === 'moderation_report'
+      ? 'abuse'
+      : input.category === 'security_disclosure'
+        ? 'bug'
+        : 'general';
+
+  const cleanSubject = input.subject.trim().slice(0, 120);
+  const cleanMessage = input.message.trim().slice(0, 2000);
+  if (cleanSubject.length < 3 || cleanMessage.length < 5) {
+    throw new Error('Ticket subject (>=3 chars) and details (>=5 chars) are required.');
+  }
+
+  const rawId =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID().replace(/[^a-zA-Z0-9_-]/g, '')
+      : `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const ticketId = `tkt_${rawId.slice(0, 32)}`;
+  const ticketPath = `supportTickets/${ticketId}`;
+  const ticketRef = doc(db, 'supportTickets', ticketId);
+
+  try {
+    await setDoc(ticketRef, {
+      ticketId,
+      ownerId: user.uid,
+      category: mappedCategory,
+      subject: cleanSubject,
+      message: cleanMessage,
+      status: 'open',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    return ticketId;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, ticketPath);
+  }
+}
