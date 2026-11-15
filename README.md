@@ -1,10 +1,10 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-144_Passing_(24_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-156_Passing_(26_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
-[![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_PBR_%2B_HDR_Bloom-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/proceduralWorld.ts)
+[![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/openWorld3DEngine.ts)
 [![Cloud Persistence](https://img.shields.io/badge/Cloud_Data-Cloud_SQL_%2B_Firestore-6366f1?style=flat-square&logo=firebase&logoColor=white)](#16-️-cloud-sql-postgresql-firebase-auth-hardened-firestore--gmail-dispatch-center)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
@@ -23,6 +23,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 
 - **Live WebGL2 Procedural PBR Materials & Dynamic CanvasTextures**: `MeshPhysicalMaterial` with clearcoat, IOR refraction, metallic reflections, and runtime-synthesized HTML5 `CanvasTexture` Albedo, Normal, Bump & AO maps (`256×256`, `512×512`, or `1024×1024`) for grass, masonry stone, timber bark, Damascus armor, and crystalline water ripples. Switching presets or platforms dynamically resizes canvas textures, updates anisotropy (`4x` / `8x` / `16x`), and mutates `normalScale` and `bumpScale` on active Three.js materials.
 - **Real-Time HDR Post-Processing, `THREE.LOD` Chains & Platform Pipeline**: Multi-pass `EffectComposer` with `RenderPass`, `UnrealBloomPass`, custom `NextGenColorGradeShader`, and `OutputPass` (ACES Filmic Tone Mapping + dynamic `2048×2048` / `1024×1024` `PCFSoftShadowMap`), 4-tier `THREE.LOD` distance switching, dynamic `InstancedMesh` foliage scaling (`800` / `520` / `320` grass tufts), and small-prop shadow culling, paired with modeled cross-platform import overrides (`BC7` vs `ASTC`) and bundle size manifests (`src/game/graphicsEngine.ts`).
+- **3D Open-World Spatial BVH Raycasting, Simplex Biome Heightmaps, Cannon-es Rigid-Body Physics & Camera Interpolation (`src/game/openWorld3DEngine.ts`)**: Accelerated `O(log N)` pointer picking across voxel terrain, keeps, monsters, and NPCs via **`three-mesh-bvh`** (`MeshBVH`, `acceleratedRaycast`), deterministic multi-octave fBm 2D/3D/4D biome & subterranean cavern synthesis via **`simplex-noise`**, 3D siege artillery ballistic trajectories & Citadel keep collision resolution via **`cannon-es`** (`SAPBroadphase`), and smooth camera orbit interpolation via **`@tweenjs/tween.js`**.
 - **Cross-Platform Input**: Full keyboard/mouse controls for PC/Mac, and responsive virtual on-screen D-pad and action buttons for Android and touchscreen devices.
 
 ### 2. 🏰 Castle Progression & 10 Eras (Lv. 0 – 100)
@@ -311,7 +312,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **144 automated tests across 24 suites** (`22` engine/security/netcode suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
+Execute all **156 automated tests across 26 suites** (`24` engine/security/netcode/anti-cheat/3D-physics suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -383,9 +384,11 @@ npm run preview       # Preview production build locally
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
 │   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 22 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 24 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
+│   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
+│   │   ├── antiCheat.test.ts          # Speed-hack, teleport, economy inflation, sequence replay & quarantine tests
 │   │   ├── architectOptimization.ts   # 06/11/2026 Software & Hardware Architect optimization engine
 │   │   ├── architectOptimization.test.ts # CPU ISA, GPU, TDP, SoA memory & Lock-Free Job unit tests
 │   │   ├── audio.ts                   # Procedural Web Audio API sound FX synthesizer
@@ -409,6 +412,8 @@ npm run preview       # Preview production build locally
 │   │   ├── math.test.ts               # Castle & combat math unit tests
 │   │   ├── omniverse.ts               # 6-Layer Cosmology, White Page, 100 Species NPCs & Infinite Omniverse
 │   │   ├── omniverse.test.ts          # 6-Layer Cosmology, White Page & 100-Species Omniverse unit tests
+│   │   ├── openWorld3DEngine.ts       # Three.js BVH raycasting, Simplex noise biomes, Cannon-es physics & Tween camera
+│   │   ├── openWorld3DEngine.test.ts  # 3D BVH, Simplex fBm terrain, Cannon-es artillery/collision & Tween unit tests
 │   │   ├── proceduralWorld.ts         # Voxel PBR terrain, castle, NPC, monster, species & aura meshes
 │   │   ├── proceduralWorld.test.ts    # 3D scene-graph, aura & engine telemetry regression tests
 │   │   ├── serverAuth.ts              # Server-only HMAC-SHA256 session auth, fail-closed RBAC & anti-tamper engine
@@ -503,7 +508,7 @@ Our automated C++20 pipeline enforces three core guardrails at the repository ro
 
 1. **Linter / Static Analyzer (`clang-tidy` via `.clang-tidy`)**: Catches complex bugs, forbids raw owning pointers in favor of modern C++20 smart pointers (`std::unique_ptr`, `std::shared_ptr`, `std::make_unique`, `std::make_shared`), and treats warnings as errors (`WarningsAsErrors: '*'`).
 2. **Formatter (`clang-format` via `.clang-format`)**: Enforces standardized LLVM formatting (`BasedOnStyle: LLVM`, `IndentWidth: 4`, `Standard: Latest`, `ColumnLimit: 100`).
-3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `gtest`) against a pinned `builtin-baseline` commit.
+3. **Package Manager (`vcpkg` via `vcpkg.json` & `CMakeLists.txt`)**: Tracks C++20 3D Open-World MMORPG engine libraries (`entt`, `fmt`, `glm`, `sdl2`, `bullet3`, `fastnoise2`, `recastnavigation`, `enet`, `lz4`, `gtest`) against a pinned `builtin-baseline` commit.
 
 ### Part 2: The Process Fix — "Architect-First" & Refactor Sessions
 
@@ -516,9 +521,11 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`144/144 Passing` across 24 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`156/156 Passing` across 26 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
+- **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
+- **`openWorld3DEngine.test.ts`**: Verifies deterministic 2D/3D/4D `simplex-noise` multi-octave fBm biome & subterranean cavern synthesis, `three-mesh-bvh` (`MeshBVH`, `acceleratedRaycast`) O(log N) 3D picking & tree disposal, `cannon-es` rigid-body siege artillery trajectory & Citadel keep collision resolution, and `@tweenjs/tween.js` camera orbit interpolation.
 - **`architectOptimization.test.ts`**: Verifies `06/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
 - **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
 - **`cosmologicalTreeD3.test.ts`**: Verifies D3 hierarchy construction (`buildCosmologicalD3TreeData`) and Horizontal/Radial layout coordinate projection (`computeCosmologicalD3Layout`) from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) to leaf `Universe` (`Tier 1`) nodes.
@@ -608,14 +615,14 @@ Before tagging or publishing a release, confirm all release gates pass:
 ## 🛠️ Tech Stack
 
 - **Framework**: React 19 (with `React.lazy` & `Suspense` on-demand modal code-splitting)
-- **3D Graphics**: Three.js (WebGL2 with adaptive software fallback support)
+- **3D Graphics & Spatial Engine**: Three.js `0.187` (WebGL2 PBR + HDR Bloom + adaptive software fallback), `three-mesh-bvh` (`0.9.18` `MeshBVH` O(log N) raycasting), `simplex-noise` (`4.0.3` 2D/3D/4D procedural terrain/cavern synthesis), `cannon-es` (`0.20.0` 3D rigid-body physics & siege ballistics), `@tweenjs/tween.js` (`25.0.0` camera & combat interpolation)
 - **Hierarchy & Data Visualization**: D3.js (`d3-hierarchy`, `d3-zoom`, `d3-selection`)
-- **Backend & Real-Time Networking**: Express 4 + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
+- **Backend, Authoritative Anti-Cheat & Real-Time Networking**: Express 4 + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + Authoritative Anti-Cheat Engine (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
 - **Cloud Database & Auth**: Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Authentication (Google Sign-In), Firebase Admin SDK, Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
 - **Workspace Integration**: Google Workspace Gmail REST v1 API (`src/lib/gmail.ts` + confirmation-gated `GmailModal.tsx`)
-- **Styling**: Tailwind CSS v4
-- **Language**: TypeScript 7 (Strict) & C++20
-- **Bundler**: Vite 8 (Rolldown vendor chunk splitting)
+- **Styling**: Tailwind CSS v4 (`4.3.5`)
+- **Language**: TypeScript 7 (Strict) & C++20 (`vcpkg.json`: `entt`, `fmt`, `glm`, `sdl2`, `bullet3`, `fastnoise2`, `recastnavigation`, `enet`, `lz4`, `gtest`)
+- **Bundler**: Vite 8 (`8.3.8` Rolldown vendor chunk splitting)
 - **Icons**: Lucide React
 - **Audio**: Web Audio API Procedural Synthesizer
 - **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`), ESLint (`@firebase/eslint-plugin-security-rules`), Prettier, `clang-tidy`, `clang-format`

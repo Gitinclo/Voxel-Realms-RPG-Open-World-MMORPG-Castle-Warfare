@@ -37,6 +37,12 @@ import {
 } from '../game/graphicsEngine';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { sound } from '../game/audio';
+import {
+  buildSceneBVHTrees,
+  disposeSceneBVHTrees,
+  enableOpenWorldMeshBVH,
+  resolvePlayerCitadelCollisionCannon,
+} from '../game/openWorld3DEngine';
 
 /**
  * Custom Post-Processing ShaderPass combining:
@@ -583,8 +589,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // Raycasting for interactive clicks
+    // Raycasting for interactive clicks accelerated via three-mesh-bvh O(log N) BVH trees
     const raycaster = new THREE.Raycaster();
+    enableOpenWorldMeshBVH(raycaster);
+    buildSceneBVHTrees(scene);
     const mouseCoord = new THREE.Vector2();
 
     const onPointerDown = (e: PointerEvent) => {
@@ -753,10 +761,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Rebuild Castle if castleLevel changed
       if (propsRef.current.castleLevel !== lastBuiltCastleLevel) {
+        disposeSceneBVHTrees(castleMesh);
         scene.remove(castleMesh);
         lastBuiltCastleLevel = propsRef.current.castleLevel;
         castleMesh = createVoxelCastle(lastBuiltCastleLevel);
         castleMesh.position.set(0, 0, 0);
+        buildSceneBVHTrees(castleMesh);
         scene.add(castleMesh);
       }
 
@@ -946,6 +956,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         playerPos.x = Math.max(-36, Math.min(36, playerPos.x));
         playerPos.z = Math.max(-36, Math.min(36, playerPos.z));
+
+        const resolvedKeepCollision = resolvePlayerCitadelCollisionCannon({
+          desiredX: playerPos.x,
+          desiredZ: playerPos.z,
+          citadelHalfExtent: 5.2,
+          playerRadius: 0.8,
+        });
+        playerPos.x = resolvedKeepCollision.resolvedX;
+        playerPos.z = resolvedKeepCollision.resolvedZ;
 
         const targetRot = Math.atan2(worldMoveX, worldMoveZ);
         playerMesh.rotation.y = targetRot;
@@ -1140,6 +1159,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (composer) {
         composer.dispose();
       }
+      disposeSceneBVHTrees(scene);
       renderer.dispose();
       container.replaceChildren();
     };

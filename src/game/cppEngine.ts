@@ -573,14 +573,19 @@ CheckOptions:
 /* --- 3. /vcpkg.json (Declarative Package Manager Manifest) ---
 {
   "name": "voxel-realms-rpg-engine",
-  "version-semver": "1.2.0",
+  "version-semver": "1.5.0",
   "builtin-baseline": "b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01",
   "dependencies": [
-    { "name": "entt", "version>=": "3.13.2" },
-    { "name": "fmt", "version>=": "10.2.1" },
+    { "name": "entt", "version>=": "3.14.0" },
+    { "name": "fmt", "version>=": "11.0.2" },
     { "name": "glm", "version>=": "1.0.1" },
-    { "name": "sdl2", "version>=": "2.30.3" },
-    { "name": "gtest", "version>=": "1.14.0" }
+    { "name": "sdl2", "version>=": "2.30.9" },
+    { "name": "bullet3", "version>=": "3.25" },
+    { "name": "fastnoise2", "version>=": "0.10.0-alpha" },
+    { "name": "recastnavigation", "version>=": "1.6.0" },
+    { "name": "enet", "version>=": "1.3.18" },
+    { "name": "lz4", "version>=": "1.10.0" },
+    { "name": "gtest", "version>=": "1.15.2" }
   ]
 }
 */
