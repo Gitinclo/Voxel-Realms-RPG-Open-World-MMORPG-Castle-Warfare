@@ -77,7 +77,8 @@ export interface SecurityAuditEntry {
     | 'TICKET_CREATED'
     | 'TICKET_UPDATED'
     | 'SYNC_SANITIZED'
-    | 'WS_COMMAND_REJECTED';
+    | 'WS_COMMAND_REJECTED'
+    | 'ANTI_CHEAT_TRIGGERED';
   actorEmail: string;
   actorRole: StaffRole | 'anonymous';
   outcome: 'allowed' | 'denied' | 'clamped';

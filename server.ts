@@ -44,7 +44,6 @@ import {
   ALLOWED_CLUSTER_IDS,
   SESSION_COOKIE_NAME,
   authorizeStaffPermission,
-  bindSiegeCommandToSession,
   buildClearSessionCookieHeader,
   buildSessionSetCookieHeader,
   createAuditEntry,
@@ -69,6 +68,12 @@ import {
   verifySameOriginRequest,
 } from './src/game/serverHardening';
 import { AtomicRealmPersistence } from './src/game/serverPersistence';
+import {
+  AntiCheatGuard,
+  sanitizeCloudProfilePatch,
+  validateRallyCommandAuthority,
+  validateTroopCommandAuthority,
+} from './src/game/antiCheat';
 import { AuthRequest, requireAuth, verifyFirebaseBearerToken } from './src/middleware/auth.ts';
 import {
   createSupportTicketForUid,
@@ -264,6 +269,11 @@ async function startServer() {
     lockoutMs: OPERATIONAL_LIMITS.AUTH_LOCKOUT_MS,
   });
   const tickLatencyTracker = new TickLatencyTracker({ capacity: 200, budgetMs: 50 });
+  const antiCheatGuard = new AntiCheatGuard({
+    windowMs: 60_000,
+    strikeLimit: 6,
+    quarantineMs: 60_000,
+  });
 
   const opsCounters = {
     startedAtIso: new Date().toISOString(),
@@ -276,6 +286,9 @@ async function startServer() {
     wsFramesRejected: 0,
     wsRateLimitDisconnects: 0,
     wsSlowConsumerDisconnects: 0,
+    antiCheatRejections: 0,
+    antiCheatSanitizedWrites: 0,
+    antiCheatStrikeLockouts: 0,
   };
   let isShuttingDown = false;
 
@@ -453,6 +466,9 @@ async function startServer() {
         wsFramesRejected: opsCounters.wsFramesRejected,
         wsRateLimitDisconnects: opsCounters.wsRateLimitDisconnects,
         wsSlowConsumerDisconnects: opsCounters.wsSlowConsumerDisconnects,
+        antiCheatRejections: opsCounters.antiCheatRejections,
+        antiCheatSanitizedWrites: opsCounters.antiCheatSanitizedWrites,
+        antiCheatStrikeLockouts: opsCounters.antiCheatStrikeLockouts,
       },
       deploymentTopologyBoundary:
         'Single-instance Node.js authoritative server with atomic SHA-256 disk persistence (.bak failover). Horizontal multi-pod scaling requires an external database (Cloud SQL/Spanner) and Redis pub/sub adapter.',
@@ -533,6 +549,30 @@ async function startServer() {
         }
       }
     }
+  };
+
+  const broadcastSectorPresence = (sector: TerritorySectorCode) => {
+    let connectedPeersInSector = 0;
+    let authenticatedPeers = 0;
+    for (const p of peers.values()) {
+      if (p.subscribedSector === sector && !p.socket.destroyed) {
+        connectedPeersInSector += 1;
+        if (p.session) authenticatedPeers += 1;
+      }
+    }
+    const sectorState = store.sectors[sector];
+    broadcastToSector(sector, {
+      opcode: SiegeNetOpcode.S2C_SECTOR_PRESENCE,
+      serverTick: sectorState.serverTick,
+      ackClientSeq: sectorState.cohorts[0]?.lastAckClientSeq ?? 0,
+      sector,
+      stateHash: sectorState.stateHash,
+      payload: {
+        sector,
+        connectedPeersInSector,
+        authenticatedPeers,
+      },
+    });
   };
 
   // ==========================================================================
@@ -1105,26 +1145,35 @@ async function startServer() {
           ? req.user!.name.trim()
           : undefined;
       const body = (req.body || {}) as Record<string, unknown>;
+      const isPrivilegedStaff = email.trim().toLowerCase() === 'creatergame31@gmail.com';
+      const existingRecord = await getCommanderProfileForUid(uid);
 
-      const saved = await upsertCommanderProfileForUid(uid, email, displayName, {
-        commanderName: typeof body.commanderName === 'string' ? body.commanderName : undefined,
-        allianceTag: typeof body.allianceTag === 'string' ? body.allianceTag : undefined,
-        castleLevel: typeof body.castleLevel === 'number' ? body.castleLevel : undefined,
-        cultivationRealmIndex:
-          typeof body.cultivationRealmIndex === 'number' ? body.cultivationRealmIndex : undefined,
-        vipTier: typeof body.vipTier === 'number' ? body.vipTier : undefined,
-        karma: typeof body.karma === 'number' ? body.karma : undefined,
-        garrisonTroopsWire:
-          typeof body.garrisonTroopsWire === 'string' ? body.garrisonTroopsWire : undefined,
-        discoveredCodexCount:
-          typeof body.discoveredCodexCount === 'number' ? body.discoveredCodexCount : undefined,
-        preferredRegion:
-          typeof body.preferredRegion === 'string' ? body.preferredRegion : undefined,
-        activeSector: typeof body.activeSector === 'string' ? body.activeSector : undefined,
+      const sanitized = sanitizeCloudProfilePatch({
+        existingProfile: existingRecord?.profile ?? null,
+        incoming: body,
+        isPrivilegedStaff,
       });
+
+      if (sanitized.flaggedViolations.length > 0) {
+        opsCounters.antiCheatSanitizedWrites += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: email,
+            actorRole: isPrivilegedStaff ? 'owner_admin' : 'player',
+            outcome: 'clamped',
+            detail: `Sanitized cloud profile tamper attempt on PUT /api/db/profile: [${sanitized.flaggedViolations.join(', ')}]`,
+          })
+        );
+        persistStoreToDisk(store);
+      }
+
+      const saved = await upsertCommanderProfileForUid(uid, email, displayName, sanitized.patch);
 
       res.json({
         ok: true,
+        sanitizedFields: sanitized.flaggedViolations,
         user: saved.user,
         profile: saved.profile,
       });
@@ -1189,7 +1238,45 @@ async function startServer() {
         return;
       }
 
-      const serialized = JSON.stringify(body.snapshot);
+      const isPrivilegedStaff = email.trim().toLowerCase() === 'creatergame31@gmail.com';
+      const existingRecord = await getCommanderProfileForUid(uid);
+      const snapshotObj = body.snapshot as Record<string, unknown>;
+      const sanitized = sanitizeCloudProfilePatch({
+        existingProfile: existingRecord?.profile ?? null,
+        incoming: snapshotObj,
+        isPrivilegedStaff,
+      });
+
+      let safeSnapshot: Record<string, unknown> = snapshotObj;
+      if (sanitized.flaggedViolations.length > 0) {
+        opsCounters.antiCheatSanitizedWrites += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: email,
+            actorRole: isPrivilegedStaff ? 'owner_admin' : 'player',
+            outcome: 'clamped',
+            detail: `Sanitized cloud save tamper attempt on PUT /api/db/save: [${sanitized.flaggedViolations.join(', ')}]`,
+          })
+        );
+        persistStoreToDisk(store);
+        safeSnapshot = {
+          ...snapshotObj,
+          ...(sanitized.patch.castleLevel !== undefined
+            ? { castleLevel: sanitized.patch.castleLevel }
+            : {}),
+          ...(sanitized.patch.cultivationRealmIndex !== undefined
+            ? { cultivationRealmIndex: sanitized.patch.cultivationRealmIndex }
+            : {}),
+          ...(sanitized.patch.vipTier !== undefined ? { vipTier: sanitized.patch.vipTier } : {}),
+          ...(sanitized.patch.garrisonTroopsWire !== undefined
+            ? { garrisonTroopsWire: sanitized.patch.garrisonTroopsWire }
+            : {}),
+        };
+      }
+
+      const serialized = JSON.stringify(safeSnapshot);
       if (serialized.length > 262_144) {
         res.status(413).json({ ok: false, error: 'Realm snapshot exceeds 256 KB limit.' });
         return;
@@ -1205,6 +1292,7 @@ async function startServer() {
 
       res.json({
         ok: true,
+        sanitizedFields: sanitized.flaggedViolations,
         version: save.version,
         updatedAt: save.updatedAt,
       });
@@ -1380,25 +1468,112 @@ async function startServer() {
     const session = requireAuthenticatedSession(req, res);
     if (!session) return;
 
+    const quarantine = antiCheatGuard.isQuarantined(session.commanderId);
+    if (quarantine.quarantined) {
+      res.setHeader('Retry-After', String(quarantine.retryAfterSec));
+      res.status(429).json({
+        ok: false,
+        violation: 'STRIKE_THRESHOLD_LOCKOUT',
+        error: `Command privileges temporarily suspended due to anti-cheat violations (${quarantine.retryAfterSec}s remaining).`,
+      });
+      return;
+    }
+
     const { sector, troopCmd, rallyCmd } = (req.body || {}) as {
       sector?: TerritorySectorCode;
       troopCmd?: TroopPositionCommandPacket;
       rallyCmd?: RallyActionCommandPacket;
     };
 
-    const bound = bindSiegeCommandToSession({ session, troopCmd, rallyCmd });
+    if (!troopCmd && !rallyCmd) {
+      res.status(400).json({
+        ok: false,
+        violation: 'INVALID_ENUM_INJECTION',
+        error: 'Missing troopCmd or rallyCmd payload.',
+      });
+      return;
+    }
 
     const targetSector: TerritorySectorCode =
       sector && ALL_TERRITORY_SECTORS.includes(sector) ? sector : store.activeSector;
-    store.activeSector = targetSector;
 
     let current = store.sectors[targetSector];
-    if (bound.troopCmd) {
-      current = applyTroopPositionCommand(current, bound.troopCmd);
+    const warnings: string[] = [];
+
+    if (troopCmd) {
+      const troopCheck = validateTroopCommandAuthority({
+        sectorState: current,
+        session,
+        rawCmd: troopCmd,
+      });
+      if (!troopCheck.allowed) {
+        opsCounters.antiCheatRejections += 1;
+        const strike = antiCheatGuard.recordStrike(session.commanderId, troopCheck.violation);
+        if (strike.quarantinedNow) {
+          opsCounters.antiCheatStrikeLockouts += 1;
+          res.setHeader('Retry-After', String(strike.retryAfterSec));
+        }
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `HTTP troopCmd rejected (${troopCheck.violation}, strike ${strike.strikeCount}): ${troopCheck.reason}`,
+          })
+        );
+        persistStoreToDisk(store);
+        res.status(strike.quarantinedNow ? 429 : troopCheck.statusCode).json({
+          ok: false,
+          violation: troopCheck.violation,
+          strikeCount: strike.strikeCount,
+          error: troopCheck.reason,
+        });
+        return;
+      }
+      warnings.push(...troopCheck.sanitizedWarnings);
+      current = applyTroopPositionCommand(current, troopCheck.command);
     }
-    if (bound.rallyCmd) {
-      current = applyRallyActionCommand(current, bound.rallyCmd);
+
+    if (rallyCmd) {
+      const rallyCheck = validateRallyCommandAuthority({
+        sectorState: current,
+        session,
+        serverCommander: store.commanders[session.commanderId],
+        rawCmd: rallyCmd,
+      });
+      if (!rallyCheck.allowed) {
+        opsCounters.antiCheatRejections += 1;
+        const strike = antiCheatGuard.recordStrike(session.commanderId, rallyCheck.violation);
+        if (strike.quarantinedNow) {
+          opsCounters.antiCheatStrikeLockouts += 1;
+          res.setHeader('Retry-After', String(strike.retryAfterSec));
+        }
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `HTTP rallyCmd rejected (${rallyCheck.violation}, strike ${strike.strikeCount}): ${rallyCheck.reason}`,
+          })
+        );
+        persistStoreToDisk(store);
+        res.status(strike.quarantinedNow ? 429 : rallyCheck.statusCode).json({
+          ok: false,
+          violation: rallyCheck.violation,
+          strikeCount: strike.strikeCount,
+          error: rallyCheck.reason,
+        });
+        return;
+      }
+      warnings.push(...rallyCheck.sanitizedWarnings);
+      current = applyRallyActionCommand(current, rallyCheck.command);
     }
+
+    store.activeSector = targetSector;
     store.sectors[targetSector] = current;
     persistStoreToDisk(store);
 
@@ -1413,6 +1588,7 @@ async function startServer() {
 
     res.json({
       ok: true,
+      sanitizedWarnings: warnings,
       sectorState: current,
     });
   });
@@ -1525,6 +1701,7 @@ async function startServer() {
       payload: { sectorState: initialState },
     };
     socket.write(encodeWsTextFrame(JSON.stringify(snapshotEnvelope)));
+    broadcastSectorPresence(validSector);
 
     socket.on('data', (chunk: Buffer) => {
       const combined = peer.rxBuffer.length > 0 ? Buffer.concat([peer.rxBuffer, chunk]) : chunk;
@@ -1534,6 +1711,7 @@ async function startServer() {
       if (decoded.protocolError) {
         opsCounters.wsFramesRejected += 1;
         peers.delete(peerId);
+        broadcastSectorPresence(peer.subscribedSector);
         try {
           socket.end(encodeWsCloseFrame(1009, decoded.protocolError));
         } catch {
@@ -1544,6 +1722,7 @@ async function startServer() {
 
       if (decoded.closeRequested) {
         peers.delete(peerId);
+        broadcastSectorPresence(peer.subscribedSector);
         socket.end();
         return;
       }
@@ -1572,6 +1751,7 @@ async function startServer() {
           if (peer.rateViolations >= 3) {
             opsCounters.wsRateLimitDisconnects += 1;
             peers.delete(peerId);
+            broadcastSectorPresence(peer.subscribedSector);
             socket.end(encodeWsCloseFrame(1008, 'Sustained WebSocket message flood'));
             return;
           }
@@ -1590,9 +1770,14 @@ async function startServer() {
             continue;
           }
 
+          const previousSector = peer.subscribedSector;
           if (parsed.sector && ALL_TERRITORY_SECTORS.includes(parsed.sector)) {
             peer.subscribedSector = parsed.sector;
             store.activeSector = parsed.sector;
+            if (parsed.sector !== previousSector) {
+              broadcastSectorPresence(previousSector);
+              broadcastSectorPresence(parsed.sector);
+            }
           }
 
           const isMutatingCommand =
@@ -1625,41 +1810,143 @@ async function startServer() {
           const targetSector = peer.subscribedSector;
           let sectorState = store.sectors[targetSector];
 
-          if (
-            peer.session &&
-            parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD &&
-            parsed.payload &&
-            typeof parsed.payload === 'object'
-          ) {
-            const rawCmd = parsed.payload as TroopPositionCommandPacket;
-            if (typeof rawCmd.clientSeq === 'number' && Number.isFinite(rawCmd.clientSeq)) {
-              if (rawCmd.clientSeq <= peer.lastClientSeq) {
-                continue; // Drop replayed or out-of-order stale command packets
+          if (isMutatingCommand && peer.session) {
+            const quarantine = antiCheatGuard.isQuarantined(peer.session.commanderId);
+            if (quarantine.quarantined) {
+              socket.write(
+                encodeWsTextFrame(
+                  JSON.stringify({
+                    opcode: SiegeNetOpcode.S2C_COMMAND_REJECTED,
+                    serverTick: sectorState.serverTick,
+                    ackClientSeq: Math.max(0, peer.lastClientSeq),
+                    sector: targetSector,
+                    stateHash: sectorState.stateHash,
+                    payload: {
+                      violation: 'STRIKE_THRESHOLD_LOCKOUT',
+                      code: 429,
+                      error: `Command quarantine active (${quarantine.retryAfterSec}s remaining).`,
+                    },
+                  })
+                )
+              );
+              peers.delete(peerId);
+              broadcastSectorPresence(targetSector);
+              socket.end(encodeWsCloseFrame(1008, 'Anti-cheat quarantine active'));
+              return;
+            }
+          }
+
+          if (peer.session && parsed.opcode === SiegeNetOpcode.C2S_TROOP_POSITION_CMD) {
+            const troopCheck = validateTroopCommandAuthority({
+              sectorState,
+              session: peer.session,
+              rawCmd: parsed.payload,
+              lastClientSeq: peer.lastClientSeq,
+            });
+            if (!troopCheck.allowed) {
+              opsCounters.antiCheatRejections += 1;
+              const strike = antiCheatGuard.recordStrike(
+                peer.session.commanderId,
+                troopCheck.violation
+              );
+              if (strike.quarantinedNow) {
+                opsCounters.antiCheatStrikeLockouts += 1;
               }
-              peer.lastClientSeq = rawCmd.clientSeq;
+              appendAuditEntry(
+                store,
+                createAuditEntry({
+                  eventType: 'ANTI_CHEAT_TRIGGERED',
+                  actorEmail: peer.session.email,
+                  actorRole: peer.session.role,
+                  outcome: 'denied',
+                  detail: `WS troopCmd blocked (${troopCheck.violation}, strike ${strike.strikeCount}): ${troopCheck.reason}`,
+                })
+              );
+              socket.write(
+                encodeWsTextFrame(
+                  JSON.stringify({
+                    opcode: SiegeNetOpcode.S2C_COMMAND_REJECTED,
+                    serverTick: sectorState.serverTick,
+                    ackClientSeq: Math.max(0, peer.lastClientSeq),
+                    sector: targetSector,
+                    stateHash: sectorState.stateHash,
+                    payload: {
+                      violation: troopCheck.violation,
+                      code: strike.quarantinedNow ? 429 : troopCheck.statusCode,
+                      strikeCount: strike.strikeCount,
+                      error: troopCheck.reason,
+                    },
+                  })
+                )
+              );
+              if (strike.quarantinedNow) {
+                persistStoreToDisk(store);
+                peers.delete(peerId);
+                broadcastSectorPresence(targetSector);
+                socket.end(encodeWsCloseFrame(1008, 'Anti-cheat strike threshold exceeded'));
+                return;
+              }
+              continue;
             }
-            const bound = bindSiegeCommandToSession({
+
+            peer.lastClientSeq = troopCheck.command.clientSeq;
+            sectorState = applyTroopPositionCommand(sectorState, troopCheck.command);
+            store.sectors[targetSector] = sectorState;
+          } else if (peer.session && parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD) {
+            const rallyCheck = validateRallyCommandAuthority({
+              sectorState,
               session: peer.session,
-              troopCmd: rawCmd,
+              serverCommander: store.commanders[peer.session.commanderId],
+              rawCmd: parsed.payload,
             });
-            if (bound.troopCmd) {
-              sectorState = applyTroopPositionCommand(sectorState, bound.troopCmd);
-              store.sectors[targetSector] = sectorState;
+            if (!rallyCheck.allowed) {
+              opsCounters.antiCheatRejections += 1;
+              const strike = antiCheatGuard.recordStrike(
+                peer.session.commanderId,
+                rallyCheck.violation
+              );
+              if (strike.quarantinedNow) {
+                opsCounters.antiCheatStrikeLockouts += 1;
+              }
+              appendAuditEntry(
+                store,
+                createAuditEntry({
+                  eventType: 'ANTI_CHEAT_TRIGGERED',
+                  actorEmail: peer.session.email,
+                  actorRole: peer.session.role,
+                  outcome: 'denied',
+                  detail: `WS rallyCmd blocked (${rallyCheck.violation}, strike ${strike.strikeCount}): ${rallyCheck.reason}`,
+                })
+              );
+              socket.write(
+                encodeWsTextFrame(
+                  JSON.stringify({
+                    opcode: SiegeNetOpcode.S2C_COMMAND_REJECTED,
+                    serverTick: sectorState.serverTick,
+                    ackClientSeq: Math.max(0, peer.lastClientSeq),
+                    sector: targetSector,
+                    stateHash: sectorState.stateHash,
+                    payload: {
+                      violation: rallyCheck.violation,
+                      code: strike.quarantinedNow ? 429 : rallyCheck.statusCode,
+                      strikeCount: strike.strikeCount,
+                      error: rallyCheck.reason,
+                    },
+                  })
+                )
+              );
+              if (strike.quarantinedNow) {
+                persistStoreToDisk(store);
+                peers.delete(peerId);
+                broadcastSectorPresence(targetSector);
+                socket.end(encodeWsCloseFrame(1008, 'Anti-cheat strike threshold exceeded'));
+                return;
+              }
+              continue;
             }
-          } else if (
-            peer.session &&
-            parsed.opcode === SiegeNetOpcode.C2S_RALLY_ACTION_CMD &&
-            parsed.payload &&
-            typeof parsed.payload === 'object'
-          ) {
-            const bound = bindSiegeCommandToSession({
-              session: peer.session,
-              rallyCmd: parsed.payload as RallyActionCommandPacket,
-            });
-            if (bound.rallyCmd) {
-              sectorState = applyRallyActionCommand(sectorState, bound.rallyCmd);
-              store.sectors[targetSector] = sectorState;
-            }
+
+            sectorState = applyRallyActionCommand(sectorState, rallyCheck.command);
+            store.sectors[targetSector] = sectorState;
           }
 
           broadcastToSector(targetSector, {
@@ -1677,10 +1964,14 @@ async function startServer() {
     });
 
     socket.on('close', () => {
+      const leftSector = peer.subscribedSector;
       peers.delete(peerId);
+      broadcastSectorPresence(leftSector);
     });
     socket.on('error', () => {
+      const leftSector = peer.subscribedSector;
       peers.delete(peerId);
+      broadcastSectorPresence(leftSector);
     });
   });
 

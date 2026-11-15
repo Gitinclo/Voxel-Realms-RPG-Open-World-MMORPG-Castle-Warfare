@@ -26,6 +26,10 @@ export enum SiegeNetOpcode {
   S2C_RALLY_STATUS_SYNC = 0x12,
   /** Server -> Client: Multi-region persistence & replication telemetry sync */
   S2C_MULTI_REGION_SYNC = 0x13,
+  /** Server -> Client: Authoritative anti-cheat / permission command rejection with rollback reason */
+  S2C_COMMAND_REJECTED = 0x14,
+  /** Server -> Client: Live peer & commander presence summary in active sector */
+  S2C_SECTOR_PRESENCE = 0x15,
 }
 
 export type TerritorySectorCode = 'A1' | 'A2' | 'A3' | 'B1' | 'B2' | 'B3' | 'C1' | 'C2' | 'C3';
@@ -648,10 +652,14 @@ export function applyRallyActionCommand(
     logMsg = `[Tick #${state.serverTick}] Rally ${rally.rallyId} locked & marching (${nextRally.totalCommittedTroopsWire} troops)!`;
   } else if (cmd.action === 'INITIATE_RALLY') {
     const cappedTotal = requestedSum > MAX_RALLY_CAPACITY ? MAX_RALLY_CAPACITY : requestedSum;
-    const ratio = requestedSum > 0n ? Number(cappedTotal) / Number(requestedSum) : 1;
-    const s = BigInt(Math.floor(Number(rawShield) * ratio));
-    const sh = BigInt(Math.floor(Number(rawShooter) * ratio));
-    const b = cappedTotal - s - sh;
+    let s = 0n;
+    let sh = 0n;
+    let b = 0n;
+    if (requestedSum > 0n && cappedTotal > 0n) {
+      s = (rawShield * cappedTotal) / requestedSum;
+      sh = (rawShooter * cappedTotal) / requestedSum;
+      b = cappedTotal - s - sh;
+    }
     nextRally = {
       rallyId: `RALLY-${state.sector}-${state.serverTick}`,
       initiatorCommanderId: cmd.commanderId,
@@ -679,10 +687,9 @@ export function applyRallyActionCommand(
     logMsg = `[Tick #${state.serverTick}] ${cmd.commanderName} opened 1T War Rally ${nextRally.rallyId} on Sector ${state.sector}.`;
   } else if (cmd.action === 'JOIN_RALLY' && nextRally.contributors.length < 50) {
     const acceptedTotal = requestedSum > remainingCap ? remainingCap : requestedSum;
-    if (acceptedTotal > 0n) {
-      const ratio = requestedSum > 0n ? Number(acceptedTotal) / Number(requestedSum) : 1;
-      const s = BigInt(Math.floor(Number(rawShield) * ratio));
-      const sh = BigInt(Math.floor(Number(rawShooter) * ratio));
+    if (acceptedTotal > 0n && requestedSum > 0n) {
+      const s = (rawShield * acceptedTotal) / requestedSum;
+      const sh = (rawShooter * acceptedTotal) / requestedSum;
       const b = acceptedTotal - s - sh;
       const existingIdx = nextRally.contributors.findIndex(
         (c) => c.commanderId === cmd.commanderId
@@ -772,7 +779,8 @@ export function stepAuthoritativeSiegeTick(state: AuthoritativeSiegeSectorState)
     const distQuantized = Math.hypot(dx, dz);
 
     // Base speed: ~22 quantized units (0.22m) per 50ms tick = 4.4 m/s
-    const stepSpeed = Math.max(4, Math.round(22 * FORMATION_SPEED_MODIFIER[curr.formation]));
+    const speedMult = FORMATION_SPEED_MODIFIER[curr.formation] ?? 1.0;
+    const stepSpeed = Math.max(4, Math.round(22 * speedMult));
 
     if (distQuantized > 25) {
       const stepX = Math.round((dx / distQuantized) * Math.min(distQuantized, stepSpeed));

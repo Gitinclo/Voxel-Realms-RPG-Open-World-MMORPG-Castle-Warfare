@@ -386,8 +386,49 @@ async function runVerification() {
     });
     assert.equal(lockedRes.status, 429);
     assert.ok(Number(lockedRes.headers.get('retry-after')) > 0);
+    // 1h. Multiplayer Authority & Anti-Cheat on /api/online/siege/cmd
+    const hijackHttpRes = await fetch(`${BASE_URL}/api/online/siege/cmd`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        sector: 'B2',
+        troopCmd: {
+          cohortId: 50,
+          clientSeq: 1,
+          targetXQuantized: 0,
+          targetZQuantized: 0,
+          facingAngleQuantized: 0,
+          formation: 'SHIELD_WALL',
+          primaryBranch: 'shieldbearer',
+        },
+      }),
+    });
+    assert.equal(hijackHttpRes.status, 403);
+    const hijackHttpBody = (await hijackHttpRes.json()) as { violation?: string };
+    assert.equal(hijackHttpBody.violation, 'COHORT_OWNERSHIP_HIJACK');
+
+    const badEnumHttpRes = await fetch(`${BASE_URL}/api/online/siege/cmd`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        sector: 'B2',
+        troopCmd: {
+          cohortId: 0,
+          clientSeq: 2,
+          targetXQuantized: 100,
+          targetZQuantized: 100,
+          facingAngleQuantized: 0,
+          formation: 'HACK_MODE',
+          primaryBranch: 'shieldbearer',
+        },
+      }),
+    });
+    assert.equal(badEnumHttpRes.status, 400);
+    const badEnumHttpBody = (await badEnumHttpRes.json()) as { violation?: string };
+    assert.equal(badEnumHttpBody.violation, 'INVALID_ENUM_INJECTION');
+
     console.log(
-      '[VerifyOps] ✅ HTTP Exploit Resistance (401/403, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
+      '[VerifyOps] ✅ HTTP Exploit Resistance & Anti-Cheat (401/403, Ownership Hijack, Invalid Enum, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
     );
 
     // =========================================================================
@@ -422,14 +463,34 @@ async function runVerification() {
     assert.equal(giantWs.isClosed(), true, 'Oversized WS frame should be closed by server');
     giantWs.socket.destroy();
 
-    // 2c. Sustained WS message flood throttled & disconnected
-    const floodWs = await connectRawWebSocket({ port: TEST_PORT, cookie: playerCookie });
+    // 2c. Sustained WS message flood throttled & disconnected (dedicated flood session)
+    const floodSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commanderId: 'flood-tester-01', displayName: 'FloodTester' }),
+    });
+    const floodCookie = floodSessRes.headers.get('set-cookie')?.split(';')[0] || '';
+    const floodWs = await connectRawWebSocket({ port: TEST_PORT, cookie: floodCookie });
     for (let i = 1; i <= 40; i++) {
       if (floodWs.isClosed()) break;
       floodWs.socket.write(
         buildMaskedWsFrame(
           0x01,
-          Buffer.from(JSON.stringify({ opcode: 0x01, sector: 'B2', payload: { clientSeq: i } }))
+          Buffer.from(
+            JSON.stringify({
+              opcode: 0x01,
+              sector: 'B2',
+              payload: {
+                cohortId: 0,
+                clientSeq: i,
+                targetXQuantized: 100,
+                targetZQuantized: 100,
+                facingAngleQuantized: 0,
+                formation: 'SHIELD_WALL',
+                primaryBranch: 'shieldbearer',
+              },
+            })
+          )
         )
       );
     }
@@ -439,6 +500,46 @@ async function runVerification() {
       'Sustained WS flood should receive S2C_RATE_LIMIT and disconnect'
     );
     floodWs.socket.destroy();
+
+    // 2c-bis. WebSocket Anti-Cheat rejection (S2C_COMMAND_REJECTED 0x14) & 6-strike quarantine disconnect
+    const cheaterSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commanderId: 'cheater-01', displayName: 'RogueVanguard' }),
+    });
+    const cheaterCookie = cheaterSessRes.headers.get('set-cookie')?.split(';')[0] || '';
+    const cheaterWs = await connectRawWebSocket({ port: TEST_PORT, cookie: cheaterCookie });
+    for (let strike = 1; strike <= 6; strike++) {
+      if (cheaterWs.isClosed()) break;
+      cheaterWs.socket.write(
+        buildMaskedWsFrame(
+          0x01,
+          Buffer.from(
+            JSON.stringify({
+              opcode: 0x01,
+              sector: 'B2',
+              payload: {
+                cohortId: 50,
+                clientSeq: strike,
+                targetXQuantized: 0,
+                targetZQuantized: 0,
+                facingAngleQuantized: 0,
+                formation: 'LOOSE_SKIRMISH',
+                primaryBranch: 'shieldbearer',
+              },
+            })
+          )
+        )
+      );
+    }
+    await sleep(150);
+    assert.ok(
+      cheaterWs.receivedTexts.some(
+        (t) => t.includes('"opcode":20') && t.includes('COHORT_OWNERSHIP_HIJACK')
+      ) && cheaterWs.isClosed(),
+      'Repeated unauthorized WS commands should emit S2C_COMMAND_REJECTED and trigger anti-cheat disconnect'
+    );
+    cheaterWs.socket.destroy();
 
     // 2d. Load capacity test: 12 concurrent WS peers + 200 concurrent HTTP requests
     const peers = await Promise.all(
@@ -498,6 +599,8 @@ async function runVerification() {
         prototypePollutionBlocks: number;
         wsFramesRejected: number;
         wsRateLimitDisconnects: number;
+        antiCheatRejections: number;
+        antiCheatStrikeLockouts: number;
       };
       persistence: { writable: boolean; totalWrites: number; failedWrites: number };
     };
@@ -509,6 +612,8 @@ async function runVerification() {
     assert.ok(opsData.exploitDefenseCounters.prototypePollutionBlocks >= 1);
     assert.ok(opsData.exploitDefenseCounters.wsFramesRejected >= 1);
     assert.ok(opsData.exploitDefenseCounters.wsRateLimitDisconnects >= 1);
+    assert.ok(opsData.exploitDefenseCounters.antiCheatRejections >= 3);
+    assert.ok(opsData.exploitDefenseCounters.antiCheatStrikeLockouts >= 1);
 
     console.log(
       `[VerifyOps] ✅ Load & Concurrency PASSED (${latenciesMs.length} reqs @ ${concurrency}-way concurrency, ${rps} req/s, p50=${p50.toFixed(1)}ms, p95=${p95.toFixed(1)}ms, p99=${p99.toFixed(1)}ms, 12 WS peers @ 20Hz with 0 tick overruns)`

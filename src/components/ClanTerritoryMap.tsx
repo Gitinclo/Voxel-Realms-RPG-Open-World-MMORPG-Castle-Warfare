@@ -145,55 +145,54 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [selectedFormation, setSelectedFormation] = useState<SiegeFormationType>('SHIELD_WALL');
   const [cspModeLabel, setCspModeLabel] = useState<string>('EXACT_MATCH');
+  const [sectorPeerCount, setSectorPeerCount] = useState<number>(1);
+  const [lastRejectedReason, setLastRejectedReason] = useState<string | null>(null);
   const [lastDeltaBytes, setLastDeltaBytes] = useState<{ raw: number; compressed: number }>({
     raw: 1344,
     compressed: 156,
   });
 
-  const { user: authUser, getFreshIdToken } = useAuth();
+  const { user: authUser, serverSession, getFreshIdToken } = useAuth();
+  const activeCommanderId = serverSession?.commanderId || authUser?.uid || 'player-commander-01';
+  const activeCommanderName =
+    serverSession?.displayName || authUser?.displayName || 'Sovereign Vanguard (You)';
   const wsRef = useRef<WebSocket | null>(null);
   const clientSeqRef = useRef<number>(1);
   const cspRingRef = useRef<ClientPredictionRingBuffer>(new ClientPredictionRingBuffer());
+
+  const rollbackFromAuthoritativeServer = async (
+    sector: TerritorySectorCode,
+    rejectionReason?: string
+  ) => {
+    setCspModeLabel('SERVER_ROLLBACK');
+    if (rejectionReason) {
+      setLastRejectedReason(rejectionReason);
+      setLastActionBanner(`Authoritative Rollback: ${rejectionReason}`);
+    }
+    try {
+      const r = await fetch(`/api/online/status?sector=${sector}`, { credentials: 'same-origin' });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data?.ok && data.sectorState) {
+        setSiegeState(data.sectorState);
+      }
+      if (data?.ok && data.replication) {
+        setReplicationSnapshot(data.replication);
+      }
+    } catch {
+      // Ignore offline fetch failure
+    }
+  };
 
   // Ensure a valid server-issued HMAC session cookie exists before connecting /ws/siege
   useEffect(() => {
     let isMounted = true;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempts = 0;
 
-    const initOnlineSiegeSession = async () => {
-      try {
-        const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
-        const sessionData = sessionRes.ok
-          ? ((await sessionRes.json()) as { authenticated?: boolean })
-          : null;
-        if (!sessionData?.authenticated) {
-          const idToken = authUser ? await getFreshIdToken() : null;
-          if (idToken) {
-            await fetch('/api/auth/firebase-exchange', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${idToken}`,
-              },
-              credentials: 'same-origin',
-            });
-          } else {
-            await fetch('/api/auth/player-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'same-origin',
-              body: JSON.stringify({
-                displayName: 'Sovereign Vanguard',
-              }),
-            });
-          }
-        }
-      } catch {
-        // Offline fallback continues cleanly below
-      }
-
+    const openWebSocket = () => {
       if (!isMounted) return;
-
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/siege?sector=${selectedSectorCode}`;
 
@@ -203,7 +202,9 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
 
         ws.onopen = () => {
           if (!isMounted) return;
+          reconnectAttempts = 0;
           setWsConnected(true);
+          setLastRejectedReason(null);
         };
 
         ws.onmessage = (event) => {
@@ -252,6 +253,17 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
                 );
                 return updated;
               });
+            } else if (env.opcode === SiegeNetOpcode.S2C_COMMAND_REJECTED) {
+              const rejection = env.payload as { error?: string; violation?: string };
+              void rollbackFromAuthoritativeServer(
+                env.sector || selectedSectorCode,
+                rejection?.error || 'Server rejected unauthorized command.'
+              );
+            } else if (env.opcode === SiegeNetOpcode.S2C_SECTOR_PRESENCE) {
+              const presence = env.payload as { connectedPeersInSector?: number };
+              if (typeof presence?.connectedPeersInSector === 'number') {
+                setSectorPeerCount(Math.max(1, presence.connectedPeersInSector));
+              }
             }
           } catch {
             // Ignore malformed WS frame
@@ -261,6 +273,13 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
         ws.onclose = () => {
           if (!isMounted) return;
           setWsConnected(false);
+          if (reconnectAttempts < 3) {
+            const delayMs = 1000 * 2 ** reconnectAttempts;
+            reconnectAttempts += 1;
+            reconnectTimer = setTimeout(() => {
+              if (isMounted) openWebSocket();
+            }, delayMs);
+          }
         };
 
         ws.onerror = () => {
@@ -270,6 +289,42 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
       } catch {
         setWsConnected(false);
       }
+    };
+
+    const initOnlineSiegeSession = async () => {
+      try {
+        const sessionRes = await fetch('/api/auth/session', { credentials: 'same-origin' });
+        const sessionData = sessionRes.ok
+          ? ((await sessionRes.json()) as { authenticated?: boolean })
+          : null;
+        if (!sessionData?.authenticated) {
+          const idToken = authUser ? await getFreshIdToken() : null;
+          if (idToken) {
+            await fetch('/api/auth/firebase-exchange', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+              },
+              credentials: 'same-origin',
+            });
+          } else {
+            await fetch('/api/auth/player-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                displayName: 'Sovereign Vanguard',
+              }),
+            });
+          }
+        }
+      } catch {
+        // Offline fallback continues cleanly below
+      }
+
+      if (!isMounted) return;
+      openWebSocket();
 
       // Fetch initial multi-region status via REST
       fetch(`/api/online/status?sector=${selectedSectorCode}`, { credentials: 'same-origin' })
@@ -278,6 +333,9 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
           if (!isMounted || !data?.ok) return;
           if (data.sectorState) setSiegeState(data.sectorState);
           if (data.replication) setReplicationSnapshot(data.replication);
+          if (typeof data.connectedWebSocketPeers === 'number') {
+            setSectorPeerCount(Math.max(1, data.connectedWebSocketPeers));
+          }
         })
         .catch(() => {
           // Fallback ticker keeps deterministic 50v50 siege advancing if offline
@@ -301,6 +359,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
 
     return () => {
       isMounted = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       if (fallbackInterval) clearInterval(fallbackInterval);
       if (wsRef.current) {
         wsRef.current.close();
@@ -351,8 +410,9 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
       });
     }
 
+    setLastRejectedReason(null);
     const troopCmd: TroopPositionCommandPacket = {
-      commanderId: 'player-commander-01',
+      commanderId: activeCommanderId,
       cohortId: 0,
       clientSeq: seq,
       targetXQuantized,
@@ -378,7 +438,17 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ sector: selectedSectorCode, troopCmd }),
-      }).catch(() => {});
+      })
+        .then(async (resp) => {
+          if (!resp.ok) {
+            const errData = (await resp.json().catch(() => null)) as { error?: string } | null;
+            await rollbackFromAuthoritativeServer(
+              selectedSectorCode,
+              errData?.error || 'Server authority rejected troop command.'
+            );
+          }
+        })
+        .catch(() => {});
     }
 
     setLastActionBanner(
@@ -388,9 +458,10 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
 
   const handleJoinOrLaunchRally = (action: 'JOIN_RALLY' | 'LAUNCH_NOW') => {
     sound.playUpgradeFanfare();
+    setLastRejectedReason(null);
     const rallyCmd: RallyActionCommandPacket = {
-      commanderId: 'player-commander-01',
-      commanderName: 'Sovereign Vanguard (You)',
+      commanderId: activeCommanderId,
+      commanderName: activeCommanderName,
       commanderRealmIndex: 7,
       allianceTag: playerClanTag,
       action,
@@ -417,7 +488,17 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ sector: selectedSectorCode, rallyCmd }),
-      }).catch(() => {});
+      })
+        .then(async (resp) => {
+          if (!resp.ok) {
+            const errData = (await resp.json().catch(() => null)) as { error?: string } | null;
+            await rollbackFromAuthoritativeServer(
+              selectedSectorCode,
+              errData?.error || 'Server authority rejected rally command.'
+            );
+          }
+        })
+        .catch(() => {});
     }
 
     setLastActionBanner(
@@ -438,8 +519,8 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
         body: JSON.stringify({
           primaryClusterId: clusterId,
           sector: selectedSectorCode,
-          commanderId: 'player-commander-01',
-          commanderName: 'Sovereign Vanguard',
+          commanderId: activeCommanderId,
+          commanderName: activeCommanderName,
           allianceTag: playerClanTag,
           preferredRegion: clusterId,
         }),
@@ -592,6 +673,12 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
               {wsConnected ? 'LIVE 20Hz WEBSOCKET (/ws/siege)' : '20Hz AUTHORITATIVE SIEGE ENGINE'}
             </span>
             <span className="text-slate-300">
+              Peers <strong className="text-cyan-300">{sectorPeerCount}</strong>
+            </span>
+            <span aria-hidden="true" className="text-slate-600">
+              ·
+            </span>
+            <span className="text-slate-300">
               Tick <strong className="text-white">#{siegeState.serverTick}</strong> (50ms)
             </span>
             <span aria-hidden="true" className="text-slate-600">
@@ -603,7 +690,7 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
             <span aria-hidden="true" className="text-slate-600">
               ·
             </span>
-            <span className="text-emerald-300">
+            <span className={lastRejectedReason ? 'text-rose-300 font-bold' : 'text-emerald-300'}>
               Delta {lastDeltaBytes.compressed}B / {lastDeltaBytes.raw}B · CSP {cspModeLabel}
             </span>
           </div>
