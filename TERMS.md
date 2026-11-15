@@ -6,16 +6,16 @@ Please read these Terms and Conditions ("Terms") carefully before downloading, r
 
 ---
 
-## 1. Acceptance of Terms
+## 1. Acceptance of Terms & EULA
 
-By downloading, creating an account, accessing, or using the App, you agree to be bound by these Terms and our [Privacy Policy](./PRIVACY.md). If you do not agree to these Terms, do not access or use the App.
+By downloading, creating an account, accessing, or using the App, you agree to be bound by these Terms, our [End User License Agreement (`EULA.md`)](./EULA.md), and our [Privacy Policy (`PRIVACY.md`)](./PRIVACY.md). If you do not agree to these Terms or the EULA, do not access or use the App.
 
 ---
 
 ## 2. License
 
-- **Application Usage License:** Subject to your strict compliance with these Terms, we grant you a revocable, non-exclusive, non-transferable, limited license to access and use the App for your personal, non-commercial entertainment purposes.
-- **Open-Source Code License:** Where applicable, the underlying source code in the public repository is licensed under the [Apache License 2.0](./LICENSE).
+- **Application Usage License & EULA:** Subject to your strict compliance with these Terms and the [End User License Agreement (`EULA.md`)](./EULA.md), we grant you a revocable, non-exclusive, non-transferable, limited license to access and use the App for your personal, non-commercial entertainment purposes.
+- **Open-Source Code License:** Where applicable, the underlying source code in the public repository is licensed under the [Apache License 2.0](./LICENSE) and [`LICENSE.md`](./LICENSE.md).
 
 ---
 

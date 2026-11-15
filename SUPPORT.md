@@ -37,6 +37,7 @@ Before opening a ticket or GitHub issue, check our comprehensive documentation s
 - **[`ROADMAP.md`](./ROADMAP.md)** — Upcoming milestones (`v1.5.0` WebSocket 50v50 sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU compute).
 - **[`CONTRIBUTING.md`](./CONTRIBUTING.md)** — Developer setup, coding standards, and Pull Request workflow.
 - **[`GOVERNANCE.md`](./GOVERNANCE.md)** — Project roles, RBAC clearance hierarchy, and RFC decision-making process.
+- **[`EULA.md`](./EULA.md)** & **[`TERMS.md`](./TERMS.md)** — End User License Agreement (`v1.5.0-2026-11-15`) and Terms of Use.
 - **[`CHANGELOG.md`](./CHANGELOG.md)** — Version history and technical release notes.
 
 ---
@@ -45,7 +46,7 @@ Before opening a ticket or GitHub issue, check our comprehensive documentation s
 
 ### Q1: My Daily Login streak or VIP Subscription state needs to be reset locally.
 
-Game state is persisted in your browser's `localStorage` under deterministic keys (`voxel_realms_daily_login_v1`, `voxel_realms_vip_subscription_v1`, `voxel_rpg_sound_muted`).
+Game state is persisted in your browser's `localStorage` under deterministic keys (`voxel_realms_daily_login_v1`, `voxel_realms_vip_subscription_v1`, `voxel_realms_eula_acceptance_v1`, `voxel_rpg_sound_muted`).
 
 - **Fix:** Clear site data in your browser DevTools (`Application -> Local Storage`) or use the **GM / Admin Console** (`Godmode & Cheats` tab) to restore castle levels, resources, and troop cohorts immediately.
 
@@ -55,7 +56,7 @@ Game state is persisted in your browser's `localStorage` under deterministic key
 
 ### Q3: Running unit tests with `node --test` fails on TypeScript imports.
 
-- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` across all 26 suites / 157 tests) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
+- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` across all 27 suites / 161 tests) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
 
 ### Q4: How do I switch my character's Species after initial creation or command the 100 Omniverse Background NPCs?
 

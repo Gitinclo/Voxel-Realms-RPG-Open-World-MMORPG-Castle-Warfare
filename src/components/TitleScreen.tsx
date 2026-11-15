@@ -16,6 +16,7 @@ import {
   LogOut,
   RefreshCw,
   Mail,
+  Scale,
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
@@ -33,6 +34,7 @@ interface TitleScreenProps {
   onOpenLoreHistory?: () => void;
   onOpenCosmologicalAdmin?: () => void;
   onOpenGmail?: () => void;
+  onOpenEula?: () => void;
   authUserEmail?: string | null;
   authLoading?: boolean;
   isSyncingAccount?: boolean;
@@ -55,6 +57,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenLoreHistory,
   onOpenCosmologicalAdmin,
   onOpenGmail,
+  onOpenEula,
   authUserEmail = null,
   authLoading = false,
   isSyncingAccount = false,
@@ -175,6 +178,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             >
               <Mail className="w-4 h-4 text-amber-400" />
               <span>Gmail</span>
+            </button>
+          )}
+
+          {onOpenEula && (
+            <button
+              type="button"
+              data-testid="title-eula-btn"
+              onClick={onOpenEula}
+              className="px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-800/85 border border-amber-400/40 text-xs font-bold text-amber-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title="Open End User License Agreement (EULA v1.5.0 · 15/11/2026)"
+            >
+              <Scale className="w-4 h-4 text-amber-400" />
+              <span>EULA</span>
             </button>
           )}
 

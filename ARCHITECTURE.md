@@ -40,15 +40,16 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/serverAuth.ts        (Server-only HMAC-SHA256 Auth & RBAC)     │
 │  • src/game/serverHardening.ts   (Rate Limits, CSRF, Brute-Force, WS Caps)   │
 │  • src/game/serverPersistence.ts (Atomic fsync+rename + SHA-256 .bak Saves)  │
+│  • src/game/eula.ts              (10-Article EULA, FNV-1a Receipt & Consent) │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **157 unit, MIME, and Firestore security-rule tests across 26 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **161 unit, MIME, EULA, and Firestore security-rule tests across 27 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
-- **Route/Modal Code Splitting**: `src/App.tsx` keeps `GameCanvas`, `GameHUD`, and `TitleScreen` eager while lazy-loading all 18 conditional overlay modals via `React.lazy` + `<Suspense fallback={null}>`, paired with `vite.config.ts` Rolldown `manualChunks` (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-motion`, `vendor-icons`, `vendor-react`) and `GoogleSignInButton.tsx` extraction to reduce the entry JS bundle to `~475 kB` (`~151 kB` gzip).
+- **Route/Modal Code Splitting**: `src/App.tsx` keeps `GameCanvas`, `GameHUD`, and `TitleScreen` eager while lazy-loading all 19 conditional overlay modals via `React.lazy` + `<Suspense fallback={null}>`, paired with `vite.config.ts` Rolldown `manualChunks` (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-motion`, `vendor-icons`, `vendor-react`) and `GoogleSignInButton.tsx` extraction to reduce the entry JS bundle to `~475 kB` (`~151 kB` gzip).
 
 ---
 
@@ -75,7 +76,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── ClanModal.tsx            # Alliance vault, 9-sector war map, co-op boss, emblem studio
 │   │   ├── VipSubscriptionModal.tsx # VIP Covenant tiers, daily stipends & loyalty progression
-│   │   └── ...                      # 18 conditional modals lazy-loaded via React.lazy in App.tsx
+│   │   ├── EulaModal.tsx            # Interactive 10-Article EULA & FNV-1a Acceptance Receipt Modal
+│   │   └── ...                      # 19 conditional modals lazy-loaded via React.lazy in App.tsx
 │   ├── contexts/
 │   │   └── AuthContext.tsx          # Firebase Auth Google Sign-In + in-memory Gmail OAuth access token
 │   ├── db/
@@ -90,7 +92,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   └── gmail.ts                 # Pure RFC 2822 MIME builders, UTF-8 Base64URL & Gmail REST v1 helpers
 │   ├── middleware/
 │   │   └── auth.ts                  # Express `requireAuth` Bearer Firebase ID token middleware
-│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (24 suites)
+│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (25 suites)
 │   ├── types/
 │   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, species)
 │   │   └── cultivation.ts           # Four-Path realms, manuals, disciples, karma types
@@ -204,7 +206,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **157 automated tests across 26 suites** (`24` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **161 automated tests across 27 suites** (`25` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

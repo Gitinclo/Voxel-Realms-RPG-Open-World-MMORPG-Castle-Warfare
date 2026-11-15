@@ -113,6 +113,9 @@ const CosmologicalAdminModal = lazy(() =>
 const GmailModal = lazy(() =>
   import('./components/GmailModal').then((m) => ({ default: m.GmailModal }))
 );
+const EulaModal = lazy(() =>
+  import('./components/EulaModal').then((m) => ({ default: m.EulaModal }))
+);
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -189,6 +192,14 @@ import {
   buildDynamicMonsterCodexEntry,
 } from './game/loreHistory';
 
+import {
+  EULA_STORAGE_KEY,
+  EulaAcceptanceState,
+  acceptEulaVersion,
+  createInitialEulaAcceptanceState,
+  revokeEulaAcceptance,
+} from './game/eula';
+
 type ActiveModal =
   | 'none'
   | 'castle'
@@ -208,7 +219,8 @@ type ActiveModal =
   | 'vip_subscription'
   | 'lore_history'
   | 'cosmological_admin'
-  | 'gmail';
+  | 'gmail'
+  | 'eula';
 
 export default function App() {
   const {
@@ -386,6 +398,27 @@ export default function App() {
   const [godmode, setGodmode] = useState<boolean>(false);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
   const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
+  const [eulaState, setEulaState] = useState<EulaAcceptanceState>(() => {
+    try {
+      const raw =
+        typeof window !== 'undefined' ? window.localStorage.getItem(EULA_STORAGE_KEY) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<EulaAcceptanceState>;
+        if (typeof parsed.accepted === 'boolean' && typeof parsed.acceptedByEmail === 'string') {
+          return {
+            accepted: parsed.accepted,
+            acceptedVersion: parsed.acceptedVersion ?? null,
+            acceptedAtIso: parsed.acceptedAtIso ?? null,
+            acceptedByEmail: parsed.acceptedByEmail,
+            receiptHash: parsed.receiptHash ?? null,
+          };
+        }
+      }
+    } catch {
+      // ignore localStorage read errors
+    }
+    return createInitialEulaAcceptanceState(PRIMARY_ADMIN_EMAIL);
+  });
   const [moderatedPlayers, setModeratedPlayers] =
     useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
@@ -2163,6 +2196,7 @@ export default function App() {
           onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onOpenGmail={() => setActiveModal('gmail')}
+          onOpenEula={() => setActiveModal('eula')}
           authUserEmail={authUser?.email ?? null}
           authLoading={authLoading}
           isSyncingAccount={isSyncingAccount}
@@ -2220,6 +2254,7 @@ export default function App() {
           onOpenLoreHistory={() => setActiveModal('lore_history')}
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onOpenGmail={() => setActiveModal('gmail')}
+          onOpenEula={() => setActiveModal('eula')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
@@ -2628,6 +2663,35 @@ export default function App() {
             castleLevel={castleLevel}
             allianceTag={clan.tag || 'SOL'}
             activeAccountEmail={activeAccountEmail}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
+
+        {activeModal === 'eula' && (
+          <EulaModal
+            eulaState={eulaState}
+            activeAccountEmail={activeAccountEmail}
+            onAcceptEula={() => {
+              const next = acceptEulaVersion(activeAccountEmail);
+              setEulaState(next);
+              try {
+                window.localStorage.setItem(EULA_STORAGE_KEY, JSON.stringify(next));
+              } catch {
+                // ignore storage write errors
+              }
+              sound.playUpgradeFanfare();
+              setToastMessage(`📜 EULA Accepted (${next.receiptHash}) for ${next.acceptedByEmail}`);
+            }}
+            onRevokeEula={() => {
+              const next = revokeEulaAcceptance(activeAccountEmail);
+              setEulaState(next);
+              try {
+                window.localStorage.setItem(EULA_STORAGE_KEY, JSON.stringify(next));
+              } catch {
+                // ignore storage write errors
+              }
+              setToastMessage('⚠️ EULA Acceptance Reset — Review & Accept EULA');
+            }}
             onClose={() => setActiveModal('none')}
           />
         )}

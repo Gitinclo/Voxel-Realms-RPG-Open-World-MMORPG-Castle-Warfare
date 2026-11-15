@@ -31,6 +31,7 @@ import {
   BookOpen,
   GitBranch,
   Mail,
+  Scale,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -69,6 +70,7 @@ interface GameHUDProps {
   onOpenLoreHistory?: () => void;
   onOpenCosmologicalAdmin?: () => void;
   onOpenGmail?: () => void;
+  onOpenEula?: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
@@ -118,6 +120,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onOpenLoreHistory,
   onOpenCosmologicalAdmin,
   onOpenGmail,
+  onOpenEula,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
@@ -292,6 +295,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   >
                     <GitBranch className="w-2.5 h-2.5 text-cyan-400" />
                     <span>6-Tier D3</span>
+                  </button>
+                )}
+                {onOpenEula && (
+                  <button
+                    type="button"
+                    data-testid="hud-eula-btn"
+                    onClick={() => {
+                      sound.playSwing();
+                      onOpenEula();
+                    }}
+                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-200 border border-amber-400/50 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                    title="Open End User License Agreement (EULA v1.5.0 · 15/11/2026)"
+                  >
+                    <Scale className="w-2.5 h-2.5 text-amber-400" />
+                    <span>EULA</span>
                   </button>
                 )}
               </div>
