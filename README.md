@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-162_Passing_(27_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-168_Passing_(28_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/openWorld3DEngine.ts)
@@ -58,8 +58,9 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
   - **Justice Bounties & Full Loot Drop**: Red names are marked globally on the map and suffer equipment drop penalties upon defeat.
 - **Master & Disciple Hierarchy**:
   - Proximity cultivation speed buffs for disciples, configurable Spirit Stone taxation (`5%–20%`), and Skill Scroll transmission.
-- **Visualizing Power (3D Aura System & Hero Skins)**:
+- **Visualizing Power (3D Aura System, Hero Skins & MMORPG Avatars, Clones & Shadows)**:
   - Dynamic 3D scene-graph cues: Foundation White Glow, revolving Golden Core, floating Nascent Soul avatar, and Dao Creator halo rings, plus customizable Hero Skins & Particle Auras (`src/game/heroSkins.ts`).
+  - **Open-World MMORPG Avatars, Clones & Shadows (`src/game/avatarCloneShadow.ts`, `HeroModal.tsx`)**: Full implementation of the 4-row **Key Differences Matrix (`Clone` vs. `Shadow` vs. `Avatar`)**, **3 Clone Subtypes** (_Tactical Illusion Decoys_ [`0%` DMG, `3.5x` aggro, cyan `#38bdf8` silhouette], _Primordial Spirit Combat Clones_ [`35%` PvE / `20%` PvP DMG, `40%` HP], and _Cosmetic Clone Avatars_ [`+12%` Cultivation Speed & `+8%` Troop ATK while adopting another outfit's look]), **3 Shadow Subtypes** (_Umbral Action Mimics & Teleport Markers_, _3.0s Chrono-Ruin Time Echoes_, and _Heart-Demon Dark Doppelgänger Bosses_ with smoky `#7c3aed` silhouettes), and **50-Player Raid Network Guardrails** (`<= 3` clones/avatar = `200` total tracked entities using `8-byte` relative `int16` delta packets inside the `20Hz` / `50ms` tick budget).
 
 ### 5. 🧠 Advanced World AI (Monsters Lv. 1–1000 & Role-Based NPCs)
 
@@ -528,7 +529,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **162 unit, security, and regression tests across 27 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **168 unit, security, and regression tests across 28 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -551,10 +552,11 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`162/162 Passing` across 27 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`168/168 Passing` across 28 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
+- **`avatarCloneShadow.test.ts`**: Verifies the 4-row `Clone` vs. `Shadow` vs. `Avatar` comparison matrix, Tactical Illusion / Combat Summon / Cosmetic Clone Avatar subtypes, Umbral Action Mimics, 3.0s Time Echoes, Dark Doppelgänger Bosses, instant Shadow Swap teleportation, per-Avatar duplication caps (`<=3` clones, `<=2` shadows), and 50-player Raid 200-entity `int16` delta-packet compression within the `20Hz` (`50ms`) server tick budget.
 - **`openWorld3DEngine.test.ts`**: Verifies deterministic 2D/3D/4D `simplex-noise` multi-octave fBm biome & subterranean cavern synthesis, `three-mesh-bvh` (`MeshBVH`, `acceleratedRaycast`) O(log N) 3D picking & tree disposal, `cannon-es` rigid-body siege artillery trajectory & Citadel keep collision resolution, and `@tweenjs/tween.js` camera orbit interpolation.
 - **`architectOptimization.test.ts`**: Verifies `15/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
 - **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
@@ -573,7 +575,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **97 invariants** across Root RBAC, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **100 invariants** across Root RBAC, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
@@ -592,7 +594,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 162 TypeScript unit, Gmail MIME, EULA/Legal & Firestore rule tests (27 suites)
+npm test                      # 4. Run all 168 TypeScript unit, Gmail MIME, EULA/Legal & Firestore rule tests (28 suites)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -611,7 +613,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)       | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                 | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)               | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 162 automated unit/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 168 automated unit/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -633,7 +635,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 162 unit, security, EULA/Legal, and Firestore rule tests across 27 TypeScript test suites
+- [x] `npm test` passes all 168 unit, security, EULA/Legal, and Firestore rule tests across 28 TypeScript test suites
 - [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile

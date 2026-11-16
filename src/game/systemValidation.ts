@@ -80,6 +80,12 @@ import {
 } from './eula';
 import { AntiCheatGuard, sanitizeCloudProfilePatch } from './antiCheat';
 import { OpenWorldSimplexGenerator, buildSceneBVHTrees } from './openWorld3DEngine';
+import {
+  AVATAR_CLONE_SHADOW_COMPARISON_MATRIX,
+  CLONE_SUBTYPE_CATALOG,
+  SHADOW_SUBTYPE_CATALOG,
+  evaluateRaidDuplicationServerLoad,
+} from './avatarCloneShadow';
 
 export type ValidationPillarId =
   | 'rbac_root_authority'
@@ -575,6 +581,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
   const simplexBiome = new OpenWorldSimplexGenerator(20261115);
   const sampleTerrain = simplexBiome.sampleTerrain(12, -8);
   const bvhBuiltCount = buildSceneBVHTrees(testScene);
+  const raidDupAudit = evaluateRaidDuplicationServerLoad(50, 3, 0);
 
   const p9Passed =
     transparency.totalEntries === 8 &&
@@ -595,19 +602,25 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     strikeResult.quarantinedNow &&
     profileAudit.flaggedViolations.length >= 2 &&
     typeof sampleTerrain.elevationMeters === 'number' &&
-    bvhBuiltCount > 0;
+    bvhBuiltCount > 0 &&
+    AVATAR_CLONE_SHADOW_COMPARISON_MATRIX.length === 4 &&
+    CLONE_SUBTYPE_CATALOG.length === 3 &&
+    SHADOW_SUBTYPE_CATALOG.length === 3 &&
+    raidDupAudit.totalTrackedEntities === 200 &&
+    raidDupAudit.withinTickBudget;
 
   pillars.push({
     id: 'engineering_transparency_and_live_webgl_pipeline',
     title:
-      '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode, Anti-Cheat & 3D BVH/WebGL2',
+      '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow & 3D BVH/WebGL2',
     passed: p9Passed,
-    assertionsPassed: 15,
-    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + 3D BVH/Simplex + Three.js WebGL2 mutations.`,
+    assertionsPassed: 18,
+    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + Avatar/Clone/Shadow 200-Entity Raid Sync + 3D BVH/Simplex + Three.js WebGL2 mutations.`,
     verifiedInvariants: [
       `Explicit 3-Tier Scope Matrix: ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated Models, ${transparency.plannedCount} Planned`,
       'Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol (/ws/siege), HMAC-SHA256 Server RBAC (/api/auth/*, /api/admin/*), CohortDirtyBit delta-compression & 128-frame CSP ring buffer',
       'Authoritative Multiplayer Anti-Cheat Engine (src/game/antiCheat.ts) enforces teleport/speed-hack rubberbanding, monotonic seq replay guards, economy delta caps & quarantine',
+      'MMORPG Avatar, Clone & Shadow Engine (src/game/avatarCloneShadow.ts) enforces 4-row Comparison Matrix, 3 Clone subtypes, 3 Shadow subtypes & 50-player Raid 200-entity delta sync',
       '3D Open-World Engine (src/game/openWorld3DEngine.ts) integrates three-mesh-bvh O(log N) raycasting, simplex-noise fBm biomes, cannon-es rigid-body physics & @tweenjs/tween.js camera interpolation',
       'Multi-Region Persistence Quorum across 3 regional clusters (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1)',
       'Live WebGL2 applyCrossPlatformPipeline mutates THREE.LOD distances, InstancedMesh.count (800 vs 320) & material normalScale/bumpScale',

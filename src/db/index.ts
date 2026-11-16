@@ -3,12 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './schema.ts';
 
 declare global {
   var _postgresPool: Pool | undefined;
+  var _drizzleDb: NodePgDatabase<typeof schema> | undefined;
 }
 
 export const createPool = () => {
@@ -29,6 +30,17 @@ export const createPool = () => {
   return global._postgresPool;
 };
 
-const pool = createPool();
+export const getDb = (): NodePgDatabase<typeof schema> => {
+  if (!global._drizzleDb) {
+    global._drizzleDb = drizzle(createPool(), { schema });
+  }
+  return global._drizzleDb;
+};
 
-export const db = drizzle(pool, { schema });
+export const db: NodePgDatabase<typeof schema> = new Proxy({} as NodePgDatabase<typeof schema>, {
+  get(_target, prop, receiver) {
+    const instance = getDb();
+    const value = Reflect.get(instance, prop, receiver);
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});

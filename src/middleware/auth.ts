@@ -4,8 +4,8 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { DecodedIdToken } from 'firebase-admin/auth';
-import { adminAuth } from '../lib/firebase-admin.ts';
+import type { DecodedIdToken } from 'firebase-admin/auth';
+import { getAdminAuth } from '../lib/firebase-admin.ts';
 
 export interface AuthRequest extends Request {
   user?: DecodedIdToken;
@@ -24,6 +24,7 @@ export async function verifyFirebaseBearerToken(
   }
 
   try {
+    const adminAuth = await getAdminAuth();
     const decoded = await adminAuth.verifyIdToken(token);
     if (!decoded?.uid) {
       return { ok: false, error: 'Unauthorized: Invalid token subject' };

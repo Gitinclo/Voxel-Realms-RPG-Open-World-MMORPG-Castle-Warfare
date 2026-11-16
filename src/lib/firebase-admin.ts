@@ -3,14 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import type { Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-if (!getApps().length) {
-  initializeApp({
-    projectId: firebaseConfig.projectId,
-  });
-}
+let cachedAdminAuth: Auth | null = null;
 
-export const adminAuth = getAuth();
+export async function getAdminAuth(): Promise<Auth> {
+  if (cachedAdminAuth) {
+    return cachedAdminAuth;
+  }
+  const [{ initializeApp, getApps }, { getAuth }] = await Promise.all([
+    import('firebase-admin/app'),
+    import('firebase-admin/auth'),
+  ]);
+  if (!getApps().length) {
+    initializeApp({
+      projectId: firebaseConfig.projectId,
+    });
+  }
+  cachedAdminAuth = getAuth();
+  return cachedAdminAuth;
+}

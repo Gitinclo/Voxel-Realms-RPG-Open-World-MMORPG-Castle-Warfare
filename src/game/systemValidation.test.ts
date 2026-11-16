@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.equal(report.totalAssertionsPassed, 97);
+  assert.equal(report.totalAssertionsPassed, 100);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -26,7 +26,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   }
 });
 
-test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus, EULA v1.5.0, 10-Agreement Legal Stack, Anti-Cheat, 3D BVH & 20Hz Siege Netcode', () => {
+test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus, EULA v1.5.0, 10-Agreement Legal Stack, Anti-Cheat, Avatar/Clone/Shadow, 3D BVH & 20Hz Siege Netcode', () => {
   const report = runFullSystemValidationReport();
   const rbacPillar = report.pillars.find((p) => p.id === 'rbac_root_authority');
   const cosmologyPillar = report.pillars.find(
@@ -79,6 +79,11 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
   assert.ok(
     transparencyPillar.verifiedInvariants.some((inv) =>
       inv.includes('Authoritative Multiplayer Anti-Cheat Engine')
+    )
+  );
+  assert.ok(
+    transparencyPillar.verifiedInvariants.some((inv) =>
+      inv.includes('MMORPG Avatar, Clone & Shadow Engine')
     )
   );
   assert.ok(

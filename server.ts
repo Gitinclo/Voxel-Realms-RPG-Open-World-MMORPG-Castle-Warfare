@@ -301,7 +301,6 @@ async function startServer() {
   app.use((req, res, next) => {
     opsCounters.httpRequestsTotal += 1;
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     if (req.path.startsWith('/api/')) {
       res.setHeader('Cache-Control', 'no-store');
@@ -1978,16 +1977,46 @@ async function startServer() {
   // ==========================================================================
   // VITE MIDDLEWARE (DEV) OR STATIC ASSET SERVING (PRODUCTION)
   // ==========================================================================
+  const distPath = path.join(ROOT_DIR, 'dist');
+  const distIndexPath = path.join(distPath, 'index.html');
+  let viteMiddlewares: express.RequestHandler | null = null;
+  let viteReadyPromise: Promise<void> | null = null;
+
   if (!securityConfig.isProduction) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+    process.env.DISABLE_HMR = process.env.DISABLE_HMR || 'true';
+    viteReadyPromise = (async () => {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: {
+          middlewareMode: true,
+          hmr: false,
+          watch: null,
+        },
+        appType: 'spa',
+      });
+      viteMiddlewares = vite.middlewares;
+    })();
+
+    app.use(async (req, res, next) => {
+      if (req.path.startsWith('/api/')) {
+        next();
+        return;
+      }
+      if (!viteMiddlewares && viteReadyPromise) {
+        try {
+          await viteReadyPromise;
+        } catch (err) {
+          next(err);
+          return;
+        }
+      }
+      if (viteMiddlewares) {
+        viteMiddlewares(req, res, next);
+        return;
+      }
+      next();
     });
-    app.use(vite.middlewares);
   } else {
-    const distPath = path.join(ROOT_DIR, 'dist');
-    const distIndexPath = path.join(distPath, 'index.html');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       if (req.path.startsWith('/api/')) {
@@ -2050,11 +2079,19 @@ async function startServer() {
   process.once('SIGTERM', () => performGracefulShutdown('SIGTERM'));
   process.once('SIGINT', () => performGracefulShutdown('SIGINT'));
 
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(
-      `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Atomic Persistence listening on http://0.0.0.0:${PORT}`
-    );
+  // Bind port 3000 immediately so health/readiness probes succeed without waiting for Vite cold scan
+  await new Promise<void>((resolve) => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
+      console.log(
+        `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Atomic Persistence listening on http://0.0.0.0:${PORT}`
+      );
+      resolve();
+    });
   });
+
+  if (viteReadyPromise) {
+    await viteReadyPromise;
+  }
 }
 
 startServer();
