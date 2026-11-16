@@ -10,7 +10,9 @@
 - **Authoritative 20Hz 50v50 Siege Server** (`/ws/siege`, `siegeNetProtocol.ts`) & **Multi-Region Quorum**
 - **Authoritative Multiplayer Anti-Cheat** (`antiCheat.ts`, quarantine + pardon API)
 - **MMORPG Avatar, Clones & Shadows Console** (`avatarCloneShadow.ts`, `HeroModal.tsx`)
+- **Supreme Creator Max-Out God Character & 12-Domain All-Things Immunity** (`godModeCharacter.ts`, fail-closed for `creatergame31@gmail.com`)
+- **In-Game Economy & Marketplace Specification** ([`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md), `BigInt` ledgers, `5%` auction escrow levy & zero-loss Creator immunity)
 - **3D BVH Raycasting, Simplex Noise Biomes, Cannon-es Physics & Tween Camera** (`openWorld3DEngine.ts`)
 - **Cloud SQL Drizzle Persistence (`/api/db/*`) + Firebase ID Verification + Hardened Firestore Rules**
 - **Complete 10-Article EULA & 10-Agreement Legal Compliance Stack** (`EULA.md`, `LEGAL.md`, `EulaModal.tsx`)
-- **29+ Core Docs, Operational Runbooks & Engineering Playbooks**
+- **214 Markdown Documentation Files, 171 Automated Tests (29 Suites) & 103 System Invariants**
