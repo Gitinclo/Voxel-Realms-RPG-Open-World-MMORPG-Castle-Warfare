@@ -65,7 +65,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 | `npm run format`               | Formats the entire repository consistently using Prettier (`prettier --write .`)                                                                     |
 | `npm run format:check`         | Verifies code style compliance via Prettier (`prettier --check .`)                                                                                   |
 | `npm audit --audit-level=high` | Scans dependencies against known security vulnerabilities and deprecated packages                                                                    |
-| `npm test`                     | Runs Node's test runner across all 27 pure game logic, EULA/Legal, MIME, security, anti-cheat, persistence, netcode, 3D & rules suites (`162` tests) |
+| `npm test`                     | Runs Node's test runner across all 28 pure game logic, EULA/Legal, MIME, security, anti-cheat, persistence, netcode, 3D & rules suites (`168` tests) |
 | `npm run test:rules`           | Runs the standalone Dirty Dozen static & structural Firestore security rules test suite (`firestore.rules.test.ts`)                                  |
 | `npm run verify:ops`           | Runs live production server load, exploit/`/api/db/*` `401` checks, truncated-save `.bak` crash recovery & `SIGTERM` verification                    |
 | `npm run validate`             | Runs the full 5-stage validation gate (`lint` + `lint:rules` + `format:check` + `test` + `build`)                                                    |
@@ -98,10 +98,11 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   └── ...                     # 19 conditional modals lazy-loaded via React.lazy in App.tsx
 │   ├── contexts/             # AuthContext (Firebase Google Sign-In & in-memory Gmail OAuth)
 │   ├── db/                   # Cloud SQL PostgreSQL pg.Pool (SQL_HOST/SQL_USER/SQL_PASSWORD/SQL_DB_NAME) + Drizzle ORM
-│   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites (25 suites)
+│   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites (26 suites)
 │   │   ├── adminModeration.ts      # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── antiCheat.ts            # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
 │   │   ├── architectOptimization.ts# 15/11/2026 Software & Hardware Architect optimization engine
+│   │   ├── avatarCloneShadow.ts    # MMORPG Avatar, Clone (Tactical/Combat/Cosmetic) & Shadow (Mimic/Echo/Boss) engine
 │   │   ├── clanMath.ts             # Clan buffs, vault rations & 9-sector outpost math
 │   │   ├── cosmologicalTreeD3.ts   # Pure D3 hierarchy layout & radial/horizontal projection engine
 │   │   ├── cultivationMath.ts      # 4 paths, 100x realm suppression, karma & disciples
@@ -119,7 +120,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   ├── serverPersistence.ts    # Atomic fsync+rename + SHA-256 .bak realm saves
 │   │   ├── siegeNetProtocol.ts     # Authoritative 20Hz 50v50 WebSocket Siege, Delta, CSP & Multi-Region Engine
 │   │   ├── species.ts              # 10-Species catalog, 3D mesh specs & Admin switch permission gate
-│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (97 checks)
+│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (100 checks)
 │   │   ├── troopTraining.ts        # Real-time troop training queue & speedup math
 │   │   ├── vipSubscription.ts      # VIP tiers, discounts & feature access gates
 │   │   ├── weather.ts              # Weather cycle & gathering/combat multipliers
@@ -239,7 +240,7 @@ Every push and Pull Request must pass both our **Web/TypeScript Guardrails** and
 1. **The Linter (`npm run lint && npm run lint:rules`)**: Enforces strict TypeScript compilation (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`) plus ESLint auditing of `firestore.rules`. Any unused variable, dead import, rule anti-pattern, or type mismatch immediately fails the build.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Blocks outdated or vulnerable third-party packages.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting (`.prettierrc`) so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Executes all **162 automated tests across 27 suites** (`25` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`) to ensure new features never break existing systems.
+4. **The Regression & Security Test Suite (`npm test`)**: Executes all **168 automated tests across 28 suites** (`26` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`) to ensure new features never break existing systems.
 
 #### B. C++20 Engine Guardrail Stack (`cpp20-guardrails` job)
 
@@ -272,7 +273,7 @@ Tools catch syntax and formatting issues, while disciplined prompting preserves 
    npm run lint:rules            # 2. Validate Cloud Firestore security rules
    npm audit --audit-level=high  # 3. Check for vulnerable/deprecated packages
    npx prettier --check .        # 4. Verify consistent code formatting (or run `npm run format`)
-   npm test                      # 5. Run all 162 automated tests across 27 suites
+   npm test                      # 5. Run all 168 automated tests across 28 suites
    npm run build                 # 6. Verify code-split production bundle compiles cleanly
    ```
 

@@ -337,7 +337,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **162 automated tests across 27 suites** (`25` engine/security/netcode/anti-cheat/3D-physics/EULA-legal suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
+Execute all **168 automated tests across 28 suites** (`26` engine/security/netcode/anti-cheat/3D-physics/avatar-clone-shadow/EULA-legal suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -410,7 +410,7 @@ npm run preview       # Preview production build locally
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
 │   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 25 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 26 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
@@ -418,6 +418,8 @@ npm run preview       # Preview production build locally
 │   │   ├── architectOptimization.ts   # 15/11/2026 Software & Hardware Architect optimization engine
 │   │   ├── architectOptimization.test.ts # CPU ISA, GPU, TDP, SoA memory & Lock-Free Job unit tests
 │   │   ├── audio.ts                   # Procedural Web Audio API sound FX synthesizer
+│   │   ├── avatarCloneShadow.ts       # MMORPG Avatar, Clone (Tactical/Combat/Cosmetic) & Shadow (Mimic/Echo/Boss) engine
+│   │   ├── avatarCloneShadow.test.ts  # 4-row Comparison Matrix, Shadow Swap & 50-player Raid 200-entity delta tests
 │   │   ├── clanMath.ts                # Clan buffs, vault rations & outpost assault math
 │   │   ├── clanMath.test.ts           # Clan math unit tests
 │   │   ├── cosmologicalTreeD3.ts      # Pure D3 hierarchy layout & radial/horizontal projection engine
@@ -454,7 +456,7 @@ npm run preview       # Preview production build locally
 │   │   ├── siegeNetProtocol.test.ts   # 20Hz Siege Protocol, BigInt wire, 128-frame CSP & Quorum unit tests
 │   │   ├── species.ts                 # 10-Species catalog, 3D mesh specs & Admin switch permission gate
 │   │   ├── species.test.ts            # 10-Species catalog, 3D stature bounds & Admin permission unit tests
-│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (97 invariants)
+│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (100 invariants)
 │   │   ├── systemValidation.test.ts   # Cross-System Validation & Integrity unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
@@ -688,6 +690,16 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **[Project Governance (`GOVERNANCE.md`)](./GOVERNANCE.md)** — Decision-making structure, RBAC clearance hierarchy (`Lv. 999` Root Owner down to `Lv. 1`), and Architect-First RFC workflow.
 - **[System Architecture (`ARCHITECTURE.md`)](./ARCHITECTURE.md)** — Technical deep-dive into the Functional Core / Imperative Shell pattern, `BigInt` trillion-scale math, A\* pathfinding, and 3D PBR rendering.
 - **[Contributing Guide (`CONTRIBUTING.md`)](./CONTRIBUTING.md)** — How to set up the repo, run tests, and submit Pull Requests.
+
+### Operational Runbooks, Engineering Discipline & QA Playbooks
+
+- **[Engineering Discipline & Anti-Spaghetti Constitution (`discipline.md`)](./discipline.md)** — Functional Core / Imperative Shell boundaries, Architect-First pre-flight rules, 3–4 feature refactor cadence, `BigInt` precision, Three.js WebGL2 disposal, and C++20 smart-pointer guardrails.
+- **[Deployment Validation Runbook (`deployment validation.md`)](./deployment%20validation.md)** — 4-stage pre-deploy, live ops harness (`npm run verify:ops`), Cloud SQL / Firestore rules sync, and post-deploy smoke & rollback criteria.
+- **[Observability, Telemetry & Monitoring Runbook (`monitoring.md`)](./monitoring.md)** — Live `/healthz`, `/readyz`, `/api/ops/readiness`, `/api/online/status`, and `/api/online/anti-cheat` probes, Four Golden Signals, `20Hz` (`50ms`) siege tick latency SLOs, and `securityAuditLog` events.
+- **[Backup, Persistence & Disaster Recovery Runbook (`backups.md`)](./backups.md)** — RPO/RTO matrix, `AtomicRealmPersistence` (`.tmp` → `fsync` → SHA-256 `.bak` → POSIX rename), Cloud SQL `pg_dump`/`pg_restore`, and Firestore GCS export/import drills.
+- **[Environment, Runtime & Infrastructure Hardening (`environment hardening.md`)](./environment%20hardening.md)** — Fail-closed production secret validation (`VOXEL_SESSION_SECRET`, `VOXEL_ADMIN_PASSKEY`), `HttpOnly` HMAC-SHA256 cookies, CSRF/prototype-pollution defenses, RFC 6455 WebSocket bounds, and zero-trust `firestore.rules`.
+- **[Real-World QA & Acceptance Playbook (`real-world QA.md`)](./real-world%20QA.md)** — Hardware GPU vs. Mobile ASTC vs. Software WebGL2 device matrix, end-to-end functional scenarios (including Avatar/Clone/Shadow & 50v50 Siege), and adversarial/network-jitter playbooks.
+- **[Incident Response, Quarantine & Recovery Runbook (`incident response.md`)](./incident%20response.md)** — `SEV-1`–`SEV-4` triage SLAs, live recovery playbooks, GM anti-cheat quarantine pardons, emergency secret rotation, and blameless post-mortem template.
 
 ### Automation & GitHub Templates (`.github/`)
 

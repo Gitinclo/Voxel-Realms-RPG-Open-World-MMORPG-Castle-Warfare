@@ -71,10 +71,10 @@ All Four-Path Cultivation math is 100% decoupled from React UI state in [`src/ga
 # Run only the Four-Path Cultivation unit test suite
 npx tsx --test src/game/cultivationMath.test.ts
 
-# Run all 162 unit, EULA/Legal, MIME, security & Firestore rule tests across 27 suites
+# Run all 168 unit, EULA/Legal, MIME, security & Firestore rule tests across 28 suites
 npm test
 
-# Run the full 5-stage validation gate (TypeScript lint + Firestore rules lint + Prettier + 162 tests + Vite build)
+# Run the full 5-stage validation gate (TypeScript lint + Firestore rules lint + Prettier + 168 tests + Vite build)
 npm run validate
 ```
 

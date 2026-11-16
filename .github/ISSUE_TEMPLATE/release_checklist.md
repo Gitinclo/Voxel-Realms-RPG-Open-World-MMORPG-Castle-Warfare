@@ -23,7 +23,7 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 162 unit, EULA/Legal, security, and rule tests across all 27 test suites
+- [ ] `npm test` passes all 168 unit, EULA/Legal, security, and rule tests across all 28 test suites
 - [ ] `npm run verify:ops` passes live server load, exploit, crash-recovery & `SIGTERM` checks
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
@@ -34,7 +34,7 @@ labels: ['release']
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
 - [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
-- [ ] World AI Director (Lv. 1–1000 monsters, A\* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server & Anti-Cheat (`/ws/siege` & `/api/online/*`), 3D Open-World BVH/Simplex/Cannon Physics (`src/game/openWorld3DEngine.ts`), C++20 Software & Hardware Architect Studio (`15/11/2026`), 9-Pillar Cross-System Validation Engine (`89+` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A\* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server & Anti-Cheat (`/ws/siege` & `/api/online/*`), 3D Open-World BVH/Simplex/Cannon Physics (`src/game/openWorld3DEngine.ts`), MMORPG Avatar/Clone/Shadow Engine (`src/game/avatarCloneShadow.ts`), C++20 Software & Hardware Architect Studio (`15/11/2026`), 9-Pillar Cross-System Validation Engine (`100` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
 - [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 

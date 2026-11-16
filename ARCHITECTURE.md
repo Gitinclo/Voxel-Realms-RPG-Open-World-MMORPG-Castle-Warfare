@@ -41,13 +41,14 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │  • src/game/serverHardening.ts   (Rate Limits, CSRF, Brute-Force, WS Caps)   │
 │  • src/game/serverPersistence.ts (Atomic fsync+rename + SHA-256 .bak Saves)  │
 │  • src/game/eula.ts              (10-Article EULA, FNV-1a Receipt & Consent) │
+│  • src/game/avatarCloneShadow.ts (MMORPG Avatars, Clones, Shadows & Raid Δ)  │
 │  • cpp/VoxelRealmsGuardrails.hpp (C++20 concepts, RAII, 64B/128B SoA)      │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Why This Separation Matters
 
-- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **162 unit, MIME, EULA/Legal, and Firestore security-rule tests across 27 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
+- **Zero DOM/Browser Coupling in Core Logic**: None of the modules in `src/game/` (except `audio.ts`) or `src/lib/gmail.ts` pure MIME helpers depend on React or browser globals, allowing `npm test` (`tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts`) to execute **168 unit, MIME, EULA/Legal, and Firestore security-rule tests across 28 suites** in ~3.8 seconds, paired with live server operational verification (`npm run verify:ops`).
 - **No 60Hz React Re-Renders**: `GameCanvas.tsx` mounts the Three.js `WebGLRenderer` and scene graph once (`useEffect(..., [])`), reading latest React callbacks and props through `useRef` so HUD updates never tear down the WebGL context or reset player coordinates.
 - **Route/Modal Code Splitting**: `src/App.tsx` keeps `GameCanvas`, `GameHUD`, and `TitleScreen` eager while lazy-loading all 19 conditional overlay modals via `React.lazy` + `<Suspense fallback={null}>`, paired with `vite.config.ts` Rolldown `manualChunks` (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-motion`, `vendor-icons`, `vendor-react`) and `GoogleSignInButton.tsx` extraction to reduce the entry JS bundle to `~475 kB` (`~151 kB` gzip).
 
@@ -92,7 +93,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   └── gmail.ts                 # Pure RFC 2822 MIME builders, UTF-8 Base64URL & Gmail REST v1 helpers
 │   ├── middleware/
 │   │   └── auth.ts                  # Express `requireAuth` Bearer Firebase ID token middleware
-│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (25 suites)
+│   ├── game/                        # Decoupled domain logic & co-located *.test.ts suites (26 suites)
 │   ├── types/
 │   │   ├── game.ts                  # Core domain interfaces (BigInt resources, troops, AI, species)
 │   │   └── cultivation.ts           # Four-Path realms, manuals, disciples, karma types
@@ -191,7 +192,7 @@ Players cultivate four complementary paths simultaneously:
 
 ### K. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **97 invariants across all 9 foundational pillars** (Root RBAC, EULA v1.5.0, 10-Agreement Legal Stack & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode, Authoritative Anti-Cheat, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
+- **Deterministic Cross-Engine Invariant Audit (`runFullSystemValidationReport`)**: Evaluates **100 invariants across all 9 foundational pillars** (Root RBAC, EULA v1.5.0, 10-Agreement Legal Stack & Server Trust Boundary `creatergame31@gmail.com`, 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore / 12 Annals / Auto-Populating Codex / `10^100` Akashic Corpus, 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and **Pillar 9: Engineering Transparency, Server RBAC, 20Hz 50v50 Siege Netcode, Authoritative Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Execution**) and surfaces live diagnostics in `CppArchitectureModal.tsx`.
 
 ### L. Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Auth, Hardened Firestore & Gmail Dispatch (`src/db/*`, `src/lib/*`, `src/middleware/auth.ts`, `firestore.rules`, `GmailModal.tsx`)
 
@@ -206,8 +207,8 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **162 automated tests across 27 suites** (`25` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **168 automated tests across 28 suites** (`26` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
-6. **Architect-First Pre-Flight Specification (`CONTRIBUTING.md` & `GOVERNANCE.md`)**: Requires planning pure domain types (`src/types/`), decoupled engine functions (`src/game/`), and 9-Pillar invariants (`src/game/systemValidation.ts` — `97` invariants) before UI integration — **helps prevent early design flaws** and eliminates state entanglement.
+6. **Architect-First Pre-Flight Specification (`CONTRIBUTING.md` & `GOVERNANCE.md`)**: Requires planning pure domain types (`src/types/`), decoupled engine functions (`src/game/`), and 9-Pillar invariants (`src/game/systemValidation.ts` — `100` invariants) before UI integration — **helps prevent early design flaws** and eliminates state entanglement.
