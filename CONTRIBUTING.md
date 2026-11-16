@@ -119,7 +119,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   ├── serverPersistence.ts    # Atomic fsync+rename + SHA-256 .bak realm saves
 │   │   ├── siegeNetProtocol.ts     # Authoritative 20Hz 50v50 WebSocket Siege, Delta, CSP & Multi-Region Engine
 │   │   ├── species.ts              # 10-Species catalog, 3D mesh specs & Admin switch permission gate
-│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (95 checks)
+│   │   ├── systemValidation.ts     # 9-Pillar Cross-System Validation & Integrity Audit Engine (97 checks)
 │   │   ├── troopTraining.ts        # Real-time troop training queue & speedup math
 │   │   ├── vipSubscription.ts      # VIP tiers, discounts & feature access gates
 │   │   ├── weather.ts              # Weather cycle & gathering/combat multipliers
@@ -141,7 +141,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 ├── LEGAL.md                  # Complete 10-Agreement Legal Stack (ToS, Privacy/DPDP, Cookie, EULA, SaaS, OSS, AUP, SLA, DPA, MSA)
 ├── LICENSE.md                # Apache License 2.0 summary & full legal text
 ├── LORE.md                   # Imperial Lore, 6-Layer Cosmology & 7 Grand Historical Epochs Codex
-├── PRIVACY.md                # User privacy, localStorage & GDPR/CCPA policy
+├── PRIVACY.md                # User privacy, localStorage & GDPR/CCPA/DPDP Act policy
 ├── ROADMAP.md                # Upcoming milestones (v1.5.0 - v2.0.0)
 ├── SECURITY.md               # Private vulnerability disclosure policy
 ├── SUPPORT.md                # Official contact directory (creatergame31@gmail.com) & FAQ

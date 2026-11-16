@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.equal(report.totalAssertionsPassed, 95);
+  assert.equal(report.totalAssertionsPassed, 97);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -26,7 +26,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   }
 });
 
-test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus, EULA v1.5.0, Anti-Cheat, 3D BVH & 20Hz Siege Netcode', () => {
+test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses, 7 Lore Epochs, 12 Annals, Lore Codex, 10^100 Akashic Corpus, EULA v1.5.0, 10-Agreement Legal Stack, Anti-Cheat, 3D BVH & 20Hz Siege Netcode', () => {
   const report = runFullSystemValidationReport();
   const rbacPillar = report.pillars.find((p) => p.id === 'rbac_root_authority');
   const cosmologyPillar = report.pillars.find(
@@ -41,6 +41,9 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
   assert.equal(rbacPillar.passed, true);
   assert.ok(
     rbacPillar.verifiedInvariants.some((inv) => inv.includes('10-Article EULA (1.5.0-2026-11-15'))
+  );
+  assert.ok(
+    rbacPillar.verifiedInvariants.some((inv) => inv.includes('10-Agreement Legal Compliance Stack'))
   );
 
   assert.ok(cosmologyPillar);

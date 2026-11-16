@@ -72,6 +72,8 @@ import {
   EULA_EFFECTIVE_DATE_DISPLAY,
   EULA_LICENSOR_EMAIL,
   EULA_VERSION,
+  LEGAL_DOCUMENT_STACK,
+  LEGAL_QUICK_COMPARISON_MATRIX,
   acceptEulaVersion,
   evaluateEulaCompliance,
   revokeEulaAcceptance,
@@ -118,7 +120,7 @@ export interface FullSystemValidationReport {
 export function runFullSystemValidationReport(): FullSystemValidationReport {
   const pillars: ValidationPillarResult[] = [];
 
-  // Pillar 1: RBAC, EULA Governance & Supreme Author Authority (creatergame31@gmail.com)
+  // Pillar 1: RBAC, EULA & 10-Agreement Legal Stack Governance & Supreme Author Authority (creatergame31@gmail.com)
   const rootPriv = verifyAccountPrivileges(PRIMARY_ADMIN_EMAIL);
   const rootSanctionAttempt = applyModerationAction({
     actorEmail: PRIMARY_ADMIN_EMAIL,
@@ -145,6 +147,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
   const eulaRevoked = revokeEulaAcceptance(PRIMARY_ADMIN_EMAIL);
   const eulaSigned = acceptEulaVersion(PRIMARY_ADMIN_EMAIL, '2026-11-15T00:00:00.000Z');
   const eulaCompliance = evaluateEulaCompliance(eulaSigned);
+  const legalCategories = new Set(LEGAL_DOCUMENT_STACK.map((d) => d.group));
 
   const p1Passed =
     PRIMARY_ADMIN_EMAIL === 'creatergame31@gmail.com' &&
@@ -161,20 +164,24 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     EULA_EFFECTIVE_DATE_DISPLAY === '15/11/2026' &&
     EULA_LICENSOR_EMAIL === PRIMARY_ADMIN_EMAIL &&
     EULA_ARTICLES.length === 10 &&
+    LEGAL_DOCUMENT_STACK.length === 10 &&
+    LEGAL_QUICK_COMPARISON_MATRIX.length === 10 &&
+    legalCategories.size === 3 &&
     !eulaRevoked.accepted &&
     eulaCompliance.isCompliant &&
     Boolean(eulaSigned.receiptHash?.startsWith('EULA-ACK-'));
 
   pillars.push({
     id: 'rbac_root_authority',
-    title: '1. Root RBAC, EULA v1.5.0 Governance & Supreme Author Immutability',
+    title: '1. Root RBAC, EULA v1.5.0, 10-Agreement Legal Stack & Supreme Author Immutability',
     passed: p1Passed,
-    assertionsPassed: 13,
-    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 10-Article EULA (${EULA_VERSION}), explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
+    assertionsPassed: 15,
+    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 10-Article EULA (${EULA_VERSION}), 10-Agreement Legal Stack (ToS, Privacy/DPDP, Cookie, EULA, SaaS, OSS, AUP, SLA, DPA, MSA), explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
     verifiedInvariants: [
       `Supreme Author & EULA Licensor Email === ${PRIMARY_ADMIN_EMAIL}`,
       'Clearance Level === 999 (owner_admin)',
       `10-Article EULA (${EULA_VERSION}, ${EULA_EFFECTIVE_DATE_DISPLAY}) Dual-Layer Apache-2.0 + Live Service compliance & FNV-1a receipt verified`,
+      '10-Agreement Legal Compliance Stack (ToS, Privacy/GDPR/CCPA/DPDP Act, Cookie, EULA, SaaS, OSS Apache-2.0, AUP, SLA, DPA, MSA) & 10-Row Comparison Matrix verified',
       'Client verifyAccountPrivileges explicitly tagged UNTRUSTED_CLIENT_PREVIEW; server routes enforce HMAC-SHA256 sessions',
       'Root Immutability Guardrail blocks self/external sanctions on creatergame31@gmail.com',
     ],
