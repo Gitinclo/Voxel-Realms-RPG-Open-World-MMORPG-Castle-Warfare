@@ -87,6 +87,7 @@ interface CultivationModalProps {
   onDiscoverManual: (freeDeduction?: boolean) => void;
   onUnlockManualDirect: (manualId: string) => void;
   onUpdateCultivation?: (updater: (prev: PlayerCultivationState) => PlayerCultivationState) => void;
+  isGodImmune?: boolean;
   onClose: () => void;
 }
 
@@ -183,6 +184,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   onDiscoverManual,
   onUnlockManualDirect,
   onUpdateCultivation,
+  isGodImmune = false,
   onClose,
 }) => {
   const [selectedPath, setSelectedPath] = useState<CultivationPath>('qi');
@@ -226,7 +228,8 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
   const activeAuraSpec = getCultivationAuraVisualSpec(activeAuraRealmIndex, masteredGreatDaos);
   const suppressionResult = calculateRealmSuppression(
     cultivation.paths.qi.realmIndex,
-    suppressionTargetRealm
+    suppressionTargetRealm,
+    isGodImmune
   );
 
   const pathProgress = cultivation.paths[selectedPath];
@@ -301,6 +304,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
       manualBonusPct:
         activeManualSummary.breakthroughBoostPct + veteranScrollBonuses.breakthroughSuccessBonusPct,
       path: selectedPath,
+      isGodImmune,
     });
 
     if (evaluation.needsTribulation) {
@@ -1500,6 +1504,29 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
           {/* TAB: MASTER/DISCIPLE HIERARCHY, THE KARMA SYSTEM, REALM SUPPRESSION & AURA VISUALIZER */}
           {activeTab === 'lineage_karma' && (
             <div className="space-y-6">
+              {isGodImmune && (
+                <div
+                  data-testid="cultivation-god-immunity-banner"
+                  className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/75 via-emerald-950/60 to-purple-950/70 border border-amber-400/60 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <div>
+                    <div className="text-xs font-mono font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Crown className="w-4 h-4 text-amber-400" />
+                      <span>
+                        Supreme Creator God Sovereignty · 12-Domain All-Things Immunity ACTIVE
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-200 mt-0.5 font-mono">
+                      0.0x Incoming Hostile Realm Suppression · 0 Tribulation Lightning Damage ·
+                      Zero Red-Name Judgment / Loot Drop · 100% Breakthrough Ascension
+                    </p>
+                  </div>
+                  <span className="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-mono font-black">
+                    IMMUNE TO ALL THINGS
+                  </span>
+                </div>
+              )}
+
               {lineageNotice && (
                 <div className="p-3.5 rounded-xl bg-amber-950/75 border border-amber-400/50 text-xs font-mono text-amber-200 flex items-center justify-between gap-2">
                   <span>{lineageNotice}</span>
@@ -1688,6 +1715,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         victimRealmIndex: 0,
                         victimKarmaValue: 100, // Green-Name Innocent
                         victimName: 'Junior Disciple Lin (Qi Refinement)',
+                        isGodImmune,
                       });
                       setLineageNotice(res.message);
                       if (onUpdateCultivation) {
@@ -1718,6 +1746,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                               },
                         isMoving: false,
                         deltaSec: 4,
+                        isGodImmune,
                       });
 
                       if (stepRes.struckByInstantKillLightning) {
@@ -1725,6 +1754,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                           karma: stepRes.updatedKarma,
                           equippedManuals: cultivation.equippedManuals,
                           inventoryPills: cultivation.inventoryPills,
+                          isGodImmune,
                         });
                         setLineageNotice(
                           `${stepRes.warningMessage} High-Risk Death Penalty: Dropped [${dropRes.droppedItemName}]!`
@@ -1764,6 +1794,7 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                         victimRealmIndex: cultivation.paths.qi.realmIndex,
                         victimKarmaValue: -450, // Red-Name Demonic Fiend
                         victimName: 'Blood Sea Patriarch [Red Name]',
+                        isGodImmune,
                       });
                       setLineageNotice(res.message);
                       if (onUpdateCultivation) {

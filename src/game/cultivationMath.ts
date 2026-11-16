@@ -1794,6 +1794,7 @@ export function evaluateBreakthroughAttempt(params: {
   mindBonusPct?: number;
   manualBonusPct?: number;
   path?: CultivationPath;
+  isGodImmune?: boolean;
 }): {
   success: boolean;
   needsTribulation: boolean;
@@ -1811,10 +1812,33 @@ export function evaluateBreakthroughAttempt(params: {
     mindBonusPct = 0,
     manualBonusPct = 0,
     path = 'qi',
+    isGodImmune = false,
   } = params;
   const realmList = CULTIVATION_PATHS_REALMS[path] || CULTIVATION_REALMS;
   const realm = realmList[realmIndex] || realmList[0];
   const pathMeta = CULTIVATION_PATH_META[path];
+
+  if (isGodImmune) {
+    let nextRealm = realmIndex;
+    let nextLayer = layer + 1;
+    if (nextLayer > 9) {
+      if (nextRealm < realmList.length - 1) {
+        nextRealm += 1;
+        nextLayer = 1;
+      } else {
+        nextLayer = 9;
+      }
+    }
+    const nextRealmDef = realmList[nextRealm];
+    return {
+      success: true,
+      needsTribulation: false,
+      message: `👑 [Creator God Immunity] ${pathMeta.name} Breakthrough Guaranteed! Ascended effortlessly to [${nextRealmDef.chineseName}] ${nextRealmDef.name} - Layer ${nextLayer}!`,
+      newRealmIndex: nextRealm,
+      newLayer: nextLayer,
+      tribulationDamage: 0n,
+    };
+  }
 
   if (currentQi < requiredQi) {
     return {
@@ -1885,8 +1909,18 @@ export function evaluateBreakthroughAttempt(params: {
  */
 export function calculateTribulationStrikeDefense(
   strikeDamage: bigint,
-  playerCombatPower: bigint
+  playerCombatPower: bigint,
+  isGodImmune: boolean = false
 ): { survived: boolean; damageTaken: bigint; message: string } {
+  if (isGodImmune) {
+    return {
+      survived: true,
+      damageTaken: 0n,
+      message:
+        '👑 [Creator God Immunity] Heavenly Tribulation Lightning dissolved cleanly (0 Damage Taken)!',
+    };
+  }
+
   const defenseThreshold = strikeDamage / 3n;
   const survived = playerCombatPower >= defenseThreshold;
   const actualDamage = playerCombatPower > strikeDamage ? strikeDamage / 5n : strikeDamage / 2n;
@@ -1907,13 +1941,24 @@ export function calculateTribulationStrikeDefense(
 
 export function calculateRealmSuppression(
   attackerRealmIndex: number,
-  defenderRealmIndex: number
+  defenderRealmIndex: number,
+  defenderIsGodImmune: boolean = false
 ): {
   realmDifference: number;
   damageMultiplier: number;
   incomingDamageReductionPct: number;
   suppressionLabel: string;
 } {
+  if (defenderIsGodImmune) {
+    return {
+      realmDifference: attackerRealmIndex - defenderRealmIndex,
+      damageMultiplier: 0,
+      incomingDamageReductionPct: 100,
+      suppressionLabel:
+        'Supreme Creator God Immunity (0.0x Incoming Damage · Suppression Nullified)',
+    };
+  }
+
   const clampedAttacker = Math.max(0, Math.min(22, attackerRealmIndex));
   const clampedDefender = Math.max(0, Math.min(22, defenderRealmIndex));
   const realmDifference = clampedAttacker - clampedDefender;
@@ -1981,14 +2026,41 @@ export function evaluatePvPKillKarma(params: {
   victimRealmIndex: number;
   victimKarmaValue: number; // >= 0 means Green/Innocent
   victimName: string;
+  isGodImmune?: boolean;
 }): {
   updatedKarma: PlayerKarmaState;
   bountyEarnedSpiritStones: bigint;
   message: string;
 } {
-  const { currentKarma, attackerRealmIndex, victimRealmIndex, victimKarmaValue, victimName } =
-    params;
+  const {
+    currentKarma,
+    attackerRealmIndex,
+    victimRealmIndex,
+    victimKarmaValue,
+    victimName,
+    isGodImmune = false,
+  } = params;
   const realmGap = Math.max(1, attackerRealmIndex - victimRealmIndex);
+
+  if (isGodImmune) {
+    const bountyReward = victimKarmaValue < 0 ? BigInt(Math.abs(victimKarmaValue) * 400) : 0n;
+    const updatedKarma: PlayerKarmaState = {
+      ...currentKarma,
+      karmaValue: Math.max(100_000, currentKarma.karmaValue),
+      alignment: 'gold_justice',
+      stationarySeconds: 0,
+      bountySpiritStones: 0n,
+      isLocationRevealed: false,
+      lastLightningStrikeMsg: null,
+      righteousKills:
+        victimKarmaValue < 0 ? currentKarma.righteousKills + 1 : currentKarma.righteousKills,
+    };
+    return {
+      updatedKarma,
+      bountyEarnedSpiritStones: bountyReward,
+      message: `👑 [Creator God Immunity] Slaying ${victimName} incurred 0 Karma Penalty, 0 Red-Name Reveal & 0 Bounty (Golden Justice Sovereignty intact)!`,
+    };
+  }
 
   if (victimKarmaValue >= 0 && attackerRealmIndex > victimRealmIndex) {
     // Unlawful slaughter of a lower-realm Green-Name cultivator!
@@ -2057,12 +2129,25 @@ export function tickRedNameStationaryLightning(params: {
   karma: PlayerKarmaState;
   isMoving: boolean;
   deltaSec?: number;
+  isGodImmune?: boolean;
 }): {
   updatedKarma: PlayerKarmaState;
   struckByInstantKillLightning: boolean;
   warningMessage: string | null;
 } {
-  const { karma, isMoving, deltaSec = 1 } = params;
+  const { karma, isMoving, deltaSec = 1, isGodImmune = false } = params;
+
+  if (isGodImmune) {
+    return {
+      updatedKarma: {
+        ...karma,
+        stationarySeconds: 0,
+        lastLightningStrikeMsg: '👑 [Creator God Immunity] Heavenly Judgment Lightning nullified.',
+      },
+      struckByInstantKillLightning: false,
+      warningMessage: '👑 [Creator God Immunity] Immune to Heavenly Judgment Lightning.',
+    };
+  }
 
   if (karma.karmaValue >= 0) {
     return {
@@ -2121,13 +2206,23 @@ export function resolveRedNameDeathLootDrop(params: {
   karma: PlayerKarmaState;
   equippedManuals: Record<CultivationPath, string | null>;
   inventoryPills: Record<string, number>;
+  isGodImmune?: boolean;
 }): {
   updatedEquippedManuals: Record<CultivationPath, string | null>;
   updatedInventoryPills: Record<string, number>;
   updatedKarma: PlayerKarmaState;
   droppedItemName: string;
 } {
-  const { karma, equippedManuals, inventoryPills } = params;
+  const { karma, equippedManuals, inventoryPills, isGodImmune = false } = params;
+  if (isGodImmune) {
+    return {
+      updatedEquippedManuals: { ...equippedManuals },
+      updatedInventoryPills: { ...inventoryPills },
+      updatedKarma: { ...karma },
+      droppedItemName: 'NONE — IMMUNE (Creator God Sovereignty)',
+    };
+  }
+
   const nextEquipped = { ...equippedManuals };
   const nextPills = { ...inventoryPills };
   let droppedItemName = '10,000 Spirit Stones Pouch';

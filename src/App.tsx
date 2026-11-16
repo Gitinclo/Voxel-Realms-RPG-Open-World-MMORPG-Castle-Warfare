@@ -31,7 +31,6 @@ import {
   WorldAIEventLog,
 } from './types/game';
 import {
-  INITIAL_APPEARANCE,
   INITIAL_CLAN,
   INITIAL_CLAN_MEMBERS,
   INITIAL_CLAN_CHAT,
@@ -41,8 +40,6 @@ import {
   INITIAL_MONSTERS,
   INITIAL_NPCS,
   INITIAL_RESOURCE_NODES,
-  INITIAL_RESOURCES,
-  INITIAL_TROOPS,
 } from './game/initialData';
 import {
   calculateCastleTroopCapacity,
@@ -145,8 +142,6 @@ import { PlayerCultivationState, CultivationPill, CultivationPath } from './type
 import {
   CULTIVATION_REALMS,
   CULTIVATION_PATH_META,
-  INITIAL_KARMA_STATE,
-  INITIAL_DISCIPLES,
   getRealmDef,
   getManualById,
   calculateFourPathSynergy,
@@ -168,7 +163,12 @@ import {
   ModeratedPlayerRecord,
   SupportTicket,
   createContactTicket,
+  isPrimaryAdminAccount,
 } from './game/adminModeration';
+import {
+  buildMaxedGodCharacterBundle,
+  evaluateGodCharacterImmunity,
+} from './game/godModeCharacter';
 import { getSpeciesSpec } from './game/species';
 import {
   TOP_100_OMNIVERSE_SPECIES_NPCS,
@@ -246,16 +246,22 @@ export default function App() {
     return 'title';
   });
 
-  // Player State
-  const [playerAppearance, setPlayerAppearance] = useState<CharacterAppearance>(INITIAL_APPEARANCE);
-  const [castleLevel, setCastleLevel] = useState<number>(12);
-  const [resources, setResources] = useState<GameResources>(INITIAL_RESOURCES);
-  const [troops, setTroops] = useState<PlayerTroopRoster>(INITIAL_TROOPS);
-  const [heroes, setHeroes] = useState<Hero[]>(INITIAL_HEROES);
-  const [playerExp, setPlayerExp] = useState<bigint>(48_500n);
+  const [initialGodBundle] = useState(() =>
+    buildMaxedGodCharacterBundle({ baseHeroes: INITIAL_HEROES })
+  );
+
+  // Player State (Initialized to Max-Out God Character for Root Creator creatergame31@gmail.com)
+  const [playerAppearance, setPlayerAppearance] = useState<CharacterAppearance>(
+    initialGodBundle.appearance
+  );
+  const [castleLevel, setCastleLevel] = useState<number>(initialGodBundle.castleLevel);
+  const [resources, setResources] = useState<GameResources>(initialGodBundle.resources);
+  const [troops, setTroops] = useState<PlayerTroopRoster>(initialGodBundle.troops);
+  const [heroes, setHeroes] = useState<Hero[]>(initialGodBundle.heroes);
+  const [playerExp, setPlayerExp] = useState<bigint>(initialGodBundle.playerExp);
   const [clan, setClan] = useState<Clan>(INITIAL_CLAN);
   const [clanMembers, setClanMembers] = useState<ClanMember[]>(INITIAL_CLAN_MEMBERS);
-  const [clanCoins, setClanCoins] = useState<bigint>(3_400n);
+  const [clanCoins, setClanCoins] = useState<bigint>(initialGodBundle.clanCoins);
   const [clanChat, setClanChat] = useState<ClanChatMessage[]>(INITIAL_CLAN_CHAT);
   const [clanLeaderboard, setClanLeaderboard] =
     useState<ClanLeaderboardEntry[]>(INITIAL_CLAN_LEADERBOARD);
@@ -298,58 +304,10 @@ export default function App() {
     },
   ]);
 
-  // Han Jue Four-Path Cultivation State (Qi, Body, Soul, Mind — 23 Realms, 9 Layers each)
-  const [cultivation, setCultivation] = useState<PlayerCultivationState>({
-    currentRealmIndex: 3, // Starts at Nascent Soul Realm (Realm #4, 元婴境)
-    currentLayer: 4,
-    currentQi: 420_000n,
-    passiveQiPerSec: 1_200n,
-    paths: {
-      qi: { realmIndex: 3, layer: 4, currentEnergy: 420_000n }, // Nascent Soul L4
-      body: { realmIndex: 2, layer: 6, currentEnergy: 1_850_000n }, // Five Viscera Renewal L6
-      soul: { realmIndex: 3, layer: 2, currentEnergy: 12_500_000n }, // Yang Spirit Projection L2
-      mind: { realmIndex: 3, layer: 5, currentEnergy: 19_000_000n }, // Flawless Dao Heart L5
-    },
-    ownedManuals: {
-      manual_qi_jade_pure: { manualId: 'manual_qi_jade_pure', level: 2 },
-      manual_qi_six_paths: { manualId: 'manual_qi_six_paths', level: 1 },
-      manual_body_vajra_marrow: { manualId: 'manual_body_vajra_marrow', level: 2 },
-      manual_body_ancestral_witch: { manualId: 'manual_body_ancestral_witch', level: 1 },
-      manual_soul_astral_visualization: { manualId: 'manual_soul_astral_visualization', level: 2 },
-      manual_mind_longevity_seclusion: { manualId: 'manual_mind_longevity_seclusion', level: 3 },
-    },
-    equippedManuals: {
-      qi: 'manual_qi_jade_pure',
-      body: 'manual_body_vajra_marrow',
-      soul: 'manual_soul_astral_visualization',
-      mind: 'manual_mind_longevity_seclusion',
-    },
-    scriptureFragments: 65,
-    secludedYears: 1240,
-    tribulationUnderway: false,
-    tribulationStrikesLeft: 0,
-    tribulationDamageRating: 0n,
-    inventoryPills: {
-      pill_qi_condensation: 3,
-      pill_foundation: 2,
-      pill_dragon_blood_temper: 2,
-      pill_core_condense: 1,
-      pill_nascent_soul: 2,
-      pill_bodhi_heart: 2,
-    },
-    selectedRoot: 'lightning',
-    rootPurityPct: 92,
-    karma: INITIAL_KARMA_STATE,
-    disciples: INITIAL_DISCIPLES,
-    masterTaxRatePct: 20,
-    learnedMysticalSkills: ['skill_heaven_earth_sleeve', 'skill_six_paths_seal'],
-    skillScrollInventory: [],
-    spiritStones: 48_000n,
-    masteredGreatDaos: 4,
-    auraOverrideRealmIndex: null,
-    veteranScrolls: 1,
-    veteranScrollsComprehended: 0,
-  });
+  // Han Jue Four-Path Cultivation State (Maxed Realm 22 L9 across all 4 paths for Root Creator)
+  const [cultivation, setCultivation] = useState<PlayerCultivationState>(
+    initialGodBundle.cultivation
+  );
 
   // Daily Login Reward State (persisted in localStorage, triggers on first load of the day)
   const [dailyLoginState, setDailyLoginState] = useState<PersistedDailyLoginState>(() => {
@@ -367,20 +325,22 @@ export default function App() {
     return INITIAL_DAILY_LOGIN_STATE;
   });
 
-  // VIP Member Subscription State (persisted in localStorage)
+  // VIP Member Subscription State (persisted in localStorage; Root Creator defaults to VIP 3 Celestial)
   const [vipState, setVipState] = useState<PersistedVipSubscriptionState>(() => {
     if (typeof window !== 'undefined') {
       try {
         const raw = window.localStorage.getItem(VIP_SUBSCRIPTION_STORAGE_KEY);
         if (raw) {
-          const parsed = JSON.parse(raw);
-          return { ...INITIAL_VIP_SUBSCRIPTION_STATE, ...parsed };
+          const parsed = JSON.parse(raw) as Partial<PersistedVipSubscriptionState>;
+          if (parsed.activeTier && parsed.activeTier !== 'free') {
+            return { ...INITIAL_VIP_SUBSCRIPTION_STATE, ...parsed };
+          }
         }
       } catch {
         // Fallback to initial state
       }
     }
-    return INITIAL_VIP_SUBSCRIPTION_STATE;
+    return initialGodBundle.vipState;
   });
 
   // Selected entities for modals
@@ -395,7 +355,7 @@ export default function App() {
   const [targetPlatform, setTargetPlatform] = useState<'pc_console' | 'mobile'>('pc_console');
   const [hdPackMounted, setHdPackMounted] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
-  const [godmode, setGodmode] = useState<boolean>(false);
+  const [godmode, setGodmode] = useState<boolean>(true);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
   const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
   const [eulaState, setEulaState] = useState<EulaAcceptanceState>(() => {
@@ -519,6 +479,9 @@ export default function App() {
   // Evaluate VIP Member Subscription status & multipliers
   const vipEffectiveDateKey = getCalendarDateKey(new Date(), vipState.simulatedVipDayOffset);
   const vipEvaluation = evaluateVipSubscription(vipState, vipEffectiveDateKey);
+
+  // Evaluate Supreme Creator 12-Domain All-Things Immunity (fail-closed for all non-root accounts)
+  const godImmunity = evaluateGodCharacterImmunity(activeAccountEmail, godmode);
 
   // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance, Veteran Scroll Mastery & VIP Covenant
   const maxTroopCapacity = calculateCastleTroopCapacity(castleLevel);
@@ -747,23 +710,47 @@ export default function App() {
     }
   }, [toastMessage]);
 
-  // Castle Upgrade (with active VIP Castle Upgrade Discount applied)
+  const handleActivateMaxGodCharacter = () => {
+    const bundle = buildMaxedGodCharacterBundle({
+      baseAppearance: { species: playerAppearance.species },
+      baseHeroes: INITIAL_HEROES,
+    });
+    setActiveAccountEmail(PRIMARY_ADMIN_EMAIL);
+    setGodmode(true);
+    setCastleLevel(bundle.castleLevel);
+    setPlayerAppearance(bundle.appearance);
+    setResources(bundle.resources);
+    setTroops(bundle.troops);
+    setHeroes(bundle.heroes);
+    setPlayerExp(bundle.playerExp);
+    setClanCoins(bundle.clanCoins);
+    setCultivation(bundle.cultivation);
+    setVipState(bundle.vipState);
+    confetti({ particleCount: 120, spread: 100, origin: { y: 0.6 } });
+    setToastMessage(
+      '👑 Maxed-Out Creator God Character & 12-Domain All-Things Immunity Activated for creatergame31@gmail.com!'
+    );
+  };
+
+  // Castle Upgrade (with active VIP Castle Upgrade Discount or Creator God Immunity)
   const handleUpgradeCastle = () => {
     if (castleLevel >= MAX_CASTLE_LEVEL) return;
-    const baseCost = getCastleUpgradeCost(castleLevel);
-    const cost = applyVipDiscountToCosts(
-      baseCost,
-      vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct
-    );
+    if (!godImmunity.immuneToAllThings) {
+      const baseCost = getCastleUpgradeCost(castleLevel);
+      const cost = applyVipDiscountToCosts(
+        baseCost,
+        vipEvaluation.tierConfig.perks.castleUpgradeDiscountPct
+      );
 
-    setResources((prev) => ({
-      wood: prev.wood - cost.wood,
-      steel: prev.steel - cost.steel,
-      copper: prev.copper - cost.copper,
-      grain: prev.grain - cost.grain,
-      oil: prev.oil - cost.oil,
-      diamond: prev.diamond - cost.diamond,
-    }));
+      setResources((prev) => ({
+        wood: prev.wood - cost.wood,
+        steel: prev.steel - cost.steel,
+        copper: prev.copper - cost.copper,
+        grain: prev.grain - cost.grain,
+        oil: prev.oil - cost.oil,
+        diamond: prev.diamond - cost.diamond,
+      }));
+    }
 
     setCastleLevel((prev) => {
       const next = prev + 1;
@@ -780,14 +767,16 @@ export default function App() {
     amount: bigint,
     cost: Partial<GameResources>
   ) => {
-    setResources((prev) => ({
-      wood: prev.wood - (cost.wood || 0n),
-      steel: prev.steel - (cost.steel || 0n),
-      copper: prev.copper - (cost.copper || 0n),
-      grain: prev.grain - (cost.grain || 0n),
-      oil: prev.oil - (cost.oil || 0n),
-      diamond: prev.diamond - (cost.diamond || 0n),
-    }));
+    if (!godImmunity.immuneToAllThings) {
+      setResources((prev) => ({
+        wood: prev.wood - (cost.wood || 0n),
+        steel: prev.steel - (cost.steel || 0n),
+        copper: prev.copper - (cost.copper || 0n),
+        grain: prev.grain - (cost.grain || 0n),
+        oil: prev.oil - (cost.oil || 0n),
+        diamond: prev.diamond - (cost.diamond || 0n),
+      }));
+    }
 
     const key = `${type}_t${tier}`;
     setTroops((prev) => ({
@@ -819,10 +808,12 @@ export default function App() {
 
   // Clan Donation & Vault Supply
   const handleClanDonate = (type: ResourceType, amount: bigint, coins: bigint) => {
-    setResources((prev) => ({
-      ...prev,
-      [type]: prev[type] - amount,
-    }));
+    if (!godImmunity.immuneToAllThings) {
+      setResources((prev) => ({
+        ...prev,
+        [type]: prev[type] - amount,
+      }));
+    }
     setClanCoins((prev) => prev + coins);
     setClan((prev) => {
       const updatedVault = {
@@ -849,7 +840,9 @@ export default function App() {
 
   // Clan Store Purchase
   const handleBuyClanStore = (_itemId: string, cost: bigint) => {
-    setClanCoins((prev) => prev - cost);
+    if (!godImmunity.immuneToAllThings) {
+      setClanCoins((prev) => prev - cost);
+    }
     setToastMessage(`🛒 Purchased item from Clan Store! Applied immediately.`);
   };
 
@@ -981,11 +974,13 @@ export default function App() {
     emblem: ClanEmblem;
     minCastleLevel: number;
   }) => {
-    if (resources.diamond < 500n) {
-      setToastMessage('💎 Need at least 500 Diamonds to found a new Clan.');
-      return;
+    if (!godImmunity.immuneToAllThings) {
+      if (resources.diamond < 500n) {
+        setToastMessage('💎 Need at least 500 Diamonds to found a new Clan.');
+        return;
+      }
+      setResources((prev) => ({ ...prev, diamond: prev.diamond - 500n }));
     }
-    setResources((prev) => ({ ...prev, diamond: prev.diamond - 500n }));
 
     const createdClan: Clan = {
       ...clan,
@@ -1136,12 +1131,14 @@ export default function App() {
 
   const handleCraftPill = (pill: CultivationPill, activePath: CultivationPath) => {
     const meta = CULTIVATION_PATH_META[activePath];
-    setResources((prev) => ({
-      ...prev,
-      wood: prev.wood - pill.costHerbWood,
-      grain: prev.grain - pill.costHerbGrain,
-      diamond: prev.diamond - pill.costDiamonds,
-    }));
+    if (!godImmunity.immuneToAllThings) {
+      setResources((prev) => ({
+        ...prev,
+        wood: prev.wood - pill.costHerbWood,
+        grain: prev.grain - pill.costHerbGrain,
+        diamond: prev.diamond - pill.costDiamonds,
+      }));
+    }
     setCultivation((prev) => {
       const updatedEnergy = prev.paths[activePath].currentEnergy + pill.qiBonus;
       return {
@@ -1231,17 +1228,21 @@ export default function App() {
     if (!owned) return;
     const cost = calculateManualUpgradeCost(manual, owned.level);
     if (cost.isMaxLevel) return;
-    if (cultivation.scriptureFragments < cost.fragments || resources.diamond < cost.diamonds)
-      return;
+    if (!godImmunity.immuneToAllThings) {
+      if (cultivation.scriptureFragments < cost.fragments || resources.diamond < cost.diamonds)
+        return;
 
-    setResources((prev) => ({
-      ...prev,
-      diamond: prev.diamond - cost.diamonds,
-    }));
+      setResources((prev) => ({
+        ...prev,
+        diamond: prev.diamond - cost.diamonds,
+      }));
+    }
     const nextLevel = owned.level + 1;
     setCultivation((prev) => ({
       ...prev,
-      scriptureFragments: prev.scriptureFragments - cost.fragments,
+      scriptureFragments: godImmunity.immuneToAllThings
+        ? prev.scriptureFragments
+        : prev.scriptureFragments - cost.fragments,
       ownedManuals: {
         ...prev.ownedManuals,
         [manualId]: {
@@ -1264,11 +1265,13 @@ export default function App() {
       return;
     }
 
-    if (resources.diamond < 200n) return;
-    setResources((prev) => ({
-      ...prev,
-      diamond: prev.diamond - 200n,
-    }));
+    if (!godImmunity.immuneToAllThings) {
+      if (resources.diamond < 200n) return;
+      setResources((prev) => ({
+        ...prev,
+        diamond: prev.diamond - 200n,
+      }));
+    }
 
     const result = rollManualDiscovery(cultivation.ownedManuals);
     setCultivation((prev) => {
@@ -1294,11 +1297,13 @@ export default function App() {
   const handleUnlockManualDirect = (manualId: string) => {
     const manual = getManualById(manualId);
     if (!manual || cultivation.ownedManuals[manualId]) return;
-    if (cultivation.scriptureFragments < 40) return;
+    if (!godImmunity.immuneToAllThings && cultivation.scriptureFragments < 40) return;
 
     setCultivation((prev) => ({
       ...prev,
-      scriptureFragments: prev.scriptureFragments - 40,
+      scriptureFragments: godImmunity.immuneToAllThings
+        ? prev.scriptureFragments
+        : prev.scriptureFragments - 40,
       ownedManuals: {
         ...prev.ownedManuals,
         [manualId]: {
@@ -1315,8 +1320,10 @@ export default function App() {
   const handleLevelUpHero = (heroId: string) => {
     const hero = heroes.find((h) => h.id === heroId);
     if (!hero) return;
-    const cost = BigInt(hero.level * 2500);
-    setPlayerExp((prev) => prev - cost);
+    if (!godImmunity.immuneToAllThings) {
+      const cost = BigInt(hero.level * 2500);
+      setPlayerExp((prev) => prev - cost);
+    }
     setHeroes((prev) =>
       prev.map((h) =>
         h.id === heroId
@@ -1334,11 +1341,13 @@ export default function App() {
 
   // Summon Hero
   const handleRecruitHero = () => {
-    if (resources.diamond < 500n) {
-      setToastMessage('💎 Not enough Diamonds to summon in the Hero Tavern (Need 500).');
-      return;
+    if (!godImmunity.immuneToAllThings) {
+      if (resources.diamond < 500n) {
+        setToastMessage('💎 Not enough Diamonds to summon in the Hero Tavern (Need 500).');
+        return;
+      }
+      setResources((prev) => ({ ...prev, diamond: prev.diamond - 500n }));
     }
-    setResources((prev) => ({ ...prev, diamond: prev.diamond - 500n }));
 
     const newHero: Hero = {
       id: `hero_summon_${Date.now()}`,
@@ -1395,8 +1404,10 @@ export default function App() {
 
   // Casualties
   const handleCasualties = (cas: { shieldbearers: bigint; shooters: bigint; bombers: bigint }) => {
-    if (godmode) {
-      setToastMessage('🛡️ [GM Godmode Active] Casualties nullified — supreme invincibility!');
+    if (godImmunity.immuneToAllThings || godmode) {
+      setToastMessage(
+        '👑 [Creator God Immunity Active] All damage & troop casualties nullified (0.0x)!'
+      );
       return;
     }
     // Deduct casualties from lowest/available tiers
@@ -1707,7 +1718,11 @@ export default function App() {
     const diamondCost =
       billingCycle === 'annual' ? targetConfig.annualDiamondCost : targetConfig.monthlyDiamondCost;
 
-    if (paymentMethod === 'diamonds' && resources.diamond < diamondCost) {
+    if (
+      !godImmunity.immuneToAllThings &&
+      paymentMethod === 'diamonds' &&
+      resources.diamond < diamondCost
+    ) {
       setToastMessage('⚠️ Insufficient Diamonds in treasury for this VIP tier.');
       return;
     }
@@ -1719,7 +1734,7 @@ export default function App() {
       ...prev,
       diamond:
         prev.diamond -
-        (paymentMethod === 'diamonds' ? diamondCost : 0n) +
+        (!godImmunity.immuneToAllThings && paymentMethod === 'diamonds' ? diamondCost : 0n) +
         activation.instantBonusDiamonds,
     }));
 
@@ -2511,7 +2526,13 @@ export default function App() {
             activeAccountEmail={activeAccountEmail}
             onChangeAccountEmail={(email) => {
               setActiveAccountEmail(email);
-              setToastMessage(`🛡️ Active Session Bound to: ${email}`);
+              const isRoot = isPrimaryAdminAccount(email);
+              setGodmode(isRoot);
+              setToastMessage(
+                isRoot
+                  ? `👑 Active Session Bound to Root Creator (${email}) · Godmode Immunity: ACTIVE`
+                  : `🛡️ Active Session Bound to: ${email} · Creator Godmode Disabled`
+              );
             }}
             moderatedPlayers={moderatedPlayers}
             onUpdateModeratedPlayers={(updated) => setModeratedPlayers(updated)}
@@ -2537,6 +2558,8 @@ export default function App() {
               setActiveModal('world_ai');
             }}
             onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
+            godImmunity={godImmunity}
+            onActivateMaxGodCharacter={handleActivateMaxGodCharacter}
             onClose={() => setActiveModal('none')}
           />
         )}
@@ -2562,6 +2585,7 @@ export default function App() {
             onDiscoverManual={handleDiscoverManual}
             onUnlockManualDirect={handleUnlockManualDirect}
             onUpdateCultivation={setCultivation}
+            isGodImmune={godImmunity.immuneToAllThings}
             onClose={() => setActiveModal('none')}
           />
         )}

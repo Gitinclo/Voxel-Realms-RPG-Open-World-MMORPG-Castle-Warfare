@@ -58,6 +58,11 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { createSupportTicketDocument } from '../lib/firestore';
+import {
+  GOD_IMMUNITY_DOMAIN_SPECS,
+  GodCharacterImmunityStatus,
+  evaluateGodCharacterImmunity,
+} from '../game/godModeCharacter';
 
 interface AdminConsoleModalProps {
   godmode: boolean;
@@ -89,6 +94,8 @@ interface AdminConsoleModalProps {
   onExecuteWhitePageDecree?: (decreeType: WhitePageAuthorDecreeType) => void;
   onOpenOmniverseDirector?: () => void;
   onOpenCosmologicalAdmin?: () => void;
+  godImmunity?: GodCharacterImmunityStatus;
+  onActivateMaxGodCharacter?: () => void;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
 }
@@ -121,6 +128,8 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onExecuteWhitePageDecree,
   onOpenOmniverseDirector,
   onOpenCosmologicalAdmin,
+  godImmunity,
+  onActivateMaxGodCharacter,
   initialTab = 'cheats',
   onClose,
 }) => {
@@ -943,6 +952,80 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                 </div>
               </div>
 
+              {/* Supreme Creator Maxed-Out God Character & All-Things Immunity */}
+              {(() => {
+                const resolvedImmunity =
+                  godImmunity ?? evaluateGodCharacterImmunity(activeAccountEmail, godmode);
+                return (
+                  <div
+                    data-testid="god-sovereign-immunity-panel"
+                    className="p-4 rounded-xl bg-gradient-to-br from-amber-950/55 via-slate-900 to-purple-950/55 border border-amber-400/50 space-y-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <span>
+                            Supreme Creator God Character &amp; All-Things Immunity (
+                            {PRIMARY_ADMIN_EMAIL})
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          {resolvedImmunity.label} · Castle Lv.100 · Ultimate Origin Realm 23 L9 ·
+                          1,000T T20 Army · VIP 3 Loyalty Lv.15 · Divine Lv.999 Heroes
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        data-testid="activate-max-god-character-btn"
+                        onClick={() => {
+                          sound.playUpgradeFanfare();
+                          onActivateMaxGodCharacter?.();
+                          addLog(
+                            `GOD CHARACTER MAXED: Applied Lv.100 / Realm 23 L9 / 1,000T T20 / VIP 3 / 12-Domain All-Things Immunity for ${PRIMARY_ADMIN_EMAIL}.`
+                          );
+                        }}
+                        className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-mono font-black shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer"
+                      >
+                        MAX-OUT GOD CHARACTER &amp; IMMUNITY
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {GOD_IMMUNITY_DOMAIN_SPECS.map((spec) => {
+                        const isDomainActive = resolvedImmunity.activeImmunities.includes(spec.id);
+                        return (
+                          <div
+                            key={spec.id}
+                            className={`p-2 rounded-lg border text-[11px] ${
+                              isDomainActive
+                                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-100'
+                                : 'bg-slate-950/70 border-slate-800 text-slate-400'
+                            }`}
+                          >
+                            <div className="font-mono font-bold flex items-start justify-between gap-2">
+                              <span className="leading-tight">{spec.title}</span>
+                              <span
+                                className={
+                                  isDomainActive
+                                    ? 'text-emerald-300 shrink-0'
+                                    : 'text-slate-500 shrink-0'
+                                }
+                              >
+                                {isDomainActive ? 'IMMUNE' : 'INACTIVE'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                              {spec.description}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Godmode & Instant Castle */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 flex items-center justify-between">
@@ -952,11 +1035,12 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       Godmode (Invulnerability)
                     </div>
                     <div className="text-xs text-slate-400 mt-0.5">
-                      Infinite Lord HP, zero casualty attrition, counter-strike block.
+                      Zero casualties, 0x realm suppression, tribulation &amp; status immunity.
                     </div>
                   </div>
                   <button
                     type="button"
+                    data-testid="toggle-godmode-btn"
                     onClick={() => {
                       onToggleGodmode();
                       sound.playSwing();

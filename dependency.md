@@ -71,18 +71,18 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 4. C++20 Engine Dependencies (`vcpkg.json`)
 
-| Library           | Version / Baseline                                  | Scope        | Manifest                        |
-| :---------------- | :-------------------------------------------------- | :----------- | :------------------------------ |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
-| `[object Object]` | Baseline `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native C++20 | `vcpkg.json` / `CMakeLists.txt` |
+| Library            | Version Constraint (`>=`) | Baseline Commit                            | Architectural Purpose                                         |
+| :----------------- | :------------------------ | :----------------------------------------- | :------------------------------------------------------------ |
+| `entt`             | `>=3.14.0`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Entity-Component-System (ECS) sparse-set registry (`SoA`)     |
+| `fmt`              | `>=11.0.2`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Fast type-safe C++20 string & telemetry formatting            |
+| `glm`              | `>=1.0.1`                 | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | SIMD-aligned 3D vector, quaternion & matrix math              |
+| `sdl2`             | `>=2.30.9`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Cross-platform desktop/mobile windowing & gamepad input       |
+| `bullet3`          | `>=3.25`                  | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Native 3D rigid-body physics & siege ballistics               |
+| `fastnoise2`       | `>=0.10.0-alpha`          | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | SIMD-accelerated 2D/3D/4D Simplex & fBm terrain generation    |
+| `recastnavigation` | `>=1.6.0`                 | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | 3D NavMesh generation & A\* crowd pathfinding around keeps    |
+| `enet`             | `>=1.3.18`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | Reliable/unreliable UDP transport for native 20Hz siege ticks |
+| `lz4`              | `>=1.10.0`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | High-speed frame & snapshot delta compression                 |
+| `gtest`            | `>=1.15.2`                | `b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01` | C++20 CTest guardrail unit test framework                     |
 
 ---
 
@@ -91,5 +91,5 @@ This document tracks every runtime dependency, development tool, transitive secu
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
 npm outdated                   # Inspect minor/major drift safely
-npm run validate               # Verify tsc --noEmit, firestore.rules lint, Prettier, 168 tests & Vite build
+npm run validate               # Verify tsc --noEmit, firestore.rules lint, Prettier, 171 tests & Vite build
 ```

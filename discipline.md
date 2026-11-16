@@ -2,7 +2,7 @@
 
 - **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
 - **Sovereign Root Owner & Lead Architect**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
-- **Enforcement Gate**: `npm run validate` (`lint` + `lint:rules` + `format:check` + `test` [`168` tests across `28` suites] + `build`)
+- **Enforcement Gate**: `npm run validate` (`lint` + `lint:rules` + `format:check` + `test` [`171` tests across `29` suites] + `build`)
 
 ---
 
@@ -28,7 +28,7 @@ Before adding any new gameplay feature, network packet, or database table:
 1. **Inspect Existing Domain Modules**: Search `src/game/` and `src/types/` to reuse existing types, `BigInt` formatters, and validation helpers rather than duplicating logic.
 2. **Design Pure Types & Functions First**: Define the TypeScript interfaces and pure state-transition functions in `src/game/<feature>.ts`.
 3. **Write Deterministic Unit Tests Immediately**: Create `src/game/<feature>.test.ts` using `node:test` and `node:assert/strict` covering normal paths, boundary caps, and adversarial inputs.
-4. **Register Cross-System Invariants**: Add the feature's structural invariants to `src/game/systemValidation.ts` (`runFullSystemValidationReport`, verifying **100 invariants across 9 pillars**).
+4. **Register Cross-System Invariants**: Add the feature's structural invariants to `src/game/systemValidation.ts` (`runFullSystemValidationReport`, verifying **103 invariants across 9 pillars**).
 5. **Wire into the Imperative Shell Last**: Connect the verified pure functions to React modals (`React.lazy`) or `server.ts` routes.
 
 ### B. The 3–4 Feature Refactor Cadence
@@ -78,7 +78,7 @@ Run these commands before every commit or Pull Request:
 
 ```bash
 npm run format                # Format all TypeScript, JSON, CSS & Markdown files with Prettier
-npm run validate              # Run lint + lint:rules + format:check + 168 unit tests + production build
+npm run validate              # Run lint + lint:rules + format:check + 171 unit tests + production build
 npm run verify:ops            # Run live server load, exploit, crash-recovery & SIGTERM readiness suite
 npm audit --audit-level=high  # Verify 0 high/critical dependency vulnerabilities
 ```

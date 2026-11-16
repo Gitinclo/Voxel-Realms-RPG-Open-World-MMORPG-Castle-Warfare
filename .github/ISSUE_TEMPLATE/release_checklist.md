@@ -23,7 +23,7 @@ labels: ['release']
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 168 unit, EULA/Legal, security, and rule tests across all 28 test suites
+- [ ] `npm test` passes all 171 unit, EULA/Legal, God-Mode, security, and rule tests across all 29 test suites
 - [ ] `npm run verify:ops` passes live server load, exploit, crash-recovery & `SIGTERM` checks
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
@@ -34,7 +34,7 @@ labels: ['release']
 - [ ] Castle progression (Lv. 0–100) and T1–T20 Troop Barracks (with live training queue) function properly
 - [ ] Four-Path Cultivation, Realm Suppression (100x Golden Core vs Qi Refinement), Karma/Tribulation Lightning, and Master/Disciple systems work
 - [ ] Daily Login Reward modal, Veteran Scroll comprehension, and VIP Member Covenant (Tiers 0–3) work
-- [ ] World AI Director (Lv. 1–1000 monsters, A\* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server & Anti-Cheat (`/ws/siege` & `/api/online/*`), 3D Open-World BVH/Simplex/Cannon Physics (`src/game/openWorld3DEngine.ts`), MMORPG Avatar/Clone/Shadow Engine (`src/game/avatarCloneShadow.ts`), C++20 Software & Hardware Architect Studio (`15/11/2026`), 9-Pillar Cross-System Validation Engine (`100` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
+- [ ] World AI Director (Lv. 1–1000 monsters, A\* pathfinding, NPC roles), 6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf & Tier 5/Tier 1 Physics Overrides), Imperial Lore & Cosmological History Codex, Authoritative 20Hz 50v50 WebSocket Siege Server & Anti-Cheat (`/ws/siege` & `/api/online/*`), 3D Open-World BVH/Simplex/Cannon Physics (`src/game/openWorld3DEngine.ts`), MMORPG Avatar/Clone/Shadow Engine (`src/game/avatarCloneShadow.ts`), Supreme Creator Max-Out God Character & 12-Domain All-Things Immunity (`src/game/godModeCharacter.ts`), C++20 Software & Hardware Architect Studio (`15/11/2026`), 9-Pillar Cross-System Validation Engine (`103` checks), and Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`) work
 - [ ] Administration, GM, Admin & Moderator Console (`creatergame31@gmail.com`) RBAC, moderation actions, and official contact ticket queue work
 - [ ] No console crashes across major user flows on desktop or mobile viewports
 
@@ -49,7 +49,7 @@ labels: ['release']
 
 - [ ] `README.md` reflects actual setup, features, and project structure
 - [ ] `CHANGELOG.md` and `ROADMAP.md` are updated with release notes and upcoming milestones
-- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LEGAL.md`, `LORE.md`, `Four-Path Cultivation.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `security_spec.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
+- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LEGAL.md`, `LORE.md`, `Four-Path Cultivation.md`, `in-game- economy -marketplace.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `security_spec.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
 - [ ] Operational runbooks & QA playbooks are up to date (`discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `environment hardening.md`, `real-world QA.md`, `incident response.md`)
 
 ## 6. ⚙️ CI/CD & Final Signoff Gate

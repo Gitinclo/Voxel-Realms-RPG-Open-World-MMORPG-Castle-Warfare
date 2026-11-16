@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.equal(report.totalAssertionsPassed, 100);
+  assert.equal(report.totalAssertionsPassed, 103);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -44,6 +44,11 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
   );
   assert.ok(
     rbacPillar.verifiedInvariants.some((inv) => inv.includes('10-Agreement Legal Compliance Stack'))
+  );
+  assert.ok(
+    rbacPillar.verifiedInvariants.some((inv) =>
+      inv.includes('12/12 All-Things God Immunity Domains')
+    )
   );
 
   assert.ok(cosmologyPillar);

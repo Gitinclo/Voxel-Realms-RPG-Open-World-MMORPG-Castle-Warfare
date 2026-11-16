@@ -208,9 +208,39 @@ export function calculateRallyCapacity(castleLevel: number): bigint {
 /**
  * Formats ultra-large BigInt numbers cleanly for UI display (e.g., 1000.00T, 45.20B, 3.50M, 120.5K)
  */
+const HIGH_SCALE_SUFFIXES: ReadonlyArray<{ exponent: number; suffix: string }> = [
+  { exponent: 45, suffix: 'Qid' },
+  { exponent: 42, suffix: 'Td' },
+  { exponent: 39, suffix: 'Dd' },
+  { exponent: 36, suffix: 'Ud' },
+  { exponent: 33, suffix: 'Dc' },
+  { exponent: 30, suffix: 'No' },
+  { exponent: 27, suffix: 'Oc' },
+  { exponent: 24, suffix: 'Sp' },
+  { exponent: 21, suffix: 'Sx' },
+  { exponent: 18, suffix: 'Qi' },
+];
+
 export function formatBigInt(num: bigint | number): string {
   const b = typeof num === 'bigint' ? num : BigInt(Math.floor(num));
   if (b < 0n) return `-${formatBigInt(-b)}`;
+
+  if (b >= 10n ** 48n) {
+    const digits = b.toString();
+    const exp = digits.length - 1;
+    const lead = `${digits[0]}.${digits.slice(1, 3)}`;
+    return `${lead}e+${exp}`;
+  }
+
+  for (const tier of HIGH_SCALE_SUFFIXES) {
+    const scale = 10n ** BigInt(tier.exponent);
+    if (b >= scale) {
+      const scaled = (b * 100n) / scale;
+      const whole = scaled / 100n;
+      const frac = (scaled % 100n).toString().padStart(2, '0');
+      return `${whole}.${frac}${tier.suffix}`;
+    }
+  }
 
   if (b >= 1_000_000_000_000_000n) {
     const quadrillions = Number(b / 10_000_000_000_000n) / 100;

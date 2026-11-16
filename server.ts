@@ -1467,7 +1467,11 @@ async function startServer() {
     const session = requireAuthenticatedSession(req, res);
     if (!session) return;
 
-    const quarantine = antiCheatGuard.isQuarantined(session.commanderId);
+    const quarantine = antiCheatGuard.isQuarantined(
+      session.commanderId,
+      Date.now(),
+      session.isRootOwner
+    );
     if (quarantine.quarantined) {
       res.setHeader('Retry-After', String(quarantine.retryAfterSec));
       res.status(429).json({
@@ -1507,7 +1511,12 @@ async function startServer() {
       });
       if (!troopCheck.allowed) {
         opsCounters.antiCheatRejections += 1;
-        const strike = antiCheatGuard.recordStrike(session.commanderId, troopCheck.violation);
+        const strike = antiCheatGuard.recordStrike(
+          session.commanderId,
+          troopCheck.violation,
+          Date.now(),
+          session.isRootOwner
+        );
         if (strike.quarantinedNow) {
           opsCounters.antiCheatStrikeLockouts += 1;
           res.setHeader('Retry-After', String(strike.retryAfterSec));
@@ -1544,7 +1553,12 @@ async function startServer() {
       });
       if (!rallyCheck.allowed) {
         opsCounters.antiCheatRejections += 1;
-        const strike = antiCheatGuard.recordStrike(session.commanderId, rallyCheck.violation);
+        const strike = antiCheatGuard.recordStrike(
+          session.commanderId,
+          rallyCheck.violation,
+          Date.now(),
+          session.isRootOwner
+        );
         if (strike.quarantinedNow) {
           opsCounters.antiCheatStrikeLockouts += 1;
           res.setHeader('Retry-After', String(strike.retryAfterSec));
@@ -1810,7 +1824,11 @@ async function startServer() {
           let sectorState = store.sectors[targetSector];
 
           if (isMutatingCommand && peer.session) {
-            const quarantine = antiCheatGuard.isQuarantined(peer.session.commanderId);
+            const quarantine = antiCheatGuard.isQuarantined(
+              peer.session.commanderId,
+              Date.now(),
+              peer.session.isRootOwner
+            );
             if (quarantine.quarantined) {
               socket.write(
                 encodeWsTextFrame(
@@ -1846,7 +1864,9 @@ async function startServer() {
               opsCounters.antiCheatRejections += 1;
               const strike = antiCheatGuard.recordStrike(
                 peer.session.commanderId,
-                troopCheck.violation
+                troopCheck.violation,
+                Date.now(),
+                peer.session.isRootOwner
               );
               if (strike.quarantinedNow) {
                 opsCounters.antiCheatStrikeLockouts += 1;
@@ -1902,7 +1922,9 @@ async function startServer() {
               opsCounters.antiCheatRejections += 1;
               const strike = antiCheatGuard.recordStrike(
                 peer.session.commanderId,
-                rallyCheck.violation
+                rallyCheck.violation,
+                Date.now(),
+                peer.session.isRootOwner
               );
               if (strike.quarantinedNow) {
                 opsCounters.antiCheatStrikeLockouts += 1;

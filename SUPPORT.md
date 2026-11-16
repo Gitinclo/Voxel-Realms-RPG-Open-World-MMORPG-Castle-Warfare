@@ -56,7 +56,7 @@ Game state is persisted in your browser's `localStorage` under deterministic key
 
 ### Q3: Running unit tests with `node --test` fails on TypeScript imports.
 
-- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` across all 28 suites / 168 tests) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
+- **Fix:** Always run tests via `npm test` (which invokes `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` across all 29 suites / 171 tests) or `npx --yes tsx --test <file>`. Node's built-in type stripper does not resolve extensionless TypeScript imports.
 
 ### Q4: How do I switch my character's Species after initial creation or command the 100 Omniverse Background NPCs?
 

@@ -17,7 +17,7 @@
    ```
 4. **Verify Everything Works**:
    ```bash
-   npm run validate     # lint + lint:rules + format:check + 168 tests + build
+   npm run validate     # lint + lint:rules + format:check + 171 tests + build
    npm run verify:ops   # live load, security & crash-recovery verification
    ```
 5. **Required Reading Order**: [`README.md`](./README.md) → [`discipline.md`](./discipline.md) → [`ARCHITECTURE.md`](./ARCHITECTURE.md) → [`CONTRIBUTING.md`](./CONTRIBUTING.md) → [`Four-Path Cultivation.md`](./Four-Path%20Cultivation.md).

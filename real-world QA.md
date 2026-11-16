@@ -2,7 +2,7 @@
 
 - **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
 - **QA Sign-Off Authority**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
-- **Automated + Manual Coverage**: `168` Unit/Security Tests (`28` Suites) + `100` System Invariants + Live `verify:ops` Harness + Cross-Device Browser Matrix
+- **Automated + Manual Coverage**: `171` Unit/Security Tests (`29` Suites) + `103` System Invariants + Live `verify:ops` Harness + Cross-Device Browser Matrix
 
 ---
 

@@ -17,7 +17,7 @@ Complete catalog of npm scripts, database migrations, C++20 verification command
 | `npm run lint:rules`   | `eslint firestore.rules`                                                  | Audits Cloud Firestore rules with `@firebase/eslint-plugin-security-rules`                     |
 | `npm run format`       | `prettier --write .`                                                      | Formats `.ts`, `.tsx`, `.md`, `.json`, `.yml`, and `.css` files                                |
 | `npm run format:check` | `prettier --check .`                                                      | Fails if any tracked file violates Prettier rules                                              |
-| `npm test`             | `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` | Executes all **168 automated tests across 28 suites**                                          |
+| `npm test`             | `tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts` | Executes all **171 automated tests across 29 suites**                                          |
 | `npm run test:rules`   | `tsx --test firestore.rules.test.ts`                                      | Runs only the Dirty Dozen Firestore security rule audit tests                                  |
 | `npm run verify:ops`   | `tsx scripts/verify-readiness.ts`                                         | Spawns isolated server, runs 50-way load, exploit rejections, `.bak` failover & `SIGTERM` test |
 | `npm run validate`     | `lint && lint:rules && format:check && test && build`                     | Full 5-stage pre-merge validation gate                                                         |

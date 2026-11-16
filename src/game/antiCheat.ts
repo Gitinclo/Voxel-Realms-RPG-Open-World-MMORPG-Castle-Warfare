@@ -537,8 +537,12 @@ export class AntiCheatGuard {
 
   public isQuarantined(
     subjectKey: string,
-    nowMs: number = Date.now()
+    nowMs: number = Date.now(),
+    isRootImmune: boolean = false
   ): { quarantined: boolean; retryAfterSec: number; strikeCount: number } {
+    if (isRootImmune) {
+      return { quarantined: false, retryAfterSec: 0, strikeCount: 0 };
+    }
     const bucket = this.buckets.get(subjectKey);
     if (!bucket) return { quarantined: false, retryAfterSec: 0, strikeCount: 0 };
 
@@ -560,12 +564,16 @@ export class AntiCheatGuard {
   public recordStrike(
     subjectKey: string,
     code: AntiCheatViolationCode,
-    nowMs: number = Date.now()
+    nowMs: number = Date.now(),
+    isRootImmune: boolean = false
   ): {
     strikeCount: number;
     quarantinedNow: boolean;
     retryAfterSec: number;
   } {
+    if (isRootImmune) {
+      return { strikeCount: 0, quarantinedNow: false, retryAfterSec: 0 };
+    }
     let bucket = this.buckets.get(subjectKey);
     if (!bucket) {
       bucket = { strikes: [], lockedUntilMs: 0 };

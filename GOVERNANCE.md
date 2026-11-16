@@ -33,7 +33,7 @@ The governance structure mirrors the deterministic Role-Based Access Control (RB
 ### A. Routine Bug Fixes, UI Polish & Test Additions
 
 - May be submitted directly via a Pull Request following [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md).
-- Requires all automated CI checks (`168` unit, EULA/Legal, security, and rule tests across 28 TypeScript suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
+- Requires all automated CI checks (`171` unit, EULA/Legal, God-Mode, security, and rule tests across 29 TypeScript suites, TypeScript strict lint, Prettier formatting) to pass and approval from at least one **Core Maintainer / Administrator** (`Lv. 600+`) or the **Root Owner** (`creatergame31@gmail.com`).
 
 ### B. Major Gameplay, Mathematical or Engine Changes ("Architect-First" RFCs)
 

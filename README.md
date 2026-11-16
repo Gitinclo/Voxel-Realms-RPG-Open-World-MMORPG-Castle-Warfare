@@ -1,7 +1,7 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-168_Passing_(28_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-171_Passing_(29_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./src/game/openWorld3DEngine.ts)
@@ -95,10 +95,25 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **Authoritative 20Hz (`50ms`) 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
 - **Atomic Disk Persistence, Crash Recovery & Single-Instance Bounds (`src/game/serverPersistence.ts`, `/readyz`, `/api/ops/readiness`)**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Live capacity bounds (`<=250` WS peers, `<=5,000` cached commanders) apply to this single-instance architecture; horizontal multi-pod clustering requires an external DB and Redis pub/sub adapter.
 
-### 10. ⚖️ Server-Enforced Administration, GM, Admin & Moderator RBAC Control (`creatergame31@gmail.com`)
+### 10. ⚖️ Server-Enforced Administration, GM, Admin & Moderator RBAC Control & Supreme Creator God Character (`creatergame31@gmail.com`)
 
 - **Server-Side Cryptographic & Exploit Hardening (`server.ts`, `src/game/serverAuth.ts`, `src/game/serverHardening.ts`)**: Privileged RBAC actions (`GET /api/admin/state`, `POST /api/admin/moderation`, `POST /api/admin/tickets/resolve`, `POST /api/admin/decree`, `POST /api/admin/species-rebirth`) and online mutations (`/api/online/sync`, `/api/online/siege/cmd`, WebSocket `C2S_*`) fail closed (`401`/`403`) without an HMAC-SHA256 `HttpOnly` session cookie, guarded by sliding-window API write rate limits (`120/min`), 5-attempt admin login brute-force lockouts (`429` + `Retry-After`), Same-Origin CSRF checks, recursive `__proto__` payload filtering (`400`), WS frame/flood caps (`32 KiB` frame / `30 msg/s`), and slow-consumer backpressure disconnects.
-- **Explicit Client Trust Boundary (`src/game/adminModeration.ts`, `AdminConsoleModal.tsx`)**: Client-side email switches, `localStorage` caches, and single-player canvas cheats are explicitly marked **`UNTRUSTED_CLIENT_PREVIEW`** and cannot escalate server permissions or spoof multiplayer state. Root account **`creatergame31@gmail.com`** retains immutable Clearance `Lv. 999` protection on the server, with all security events persisted to `securityAuditLog` and verified end-to-end against a live server via `npm run verify:ops` (`scripts/verify-readiness.ts`). See [`SECURITY.md`](./SECURITY.md) for deployment hardening requirements.
+- **Explicit Client Trust Boundary (`src/game/adminModeration.ts`, `AdminConsoleModal.tsx`)**: Client-side email switches, `localStorage` caches, and single-player canvas cheats are explicitly marked **`UNTRUSTED_CLIENT_PREVIEW`** and cannot escalate server permissions or spoof multiplayer state. Root account **`creatergame31@gmail.com`** retains immutable Clearance `Lv. 999` protection plus **Supreme Creator Max-Out God Character & 12-Domain All-Things Immunity** (`src/game/godModeCharacter.ts`, strictly fail-closed for all other emails), with all security events persisted to `securityAuditLog` and verified end-to-end against a live server via `npm run verify:ops` (`scripts/verify-readiness.ts`). See [`SECURITY.md`](./SECURITY.md) for deployment hardening requirements.
+- **Supreme Creator Max-Out God Character & 12-Domain All-Things Immunity (`src/game/godModeCharacter.ts`, `AdminConsoleModal.tsx`, `CultivationModal.tsx`)**:
+  - **Maxed-Out God Character Bundle (`buildMaxedGodCharacterBundle`)**: Exclusively bound to **`creatergame31@gmail.com`** (`Castle Lv. 100 Omnipotent Citadel`, `Armor Tier 20`, `1,000T` T20 troops across Shieldbearers/Shooters/Bombers, `999.999T` [`~1Q`] treasury reserves across Wood/Steel/Copper/Grain/Oil/Diamonds/Spirit Stones/Scripture Fragments, **Realm 22 `Ultimate Origin Supreme Realm` Layer 9** across Qi/Body/Soul/Mind, all 12 Ancient Manuals at `Lv. 10`, all 4 Mystical Skills, 12 Comprehended Great Daos, `100%` Chaos Spirit Root, Supreme Gold Justice Karma `+100,000`, `VIP 3 Celestial Sovereign` Loyalty `Lv. 15`, and `Lv. 999` Divine Heroes).
+  - **12-Domain All-Things Immunity (`GOD_IMMUNITY_DOMAINS`, `evaluateGodCharacterImmunity`, `applyGodImmunityToIncomingEffect`)**: Strictly fail-closed for all non-root accounts (`isCreatorGodAccount && godmodeEnabled`):
+    1. `damage_and_casualties` — Zero incoming HP damage (`0`) and `0` troop casualties across PvE, PvP, and `1T` Rallies.
+    2. `realm_suppression` — Immune to hostile cultivation realm suppression (`0.0x` incoming multiplier vs. standard up to `100.0x`).
+    3. `tribulation_lightning` — Complete immunity to Heavenly & Stationary Tribulation Lightning strikes.
+    4. `judgment_and_loot_drop` — Zero equipment/loot drop risk (`0%` vs. `85%` Red-Name penalty) and immunity to Heavenly Judgment.
+    5. `karma_degradation_and_bounty` — Immune to negative Karma shifts, Red-Name locking, and global Bounty broadcasting.
+    6. `mind_demon_and_curse` — Immune to Inner Heart Demons, Soul Corruption, Qi Deviation, and hexes.
+    7. `status_and_crowd_control` — Immune to stun, freeze, silence, knockback, slow, root, and weather penalties.
+    8. `economic_drain_and_tax` — Zero-Loss Economic Immunity across upgrades, training, alchemy, manuals, VIP, and marketplace taxes ([`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md)).
+    9. `cooldown_and_phase_lock` — Zero skill/clone/shadow/decree cooldowns and immunity to spatial/dimensional locks.
+    10. `moderation_and_quarantine` — Immutable `Lv. 999` Root Owner protection (`cannotSanctionRootAdmin`) and server `AntiCheatEngine` quarantine bypass.
+    11. `breakthrough_failure` — Guaranteed `100%` breakthrough ascension probability with zero realm regression.
+    12. `cosmic_oblivion_erase` — Anchored at Layer 6 (`THE_WHITE_PAGE` / `The House of Ideas`), immune to Tier 5 Overvoid logic erasure and Oblivion resets.
 
 ### 11. 🖥️ Software Architect & Hardware Architect Compatibility & Optimization (`15/11/2026` — `v1.5.0`)
 
@@ -243,8 +258,8 @@ interface WhitePageRoot {
 
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **100 cross-module invariants** across:
-  1. **Root RBAC, 10-Article EULA v1.5.0, 10-Agreement Legal Stack Governance & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **103 cross-module invariants** across:
+  1. **Root RBAC, 12-Domain All-Things Creator God Immunity (`src/game/godModeCharacter.ts`), 10-Article EULA v1.5.0, 10-Agreement Legal Stack Governance & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
   4. **10 Playable Species, 3D Procedural Anatomy & Admin Rebirth Permission Gate**
@@ -337,7 +352,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **168 automated tests across 28 suites** (`26` engine/security/netcode/anti-cheat/3D-physics/avatar-clone-shadow/EULA-legal suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
+Execute all **171 automated tests across 29 suites** (`27` engine/security/netcode/anti-cheat/3D-physics/avatar-clone-shadow/EULA-legal/god-mode suites in `src/game/*.test.ts`, `src/lib/gmail.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -439,7 +454,7 @@ npm run preview       # Preview production build locally
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
 │   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 26 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 27 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
@@ -460,6 +475,8 @@ npm run preview       # Preview production build locally
 │   │   ├── dailyLogin.test.ts         # Daily login system unit tests
 │   │   ├── eula.ts                    # End User License Agreement (EULA v1.5.0), FNV-1a receipts & compliance
 │   │   ├── eula.test.ts               # EULA 10 articles, FNV-1a receipt hashing & compliance unit tests
+│   │   ├── godModeCharacter.ts        # Supreme Creator Max-Out God Character & 12-Domain All-Things Immunity
+│   │   ├── godModeCharacter.test.ts   # Fail-closed 12-Domain God Immunity & Maxed God Character unit tests
 │   │   ├── graphicsEngine.ts          # PC/Console BC7 vs Mobile ASTC LOD pipeline logic
 │   │   ├── graphicsEngine.test.ts     # Graphics pipeline unit tests
 │   │   ├── heroSkins.ts               # Hero aesthetic skins & particle aura catalog
@@ -485,7 +502,7 @@ npm run preview       # Preview production build locally
 │   │   ├── siegeNetProtocol.test.ts   # 20Hz Siege Protocol, BigInt wire, 128-frame CSP & Quorum unit tests
 │   │   ├── species.ts                 # 10-Species catalog, 3D mesh specs & Admin switch permission gate
 │   │   ├── species.test.ts            # 10-Species catalog, 3D stature bounds & Admin permission unit tests
-│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (100 invariants)
+│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (103 invariants)
 │   │   ├── systemValidation.test.ts   # Cross-System Validation & Integrity unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
@@ -537,6 +554,7 @@ npm run preview       # Preview production build locally
 ├── Four-Path Cultivation.md           # Four-Path Cultivation guide, Getting Started & .env.example setup
 ├── GOVERNANCE.md                      # Project governance, RBAC hierarchy & RFC process
 ├── incident response.md               # SEV-1 to SEV-4 triage SLAs, quarantine pardons & recovery playbooks
+├── in-game- economy -marketplace.md   # In-game Kingdom/Cultivation currencies, BigInt ledgers & Auction/Marketplace spec
 ├── index.html                         # HTML entry point & Google Fonts configuration
 ├── LEGAL.md                           # Complete 10-Agreement Legal Stack (ToS, Privacy/DPDP, Cookie, EULA, SaaS, OSS, AUP, SLA, DPA, MSA)
 ├── LICENSE                            # Apache License 2.0 (raw text)
@@ -573,7 +591,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **168 unit, security, and regression tests across 28 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **171 unit, security, and regression tests across 29 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -596,7 +614,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`168/168 Passing` across 28 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`171/171 Passing` across 29 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
@@ -608,6 +626,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
 - **`eula.test.ts`**: Verifies the 10-article End User License Agreement (`EULA v1.5.0 · 15/11/2026`), the 10-Agreement Legal Compliance Stack (`LEGAL_DOCUMENT_STACK` & `LEGAL_QUICK_COMPARISON_MATRIX`), Dual-Layer `Apache-2.0` + Hosted Game Service scope, deterministic FNV-1a acceptance receipt hashing (`EULA-ACK-...`), compliance checks, and keyword/category filtering.
+- **`godModeCharacter.test.ts`**: Verifies `creatergame31@gmail.com` fail-closed 12-Domain All-Things Immunity (`evaluateGodCharacterImmunity`, `applyGodImmunityToIncomingEffect`), Max-Out God Character preset generation (`Castle Lv. 100`, `1,000T` T20 troops, Realm 22 L9 across all 4 Paths, VIP 3 Celestial Sovereign, `Lv. 999` Divine Heroes), and total immunity integration across cultivation suppression, tribulation lightning, Red-Name loot drops, and anti-cheat quarantine.
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`6+` sections each), 12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`), Auto-Populating Open-World Lore Codex (8 spatial biomes + canonical/dynamic Lv. 1–1000 monster discovery & bounty claims), the `10^100`-Word Minimum Akashic Lore Stream (`generateGoogolScaleLoreScrollSlice` synthesizing `>= 1,000` real words/volume across `10^97` `BigInt` coordinates), 6 Sacred Compendium Codices, `comprehendLoreEpoch`, and full-text `searchLoreHistory`.
@@ -619,7 +638,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
 - **`species.test.ts`**: Verifies all 10 playable species across Fantasy, Xianxia, and Cosmic lineages, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **100 invariants** across Root RBAC, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **103 invariants** across Root RBAC & 12-Domain Creator God Immunity, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 10 Playable Species, `15/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex Engine & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
@@ -638,7 +657,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 168 TypeScript unit, Gmail MIME, EULA/Legal & Firestore rule tests (28 suites)
+npm test                      # 4. Run all 171 TypeScript unit, Gmail MIME, EULA/Legal & Firestore rule tests (29 suites)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 ```
 
@@ -657,7 +676,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)       | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                 | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)               | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 168 automated unit/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 171 automated unit/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -679,7 +698,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 168 unit, security, EULA/Legal, and Firestore rule tests across 28 TypeScript test suites
+- [x] `npm test` passes all 171 unit, security, EULA/Legal, and Firestore rule tests across 29 TypeScript test suites
 - [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile (`real-world QA.md`)
@@ -722,6 +741,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 ### Project Tracking & History
 
 - **[Four-Path Immortal Cultivation & Local Dev Guide (`Four-Path Cultivation.md`)](./Four-Path%20Cultivation.md)** — Complete 23-Realm × 9-Layer matrix across Qi, Body, Soul, and Mind, `100.0x` Realm Suppression math, Karma & Red-Name justice, Master-Disciple lineage, Getting Started workflow, and `.env.example` environment variable guide.
+- **[In-Game Economy & Marketplace Specification (`in-game- economy -marketplace.md`)](./in-game-%20economy%20-marketplace.md)** — Complete specification of the 8 core Kingdom & Cultivation currencies + Clan Honor Coins, lossless `BigInt` (`1,000T` troop / `1T` rally) ledger math, Marketplace & Auction House (`5%` escrow sink, soft-close anti-sniping, Jade Skill Scrolls), VIP discounts/stipends, and Root Creator Zero-Loss Economic Immunity (`creatergame31@gmail.com`).
 - **[Imperial Lore & Cosmological History Codex (`LORE.md`)](./LORE.md)** — Complete 6-Layer Cosmic Ontology (`COSMIC_LIMITS`: `1` White Page Singleton → `100` Overvoids → `∞` Realities), 7 Grand Historical Epochs (`Epoch Ω-0`–`VI`), 12 Imperial Dynastic Annals, Auto-Populating Open-World Lore Codex (`Biomes` & `Monsters`), and `10^100`-Word Akashic Archive.
 - **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.5.0` · `15/11/2026`).
 - **[Project Roadmap (`ROADMAP.md`)](./ROADMAP.md)** — High-level vision and upcoming milestones (`v1.5.0` Software & Hardware Architect, `v1.5.1` 50v50 WebSocket Sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU Flocking, `v2.0.0` Native C++20/Vulkan).
@@ -756,7 +776,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **SRE, DevOps & Operational Discipline (`26` Docs)**: [`runbooks.md`](./runbooks.md), [`playbooks.md`](./playbooks.md), [`disaster_recovery.md`](./disaster_recovery.md), [`business_continuity.md`](./business_continuity.md), [`slo_sla_sli.md`](./slo_sla_sli.md), [`error_budgets.md`](./error_budgets.md), [`alerting_matrix.md`](./alerting_matrix.md), [`on_call_rotation.md`](./on_call_rotation.md), [`postmortem_template.md`](./postmortem_template.md), [`blameless_retrospective.md`](./blameless_retrospective.md), [`root_cause_analysis.md`](./root_cause_analysis.md), [`rollback_procedures.md`](./rollback_procedures.md), [`zero_downtime_migrations.md`](./zero_downtime_migrations.md), [`canary_deployments.md`](./canary_deployments.md), [`chaos_engineering.md`](./chaos_engineering.md), [`capacity_planning.md`](./capacity_planning.md), [`load_testing.md`](./load_testing.md), [`stress_testing.md`](./stress_testing.md), [`observability_pipeline.md`](./observability_pipeline.md), [`telemetry_spec.md`](./telemetry_spec.md), [`log_aggregation.md`](./log_aggregation.md), [`tracing.md`](./tracing.md), [`secrets_management.md`](./secrets_management.md), [`key_rotation.md`](./key_rotation.md), [`immutable_infrastructure.md`](./immutable_infrastructure.md), [`cost_optimization.md`](./cost_optimization.md).
 - **Quality Assurance & Verification (`15` Docs)**: [`test_strategy.md`](./test_strategy.md), [`test_harness.md`](./test_harness.md), [`edge_cases.md`](./edge_cases.md), [`invariants.md`](./invariants.md), [`regression_suite.md`](./regression_suite.md), [`smoke_tests.md`](./smoke_tests.md), [`soak_testing.md`](./soak_testing.md), [`fuzz_testing.md`](./fuzz_testing.md), [`uat_checklist.md`](./uat_checklist.md), [`bug_triage_protocol.md`](./bug_triage_protocol.md), [`severity_definitions.md`](./severity_definitions.md), [`compatibility_matrix.md`](./compatibility_matrix.md), [`accessibility_qa.md`](./accessibility_qa.md), [`localization_qa.md`](./localization_qa.md), [`determinism_validation.md`](./determinism_validation.md).
 - **Security, Threat Modeling & Cryptography (`18` Docs)**: [`THREAT_MODEL.md`](./THREAT_MODEL.md), [`ATTACK_SURFACE.md`](./ATTACK_SURFACE.md), [`TRUST_BOUNDARIES.md`](./TRUST_BOUNDARIES.md), [`ZERO_TRUST_POLICY.md`](./ZERO_TRUST_POLICY.md), [`VULNERABILITY_DISCLOSURE.md`](./VULNERABILITY_DISCLOSURE.md), [`BUG_BOUNTY.md`](./BUG_BOUNTY.md), [`PENETRATION_TESTING.md`](./PENETRATION_TESTING.md), [`CRYPTOGRAPHY_SPEC.md`](./CRYPTOGRAPHY_SPEC.md), [`ACCESS_CONTROL.md`](./ACCESS_CONTROL.md), [`RBAC_MATRIX.md`](./RBAC_MATRIX.md), [`AUTH_FLOWS.md`](./AUTH_FLOWS.md), [`AUDIT_LOGGING.md`](./AUDIT_LOGGING.md), [`SUPPLY_CHAIN_SECURITY.md`](./SUPPLY_CHAIN_SECURITY.md), [`SBOM.md`](./SBOM.md), [`SANDBOXING.md`](./SANDBOXING.md), [`DATA_CLASSIFICATION.md`](./DATA_CLASSIFICATION.md), [`DATA_RETENTION.md`](./DATA_RETENTION.md), [`INCIDENT_FORENSICS.md`](./INCIDENT_FORENSICS.md).
-- **Cultivation, Worldbuilding & Game Systems (`39` Docs)**: [`COSMOLOGY.md`](./COSMOLOGY.md), [`CREATION_MYTH.md`](./CREATION_MYTH.md), [`TIMELINE_OF_ERAS.md`](./TIMELINE_OF_ERAS.md), [`WORLD_GEOGRAPHY.md`](./WORLD_GEOGRAPHY.md), [`REALMS_AND_TIERS.md`](./REALMS_AND_TIERS.md), [`BREAKTHROUGH_MECHANICS.md`](./BREAKTHROUGH_MECHANICS.md), [`TRIBULATION_SYSTEM.md`](./TRIBULATION_SYSTEM.md), [`ASCENSION_PROTOCOL.md`](./ASCENSION_PROTOCOL.md), [`QI_ECONOMY.md`](./QI_ECONOMY.md), [`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md), [`SECLUSION_AND_MEDITATION.md`](./SECLUSION_AND_MEDITATION.md), [`DUAL_CULTIVATION_AND_BONDS.md`](./DUAL_CULTIVATION_AND_BONDS.md), [`DEMONIC_VS_RIGHTEOUS_PATHS.md`](./DEMONIC_VS_RIGHTEOUS_PATHS.md), [`FORBIDDEN_TECHNIQUES.md`](./FORBIDDEN_TECHNIQUES.md), [`POCKET_REALMS_AND_GROTTOES.md`](./POCKET_REALMS_AND_GROTTOES.md), [`CALAMITIES_AND_EXTINCTIONS.md`](./CALAMITIES_AND_EXTINCTIONS.md), [`LANGUAGE_AND_RUNES.md`](./LANGUAGE_AND_RUNES.md), [`MERIDIAN_SYSTEM.md`](./MERIDIAN_SYSTEM.md), [`SPIRIT_ROOTS.md`](./SPIRIT_ROOTS.md), [`SOUL_IMPRINTING.md`](./SOUL_IMPRINTING.md), [`MIND_DEMONS.md`](./MIND_DEMONS.md), [`KARMA_AND_DAO.md`](./KARMA_AND_DAO.md), [`HEAVENLY_LAWS.md`](./HEAVENLY_LAWS.md), [`BLOODLINE_INHERITANCE.md`](./BLOODLINE_INHERITANCE.md), [`PHYSIQUES.md`](./PHYSIQUES.md), [`SECT_HIERARCHY.md`](./SECT_HIERARCHY.md), [`FACTION_DIPLOMACY.md`](./FACTION_DIPLOMACY.md), [`REPUTATION_SYSTEM.md`](./REPUTATION_SYSTEM.md), [`ALCHEMY_AND_PILLS.md`](./ALCHEMY_AND_PILLS.md), [`ARTIFACT_FORGING.md`](./ARTIFACT_FORGING.md), [`FORMATION_ARRAYS.md`](./FORMATION_ARRAYS.md), [`TALISMAN_INSCRIPTION.md`](./TALISMAN_INSCRIPTION.md), [`BEAST_COMPENDIUM.md`](./BEAST_COMPENDIUM.md), [`HERBOLOGY_INDEX.md`](./HERBOLOGY_INDEX.md), [`RELICS_AND_TREASURES.md`](./RELICS_AND_TREASURES.md), [`COMBAT_FORMULAS.md`](./COMBAT_FORMULAS.md), [`TECHNIQUE_SYNERGIES.md`](./TECHNIQUE_SYNERGIES.md), [`DAMAGE_TAXONOMY.md`](./DAMAGE_TAXONOMY.md), [`BALANCE_PHILOSOPHY.md`](./BALANCE_PHILOSOPHY.md).
+- **Cultivation, Worldbuilding, Economy & Game Systems (`40` Docs)**: [`COSMOLOGY.md`](./COSMOLOGY.md), [`CREATION_MYTH.md`](./CREATION_MYTH.md), [`TIMELINE_OF_ERAS.md`](./TIMELINE_OF_ERAS.md), [`WORLD_GEOGRAPHY.md`](./WORLD_GEOGRAPHY.md), [`REALMS_AND_TIERS.md`](./REALMS_AND_TIERS.md), [`BREAKTHROUGH_MECHANICS.md`](./BREAKTHROUGH_MECHANICS.md), [`TRIBULATION_SYSTEM.md`](./TRIBULATION_SYSTEM.md), [`ASCENSION_PROTOCOL.md`](./ASCENSION_PROTOCOL.md), [`QI_ECONOMY.md`](./QI_ECONOMY.md), [`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md), [`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md), [`SECLUSION_AND_MEDITATION.md`](./SECLUSION_AND_MEDITATION.md), [`DUAL_CULTIVATION_AND_BONDS.md`](./DUAL_CULTIVATION_AND_BONDS.md), [`DEMONIC_VS_RIGHTEOUS_PATHS.md`](./DEMONIC_VS_RIGHTEOUS_PATHS.md), [`FORBIDDEN_TECHNIQUES.md`](./FORBIDDEN_TECHNIQUES.md), [`POCKET_REALMS_AND_GROTTOES.md`](./POCKET_REALMS_AND_GROTTOES.md), [`CALAMITIES_AND_EXTINCTIONS.md`](./CALAMITIES_AND_EXTINCTIONS.md), [`LANGUAGE_AND_RUNES.md`](./LANGUAGE_AND_RUNES.md), [`MERIDIAN_SYSTEM.md`](./MERIDIAN_SYSTEM.md), [`SPIRIT_ROOTS.md`](./SPIRIT_ROOTS.md), [`SOUL_IMPRINTING.md`](./SOUL_IMPRINTING.md), [`MIND_DEMONS.md`](./MIND_DEMONS.md), [`KARMA_AND_DAO.md`](./KARMA_AND_DAO.md), [`HEAVENLY_LAWS.md`](./HEAVENLY_LAWS.md), [`BLOODLINE_INHERITANCE.md`](./BLOODLINE_INHERITANCE.md), [`PHYSIQUES.md`](./PHYSIQUES.md), [`SECT_HIERARCHY.md`](./SECT_HIERARCHY.md), [`FACTION_DIPLOMACY.md`](./FACTION_DIPLOMACY.md), [`REPUTATION_SYSTEM.md`](./REPUTATION_SYSTEM.md), [`ALCHEMY_AND_PILLS.md`](./ALCHEMY_AND_PILLS.md), [`ARTIFACT_FORGING.md`](./ARTIFACT_FORGING.md), [`FORMATION_ARRAYS.md`](./FORMATION_ARRAYS.md), [`TALISMAN_INSCRIPTION.md`](./TALISMAN_INSCRIPTION.md), [`BEAST_COMPENDIUM.md`](./BEAST_COMPENDIUM.md), [`HERBOLOGY_INDEX.md`](./HERBOLOGY_INDEX.md), [`RELICS_AND_TREASURES.md`](./RELICS_AND_TREASURES.md), [`COMBAT_FORMULAS.md`](./COMBAT_FORMULAS.md), [`TECHNIQUE_SYNERGIES.md`](./TECHNIQUE_SYNERGIES.md), [`DAMAGE_TAXONOMY.md`](./DAMAGE_TAXONOMY.md), [`BALANCE_PHILOSOPHY.md`](./BALANCE_PHILOSOPHY.md).
 - **Legal, Compliance & Trust (`17` Docs)**: [`ACCEPTABLE_USE_POLICY.md`](./ACCEPTABLE_USE_POLICY.md), [`COOKIE_POLICY.md`](./COOKIE_POLICY.md), [`DATA_PROCESSING_AGREEMENT.md`](./DATA_PROCESSING_AGREEMENT.md), [`GDPR_COMPLIANCE.md`](./GDPR_COMPLIANCE.md), [`CCPA_COMPLIANCE.md`](./CCPA_COMPLIANCE.md), [`EXPORT_COMPLIANCE.md`](./EXPORT_COMPLIANCE.md), [`PATENTS.md`](./PATENTS.md), [`TRADEMARKS.md`](./TRADEMARKS.md), [`COPYRIGHT.md`](./COPYRIGHT.md), [`DMCA_POLICY.md`](./DMCA_POLICY.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md), [`SUBPROCESSORS.md`](./SUBPROCESSORS.md), [`WAIVER.md`](./WAIVER.md), [`ETHICS.md`](./ETHICS.md), [`AI_USAGE_POLICY.md`](./AI_USAGE_POLICY.md), [`CONTENT_MODERATION_POLICY.md`](./CONTENT_MODERATION_POLICY.md).
 
 ---
