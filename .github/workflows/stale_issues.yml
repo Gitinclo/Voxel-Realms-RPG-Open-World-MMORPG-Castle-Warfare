@@ -1,0 +1,37 @@
+name: Manage Stale Issues & PRs
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Triage Stale Issues and Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run actions/stale
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: >
+            This issue has had no activity for 45 days and has been marked stale.
+            Please comment with updated reproduction logs (`v1.5.0+`) within 14 days
+            or it will be closed automatically.
+          stale-pr-message: >
+            This pull request has had no activity for 30 days. Please rebase onto
+            `main` and ensure `npm run validate` passes so maintainers can review it.
+          close-issue-message: >
+            Closing automatically due to inactivity. Feel free to reopen with fresh
+            reproduction details (`BUG_REPORT` or `creatergame31@gmail.com`).
+          days-before-issue-stale: 45
+          days-before-pr-stale: 30
+          days-before-issue-close: 14
+          days-before-pr-close: 14
+          exempt-issue-labels: 'security,pinned,roadmap,sev-1,sev-2'
+          exempt-pr-labels: 'pinned,security,hotfix'
+          operations-per-run: 50

@@ -1,0 +1,34 @@
+# Pre-commit framework configuration (https://pre-commit.com)
+# Install locally via: pre-commit install
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+
+  - repo: local
+    hooks:
+      - id: prettier-check
+        name: Prettier Format Check
+        entry: npm run format:check
+        language: system
+        pass_filenames: false
+      - id: typescript-lint
+        name: TypeScript Strict Check (tsc --noEmit)
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+      - id: firestore-rules-lint
+        name: Firestore Rules ESLint Audit
+        entry: npm run lint:rules
+        language: system
+        files: ^firestore\.rules$
+        pass_filenames: false

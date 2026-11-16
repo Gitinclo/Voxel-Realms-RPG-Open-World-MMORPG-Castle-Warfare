@@ -49,7 +49,8 @@ labels: ['release']
 
 - [ ] `README.md` reflects actual setup, features, and project structure
 - [ ] `CHANGELOG.md` and `ROADMAP.md` are updated with release notes and upcoming milestones
-- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LEGAL.md`, `LORE.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
+- [ ] Legal, governance & technical docs are in place (`LICENSE`, `LICENSE.md`, `EULA.md`, `LEGAL.md`, `LORE.md`, `Four-Path Cultivation.md`, `NOTICE`, `PRIVACY.md`, `TERMS.md`, `SECURITY.md`, `security_spec.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `SUPPORT.md`)
+- [ ] Operational runbooks & QA playbooks are up to date (`discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `environment hardening.md`, `real-world QA.md`, `incident response.md`)
 
 ## 6. ⚙️ CI/CD & Final Signoff Gate
 

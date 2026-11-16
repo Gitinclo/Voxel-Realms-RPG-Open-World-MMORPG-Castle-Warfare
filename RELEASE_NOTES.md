@@ -1,0 +1,16 @@
+# 🏷️ Release Notes Summary (`RELEASE_NOTES.md`)
+
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)  
+> **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service)
+
+> For granular per-commit engineering notes, see [`CHANGELOG.md`](./CHANGELOG.md).
+
+## Current Source Milestone: `v1.5.0` (`15/11/2026`)
+
+- **Authoritative 20Hz 50v50 Siege Server** (`/ws/siege`, `siegeNetProtocol.ts`) & **Multi-Region Quorum**
+- **Authoritative Multiplayer Anti-Cheat** (`antiCheat.ts`, quarantine + pardon API)
+- **MMORPG Avatar, Clones & Shadows Console** (`avatarCloneShadow.ts`, `HeroModal.tsx`)
+- **3D BVH Raycasting, Simplex Noise Biomes, Cannon-es Physics & Tween Camera** (`openWorld3DEngine.ts`)
+- **Cloud SQL Drizzle Persistence (`/api/db/*`) + Firebase ID Verification + Hardened Firestore Rules**
+- **Complete 10-Article EULA & 10-Agreement Legal Compliance Stack** (`EULA.md`, `LEGAL.md`, `EulaModal.tsx`)
+- **29+ Core Docs, Operational Runbooks & Engineering Playbooks**

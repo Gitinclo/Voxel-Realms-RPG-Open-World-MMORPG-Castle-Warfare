@@ -1,0 +1,14 @@
+name: CD — Staging Validation Gate
+on:
+  workflow_dispatch:
+jobs:
+  verify-release-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm install --no-audit
+      - run: npm run validate && npm run verify:ops

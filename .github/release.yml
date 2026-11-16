@@ -1,0 +1,11 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: '🚀 Features & Gameplay'
+      labels: ['enhancement', 'feature', 'lore']
+    - title: '🐛 Bug Fixes & Stability'
+      labels: ['bug', 'hotfix']
+    - title: '🛡️ Security & Operational Hardening'
+      labels: ['security', 'ops']

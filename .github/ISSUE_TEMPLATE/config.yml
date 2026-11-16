@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🔒 Private Security Vulnerability Disclosure
+    url: mailto:creatergame31@gmail.com?subject=%5BSECURITY%5D%20Voxel%20Realms%20RPG
+    about: Please email creatergame31@gmail.com privately instead of opening public security issues.
+  - name: 📘 Official Support & Documentation Hub
+    url: https://github.com
+    about: Review SUPPORT.md and real-world QA.md before filing general tickets.

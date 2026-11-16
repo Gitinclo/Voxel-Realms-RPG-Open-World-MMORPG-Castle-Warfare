@@ -1,0 +1,31 @@
+# Auto-normalize line endings cleanly across Windows, macOS, and Linux contributors.
+* text=auto eol=lf
+
+# TypeScript, React, Configs & Documentation
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# C++20 Engine Sources
+*.hpp text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+CMakeLists.txt text eol=lf
+Justfile text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Binary assets (if any)
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.woff2 binary

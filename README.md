@@ -243,7 +243,7 @@ interface WhitePageRoot {
 
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
-- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **97 cross-module invariants** across:
+- **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **100 cross-module invariants** across:
   1. **Root RBAC, 10-Article EULA v1.5.0, 10-Agreement Legal Stack Governance & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
@@ -362,15 +362,44 @@ npm run preview       # Preview production build locally
 
 ```text
 ├── .github/
+│   ├── CODEOWNERS                     # Default Root Owner & Guardrail reviewers (creatergame31@gmail.com)
+│   ├── CODE_OF_CONDUCT_ENFORCEMENT.md # Graduated enforcement ladder & escalation guide
+│   ├── dependabot.yml                 # Weekly automated npm & GitHub Actions dependency updates
+│   ├── FUNDING.yml                    # Maintainer contact & support funding metadata
+│   ├── release.yml                    # Automated changelog category configuration
+│   ├── DISCUSSION_TEMPLATE/           # announcements.yml, ideas.yml, q-and-a.yml
 │   ├── ISSUE_TEMPLATE/
+│   │   ├── config.yml                 # Contact links & private security disclosure redirect
 │   │   ├── bug_report.md              # Bug report template
 │   │   ├── feature_request.md         # Feature request template
-│   │   └── release_checklist.md       # Final release signoff checklist
+│   │   ├── release_checklist.md       # Final release signoff checklist
+│   │   ├── security_vulnerability.md  # Private security redirect notice
+│   │   ├── performance_regression.md  # FPS / 20Hz tick overrun / bundle regression report
+│   │   ├── incident_report.md         # SEV-1 to SEV-4 operational incident template
+│   │   ├── lore_inconsistency.md      # Lore / Cosmology consistency report
+│   │   ├── balance_feedback.md        # Combat / Cultivation / Clone balance proposal
+│   │   ├── tech_debt.md               # Technical debt logging template
+│   │   └── documentation_gap.md       # Documentation gap report template
 │   ├── ISSUE_TEMPLATE.md              # Unified issue / bug / feature / moderation template
+│   ├── PULL_REQUEST_TEMPLATE/         # hotfix.md, breaking_change.md, architecture_change.md, lore_addition.md
 │   ├── PULL_REQUEST_TEMPLATE.md       # Pull Request validation & guardrail checklist
 │   └── workflows/
 │       ├── build.yml                  # GitHub Actions CI (Web/TS + Rules ESLint + Live Ops + C++20)
-│       └── release.yml                # Tag-triggered v*.*.* checksummed GitHub Release pipeline
+│       ├── release.yml                # Tag-triggered v*.*.* checksummed GitHub Release pipeline
+│       ├── ci.yml                     # Fast PR npm run validate workflow
+│       ├── cd.yml                     # Manual / staging verification gate
+│       ├── docs_deploy.yml            # Markdown Prettier formatting & README relative link check
+│       ├── nightly_build.yml          # Daily validation + audit + verify:ops workflow
+│       ├── security_audit.yml         # Weekly supply-chain audit + Firestore rules verification
+│       ├── lint_and_format.yml        # TypeScript, ESLint Rules & Prettier PR check
+│       ├── release_drafter.yml        # Release notes preview workflow
+│       └── stale_issues.yml           # Scheduled stale issue & PR triage automation
+├── docs/
+│   ├── adr/
+│   │   ├── 0001-record-architecture-decisions.md # ADR 0001: Functional Core / Imperative Shell separation
+│   │   └── TEMPLATE.md                # Standard Architecture Decision Record (ADR) template
+│   └── rfcs/
+│       └── TEMPLATE.md                # Standard Architect-First RFC proposal template
 ├── cpp/
 │   ├── VoxelRealmsGuardrails.hpp      # C++20 RAII smart-pointer & concept guardrail header
 │   └── engine_guardrail_test.cpp      # C++20 CTest static_assert & RAII verification unit test
@@ -393,7 +422,7 @@ npm run preview       # Preview production build locally
 │   │   ├── GameHUD.tsx                # Consolidated top bar, D-pad & 5-tab command dock
 │   │   ├── GmailModal.tsx             # Gmail Dispatch Center (inbox, labels, compose & confirm gates)
 │   │   ├── GoogleSignInButton.tsx     # Official Google Identity Material Sign-In button
-│   │   ├── HeroModal.tsx              # Hero ascension, tavern summons & aesthetic skins
+│   │   ├── HeroModal.tsx              # Hero ascension, tavern summons, skins & Avatar/Clones/Shadows console
 │   │   ├── LeaderboardModal.tsx       # Global lord & clan power rankings
 │   │   ├── LoreHistoryModal.tsx       # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
 │   │   ├── ResourceGatherModal.tsx    # Lv 1-10 resource node extraction & march queues
@@ -480,15 +509,25 @@ npm run preview       # Preview production build locally
 │   └── main.tsx                       # Application entry point wrapped in AuthProvider
 ├── .clang-format                      # C++20 LLVM code formatter rules (IndentWidth: 4, ColumnLimit: 100)
 ├── .clang-tidy                        # C++20 static analyzer rules (enforces smart pointers)
+├── .editorconfig                      # Unified cross-IDE charset, LF endings, and indent defaults
 ├── .env.example                       # Environment variable template (safe placeholders)
+├── .gitattributes                     # LF text normalization & binary file heuristics
 ├── .gitignore                         # Git ignore rules (node_modules, dist, build, data, .env, keystores)
+├── .LOCAL_DEVELOPMENT.md              # Workstation boot sequence, Cloud SQL proxy & local QA loops
+├── .pre-commit-config.yaml            # Pre-commit secret, YAML/JSON, Prettier, tsc & Firestore rule hooks
 ├── .prettierignore                    # Excluded paths for Prettier formatting checks
 ├── .prettierrc                        # Prettier code style configuration
+├── Justfile                           # Command runner shortcuts (just dev, just validate, just ops, just cpp-test)
 ├── ARCHITECTURE.md                    # System architecture & Functional Core / Imperative Shell guide
+├── backups.md                         # Backup, Atomic .bak failover, Cloud SQL PITR & Firestore DR runbook
 ├── CHANGELOG.md                       # Chronological release history & v1.5.0 network spec
 ├── CMakeLists.txt                     # C++20 strict compiler flags & CTest configuration
 ├── CODE_OF_CONDUCT.md                 # Contributor Covenant Code of Conduct
 ├── CONTRIBUTING.md                    # Developer setup, Guardrails, testing & PR guidelines
+├── dependency.md                      # Full npm, devDependencies, security overrides & vcpkg.json ledger
+├── deployment validation.md           # 4-Stage pre-deploy, verify:ops, Cloud SQL/Firestore & smoke gate
+├── discipline.md                      # Engineering Discipline, Architect-First & Anti-Spaghetti Constitution
+├── environment hardening.md           # Fail-closed secrets, HttpOnly cookies, CSRF, WS bounds & Firestore hardening
 ├── eslint.config.js                   # ESLint flat config enforcing @firebase/eslint-plugin-security-rules
 ├── EULA.md                            # End User License Agreement (EULA v1.5.0 · 15/11/2026)
 ├── firebase-applet-config.json        # Provisioned Firebase project & Firestore database identifiers
@@ -497,16 +536,19 @@ npm run preview       # Preview production build locally
 ├── firestore.rules.test.ts            # Firestore schema & Dirty Dozen #1–#12 adversarial security tests
 ├── Four-Path Cultivation.md           # Four-Path Cultivation guide, Getting Started & .env.example setup
 ├── GOVERNANCE.md                      # Project governance, RBAC hierarchy & RFC process
+├── incident response.md               # SEV-1 to SEV-4 triage SLAs, quarantine pardons & recovery playbooks
 ├── index.html                         # HTML entry point & Google Fonts configuration
 ├── LEGAL.md                           # Complete 10-Agreement Legal Stack (ToS, Privacy/DPDP, Cookie, EULA, SaaS, OSS, AUP, SLA, DPA, MSA)
 ├── LICENSE                            # Apache License 2.0 (raw text)
 ├── LICENSE.md                         # Apache License 2.0 (formatted legal summary & full terms)
 ├── LORE.md                            # Imperial Lore, Auto-Populating Codex, 12 Annals & 10^100 Akashic Archive
 ├── metadata.json                      # Applet configuration & capabilities
+├── monitoring.md                      # Live /healthz, /readyz, /api/ops/readiness & 20Hz latency SLO runbook
 ├── NOTICE                             # Apache 2.0 Section 4(d) mandatory attribution notice
 ├── package.json                       # Project dependencies, metadata & npm scripts
 ├── PRIVACY.md                         # User Privacy Policy (GDPR/CCPA/India DPDP Act 2023, localStorage, payments)
 ├── README.md                          # Project overview & documentation hub (this file)
+├── real-world QA.md                   # Hardware GPU / Mobile ASTC / SwiftShader matrix & E2E QA scenarios
 ├── ROADMAP.md                         # Long-term product vision & v1.5.0–v2.0.0 milestones
 ├── SECURITY.md                        # Server-side enforcement, Firebase/Cloud SQL trust boundaries & disclosure
 ├── security_spec.md                   # Firestore data invariants & Dirty Dozen threat matrix
@@ -640,8 +682,8 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm test` passes all 168 unit, security, EULA/Legal, and Firestore rule tests across 28 TypeScript test suites
 - [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
-- [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile
-- [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`) and Release workflow (`.github/workflows/release.yml`) are up to date
+- [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile (`real-world QA.md`)
+- [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`), Release workflow (`.github/workflows/release.yml`), and Operational Runbooks (`discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `environment hardening.md`, `incident response.md`) are up to date
 - [x] Steam & Platform AI Disclosure documentation (`README.md`) is up to date
 - [x] No `.env` secrets, API keys, OAuth tokens, or Android signing keystores (`*.jks`, `*.keystore`) are exposed
 
@@ -703,8 +745,19 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 ### Automation & GitHub Templates (`.github/`)
 
-- **[Pull Request Template (`.github/PULL_REQUEST_TEMPLATE.md`)](./.github/PULL_REQUEST_TEMPLATE.md)** — Pre-merge validation checklist for build, test, and architectural guardrails.
-- **[Issue Template (`.github/ISSUE_TEMPLATE.md`)](./.github/ISSUE_TEMPLATE.md)** — Pre-formatted form for filing bug reports, feature requests, and system specifications (alongside [`.github/ISSUE_TEMPLATE/bug_report.md`](./.github/ISSUE_TEMPLATE/bug_report.md), [`feature_request.md`](./.github/ISSUE_TEMPLATE/feature_request.md), and [`release_checklist.md`](./.github/ISSUE_TEMPLATE/release_checklist.md)).
+- **[Pull Request Templates (`.github/PULL_REQUEST_TEMPLATE.md` & `.github/PULL_REQUEST_TEMPLATE/`)](./.github/PULL_REQUEST_TEMPLATE.md)** — Default PR checklist plus specialized [`hotfix.md`](./.github/PULL_REQUEST_TEMPLATE/hotfix.md), [`breaking_change.md`](./.github/PULL_REQUEST_TEMPLATE/breaking_change.md), [`architecture_change.md`](./.github/PULL_REQUEST_TEMPLATE/architecture_change.md), and [`lore_addition.md`](./.github/PULL_REQUEST_TEMPLATE/lore_addition.md).
+- **[Issue & Discussion Templates (`.github/ISSUE_TEMPLATE/` & `.github/DISCUSSION_TEMPLATE/`)](./.github/ISSUE_TEMPLATE.md)** — Config redirect ([`config.yml`](./.github/ISSUE_TEMPLATE/config.yml)), [`bug_report.md`](./.github/ISSUE_TEMPLATE/bug_report.md), [`feature_request.md`](./.github/ISSUE_TEMPLATE/feature_request.md), [`release_checklist.md`](./.github/ISSUE_TEMPLATE/release_checklist.md), [`security_vulnerability.md`](./.github/ISSUE_TEMPLATE/security_vulnerability.md), [`performance_regression.md`](./.github/ISSUE_TEMPLATE/performance_regression.md), [`incident_report.md`](./.github/ISSUE_TEMPLATE/incident_report.md), [`lore_inconsistency.md`](./.github/ISSUE_TEMPLATE/lore_inconsistency.md), [`balance_feedback.md`](./.github/ISSUE_TEMPLATE/balance_feedback.md), [`tech_debt.md`](./.github/ISSUE_TEMPLATE/tech_debt.md), [`documentation_gap.md`](./.github/ISSUE_TEMPLATE/documentation_gap.md), and Discussions (`announcements.yml`, `ideas.yml`, `q-and-a.yml`).
+- **[GitHub Configs & Workflows (`.github/workflows/`)](./.github/workflows/build.yml)** — [`CODEOWNERS`](./.github/CODEOWNERS), [`CODE_OF_CONDUCT_ENFORCEMENT.md`](./.github/CODE_OF_CONDUCT_ENFORCEMENT.md), [`FUNDING.yml`](./.github/FUNDING.yml), [`dependabot.yml`](./.github/dependabot.yml), [`release.yml`](./.github/release.yml), [`ci.yml`](./.github/workflows/ci.yml), [`cd.yml`](./.github/workflows/cd.yml), [`docs_deploy.yml`](./.github/workflows/docs_deploy.yml), [`nightly_build.yml`](./.github/workflows/nightly_build.yml), [`security_audit.yml`](./.github/workflows/security_audit.yml), [`lint_and_format.yml`](./.github/workflows/lint_and_format.yml), [`release_drafter.yml`](./.github/workflows/release_drafter.yml), and [`stale_issues.yml`](./.github/workflows/stale_issues.yml).
+
+### Extended Engineering, SRE, QA, Security, Cultivation & Legal Suite
+
+- **Core Repository & Governance (`25` Docs)**: [`VISION.md`](./VISION.md), [`MANIFESTO.md`](./MANIFESTO.md), [`PHILOSOPHY.md`](./PHILOSOPHY.md), [`PRINCIPLES.md`](./PRINCIPLES.md), [`AUTHORS.md`](./AUTHORS.md), [`MAINTAINERS.md`](./MAINTAINERS.md), [`CREDITS.md`](./CREDITS.md), [`ACKNOWLEDGMENTS.md`](./ACKNOWLEDGMENTS.md), [`ONBOARDING.md`](./ONBOARDING.md), [`.LOCAL_DEVELOPMENT.md`](./.LOCAL_DEVELOPMENT.md), [`CLI_REFERENCE.md`](./CLI_REFERENCE.md), [`DEBUGGING_GUIDE.md`](./DEBUGGING_GUIDE.md), [`STYLE_GUIDE.md`](./STYLE_GUIDE.md), [`CODING_STANDARDS.md`](./CODING_STANDARDS.md), [`DOC_CONVENTIONS.md`](./DOC_CONVENTIONS.md), [`COMMUNITY_GUIDELINES.md`](./COMMUNITY_GUIDELINES.md), [`GLOSSARY.md`](./GLOSSARY.md), [`FAQ.md`](./FAQ.md), [`RELEASE_NOTES.md`](./RELEASE_NOTES.md), [`MIGRATION.md`](./MIGRATION.md), [`DEPRECATION_POLICY.md`](./DEPRECATION_POLICY.md), [`UPGRADING.md`](./UPGRADING.md), [`DECISION_LOG.md`](./DECISION_LOG.md), [`COMMUNICATION_CHANNELS.md`](./COMMUNICATION_CHANNELS.md), [`MEETING_NOTES.md`](./MEETING_NOTES.md).
+- **Architecture, Simulation, Tooling & RFCs (`34` Docs + Configs)**: [`dependency.md`](./dependency.md), [`BUILD_SYSTEM.md`](./BUILD_SYSTEM.md), [`FEATURE_FLAGS.md`](./FEATURE_FLAGS.md), [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md), [`DOMAIN_MODEL.md`](./DOMAIN_MODEL.md), [`DATA_DICTIONARY.md`](./DATA_DICTIONARY.md), [`DATA_PIPELINE.md`](./DATA_PIPELINE.md), [`SCHEMA_EVOLUTION.md`](./SCHEMA_EVOLUTION.md), [`API_SPEC.md`](./API_SPEC.md), [`PROTOCOL_SPEC.md`](./PROTOCOL_SPEC.md), [`STATE_MACHINE.md`](./STATE_MACHINE.md), [`EVENT_CATALOG.md`](./EVENT_CATALOG.md), [`EVENT_SCHEMA_REGISTRY.md`](./EVENT_SCHEMA_REGISTRY.md), [`ANALYTICS_TAXONOMY.md`](./ANALYTICS_TAXONOMY.md), [`RNG_AND_SEEDING.md`](./RNG_AND_SEEDING.md), [`SIMULATION_TICK_LOOP.md`](./SIMULATION_TICK_LOOP.md), [`AI_BEHAVIOR_TREES.md`](./AI_BEHAVIOR_TREES.md), [`PLUGIN_ARCHITECTURE.md`](./PLUGIN_ARCHITECTURE.md), [`MODDING_API.md`](./MODDING_API.md), [`CONCURRENCY_MODEL.md`](./CONCURRENCY_MODEL.md), [`MEMORY_MANAGEMENT.md`](./MEMORY_MANAGEMENT.md), [`CACHING_STRATEGY.md`](./CACHING_STRATEGY.md), [`NETWORK_TOPOLOGY.md`](./NETWORK_TOPOLOGY.md), [`STORAGE_ENGINE.md`](./STORAGE_ENGINE.md), [`DEPENDENCY_POLICY.md`](./DEPENDENCY_POLICY.md), [`PERFORMANCE_BENCHMARKS.md`](./PERFORMANCE_BENCHMARKS.md), [`TECH_DEBT.md`](./TECH_DEBT.md), [`SCALABILITY_MATRIX.md`](./SCALABILITY_MATRIX.md), [`RFC_PROCESS.md`](./RFC_PROCESS.md), [`docs/rfcs/TEMPLATE.md`](./docs/rfcs/TEMPLATE.md), [`docs/adr/0001-record-architecture-decisions.md`](./docs/adr/0001-record-architecture-decisions.md), [`docs/adr/TEMPLATE.md`](./docs/adr/TEMPLATE.md), [`Justfile`](./Justfile), [`.editorconfig`](./.editorconfig), [`.gitattributes`](./.gitattributes), [`.gitignore`](./.gitignore), [`.pre-commit-config.yaml`](./.pre-commit-config.yaml).
+- **SRE, DevOps & Operational Discipline (`26` Docs)**: [`runbooks.md`](./runbooks.md), [`playbooks.md`](./playbooks.md), [`disaster_recovery.md`](./disaster_recovery.md), [`business_continuity.md`](./business_continuity.md), [`slo_sla_sli.md`](./slo_sla_sli.md), [`error_budgets.md`](./error_budgets.md), [`alerting_matrix.md`](./alerting_matrix.md), [`on_call_rotation.md`](./on_call_rotation.md), [`postmortem_template.md`](./postmortem_template.md), [`blameless_retrospective.md`](./blameless_retrospective.md), [`root_cause_analysis.md`](./root_cause_analysis.md), [`rollback_procedures.md`](./rollback_procedures.md), [`zero_downtime_migrations.md`](./zero_downtime_migrations.md), [`canary_deployments.md`](./canary_deployments.md), [`chaos_engineering.md`](./chaos_engineering.md), [`capacity_planning.md`](./capacity_planning.md), [`load_testing.md`](./load_testing.md), [`stress_testing.md`](./stress_testing.md), [`observability_pipeline.md`](./observability_pipeline.md), [`telemetry_spec.md`](./telemetry_spec.md), [`log_aggregation.md`](./log_aggregation.md), [`tracing.md`](./tracing.md), [`secrets_management.md`](./secrets_management.md), [`key_rotation.md`](./key_rotation.md), [`immutable_infrastructure.md`](./immutable_infrastructure.md), [`cost_optimization.md`](./cost_optimization.md).
+- **Quality Assurance & Verification (`15` Docs)**: [`test_strategy.md`](./test_strategy.md), [`test_harness.md`](./test_harness.md), [`edge_cases.md`](./edge_cases.md), [`invariants.md`](./invariants.md), [`regression_suite.md`](./regression_suite.md), [`smoke_tests.md`](./smoke_tests.md), [`soak_testing.md`](./soak_testing.md), [`fuzz_testing.md`](./fuzz_testing.md), [`uat_checklist.md`](./uat_checklist.md), [`bug_triage_protocol.md`](./bug_triage_protocol.md), [`severity_definitions.md`](./severity_definitions.md), [`compatibility_matrix.md`](./compatibility_matrix.md), [`accessibility_qa.md`](./accessibility_qa.md), [`localization_qa.md`](./localization_qa.md), [`determinism_validation.md`](./determinism_validation.md).
+- **Security, Threat Modeling & Cryptography (`18` Docs)**: [`THREAT_MODEL.md`](./THREAT_MODEL.md), [`ATTACK_SURFACE.md`](./ATTACK_SURFACE.md), [`TRUST_BOUNDARIES.md`](./TRUST_BOUNDARIES.md), [`ZERO_TRUST_POLICY.md`](./ZERO_TRUST_POLICY.md), [`VULNERABILITY_DISCLOSURE.md`](./VULNERABILITY_DISCLOSURE.md), [`BUG_BOUNTY.md`](./BUG_BOUNTY.md), [`PENETRATION_TESTING.md`](./PENETRATION_TESTING.md), [`CRYPTOGRAPHY_SPEC.md`](./CRYPTOGRAPHY_SPEC.md), [`ACCESS_CONTROL.md`](./ACCESS_CONTROL.md), [`RBAC_MATRIX.md`](./RBAC_MATRIX.md), [`AUTH_FLOWS.md`](./AUTH_FLOWS.md), [`AUDIT_LOGGING.md`](./AUDIT_LOGGING.md), [`SUPPLY_CHAIN_SECURITY.md`](./SUPPLY_CHAIN_SECURITY.md), [`SBOM.md`](./SBOM.md), [`SANDBOXING.md`](./SANDBOXING.md), [`DATA_CLASSIFICATION.md`](./DATA_CLASSIFICATION.md), [`DATA_RETENTION.md`](./DATA_RETENTION.md), [`INCIDENT_FORENSICS.md`](./INCIDENT_FORENSICS.md).
+- **Cultivation, Worldbuilding & Game Systems (`39` Docs)**: [`COSMOLOGY.md`](./COSMOLOGY.md), [`CREATION_MYTH.md`](./CREATION_MYTH.md), [`TIMELINE_OF_ERAS.md`](./TIMELINE_OF_ERAS.md), [`WORLD_GEOGRAPHY.md`](./WORLD_GEOGRAPHY.md), [`REALMS_AND_TIERS.md`](./REALMS_AND_TIERS.md), [`BREAKTHROUGH_MECHANICS.md`](./BREAKTHROUGH_MECHANICS.md), [`TRIBULATION_SYSTEM.md`](./TRIBULATION_SYSTEM.md), [`ASCENSION_PROTOCOL.md`](./ASCENSION_PROTOCOL.md), [`QI_ECONOMY.md`](./QI_ECONOMY.md), [`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md), [`SECLUSION_AND_MEDITATION.md`](./SECLUSION_AND_MEDITATION.md), [`DUAL_CULTIVATION_AND_BONDS.md`](./DUAL_CULTIVATION_AND_BONDS.md), [`DEMONIC_VS_RIGHTEOUS_PATHS.md`](./DEMONIC_VS_RIGHTEOUS_PATHS.md), [`FORBIDDEN_TECHNIQUES.md`](./FORBIDDEN_TECHNIQUES.md), [`POCKET_REALMS_AND_GROTTOES.md`](./POCKET_REALMS_AND_GROTTOES.md), [`CALAMITIES_AND_EXTINCTIONS.md`](./CALAMITIES_AND_EXTINCTIONS.md), [`LANGUAGE_AND_RUNES.md`](./LANGUAGE_AND_RUNES.md), [`MERIDIAN_SYSTEM.md`](./MERIDIAN_SYSTEM.md), [`SPIRIT_ROOTS.md`](./SPIRIT_ROOTS.md), [`SOUL_IMPRINTING.md`](./SOUL_IMPRINTING.md), [`MIND_DEMONS.md`](./MIND_DEMONS.md), [`KARMA_AND_DAO.md`](./KARMA_AND_DAO.md), [`HEAVENLY_LAWS.md`](./HEAVENLY_LAWS.md), [`BLOODLINE_INHERITANCE.md`](./BLOODLINE_INHERITANCE.md), [`PHYSIQUES.md`](./PHYSIQUES.md), [`SECT_HIERARCHY.md`](./SECT_HIERARCHY.md), [`FACTION_DIPLOMACY.md`](./FACTION_DIPLOMACY.md), [`REPUTATION_SYSTEM.md`](./REPUTATION_SYSTEM.md), [`ALCHEMY_AND_PILLS.md`](./ALCHEMY_AND_PILLS.md), [`ARTIFACT_FORGING.md`](./ARTIFACT_FORGING.md), [`FORMATION_ARRAYS.md`](./FORMATION_ARRAYS.md), [`TALISMAN_INSCRIPTION.md`](./TALISMAN_INSCRIPTION.md), [`BEAST_COMPENDIUM.md`](./BEAST_COMPENDIUM.md), [`HERBOLOGY_INDEX.md`](./HERBOLOGY_INDEX.md), [`RELICS_AND_TREASURES.md`](./RELICS_AND_TREASURES.md), [`COMBAT_FORMULAS.md`](./COMBAT_FORMULAS.md), [`TECHNIQUE_SYNERGIES.md`](./TECHNIQUE_SYNERGIES.md), [`DAMAGE_TAXONOMY.md`](./DAMAGE_TAXONOMY.md), [`BALANCE_PHILOSOPHY.md`](./BALANCE_PHILOSOPHY.md).
+- **Legal, Compliance & Trust (`17` Docs)**: [`ACCEPTABLE_USE_POLICY.md`](./ACCEPTABLE_USE_POLICY.md), [`COOKIE_POLICY.md`](./COOKIE_POLICY.md), [`DATA_PROCESSING_AGREEMENT.md`](./DATA_PROCESSING_AGREEMENT.md), [`GDPR_COMPLIANCE.md`](./GDPR_COMPLIANCE.md), [`CCPA_COMPLIANCE.md`](./CCPA_COMPLIANCE.md), [`EXPORT_COMPLIANCE.md`](./EXPORT_COMPLIANCE.md), [`PATENTS.md`](./PATENTS.md), [`TRADEMARKS.md`](./TRADEMARKS.md), [`COPYRIGHT.md`](./COPYRIGHT.md), [`DMCA_POLICY.md`](./DMCA_POLICY.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md), [`SUBPROCESSORS.md`](./SUBPROCESSORS.md), [`WAIVER.md`](./WAIVER.md), [`ETHICS.md`](./ETHICS.md), [`AI_USAGE_POLICY.md`](./AI_USAGE_POLICY.md), [`CONTENT_MODERATION_POLICY.md`](./CONTENT_MODERATION_POLICY.md).
 
 ---
 

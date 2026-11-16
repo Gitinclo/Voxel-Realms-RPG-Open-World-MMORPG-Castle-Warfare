@@ -1,0 +1,16 @@
+name: Nightly — Soak, Audit & Full Build
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm install --no-audit
+      - run: npm run validate && npm audit --audit-level=high && npm run verify:ops

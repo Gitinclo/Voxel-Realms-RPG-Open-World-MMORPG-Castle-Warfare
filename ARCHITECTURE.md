@@ -76,6 +76,7 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 │   │   ├── WorldAIDirectorModal.tsx # Lv 1-1000 monster telemetry, A* waypoints & 100-Omniverse Matrix
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── ClanModal.tsx            # Alliance vault, 9-sector war map, co-op boss, emblem studio
+│   │   ├── HeroModal.tsx            # Hero ascension, aesthetic skins & Avatar/Clones/Shadows console
 │   │   ├── VipSubscriptionModal.tsx # VIP Covenant tiers, daily stipends & loyalty progression
 │   │   ├── EulaModal.tsx            # Interactive 10-Article EULA & FNV-1a Acceptance Receipt Modal
 │   │   └── ...                      # 19 conditional modals lazy-loaded via React.lazy in App.tsx
@@ -101,7 +102,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 ├── firestore.rules                  # Hardened Cloud Firestore RBAC, field-type & schema validation rules
 ├── firestore.rules.test.ts          # "Dirty Dozen" static & structural security-rule audit suite
 ├── firebase-blueprint.json          # Canonical Firestore collection schema & role definitions
-└── server.ts                        # Express + RFC 6455 WS (/ws/siege), /api/admin/*, /api/online/* & /api/db/*
+├── server.ts                        # Express + RFC 6455 WS (/ws/siege), /api/admin/*, /api/online/* & /api/db/*
+└── *.md Operational Runbooks        # discipline.md, deployment validation.md, monitoring.md, backups.md, environment hardening.md, real-world QA.md, incident response.md
 ```
 
 ---

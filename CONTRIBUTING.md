@@ -75,12 +75,13 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ## Repository Architecture
 
-For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** and **[`GOVERNANCE.md`](./GOVERNANCE.md)**.
+For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**, **[`discipline.md`](./discipline.md)**, and **[`GOVERNANCE.md`](./GOVERNANCE.md)**.
 
 ```text
 /
-├── .github/                  # CI/CD workflows & Issue/PR templates
+├── .github/                  # CI/CD workflows & Issue/PR templates (ISSUE_TEMPLATE.md, bug_report.md, feature_request.md, release_checklist.md, PULL_REQUEST_TEMPLATE.md)
 ├── cpp/                      # C++20 RAII & SIMD engine guardrail headers & CTest suite
+├── scripts/                  # Operational readiness & chaos testing harness (verify-readiness.ts)
 ├── src/
 │   ├── components/           # React 19 UI overlays, HUD, Modals & 3D Canvas
 │   │   ├── GameCanvas.tsx          # Three.js WebGL2 canvas & scene lifecycle
@@ -90,6 +91,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── CultivationModal.tsx    # Four-Path cultivation, manuals, pills & tribulations
 │   │   ├── DailyLoginModal.tsx     # Daily login decrees & Veteran Scroll sanctum
+│   │   ├── HeroModal.tsx           # Hero ascension, skins & Avatar/Clones/Shadows console
 │   │   ├── LoreHistoryModal.tsx    # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
 │   │   ├── VipSubscriptionModal.tsx# VIP Tiers 0-3, daily stipends & loyalty progression
 │   │   ├── GmailModal.tsx          # Lazy-loaded Google Workspace Gmail Dispatch Center
@@ -134,17 +136,27 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 ├── firebase-blueprint.json   # Firestore schema blueprint
 ├── server.ts                 # Authoritative 20Hz WebSocket (/ws/siege), RBAC, Multi-Region & /api/db/* server
 ├── ARCHITECTURE.md           # Functional Core / Imperative Shell technical reference
+├── backups.md                # Atomic .bak failover, Cloud SQL PITR & Firestore DR runbook
 ├── CHANGELOG.md              # Version release history & v1.5.0 network protocol
 ├── CODE_OF_CONDUCT.md        # Contributor Covenant v2.1
 ├── CONTRIBUTING.md           # Contribution guidelines (this file)
+├── deployment validation.md  # 4-stage pre-deploy, verify:ops, Cloud SQL/Firestore & smoke gate
+├── discipline.md             # Engineering Discipline, Architect-First & Anti-Spaghetti Constitution
+├── environment hardening.md  # Fail-closed secrets, HttpOnly cookies, CSRF, WS bounds & Firestore hardening
 ├── EULA.md                   # End User License Agreement (v1.5.0-2026-11-15)
+├── Four-Path Cultivation.md  # Four-Path Cultivation guide, Getting Started & .env.example setup
 ├── GOVERNANCE.md             # Roles, RBAC clearances & RFC decision-making process
+├── incident response.md      # SEV-1 to SEV-4 triage SLAs, quarantine pardons & recovery playbooks
 ├── LEGAL.md                  # Complete 10-Agreement Legal Stack (ToS, Privacy/DPDP, Cookie, EULA, SaaS, OSS, AUP, SLA, DPA, MSA)
 ├── LICENSE.md                # Apache License 2.0 summary & full legal text
 ├── LORE.md                   # Imperial Lore, 6-Layer Cosmology & 7 Grand Historical Epochs Codex
+├── monitoring.md             # Live /healthz, /readyz, /api/ops/readiness & 20Hz latency SLO runbook
 ├── PRIVACY.md                # User privacy, localStorage & GDPR/CCPA/DPDP Act policy
+├── README.md                 # Project overview & master documentation hub
+├── real-world QA.md          # Hardware GPU / Mobile ASTC / SwiftShader matrix & E2E QA scenarios
 ├── ROADMAP.md                # Upcoming milestones (v1.5.0 - v2.0.0)
 ├── SECURITY.md               # Private vulnerability disclosure policy
+├── security_spec.md          # Firestore data invariants & Dirty Dozen threat matrix
 ├── SUPPORT.md                # Official contact directory (creatergame31@gmail.com) & FAQ
 └── TERMS.md                  # Terms and Conditions of use
 ```

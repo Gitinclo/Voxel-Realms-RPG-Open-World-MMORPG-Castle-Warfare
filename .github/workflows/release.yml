@@ -59,14 +59,31 @@ jobs:
             src/middleware \
             src/lib/firebase-admin.ts \
             README.md \
-            LEGAL.md \
-            EULA.md \
-            TERMS.md \
-            PRIVACY.md \
-            SECURITY.md \
+            ARCHITECTURE.md \
             CHANGELOG.md \
+            CODE_OF_CONDUCT.md \
+            CONTRIBUTING.md \
+            EULA.md \
+            "Four-Path Cultivation.md" \
+            GOVERNANCE.md \
+            LEGAL.md \
             LICENSE \
-            NOTICE
+            LICENSE.md \
+            LORE.md \
+            NOTICE \
+            PRIVACY.md \
+            ROADMAP.md \
+            SECURITY.md \
+            security_spec.md \
+            SUPPORT.md \
+            TERMS.md \
+            backups.md \
+            "deployment validation.md" \
+            discipline.md \
+            "environment hardening.md" \
+            "incident response.md" \
+            monitoring.md \
+            "real-world QA.md"
           (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
 
       - name: Publish GitHub Release

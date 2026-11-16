@@ -64,3 +64,13 @@ data/
 drizzle/
 public/assets/aistudio/
 release-assets/
+
+# Native C++20 / CMake / vcpkg / Vite Cache Artifacts
+cmake-build-*/
+vcpkg_installed/
+*.o
+*.obj
+*.exe
+*.out
+.vite/
+server.js

@@ -1,0 +1,12 @@
+title: '[Announcement] '
+labels: ['announcements']
+body:
+  - type: markdown
+    attributes:
+      value: 'Share release highlights or operational notices for Voxel Realms RPG.'
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+    validations:
+      required: true

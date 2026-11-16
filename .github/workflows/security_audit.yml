@@ -1,0 +1,17 @@
+name: Security Audit & Firestore Rules Verification
+on:
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: '0 6 * * 1'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm install --no-audit
+      - run: npm audit --audit-level=high && npm run lint:rules && npm run test:rules

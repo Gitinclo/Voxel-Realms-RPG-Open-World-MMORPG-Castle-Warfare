@@ -1,0 +1,10 @@
+title: '[Idea] '
+labels: ['ideas']
+body:
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature or System Proposal
+      description: Follow the Architect-First mindset—describe domain rules before UI.
+    validations:
+      required: true
