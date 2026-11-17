@@ -24,7 +24,7 @@ Please confirm all items below before requesting a review or merging:
 
 - [ ] `npm install` completes cleanly with no dependency conflicts
 - [ ] `npm run lint` (`tsc --noEmit`) & `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
-- [ ] `npm test` passes all **168 automated tests across 28 suites** (`26` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`)
+- [ ] `npm test` passes all **171 automated tests across 29 suites** (`27` `src/game/*.test.ts` suites + `src/lib/gmail.test.ts` + `firestore.rules.test.ts`)
 - [ ] `npm run validate`, `npm run verify:ops` & `npm run build` succeed cleanly
 
 ### 2. Runtime Smoke Test
