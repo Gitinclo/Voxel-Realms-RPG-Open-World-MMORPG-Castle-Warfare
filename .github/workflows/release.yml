@@ -85,7 +85,16 @@ jobs:
             "in-game- economy -marketplace.md" \
             "incident response.md" \
             monitoring.md \
-            "real-world QA.md"
+            "real-world QA.md" \
+            Windows.md \
+            PC.md \
+            playstation.md \
+            xbox.md \
+            mac.md \
+            linux.md \
+            iOS.md \
+            android.md \
+            "Virtual Reality.md"
           (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
 
       - name: Publish GitHub Release

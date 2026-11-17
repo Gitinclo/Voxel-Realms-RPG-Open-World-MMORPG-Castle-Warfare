@@ -62,7 +62,7 @@ By clicking **"Accept EULA"**, **"Enter the Realm"**, creating or linking an acc
 ## 6. Sovereign Root Authority, Species Rebirth & Cosmological Governance
 
 1. **Root Sovereign Administrator (`creatergame31@gmail.com`):** The account **`creatergame31@gmail.com`** holds immutable Root Owner & Supreme Administrator clearance (`Clearance Lv. 999`) over official Game governance, server moderation, and Layer-6 Cosmological decrees (_The White Page / The House of Ideas_).
-2. **Species Rebirth Governance (`src/game/species.ts`):** While initial character creation permits free selection among the 10 playable species, subsequent species/race rebirth switches on a locked profile require explicit administrative authorization from **`creatergame31@gmail.com`** or an authorized Game Master.
+2. **Species Rebirth & 100-Race Governance (`src/game/species.ts`):** Root Creator **`creatergame31@gmail.com`** and accounts granted Admin permission (`adminSpeciesSwitchApproved: true`) may select and switch across all **100 Playable Species / Races (`#1–#100`)** at any time; without Admin permission, initial character creation permits free selection among the 10 Core Solara Starter Lineages while selecting the 90 Sovereign Omniverse Races or switching species on a locked profile requires explicit administrative authorization from **`creatergame31@gmail.com`**.
 
 ---
 
