@@ -9,7 +9,12 @@ import {
   applyModerationAction,
   INITIAL_MODERATED_PLAYERS,
 } from './adminModeration';
-import { buildMaxedGodCharacterBundle, evaluateGodCharacterImmunity } from './godModeCharacter';
+import {
+  GOD_OMNI_ATTRIBUTES,
+  GOD_OMNI_PILLAR_SPECS,
+  buildMaxedGodCharacterBundle,
+  evaluateGodCharacterImmunity,
+} from './godModeCharacter';
 import {
   SIX_LAYER_COSMIC_HIERARCHY,
   TOP_100_OMNIVERSE_SPECIES_NPCS,
@@ -165,7 +170,12 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     rootPriv.isRootOwner &&
     godImmunity.immuneToAllThings &&
     godImmunity.activeImmunities.length === 12 &&
+    GOD_OMNI_ATTRIBUTES.length === 100 &&
+    GOD_OMNI_PILLAR_SPECS.length === 5 &&
+    godImmunity.activeOmniAttributesCount === 100 &&
+    godImmunity.activeOmniPillarsCount === 5 &&
     !outsiderImmunity.immuneToAllThings &&
+    outsiderImmunity.activeOmniAttributesCount === 0 &&
     godBundle.castleLevel === 100 &&
     godBundle.cultivation.currentRealmIndex === 22 &&
     rootPriv.trustBoundary === 'UNTRUSTED_CLIENT_PREVIEW' &&
@@ -191,10 +201,10 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     title: '1. Root RBAC, EULA v1.5.0, 10-Agreement Legal Stack & Supreme Author Immutability',
     passed: p1Passed,
     assertionsPassed: 18,
-    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 12-Domain Creator God Immunity & Maxed Sovereign Bundle, 10-Article EULA (${EULA_VERSION}), 10-Agreement Legal Stack, explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
+    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 12-Domain Creator God Immunity, 100 Supreme Omni-Attributes (5 Divine Pillars), Maxed Sovereign Bundle, 10-Article EULA (${EULA_VERSION}), 10-Agreement Legal Stack, explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
     verifiedInvariants: [
       `Supreme Author & EULA Licensor Email === ${PRIMARY_ADMIN_EMAIL}`,
-      'Clearance Level === 999 (owner_admin) + 12/12 All-Things God Immunity Domains (fail-closed for non-root)',
+      'Clearance Level === 999 (owner_admin) + 12/12 All-Things God Immunity Domains + 100/100 Supreme Omni-Attributes across 5 Divine Pillars (fail-closed for non-root)',
       `10-Article EULA (${EULA_VERSION}, ${EULA_EFFECTIVE_DATE_DISPLAY}) Dual-Layer Apache-2.0 + Live Service compliance & FNV-1a receipt verified`,
       '10-Agreement Legal Compliance Stack (ToS, Privacy/GDPR/CCPA/DPDP Act, Cookie, EULA, SaaS, OSS Apache-2.0, AUP, SLA, DPA, MSA) & 10-Row Comparison Matrix verified',
       'Client verifyAccountPrivileges explicitly tagged UNTRUSTED_CLIENT_PREVIEW; server routes enforce HMAC-SHA256 sessions',

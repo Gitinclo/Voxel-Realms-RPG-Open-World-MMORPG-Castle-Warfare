@@ -1513,16 +1513,19 @@ export const CultivationModal: React.FC<CultivationModalProps> = ({
                     <div className="text-xs font-mono font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                       <Crown className="w-4 h-4 text-amber-400" />
                       <span>
-                        Supreme Creator God Sovereignty · 12-Domain All-Things Immunity ACTIVE
+                        Supreme Creator God Sovereignty · 12-Domain All-Things Immunity &amp; 100
+                        Supreme Omni-Attributes ACTIVE
                       </span>
                     </div>
                     <p className="text-xs text-emerald-200 mt-0.5 font-mono">
                       0.0x Incoming Hostile Realm Suppression · 0 Tribulation Lightning Damage ·
-                      Zero Red-Name Judgment / Loot Drop · 100% Breakthrough Ascension
+                      Zero Red-Name Judgment / Loot Drop · 100% Breakthrough Ascension · 5 Divine
+                      Omni-Pillars (Omnipotent · Omniscient · Omnipresent · Omnibenevolent ·
+                      Omnidivine)
                     </p>
                   </div>
                   <span className="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-mono font-black">
-                    IMMUNE TO ALL THINGS
+                    IMMUNE TO ALL THINGS · 100 OMNI
                   </span>
                 </div>
               )}

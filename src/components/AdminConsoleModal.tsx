@@ -60,7 +60,10 @@ import { GoogleSignInButton } from './GoogleSignInButton';
 import { createSupportTicketDocument } from '../lib/firestore';
 import {
   GOD_IMMUNITY_DOMAIN_SPECS,
+  GOD_OMNI_ATTRIBUTES,
+  GOD_OMNI_PILLAR_SPECS,
   GodCharacterImmunityStatus,
+  GodOmniPillarId,
   evaluateGodCharacterImmunity,
 } from '../game/godModeCharacter';
 
@@ -170,6 +173,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     'Code of Conduct & Realm Fair-Play Enforcement'
   );
   const [broadcastInput, setBroadcastInput] = useState<string>('');
+  const [selectedOmniPillar, setSelectedOmniPillar] = useState<'all' | GodOmniPillarId>('all');
 
   // Official Contact & Ticket form state
   const [ticketCategory, setTicketCategory] = useState<ContactCategory>('administration');
@@ -1021,6 +1025,96 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                           </div>
                         );
                       })}
+                    </div>
+
+                    {/* 100 Supreme Omni-Attributes Codex (5 Divine Pillars × 20 Attributes) */}
+                    <div
+                      data-testid="god-omni-attributes-codex"
+                      className="pt-3 border-t border-amber-500/30 space-y-2.5"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-mono font-bold text-amber-200 uppercase tracking-wider">
+                            100 Supreme Omni-Attributes Codex (5 Divine Pillars × 20 Attributes)
+                          </div>
+                          <div className="text-[11px] text-slate-300">
+                            Active Omni-Attributes:{' '}
+                            <span className="font-mono font-bold text-emerald-300">
+                              {resolvedImmunity.activeOmniAttributesCount} /{' '}
+                              {GOD_OMNI_ATTRIBUTES.length}
+                            </span>{' '}
+                            across{' '}
+                            <span className="font-mono font-bold text-amber-300">
+                              {resolvedImmunity.activeOmniPillarsCount} /{' '}
+                              {GOD_OMNI_PILLAR_SPECS.length}
+                            </span>{' '}
+                            Divine Pillars (Fail-Closed for {PRIMARY_ADMIN_EMAIL})
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOmniPillar('all')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold cursor-pointer transition-colors ${
+                              selectedOmniPillar === 'all'
+                                ? 'bg-amber-400 text-slate-950'
+                                : 'bg-slate-900/90 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                            }`}
+                          >
+                            All ({GOD_OMNI_ATTRIBUTES.length})
+                          </button>
+                          {GOD_OMNI_PILLAR_SPECS.map((pillar) => (
+                            <button
+                              key={pillar.id}
+                              type="button"
+                              onClick={() => setSelectedOmniPillar(pillar.id)}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold cursor-pointer transition-colors ${
+                                selectedOmniPillar === pillar.id
+                                  ? 'bg-amber-400 text-slate-950'
+                                  : 'bg-slate-900/90 border border-slate-700 text-slate-300 hover:bg-slate-800'
+                              }`}
+                            >
+                              {pillar.shortLabel} ({pillar.attributeCount})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="max-h-56 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
+                        {GOD_OMNI_ATTRIBUTES.filter(
+                          (attr) =>
+                            selectedOmniPillar === 'all' || attr.pillar === selectedOmniPillar
+                        ).map((attr) => {
+                          const isOmniActive = resolvedImmunity.immuneToAllThings;
+                          return (
+                            <div
+                              key={attr.id}
+                              className={`p-2 rounded-lg border text-[10px] ${
+                                isOmniActive
+                                  ? 'bg-amber-950/35 border-amber-500/35 text-amber-100'
+                                  : 'bg-slate-950/70 border-slate-800 text-slate-400'
+                              }`}
+                            >
+                              <div className="font-mono font-bold flex items-center justify-between gap-1">
+                                <span className="text-amber-300">{attr.name}</span>
+                                <span
+                                  className={
+                                    isOmniActive
+                                      ? 'text-emerald-300 text-[9px] shrink-0'
+                                      : 'text-slate-500 text-[9px] shrink-0'
+                                  }
+                                >
+                                  {isOmniActive ? 'OMNI-ACTIVE' : 'LOCKED'}
+                                </span>
+                              </div>
+                              <div className="text-[9.5px] text-slate-300 mt-0.5 leading-snug">
+                                {attr.description}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 );

@@ -78,9 +78,11 @@ jobs:
             SUPPORT.md \
             TERMS.md \
             backups.md \
+            dependency.md \
             "deployment validation.md" \
             discipline.md \
             "environment hardening.md" \
+            "in-game- economy -marketplace.md" \
             "incident response.md" \
             monitoring.md \
             "real-world QA.md"

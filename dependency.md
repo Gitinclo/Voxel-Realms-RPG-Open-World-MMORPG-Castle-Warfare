@@ -86,7 +86,20 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ---
 
-## 5. Verification Commands
+## 5. GitHub Actions & CI/CD Workflow Dependencies (`.github/workflows/*.yml`)
+
+All 10 automated workflows under `.github/workflows/` are tracked by [`.github/dependabot.yml`](./.github/dependabot.yml) (`package-ecosystem: "github-actions"`) and standardized on Node.js `22`:
+
+| GitHub Action             | Version | Workflows Using Action                                                                                                                                     | Architectural Purpose                                                     |
+| :------------------------ | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `actions/checkout`        | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `release.yml`, `release_drafter.yml`, `security_audit.yml` | Checks out repository source & release tags across CI/CD jobs             |
+| `actions/setup-node`      | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `release.yml`, `security_audit.yml`                        | Provisions Node.js `22` runtime with deterministic `npm` lockfile cache   |
+| `actions/upload-artifact` | `@v7`   | `build.yml`                                                                                                                                                | Uploads verified `dist/` production bundle artifact (`14`-day retention)  |
+| `actions/stale`           | `@v11`  | `stale_issues.yml`                                                                                                                                         | Automated 60-day inactive issue/PR triage (exempting `security`, `SEV-1`) |
+
+---
+
+## 6. Verification Commands
 
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs

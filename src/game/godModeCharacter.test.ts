@@ -8,9 +8,14 @@ import assert from 'node:assert/strict';
 import {
   GOD_IMMUNITY_DOMAINS,
   GOD_IMMUNITY_DOMAIN_SPECS,
+  GOD_OMNI_ATTRIBUTES,
+  GOD_OMNI_PILLAR_IDS,
+  GOD_OMNI_PILLAR_SPECS,
   applyGodImmunityToIncomingEffect,
   buildMaxedGodCharacterBundle,
   evaluateGodCharacterImmunity,
+  evaluateGodOmniAttribute,
+  getGodOmniAttributesByPillar,
 } from './godModeCharacter';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 import {
@@ -22,7 +27,7 @@ import {
 import { MAX_CASTLE_LEVEL, MAX_CASTLE_TROOP_CAPACITY } from './math';
 import { evaluateVipSubscription } from './vipSubscription';
 
-test('evaluateGodCharacterImmunity grants all 12 immunity domains exclusively to creatergame31@gmail.com', () => {
+test('evaluateGodCharacterImmunity grants all 12 immunity domains and 100 Omni-Attributes across 5 Divine Pillars exclusively to creatergame31@gmail.com', () => {
   const rootImmunity = evaluateGodCharacterImmunity(PRIMARY_ADMIN_EMAIL, true);
   assert.equal(rootImmunity.isRootGodAccount, true);
   assert.equal(rootImmunity.immuneToAllThings, true);
@@ -30,15 +35,61 @@ test('evaluateGodCharacterImmunity grants all 12 immunity domains exclusively to
   assert.equal(rootImmunity.tribulationDamageMultiplier, 0);
   assert.equal(rootImmunity.activeImmunities.length, 12);
   assert.equal(GOD_IMMUNITY_DOMAIN_SPECS.length, 12);
+  assert.equal(rootImmunity.activeOmniAttributesCount, 100);
+  assert.equal(rootImmunity.activeOmniPillarsCount, 5);
+  assert.equal(rootImmunity.omniAttributes.length, 100);
+  assert.equal(GOD_OMNI_ATTRIBUTES.length, 100);
+  assert.equal(GOD_OMNI_PILLAR_SPECS.length, 5);
+
+  // Verify each of the 5 Divine Pillars has exactly 20 unique Omni-Attributes
+  const uniqueIds = new Set(GOD_OMNI_ATTRIBUTES.map((a) => a.id));
+  const uniqueNames = new Set(GOD_OMNI_ATTRIBUTES.map((a) => a.name));
+  assert.equal(uniqueIds.size, 100);
+  assert.equal(uniqueNames.size, 100);
+
+  for (const pillarId of GOD_OMNI_PILLAR_IDS) {
+    const pillarAttrs = getGodOmniAttributesByPillar(pillarId);
+    assert.equal(pillarAttrs.length, 20, `Expected 20 Omni-Attributes in pillar ${pillarId}`);
+  }
+
+  // Spot-check canonical attributes across all 5 pillars via evaluateGodOmniAttribute
+  for (const sampleName of [
+    'Omnipotent',
+    'Omnific',
+    'Omniconquering',
+    'Omniscient',
+    'Omniprohetic',
+    'Omniscrutinizing',
+    'Omnipresent',
+    'Omnitemporal',
+    'Omniabiding',
+    'Omnibenevolent',
+    'Omnijust',
+    'Omnimoral',
+    'Omnivolent',
+    'Omnimalevolent',
+    'Omnidestructive',
+    'Omnidivine',
+  ]) {
+    const activeCheck = evaluateGodOmniAttribute(PRIMARY_ADMIN_EMAIL, sampleName, true);
+    assert.equal(activeCheck.found, true, `Expected ${sampleName} in GOD_OMNI_ATTRIBUTES`);
+    assert.equal(activeCheck.active, true, `Expected ${sampleName} active for root owner`);
+
+    const outsiderCheck = evaluateGodOmniAttribute('player@voxelrealms.example', sampleName, true);
+    assert.equal(outsiderCheck.found, true);
+    assert.equal(outsiderCheck.active, false);
+  }
 
   // Case-insensitive and whitespace-trimmed match for primary owner
   const normalizedRoot = evaluateGodCharacterImmunity('  CREATERGAME31@GMAIL.COM ', true);
   assert.equal(normalizedRoot.immuneToAllThings, true);
+  assert.equal(normalizedRoot.activeOmniAttributesCount, 100);
 
-  // Disabled godmode pauses active immunity cleanly
+  // Disabled godmode pauses active immunity and omni-attributes cleanly
   const pausedRoot = evaluateGodCharacterImmunity(PRIMARY_ADMIN_EMAIL, false);
   assert.equal(pausedRoot.isRootGodAccount, true);
   assert.equal(pausedRoot.immuneToAllThings, false);
+  assert.equal(pausedRoot.activeOmniAttributesCount, 0);
   assert.equal(pausedRoot.incomingDamageMultiplier, 1);
 
   // Fail-closed for all other emails
@@ -47,6 +98,8 @@ test('evaluateGodCharacterImmunity grants all 12 immunity domains exclusively to
     assert.equal(res.isRootGodAccount, false);
     assert.equal(res.immuneToAllThings, false);
     assert.equal(res.activeImmunities.length, 0);
+    assert.equal(res.activeOmniAttributesCount, 0);
+    assert.equal(res.omniAttributes.length, 0);
     assert.equal(res.incomingDamageMultiplier, 1);
   }
 });
@@ -74,13 +127,15 @@ test('applyGodImmunityToIncomingEffect nullifies every domain for creatergame31@
   }
 });
 
-test('buildMaxedGodCharacterBundle creates a fully maxed-out Lv.100 / Realm 22 L9 / 1,000T / VIP 3 Sovereign bundle', () => {
+test('buildMaxedGodCharacterBundle creates a fully maxed-out Lv.100 / Realm 22 L9 / 1,000T / VIP 3 / 100 Omni-Attribute Sovereign bundle', () => {
   const bundle = buildMaxedGodCharacterBundle();
 
   assert.equal(bundle.accountEmail, 'creatergame31@gmail.com');
   assert.equal(bundle.castleLevel, MAX_CASTLE_LEVEL);
   assert.equal(bundle.castleLevel, 100);
   assert.equal(bundle.immunity.immuneToAllThings, true);
+  assert.equal(bundle.immunity.activeOmniAttributesCount, 100);
+  assert.equal(bundle.immunity.activeOmniPillarsCount, 5);
   assert.equal(bundle.appearance.armorTier, 20);
   assert.equal(bundle.appearance.adminSpeciesSwitchApproved, true);
 

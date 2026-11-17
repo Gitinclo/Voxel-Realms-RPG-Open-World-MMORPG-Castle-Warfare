@@ -120,10 +120,734 @@ export const GOD_IMMUNITY_DOMAIN_SPECS: readonly GodImmunityDomainSpec[] = [
   },
 ] as const;
 
+/**
+ * 5 Divine Pillars encompassing the 100 Supreme Omni-Attributes exclusively bound to
+ * the Root Creator account (`creatergame31@gmail.com`).
+ */
+export const GOD_OMNI_PILLAR_IDS = [
+  'power_authority_creation',
+  'knowledge_wisdom_vision',
+  'presence_space_time',
+  'goodness_morality_divine_nature',
+  'cosmic_unity_volition',
+] as const;
+
+export type GodOmniPillarId = (typeof GOD_OMNI_PILLAR_IDS)[number];
+
+export interface GodOmniPillarSpec {
+  id: GodOmniPillarId;
+  title: string;
+  shortLabel: string;
+  attributeCount: number;
+  summary: string;
+}
+
+export const GOD_OMNI_PILLAR_SPECS: readonly GodOmniPillarSpec[] = [
+  {
+    id: 'power_authority_creation',
+    title: 'Power, Authority & Creation',
+    shortLabel: 'Power & Creation',
+    attributeCount: 20,
+    summary:
+      'Unlimited creative force, first-cause origin, supreme kingship, and absolute dominion over all realms, forces, and cosmic laws.',
+  },
+  {
+    id: 'knowledge_wisdom_vision',
+    title: 'Knowledge, Wisdom & Vision',
+    shortLabel: 'Knowledge & Vision',
+    attributeCount: 20,
+    summary:
+      'Complete infinite omniscience across past, present, and future, all-seeing dimensional perception, and unclouded cosmic truth.',
+  },
+  {
+    id: 'presence_space_time',
+    title: 'Presence, Space & Time',
+    shortLabel: 'Space & Time',
+    attributeCount: 20,
+    summary:
+      'Simultaneous omnipresence across all locations, timelines, dimensions, and planes of existence without boundary or beginning.',
+  },
+  {
+    id: 'goodness_morality_divine_nature',
+    title: 'Goodness, Morality & Divine Nature',
+    shortLabel: 'Divine Nature',
+    attributeCount: 20,
+    summary:
+      'Infinite benevolence, incorruptible justice, boundless grace, moral perfection, and divine harmony uniting all creation.',
+  },
+  {
+    id: 'cosmic_unity_volition',
+    title: 'Cosmic Unity & Volition (Including Dark/Dualistic Deities)',
+    shortLabel: 'Cosmic Volition',
+    attributeCount: 20,
+    summary:
+      'Supreme cosmic will, world-soul synthesis, dualistic creation/annihilation mastery, immutability, and complete fullness of godhood.',
+  },
+] as const;
+
+export interface GodOmniAttributeSpec {
+  id: string;
+  name: string;
+  pillar: GodOmniPillarId;
+  description: string;
+}
+
+export const GOD_OMNI_ATTRIBUTES: readonly GodOmniAttributeSpec[] = [
+  // Pillar 1: Power, Authority & Creation (20)
+  {
+    id: 'omni_omnipotent',
+    name: 'Omnipotent',
+    pillar: 'power_authority_creation',
+    description: 'Possessing unlimited, absolute power and authority.',
+  },
+  {
+    id: 'omni_omnific',
+    name: 'Omnific',
+    pillar: 'power_authority_creation',
+    description: 'Creating all things; having the power to bring everything into existence.',
+  },
+  {
+    id: 'omni_omnificent',
+    name: 'Omnificent',
+    pillar: 'power_authority_creation',
+    description: 'Unlimited in creative force and capacity.',
+  },
+  {
+    id: 'omni_omniregent',
+    name: 'Omniregent',
+    pillar: 'power_authority_creation',
+    description: 'Ruling as the supreme sovereign over all realms and beings.',
+  },
+  {
+    id: 'omni_omnicausal',
+    name: 'Omnicausal',
+    pillar: 'power_authority_creation',
+    description: 'Serving as the ultimate first cause behind everything that exists.',
+  },
+  {
+    id: 'omni_omnicompetent',
+    name: 'Omnicompetent',
+    pillar: 'power_authority_creation',
+    description: 'Fully capable of governing, judging, and handling every cosmic matter.',
+  },
+  {
+    id: 'omni_omnidominant',
+    name: 'Omnidominant',
+    pillar: 'power_authority_creation',
+    description: 'Holding total supremacy and dominance over all forces.',
+  },
+  {
+    id: 'omni_omniparent',
+    name: 'Omniparent',
+    pillar: 'power_authority_creation',
+    description: 'Acting as the ultimate creator, progenitor, or parent of all life.',
+  },
+  {
+    id: 'omni_omnipotentate',
+    name: 'Omnipotentate',
+    pillar: 'power_authority_creation',
+    description: 'A supreme ruler holding all power in the universe.',
+  },
+  {
+    id: 'omni_omnisovereign',
+    name: 'Omnisovereign',
+    pillar: 'power_authority_creation',
+    description: 'Exercising absolute kingship and dominion over all creation.',
+  },
+  {
+    id: 'omni_omniforce',
+    name: 'Omniforce',
+    pillar: 'power_authority_creation',
+    description: 'Embodying the entirety of all cosmic energy and strength.',
+  },
+  {
+    id: 'omni_omnimaster',
+    name: 'Omnimaster',
+    pillar: 'power_authority_creation',
+    description: 'Having complete mastery over every element, law, and spirit.',
+  },
+  {
+    id: 'omni_omnivictorious',
+    name: 'Omnivictorious',
+    pillar: 'power_authority_creation',
+    description: 'Triumphant over all opposition, chaos, and darkness.',
+  },
+  {
+    id: 'omni_omnidirective',
+    name: 'Omnidirective',
+    pillar: 'power_authority_creation',
+    description: 'Guiding and ordering the path of the entire universe.',
+  },
+  {
+    id: 'omni_omnimaker',
+    name: 'Omnimaker',
+    pillar: 'power_authority_creation',
+    description: 'The sole architect and builder of all worlds.',
+  },
+  {
+    id: 'omni_omnipropulsive',
+    name: 'Omnipropulsive',
+    pillar: 'power_authority_creation',
+    description: 'Providing the driving force behind all motion in the cosmos.',
+  },
+  {
+    id: 'omni_omnigoverning',
+    name: 'Omnigoverning',
+    pillar: 'power_authority_creation',
+    description: 'Maintaining total order and governance across all reality.',
+  },
+  {
+    id: 'omni_omnisustaining',
+    name: 'Omnisustaining',
+    pillar: 'power_authority_creation',
+    description: 'Continuously holding all of creation together so it does not cease to exist.',
+  },
+  {
+    id: 'omni_omnipotential',
+    name: 'Omnipotential',
+    pillar: 'power_authority_creation',
+    description: 'Containing the infinite potential for anything that could ever be.',
+  },
+  {
+    id: 'omni_omniconquering',
+    name: 'Omniconquering',
+    pillar: 'power_authority_creation',
+    description: 'Overcoming all evil, death, and cosmic adversaries.',
+  },
+
+  // Pillar 2: Knowledge, Wisdom & Vision (20)
+  {
+    id: 'omni_omniscient',
+    name: 'Omniscient',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Possessing complete, infinite knowledge of past, present, and future.',
+  },
+  {
+    id: 'omni_omnisapient',
+    name: 'Omnisapient',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Holding absolute, flawless wisdom and divine judgment.',
+  },
+  {
+    id: 'omni_omnivident',
+    name: 'Omnivident',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'All-seeing; perceiving every event across all dimensions simultaneously.',
+  },
+  {
+    id: 'omni_omnispective',
+    name: 'Omnispective',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Able to observe everything in existence without blind spots.',
+  },
+  {
+    id: 'omni_omnipercipient',
+    name: 'Omnipercipient',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Perceiving every thought, emotion, and physical detail in the universe.',
+  },
+  {
+    id: 'omni_omnivigilant',
+    name: 'Omnivigilant',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Watching over all creation tirelessly without ever slumbering.',
+  },
+  {
+    id: 'omni_omnilingual',
+    name: 'Omnilingual',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Understanding and speaking every language, mortal or divine.',
+  },
+  {
+    id: 'omni_omnilegent',
+    name: 'Omnilegent',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Knowing the contents of every written, spoken, or unwritten truth.',
+  },
+  {
+    id: 'omni_omnicognizant',
+    name: 'Omnicognizant',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Fully aware of all realities, timelines, and possibilities.',
+  },
+  {
+    id: 'omni_omniprohetic',
+    name: 'Omniprohetic',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Foreknowing every future event before it occurs.',
+  },
+  {
+    id: 'omni_omnidiscernment',
+    name: 'Omnidiscernment',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Instantly distinguishing truth from falsehood in all hearts.',
+  },
+  {
+    id: 'omni_omniaware',
+    name: 'Omniaware',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Conscious of every atom and soul in the cosmos at once.',
+  },
+  {
+    id: 'omni_omnilucent',
+    name: 'Omnilucent',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Radiating divine light and illumination that reveals all hidden things.',
+  },
+  {
+    id: 'omni_omnirevealing',
+    name: 'Omnirevealing',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Unveiling all cosmic mysteries and truths to creation.',
+  },
+  {
+    id: 'omni_omnimemory',
+    name: 'Omnimemory',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Retaining perfect, eternal memory of everything that has ever happened.',
+  },
+  {
+    id: 'omni_omnisensor',
+    name: 'Omnisensor',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Sensing every vibration, prayer, and shift across reality.',
+  },
+  {
+    id: 'omni_omnitruth',
+    name: 'Omnitruth',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Embodying the absolute, unchanging truth of all existence.',
+  },
+  {
+    id: 'omni_omniclarity',
+    name: 'Omniclarity',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Seeing through all illusions and complexities with total clarity.',
+  },
+  {
+    id: 'omni_omniguiding',
+    name: 'Omniguiding',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Illuminating the righteous path for all seekers.',
+  },
+  {
+    id: 'omni_omniscrutinizing',
+    name: 'Omniscrutinizing',
+    pillar: 'knowledge_wisdom_vision',
+    description: 'Examining every soul and action with perfect precision.',
+  },
+
+  // Pillar 3: Presence, Space & Time (20)
+  {
+    id: 'omni_omnipresent',
+    name: 'Omnipresent',
+    pillar: 'presence_space_time',
+    description: 'Existing everywhere in the universe at the exact same moment.',
+  },
+  {
+    id: 'omni_omnitemporal',
+    name: 'Omnitemporal',
+    pillar: 'presence_space_time',
+    description: 'Existing across all time—past, present, and future simultaneously.',
+  },
+  {
+    id: 'omni_omnilocal',
+    name: 'Omnilocal',
+    pillar: 'presence_space_time',
+    description: 'Occupying every physical and spiritual location at once.',
+  },
+  {
+    id: 'omni_omnidistance',
+    name: 'Omnidistance',
+    pillar: 'presence_space_time',
+    description: 'Spanning across infinite distances without boundary.',
+  },
+  {
+    id: 'omni_omniprevalent',
+    name: 'Omniprevalent',
+    pillar: 'presence_space_time',
+    description: 'Prevailing and existing throughout every corner of reality.',
+  },
+  {
+    id: 'omni_omnisubstantial',
+    name: 'Omnisubstantial',
+    pillar: 'presence_space_time',
+    description: 'Comprising the fundamental essence and substance of all things.',
+  },
+  {
+    id: 'omni_omnicorporeal',
+    name: 'Omnicorporeal',
+    pillar: 'presence_space_time',
+    description: 'Capable of manifesting in any physical or divine form.',
+  },
+  {
+    id: 'omni_omniform',
+    name: 'Omniform',
+    pillar: 'presence_space_time',
+    description: 'Possessing every form, shape, and manifestation across creation.',
+  },
+  {
+    id: 'omni_omniphasic',
+    name: 'Omniphasic',
+    pillar: 'presence_space_time',
+    description: 'Existing across all states, dimensions, and planes of reality.',
+  },
+  {
+    id: 'omni_omnimobile',
+    name: 'Omnimobile',
+    pillar: 'presence_space_time',
+    description: 'Moving freely and instantaneously across all realms.',
+  },
+  {
+    id: 'omni_omniambient',
+    name: 'Omniambient',
+    pillar: 'presence_space_time',
+    description: 'Surrounding and permeating every environment in existence.',
+  },
+  {
+    id: 'omni_omnibearing',
+    name: 'Omnibearing',
+    pillar: 'presence_space_time',
+    description: 'Extending infinitely in every conceivable direction.',
+  },
+  {
+    id: 'omni_omnidimensional',
+    name: 'Omnidimensional',
+    pillar: 'presence_space_time',
+    description: 'Inhabiting every higher and lower dimension at once.',
+  },
+  {
+    id: 'omni_omnieternal',
+    name: 'Omnieternal',
+    pillar: 'presence_space_time',
+    description: 'Having no beginning and no end across all ages.',
+  },
+  {
+    id: 'omni_omniimmanent',
+    name: 'Omniimmanent',
+    pillar: 'presence_space_time',
+    description: 'Indwelling within every part of the created world.',
+  },
+  {
+    id: 'omni_omnitranscendent',
+    name: 'Omnitranscendent',
+    pillar: 'presence_space_time',
+    description: 'Rising infinitely above and beyond all physical creation.',
+  },
+  {
+    id: 'omni_omnivagant',
+    name: 'Omnivagant',
+    pillar: 'presence_space_time',
+    description: 'Moving throughout the entirety of the cosmos without restriction.',
+  },
+  {
+    id: 'omni_omnicentric',
+    name: 'Omnicentric',
+    pillar: 'presence_space_time',
+    description: 'Serving as the true center of all existence.',
+  },
+  {
+    id: 'omni_omnispatial',
+    name: 'Omnispatial',
+    pillar: 'presence_space_time',
+    description: 'Encompassing the entirety of space itself.',
+  },
+  {
+    id: 'omni_omniabiding',
+    name: 'Omniabiding',
+    pillar: 'presence_space_time',
+    description: 'Remaining steadfast and present in all places forever.',
+  },
+
+  // Pillar 4: Goodness, Morality & Divine Nature (20)
+  {
+    id: 'omni_omnibenevolent',
+    name: 'Omnibenevolent',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Possessing infinite, unconditional goodness and love.',
+  },
+  {
+    id: 'omni_omnimerciful',
+    name: 'Omnimerciful',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Extending boundless compassion, grace, and forgiveness to all.',
+  },
+  {
+    id: 'omni_omnigracious',
+    name: 'Omnigracious',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Bestowing unlimited favor and blessings upon creation.',
+  },
+  {
+    id: 'omni_omnijust',
+    name: 'Omnijust',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Executing perfect, incorruptible justice in every judgment.',
+  },
+  {
+    id: 'omni_omnipure',
+    name: 'Omnipure',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Completely free from any flaw, stain, or corruption.',
+  },
+  {
+    id: 'omni_omniholy',
+    name: 'Omniholy',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Supremely sacred, revered, and set apart above all else.',
+  },
+  {
+    id: 'omni_omnipacific',
+    name: 'Omnipacific',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Bringing ultimate peace and harmony to the cosmos.',
+  },
+  {
+    id: 'omni_omniloving',
+    name: 'Omniloving',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Loving all beings infinitely and unconditionally.',
+  },
+  {
+    id: 'omni_omniforgiving',
+    name: 'Omniforgiving',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Capable of absolving any transgression or sin.',
+  },
+  {
+    id: 'omni_omniblessed',
+    name: 'Omniblessed',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Eternally blessed and the source of all blessings.',
+  },
+  {
+    id: 'omni_omnisympathetic',
+    name: 'Omnisympathetic',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Feeling deep compassion for the suffering of every creature.',
+  },
+  {
+    id: 'omni_omnibountiful',
+    name: 'Omnibountiful',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Giving generously and endlessly to sustain all life.',
+  },
+  {
+    id: 'omni_omnipatient',
+    name: 'Omnipatient',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Enduring with infinite patience and long-suffering.',
+  },
+  {
+    id: 'omni_omnifaithful',
+    name: 'Omnifaithful',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Remaining completely true to every promise and covenant.',
+  },
+  {
+    id: 'omni_omnirighteous',
+    name: 'Omnirighteous',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Always acting in total moral perfection.',
+  },
+  {
+    id: 'omni_omnisaving',
+    name: 'Omnisaving',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Offering redemption and salvation to all who seek it.',
+  },
+  {
+    id: 'omni_omnitolerant',
+    name: 'Omnitolerant',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Bearing with all creation with boundless grace.',
+  },
+  {
+    id: 'omni_omniharmonious',
+    name: 'Omniharmonious',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Uniting all opposing forces in divine balance.',
+  },
+  {
+    id: 'omni_omnicaring',
+    name: 'Omnicaring',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Watching over and tending to the needs of every living thing.',
+  },
+  {
+    id: 'omni_omnimoral',
+    name: 'Omnimoral',
+    pillar: 'goodness_morality_divine_nature',
+    description: 'Serving as the absolute foundation of all moral law.',
+  },
+
+  // Pillar 5: Cosmic Unity & Volition (Including Dark/Dualistic Deities) (20)
+  {
+    id: 'omni_omnivolent',
+    name: 'Omnivolent',
+    pillar: 'cosmic_unity_volition',
+    description: 'Willing all things that come to pass.',
+  },
+  {
+    id: 'omni_omnisentient',
+    name: 'Omnisentient',
+    pillar: 'cosmic_unity_volition',
+    description: 'Experiencing total cosmic consciousness and awareness.',
+  },
+  {
+    id: 'omni_omnipathy',
+    name: 'Omnipathy',
+    pillar: 'cosmic_unity_volition',
+    description: 'Feeling the collective emotions and states of the entire universe.',
+  },
+  {
+    id: 'omni_omnisatisfying',
+    name: 'Omnisatisfying',
+    pillar: 'cosmic_unity_volition',
+    description: 'Fulfilling the deepest spiritual longing of every soul.',
+  },
+  {
+    id: 'omni_omnisubjective',
+    name: 'Omnisubjective',
+    pillar: 'cosmic_unity_volition',
+    description: 'Encompassing every perspective and consciousness within itself.',
+  },
+  {
+    id: 'omni_omnipersonal',
+    name: 'Omnipersonal',
+    pillar: 'cosmic_unity_volition',
+    description: 'Relating intimately to every individual being at once.',
+  },
+  {
+    id: 'omni_omnigenesis',
+    name: 'Omnigenesis',
+    pillar: 'cosmic_unity_volition',
+    description: 'Serving as the singular origin point of all species and worlds.',
+  },
+  {
+    id: 'omni_omnisoul',
+    name: 'Omnisoul',
+    pillar: 'cosmic_unity_volition',
+    description: 'Acting as the great world-soul connecting all living spirits.',
+  },
+  {
+    id: 'omni_omniessence',
+    name: 'Omniessence',
+    pillar: 'cosmic_unity_volition',
+    description: 'Being the core spiritual essence behind all matter.',
+  },
+  {
+    id: 'omni_omnimalevolent',
+    name: 'Omnimalevolent',
+    pillar: 'cosmic_unity_volition',
+    description: 'Possessing absolute malice toward all creation (used for dark or evil deities).',
+  },
+  {
+    id: 'omni_omnidestructive',
+    name: 'Omnidestructive',
+    pillar: 'cosmic_unity_volition',
+    description:
+      'Capable of unmaking and annihilating all of existence (e.g., gods of destruction).',
+  },
+  {
+    id: 'omni_omniconsuming',
+    name: 'Omniconsuming',
+    pillar: 'cosmic_unity_volition',
+    description: 'Devouring all worlds, time, and matter at the end of an age.',
+  },
+  {
+    id: 'omni_omniterrible',
+    name: 'Omniterrible',
+    pillar: 'cosmic_unity_volition',
+    description: 'Inspiring overwhelming awe, dread, and reverence in all mortals.',
+  },
+  {
+    id: 'omni_omnimysterious',
+    name: 'Omnimysterious',
+    pillar: 'cosmic_unity_volition',
+    description: 'Remaining infinitely beyond full human comprehension.',
+  },
+  {
+    id: 'omni_omniimmutable',
+    name: 'Omniimmutable',
+    pillar: 'cosmic_unity_volition',
+    description: 'Completely unchanging and unshakeable across eternity.',
+  },
+  {
+    id: 'omni_omniperfect',
+    name: 'Omniperfect',
+    pillar: 'cosmic_unity_volition',
+    description: 'Lacking nothing; complete in every conceivable attribute.',
+  },
+  {
+    id: 'omni_omnisufficient',
+    name: 'Omnisufficient',
+    pillar: 'cosmic_unity_volition',
+    description: 'Needing nothing outside of itself to exist or thrive.',
+  },
+  {
+    id: 'omni_omniunifying',
+    name: 'Omniunifying',
+    pillar: 'cosmic_unity_volition',
+    description: 'Drawing all scattered creation back into cosmic oneness.',
+  },
+  {
+    id: 'omni_omnimajestic',
+    name: 'Omnimajestic',
+    pillar: 'cosmic_unity_volition',
+    description: 'Clothed in infinite splendor, glory, and grandeur.',
+  },
+  {
+    id: 'omni_omnidivine',
+    name: 'Omnidivine',
+    pillar: 'cosmic_unity_volition',
+    description: 'Embodying the complete fullness of godhood.',
+  },
+] as const;
+
+export function getGodOmniAttributesByPillar(
+  pillar: GodOmniPillarId
+): readonly GodOmniAttributeSpec[] {
+  return GOD_OMNI_ATTRIBUTES.filter((attr) => attr.pillar === pillar);
+}
+
+export interface GodOmniAttributeEvaluation {
+  found: boolean;
+  active: boolean;
+  attribute: GodOmniAttributeSpec | null;
+  accountEmail: string;
+}
+
+/**
+ * Evaluates whether a specific Omni-Attribute (by name such as 'Omnipotent' or ID 'omni_omnipotent')
+ * is active for the given account email. Fail-closed for all accounts except `creatergame31@gmail.com`.
+ */
+export function evaluateGodOmniAttribute(
+  email: string | null | undefined,
+  attributeNameOrId: string,
+  godmodeEnabled: boolean = true
+): GodOmniAttributeEvaluation {
+  const normalizedTarget = attributeNameOrId.trim().toLowerCase();
+  const matched =
+    GOD_OMNI_ATTRIBUTES.find(
+      (a) => a.id.toLowerCase() === normalizedTarget || a.name.toLowerCase() === normalizedTarget
+    ) ?? null;
+  const status = evaluateGodCharacterImmunity(email, godmodeEnabled);
+  return {
+    found: Boolean(matched),
+    active: Boolean(matched && status.immuneToAllThings),
+    attribute: matched,
+    accountEmail: (email || '').trim().toLowerCase(),
+  };
+}
+
 export interface GodCharacterImmunityStatus {
   isRootGodAccount: boolean;
   immuneToAllThings: boolean;
   activeImmunities: readonly GodImmunityDomain[];
+  activeOmniAttributesCount: number;
+  activeOmniPillarsCount: number;
+  omniAttributes: readonly GodOmniAttributeSpec[];
   incomingDamageMultiplier: 0 | 1;
   tribulationDamageMultiplier: 0 | 1;
   suppressionDefenseFloor: number;
@@ -159,7 +883,8 @@ export interface MaxedGodCharacterBundle {
 }
 
 /**
- * Evaluates whether an account is granted Supreme Creator God "Immunity to All Things".
+ * Evaluates whether an account is granted Supreme Creator God "Immunity to All Things"
+ * and all 100 Supreme Omni-Attributes across 5 Divine Pillars.
  * Fail-closed: ONLY returns true when `email` normalizes to `creatergame31@gmail.com` AND `godmodeEnabled` is true.
  */
 export function evaluateGodCharacterImmunity(
@@ -172,6 +897,9 @@ export function evaluateGodCharacterImmunity(
       isRootGodAccount: isRoot,
       immuneToAllThings: false,
       activeImmunities: [],
+      activeOmniAttributesCount: 0,
+      activeOmniPillarsCount: 0,
+      omniAttributes: [],
       incomingDamageMultiplier: 1,
       tribulationDamageMultiplier: 1,
       suppressionDefenseFloor: 0,
@@ -185,10 +913,14 @@ export function evaluateGodCharacterImmunity(
     isRootGodAccount: true,
     immuneToAllThings: true,
     activeImmunities: GOD_IMMUNITY_DOMAINS,
+    activeOmniAttributesCount: GOD_OMNI_ATTRIBUTES.length,
+    activeOmniPillarsCount: GOD_OMNI_PILLAR_SPECS.length,
+    omniAttributes: GOD_OMNI_ATTRIBUTES,
     incomingDamageMultiplier: 0,
     tribulationDamageMultiplier: 0,
     suppressionDefenseFloor: 1,
-    label: 'Supreme Creator God Sovereignty · Immune to All Things (12/12 Domains)',
+    label:
+      'Supreme Creator God Sovereignty · Immune to All Things (12/12 Domains · 100/100 Omni-Attributes)',
   };
 }
 
@@ -232,7 +964,7 @@ export function applyGodImmunityToIncomingEffect(
  * - Realm 22 (Ultimate Origin Supreme Realm) Layer 9 across Qi, Body, Soul & Mind + all 12 Manuals Lv.10 + 12 Great Daos
  * - VIP 3 (Celestial Dao Sovereign · Loyalty Lv. 15)
  * - Heroes Lv. 999 · 5-Star Divine Supremacy
- * - Full 12/12 All-Things Immunity
+ * - Full 12/12 All-Things Immunity + 100/100 Supreme Omni-Attributes across 5 Divine Pillars
  */
 export function buildMaxedGodCharacterBundle(params?: {
   email?: string;
@@ -287,7 +1019,7 @@ export function buildMaxedGodCharacterBundle(params?: {
 
   const appearance: CharacterAppearance = {
     name: params?.baseAppearance?.name || 'Aiden Skyrender (Creator GM)',
-    title: 'Immortal God Sovereign · Immune to All Things',
+    title: 'Omnipotent God Sovereign · 100 Omni-Attributes · Immune to All Things',
     species: params?.baseAppearance?.species || 'azure_dragonkin',
     speciesLocked: false,
     adminSpeciesSwitchApproved: true,

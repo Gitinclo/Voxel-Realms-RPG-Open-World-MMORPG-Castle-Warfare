@@ -117,6 +117,112 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
     10. `moderation_and_quarantine` — Immutable `Lv. 999` Root Owner protection (`cannotSanctionRootAdmin`) and server `AntiCheatEngine` quarantine bypass.
     11. `breakthrough_failure` — Guaranteed `100%` breakthrough ascension probability with zero realm regression.
     12. `cosmic_oblivion_erase` — Anchored at Layer 6 (`THE_WHITE_PAGE` / `The House of Ideas`), immune to Tier 5 Overvoid logic erasure and Oblivion resets.
+  - **100 Supreme Omni-Attributes Codex across 5 Divine Pillars (`GOD_OMNI_ATTRIBUTES`, `GOD_OMNI_PILLAR_SPECS`, `evaluateGodOmniAttribute` in `src/game/godModeCharacter.ts`)**: Strictly fail-closed for all accounts except **`creatergame31@gmail.com`**:
+    - **Pillar 1 — Power, Authority & Creation (`20` Attributes)**:
+      - **Omnipotent**: Possessing unlimited, absolute power and authority.
+      - **Omnific**: Creating all things; having the power to bring everything into existence.
+      - **Omnificent**: Unlimited in creative force and capacity.
+      - **Omniregent**: Ruling as the supreme sovereign over all realms and beings.
+      - **Omnicausal**: Serving as the ultimate first cause behind everything that exists.
+      - **Omnicompetent**: Fully capable of governing, judging, and handling every cosmic matter.
+      - **Omnidominant**: Holding total supremacy and dominance over all forces.
+      - **Omniparent**: Acting as the ultimate creator, progenitor, or parent of all life.
+      - **Omnipotentate**: A supreme ruler holding all power in the universe.
+      - **Omnisovereign**: Exercising absolute kingship and dominion over all creation.
+      - **Omniforce**: Embodying the entirety of all cosmic energy and strength.
+      - **Omnimaster**: Having complete mastery over every element, law, and spirit.
+      - **Omnivictorious**: Triumphant over all opposition, chaos, and darkness.
+      - **Omnidirective**: Guiding and ordering the path of the entire universe.
+      - **Omnimaker**: The sole architect and builder of all worlds.
+      - **Omnipropulsive**: Providing the driving force behind all motion in the cosmos.
+      - **Omnigoverning**: Maintaining total order and governance across all reality.
+      - **Omnisustaining**: Continuously holding all of creation together so it does not cease to exist.
+      - **Omnipotential**: Containing the infinite potential for anything that could ever be.
+      - **Omniconquering**: Overcoming all evil, death, and cosmic adversaries.
+    - **Pillar 2 — Knowledge, Wisdom & Vision (`20` Attributes)**:
+      - **Omniscient**: Possessing complete, infinite knowledge of past, present, and future.
+      - **Omnisapient**: Holding absolute, flawless wisdom and divine judgment.
+      - **Omnivident**: All-seeing; perceiving every event across all dimensions simultaneously.
+      - **Omnispective**: Able to observe everything in existence without blind spots.
+      - **Omnipercipient**: Perceiving every thought, emotion, and physical detail in the universe.
+      - **Omnivigilant**: Watching over all creation tirelessly without ever slumbering.
+      - **Omnilingual**: Understanding and speaking every language, mortal or divine.
+      - **Omnilegent**: Knowing the contents of every written, spoken, or unwritten truth.
+      - **Omnicognizant**: Fully aware of all realities, timelines, and possibilities.
+      - **Omniprohetic**: Foreknowing every future event before it occurs.
+      - **Omnidiscernment**: Instantly distinguishing truth from falsehood in all hearts.
+      - **Omniaware**: Conscious of every atom and soul in the cosmos at once.
+      - **Omnilucent**: Radiating divine light and illumination that reveals all hidden things.
+      - **Omnirevealing**: Unveiling all cosmic mysteries and truths to creation.
+      - **Omnimemory**: Retaining perfect, eternal memory of everything that has ever happened.
+      - **Omnisensor**: Sensing every vibration, prayer, and shift across reality.
+      - **Omnitruth**: Embodying the absolute, unchanging truth of all existence.
+      - **Omniclarity**: Seeing through all illusions and complexities with total clarity.
+      - **Omniguiding**: Illuminating the righteous path for all seekers.
+      - **Omniscrutinizing**: Examining every soul and action with perfect precision.
+    - **Pillar 3 — Presence, Space & Time (`20` Attributes)**:
+      - **Omnipresent**: Existing everywhere in the universe at the exact same moment.
+      - **Omnitemporal**: Existing across all time—past, present, and future simultaneously.
+      - **Omnilocal**: Occupying every physical and spiritual location at once.
+      - **Omnidistance**: Spanning across infinite distances without boundary.
+      - **Omniprevalent**: Prevailing and existing throughout every corner of reality.
+      - **Omnisubstantial**: Comprising the fundamental essence and substance of all things.
+      - **Omnicorporeal**: Capable of manifesting in any physical or divine form.
+      - **Omniform**: Possessing every form, shape, and manifestation across creation.
+      - **Omniphasic**: Existing across all states, dimensions, and planes of reality.
+      - **Omnimobile**: Moving freely and instantaneously across all realms.
+      - **Omniambient**: Surrounding and permeating every environment in existence.
+      - **Omnibearing**: Extending infinitely in every conceivable direction.
+      - **Omnidimensional**: Inhabiting every higher and lower dimension at once.
+      - **Omnieternal**: Having no beginning and no end across all ages.
+      - **Omniimmanent**: Indwelling within every part of the created world.
+      - **Omnitranscendent**: Rising infinitely above and beyond all physical creation.
+      - **Omnivagant**: Moving throughout the entirety of the cosmos without restriction.
+      - **Omnicentric**: Serving as the true center of all existence.
+      - **Omnispatial**: Encompassing the entirety of space itself.
+      - **Omniabiding**: Remaining steadfast and present in all places forever.
+    - **Pillar 4 — Goodness, Morality & Divine Nature (`20` Attributes)**:
+      - **Omnibenevolent**: Possessing infinite, unconditional goodness and love.
+      - **Omnimerciful**: Extending boundless compassion, grace, and forgiveness to all.
+      - **Omnigracious**: Bestowing unlimited favor and blessings upon creation.
+      - **Omnijust**: Executing perfect, incorruptible justice in every judgment.
+      - **Omnipure**: Completely free from any flaw, stain, or corruption.
+      - **Omniholy**: Supremely sacred, revered, and set apart above all else.
+      - **Omnipacific**: Bringing ultimate peace and harmony to the cosmos.
+      - **Omniloving**: Loving all beings infinitely and unconditionally.
+      - **Omniforgiving**: Capable of absolving any transgression or sin.
+      - **Omniblessed**: Eternally blessed and the source of all blessings.
+      - **Omnisympathetic**: Feeling deep compassion for the suffering of every creature.
+      - **Omnibountiful**: Giving generously and endlessly to sustain all life.
+      - **Omnipatient**: Enduring with infinite patience and long-suffering.
+      - **Omnifaithful**: Remaining completely true to every promise and covenant.
+      - **Omnirighteous**: Always acting in total moral perfection.
+      - **Omnisaving**: Offering redemption and salvation to all who seek it.
+      - **Omnitolerant**: Bearing with all creation with boundless grace.
+      - **Omniharmonious**: Uniting all opposing forces in divine balance.
+      - **Omnicaring**: Watching over and tending to the needs of every living thing.
+      - **Omnimoral**: Serving as the absolute foundation of all moral law.
+    - **Pillar 5 — Cosmic Unity & Volition (Including Dark/Dualistic Deities) (`20` Attributes)**:
+      - **Omnivolent**: Willing all things that come to pass.
+      - **Omnisentient**: Experiencing total cosmic consciousness and awareness.
+      - **Omnipathy**: Feeling the collective emotions and states of the entire universe.
+      - **Omnisatisfying**: Fulfilling the deepest spiritual longing of every soul.
+      - **Omnisubjective**: Encompassing every perspective and consciousness within itself.
+      - **Omnipersonal**: Relating intimately to every individual being at once.
+      - **Omnigenesis**: Serving as the singular origin point of all species and worlds.
+      - **Omnisoul**: Acting as the great world-soul connecting all living spirits.
+      - **Omniessence**: Being the core spiritual essence behind all matter.
+      - **Omnimalevolent**: Possessing absolute malice toward all creation (used for dark or evil deities).
+      - **Omnidestructive**: Capable of unmaking and annihilating all of existence (e.g., gods of destruction).
+      - **Omniconsuming**: Devouring all worlds, time, and matter at the end of an age.
+      - **Omniterrible**: Inspiring overwhelming awe, dread, and reverence in all mortals.
+      - **Omnimysterious**: Remaining infinitely beyond full human comprehension.
+      - **Omniimmutable**: Completely unchanging and unshakeable across eternity.
+      - **Omniperfect**: Lacking nothing; complete in every conceivable attribute.
+      - **Omnisufficient**: Needing nothing outside of itself to exist or thrive.
+      - **Omniunifying**: Drawing all scattered creation back into cosmic oneness.
+      - **Omnimajestic**: Clothed in infinite splendor, glory, and grandeur.
+      - **Omnidivine**: Embodying the complete fullness of godhood.
 
 ### 11. 🖥️ Software Architect & Hardware Architect Compatibility & Optimization (`15/11/2026` — `v1.5.0`)
 
@@ -262,7 +368,7 @@ interface WhitePageRoot {
 ### 15. 🛡️ 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
 - **Deterministic 9-Pillar Engine Audit (`runFullSystemValidationReport`)**: Continuously validates **103 cross-module invariants** across:
-  1. **Root RBAC, 12-Domain All-Things Creator God Immunity (`src/game/godModeCharacter.ts`), 10-Article EULA v1.5.0, 10-Agreement Legal Stack Governance & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
+  1. **Root RBAC, 12-Domain All-Things Creator God Immunity & 100 Supreme Omni-Attributes across 5 Divine Pillars (`src/game/godModeCharacter.ts`), 10-Article EULA v1.5.0, 10-Agreement Legal Stack Governance & Supreme Author Immutability (`creatergame31@gmail.com` · Clearance Lv. 999)**
   2. **6-Tier Nested Cosmological Tree (`WhitePageRoot` Singleton → `Universe` Leaf), Tier 5/Tier 1 Physics Overrides & 100+∞ Sovereign Omniverses**
   3. **Imperial Lore (7 Epochs), 12 Dynastic Annals, Auto-Populating Open-World Codex (8 Biomes & Monsters) & `10^100`-Word Akashic Stream**
   4. **10 Playable Species, 3D Procedural Anatomy & Admin Rebirth Permission Gate**
@@ -401,7 +507,7 @@ npm run preview       # Preview production build locally
 │   ├── ISSUE_TEMPLATE.md              # Unified issue / bug / feature / moderation template
 │   ├── PULL_REQUEST_TEMPLATE/         # hotfix.md, breaking_change.md, architecture_change.md, lore_addition.md
 │   ├── PULL_REQUEST_TEMPLATE.md       # Pull Request validation & guardrail checklist
-│   └── workflows/
+│   └── workflows/                     # 10 GitHub Actions pipelines (checkout@v7, setup-node@v7, upload-artifact@v7, stale@v11)
 │       ├── build.yml                  # GitHub Actions CI (Web/TS + Rules ESLint + Live Ops + C++20)
 │       ├── release.yml                # Tag-triggered v*.*.* checksummed GitHub Release pipeline
 │       ├── ci.yml                     # Fast PR npm run validate workflow
@@ -411,7 +517,7 @@ npm run preview       # Preview production build locally
 │       ├── security_audit.yml         # Weekly supply-chain audit + Firestore rules verification
 │       ├── lint_and_format.yml        # TypeScript, ESLint Rules & Prettier PR check
 │       ├── release_drafter.yml        # Release notes preview workflow
-│       └── stale_issues.yml           # Scheduled stale issue & PR triage automation
+│       └── stale_issues.yml           # Scheduled stale issue & PR triage automation (actions/stale@v11)
 ├── docs/
 │   ├── adr/
 │   │   ├── 0001-record-architecture-decisions.md # ADR 0001: Functional Core / Imperative Shell separation
@@ -589,7 +695,7 @@ To solve the **"Spaghetti Code" risk** across TypeScript/WebGL, Cloud Firestore 
 
 ### Part 1A: TypeScript, Security Rules & WebGL Guardrails (`.github/workflows/build.yml` -> `quality-check`)
 
-Every push and Pull Request automatically runs six strict Web/TypeScript/Security quality gates:
+Every push and Pull Request automatically runs six strict Web/TypeScript/Security quality gates on Node.js `22` (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`):
 
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
@@ -770,7 +876,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 - **[Pull Request Templates (`.github/PULL_REQUEST_TEMPLATE.md` & `.github/PULL_REQUEST_TEMPLATE/`)](./.github/PULL_REQUEST_TEMPLATE.md)** — Default PR checklist plus specialized [`hotfix.md`](./.github/PULL_REQUEST_TEMPLATE/hotfix.md), [`breaking_change.md`](./.github/PULL_REQUEST_TEMPLATE/breaking_change.md), [`architecture_change.md`](./.github/PULL_REQUEST_TEMPLATE/architecture_change.md), and [`lore_addition.md`](./.github/PULL_REQUEST_TEMPLATE/lore_addition.md).
 - **[Issue & Discussion Templates (`.github/ISSUE_TEMPLATE/` & `.github/DISCUSSION_TEMPLATE/`)](./.github/ISSUE_TEMPLATE.md)** — Config redirect ([`config.yml`](./.github/ISSUE_TEMPLATE/config.yml)), [`bug_report.md`](./.github/ISSUE_TEMPLATE/bug_report.md), [`feature_request.md`](./.github/ISSUE_TEMPLATE/feature_request.md), [`release_checklist.md`](./.github/ISSUE_TEMPLATE/release_checklist.md), [`security_vulnerability.md`](./.github/ISSUE_TEMPLATE/security_vulnerability.md), [`performance_regression.md`](./.github/ISSUE_TEMPLATE/performance_regression.md), [`incident_report.md`](./.github/ISSUE_TEMPLATE/incident_report.md), [`lore_inconsistency.md`](./.github/ISSUE_TEMPLATE/lore_inconsistency.md), [`balance_feedback.md`](./.github/ISSUE_TEMPLATE/balance_feedback.md), [`tech_debt.md`](./.github/ISSUE_TEMPLATE/tech_debt.md), [`documentation_gap.md`](./.github/ISSUE_TEMPLATE/documentation_gap.md), and Discussions (`announcements.yml`, `ideas.yml`, `q-and-a.yml`).
-- **[GitHub Configs & Workflows (`.github/workflows/`)](./.github/workflows/build.yml)** — [`CODEOWNERS`](./.github/CODEOWNERS), [`CODE_OF_CONDUCT_ENFORCEMENT.md`](./.github/CODE_OF_CONDUCT_ENFORCEMENT.md), [`FUNDING.yml`](./.github/FUNDING.yml), [`dependabot.yml`](./.github/dependabot.yml), [`release.yml`](./.github/release.yml), [`ci.yml`](./.github/workflows/ci.yml), [`cd.yml`](./.github/workflows/cd.yml), [`docs_deploy.yml`](./.github/workflows/docs_deploy.yml), [`nightly_build.yml`](./.github/workflows/nightly_build.yml), [`security_audit.yml`](./.github/workflows/security_audit.yml), [`lint_and_format.yml`](./.github/workflows/lint_and_format.yml), [`release_drafter.yml`](./.github/workflows/release_drafter.yml), and [`stale_issues.yml`](./.github/workflows/stale_issues.yml).
+- **[GitHub Configs & Workflows (`.github/workflows/`)](./.github/workflows/build.yml)** — [`CODEOWNERS`](./.github/CODEOWNERS), [`CODE_OF_CONDUCT_ENFORCEMENT.md`](./.github/CODE_OF_CONDUCT_ENFORCEMENT.md), [`FUNDING.yml`](./.github/FUNDING.yml), [`dependabot.yml`](./.github/dependabot.yml), [`.github/release.yml`](./.github/release.yml), and all 10 standardized workflows (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `actions/stale@v11`): [`build.yml`](./.github/workflows/build.yml), [`release.yml`](./.github/workflows/release.yml), [`ci.yml`](./.github/workflows/ci.yml), [`cd.yml`](./.github/workflows/cd.yml), [`docs_deploy.yml`](./.github/workflows/docs_deploy.yml), [`nightly_build.yml`](./.github/workflows/nightly_build.yml), [`security_audit.yml`](./.github/workflows/security_audit.yml), [`lint_and_format.yml`](./.github/workflows/lint_and_format.yml), [`release_drafter.yml`](./.github/workflows/release_drafter.yml), and [`stale_issues.yml`](./.github/workflows/stale_issues.yml).
 
 ### Extended Engineering, SRE, QA, Security, Cultivation & Legal Suite
 

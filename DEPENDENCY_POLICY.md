@@ -5,4 +5,5 @@
 
 - **Zero High/Critical CVEs**: `npm audit --audit-level=high` runs on every CI push and blocks merges on high/critical advisories.
 - **Lockfile & Overrides**: Transitive fixes use `overrides` in `package.json` (`@grpc/grpc-js`, `esbuild`, `minimatch`). See [`dependency.md`](./dependency.md).
+- **GitHub Actions Standardization**: All 10 workflows in `.github/workflows/` standardize on `actions/checkout@v7`, `actions/setup-node@v7` (Node.js `22`), `actions/upload-artifact@v7`, and `actions/stale@v11`, monitored weekly by `.github/dependabot.yml`.
 - **Major Upgrades**: Breaking majors (e.g., `express 5`, `motion 14`, `lucide-react 1`) require explicit migration testing across `server.ts`, `npm run validate`, and Playwright UI checks before bumping.
