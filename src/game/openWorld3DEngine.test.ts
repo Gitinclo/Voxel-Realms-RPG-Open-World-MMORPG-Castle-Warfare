@@ -13,6 +13,7 @@ import {
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
   resolvePlayerCitadelCollisionCannon,
+  resolveThreeDimensionalObjectCollision,
   simulateSiegeArtilleryTrajectory,
 } from './openWorld3DEngine';
 
@@ -93,4 +94,69 @@ test('4. @tweenjs/tween.js OpenWorldCameraTweenController smoothly interpolates 
 
   const end = ctrl.update(250);
   assert.ok(Math.abs(end.orbitAngleRad - Math.PI / 2) < 1e-4);
+});
+
+test('5. resolveThreeDimensionalObjectCollision enforces Momentum Conservation, Newtons Third Law, and Elastic / Inelastic / Perfectly Inelastic energy regimes', () => {
+  const bodyA = {
+    id: 'boulder_alpha',
+    massKg: 10,
+    position: { x: 0, y: 1, z: 0 },
+    velocity: { vx: 12, vy: 0, vz: 0 },
+    radiusMeters: 1.0,
+  };
+  const bodyB = {
+    id: 'boulder_beta',
+    massKg: 10,
+    position: { x: 1.8, y: 1, z: 0 }, // Overlapping by 0.2m (combined radius = 2.0m)
+    velocity: { vx: 0, vy: 0, vz: 0 },
+    radiusMeters: 1.0,
+  };
+
+  // 1. Elastic Collision (e = 1.0): Momentum AND Kinetic Energy are both conserved; equal masses swap velocities
+  const elastic = resolveThreeDimensionalObjectCollision({
+    bodyA,
+    bodyB,
+    regime: 'elastic',
+  });
+  assert.equal(elastic.collided, true);
+  assert.equal(elastic.restitutionCoefficient, 1.0);
+  assert.equal(elastic.momentumConserved, true);
+  assert.equal(elastic.newtonThirdLawVerified, true);
+  assert.ok(Math.abs(elastic.kineticEnergyLostJoules) < 1e-7);
+  assert.ok(Math.abs(elastic.bodyAAfter.velocity.vx - 0) < 1e-7);
+  assert.ok(Math.abs(elastic.bodyBAfter.velocity.vx - 12) < 1e-7);
+  // Colliders pushed apart so they no longer overlap
+  const postDist = Math.hypot(
+    elastic.bodyBAfter.position.x - elastic.bodyAAfter.position.x,
+    elastic.bodyBAfter.position.y - elastic.bodyAAfter.position.y,
+    elastic.bodyBAfter.position.z - elastic.bodyAAfter.position.z
+  );
+  assert.ok(postDist >= 2.0 - 1e-6);
+
+  // 2. Inelastic Collision (e = 0.5): Momentum conserved, partial kinetic energy lost
+  const inelastic = resolveThreeDimensionalObjectCollision({
+    bodyA,
+    bodyB,
+    regime: 'inelastic',
+    inelasticRestitution: 0.5,
+  });
+  assert.equal(inelastic.collided, true);
+  assert.equal(inelastic.momentumConserved, true);
+  assert.equal(inelastic.newtonThirdLawVerified, true);
+  assert.ok(inelastic.kineticEnergyLostJoules > 0);
+  assert.ok(inelastic.kineticEnergyAfterJoules < inelastic.kineticEnergyBeforeJoules);
+
+  // 3. Perfectly Inelastic Collision (e = 0.0): Objects move with common final velocity (6 m/s) & maximize KE loss
+  const perfectlyInelastic = resolveThreeDimensionalObjectCollision({
+    bodyA,
+    bodyB,
+    regime: 'perfectly_inelastic',
+  });
+  assert.equal(perfectlyInelastic.collided, true);
+  assert.equal(perfectlyInelastic.restitutionCoefficient, 0.0);
+  assert.equal(perfectlyInelastic.momentumConserved, true);
+  assert.equal(perfectlyInelastic.newtonThirdLawVerified, true);
+  assert.ok(Math.abs(perfectlyInelastic.bodyAAfter.velocity.vx - 6) < 1e-7);
+  assert.ok(Math.abs(perfectlyInelastic.bodyBAfter.velocity.vx - 6) < 1e-7);
+  assert.ok(perfectlyInelastic.kineticEnergyLostJoules > inelastic.kineticEnergyLostJoules);
 });

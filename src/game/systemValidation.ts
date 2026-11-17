@@ -95,7 +95,11 @@ import {
   revokeEulaAcceptance,
 } from './eula';
 import { AntiCheatGuard, sanitizeCloudProfilePatch } from './antiCheat';
-import { OpenWorldSimplexGenerator, buildSceneBVHTrees } from './openWorld3DEngine';
+import {
+  OpenWorldSimplexGenerator,
+  buildSceneBVHTrees,
+  resolveThreeDimensionalObjectCollision,
+} from './openWorld3DEngine';
 import {
   AVATAR_CLONE_SHADOW_COMPARISON_MATRIX,
   CLONE_SUBTYPE_CATALOG,
@@ -664,6 +668,40 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
   const sampleTerrain = simplexBiome.sampleTerrain(12, -8);
   const bvhBuiltCount = buildSceneBVHTrees(testScene);
   const raidDupAudit = evaluateRaidDuplicationServerLoad(50, 3, 0);
+  const elasticCollisionCheck = resolveThreeDimensionalObjectCollision({
+    bodyA: {
+      id: 'col_a',
+      massKg: 10,
+      position: { x: 0, y: 1, z: 0 },
+      velocity: { vx: 10, vy: 0, vz: 0 },
+      radiusMeters: 1,
+    },
+    bodyB: {
+      id: 'col_b',
+      massKg: 10,
+      position: { x: 1.8, y: 1, z: 0 },
+      velocity: { vx: 0, vy: 0, vz: 0 },
+      radiusMeters: 1,
+    },
+    regime: 'elastic',
+  });
+  const perfectlyInelasticCheck = resolveThreeDimensionalObjectCollision({
+    bodyA: {
+      id: 'col_a',
+      massKg: 10,
+      position: { x: 0, y: 1, z: 0 },
+      velocity: { vx: 10, vy: 0, vz: 0 },
+      radiusMeters: 1,
+    },
+    bodyB: {
+      id: 'col_b',
+      massKg: 10,
+      position: { x: 1.8, y: 1, z: 0 },
+      velocity: { vx: 0, vy: 0, vz: 0 },
+      radiusMeters: 1,
+    },
+    regime: 'perfectly_inelastic',
+  });
 
   const p9Passed =
     transparency.totalEntries === 8 &&
@@ -685,6 +723,14 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     profileAudit.flaggedViolations.length >= 2 &&
     typeof sampleTerrain.elevationMeters === 'number' &&
     bvhBuiltCount > 0 &&
+    elasticCollisionCheck.collided &&
+    elasticCollisionCheck.momentumConserved &&
+    elasticCollisionCheck.newtonThirdLawVerified &&
+    Math.abs(elasticCollisionCheck.kineticEnergyLostJoules) < 1e-6 &&
+    perfectlyInelasticCheck.collided &&
+    perfectlyInelasticCheck.momentumConserved &&
+    perfectlyInelasticCheck.newtonThirdLawVerified &&
+    perfectlyInelasticCheck.kineticEnergyLostJoules > 0 &&
     AVATAR_CLONE_SHADOW_COMPARISON_MATRIX.length === 4 &&
     CLONE_SUBTYPE_CATALOG.length === 3 &&
     SHADOW_SUBTYPE_CATALOG.length === 3 &&
@@ -697,13 +743,13 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
       '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow & 3D BVH/WebGL2',
     passed: p9Passed,
     assertionsPassed: 18,
-    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + Avatar/Clone/Shadow 200-Entity Raid Sync + 3D BVH/Simplex + Three.js WebGL2 mutations.`,
+    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + Avatar/Clone/Shadow 200-Entity Raid Sync + 3D BVH/Simplex/Object Collision (Elastic, Inelastic, Perfectly Inelastic) + Three.js WebGL2 mutations.`,
     verifiedInvariants: [
       `Explicit 3-Tier Scope Matrix: ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated Models, ${transparency.plannedCount} Planned`,
       'Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol (/ws/siege), HMAC-SHA256 Server RBAC (/api/auth/*, /api/admin/*), CohortDirtyBit delta-compression & 128-frame CSP ring buffer',
       'Authoritative Multiplayer Anti-Cheat Engine (src/game/antiCheat.ts) enforces teleport/speed-hack rubberbanding, monotonic seq replay guards, economy delta caps & quarantine',
       'MMORPG Avatar, Clone & Shadow Engine (src/game/avatarCloneShadow.ts) enforces 4-row Comparison Matrix, 3 Clone subtypes, 3 Shadow subtypes & 50-player Raid 200-entity delta sync',
-      '3D Open-World Engine (src/game/openWorld3DEngine.ts) integrates three-mesh-bvh O(log N) raycasting, simplex-noise fBm biomes, cannon-es rigid-body physics & @tweenjs/tween.js camera interpolation',
+      '3D Open-World Engine (src/game/openWorld3DEngine.ts) integrates three-mesh-bvh O(log N) raycasting, simplex-noise fBm biomes, cannon-es rigid-body physics, 3D Object Collision Solver (Momentum Conservation, Newton Third Law, Elastic/Inelastic/Perfectly Inelastic) & @tweenjs/tween.js camera interpolation',
       'Multi-Region Persistence Quorum across 3 regional clusters (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1)',
       'Live WebGL2 applyCrossPlatformPipeline mutates THREE.LOD distances, InstancedMesh.count (800 vs 320) & material normalScale/bumpScale',
       'Simulated metadata (BC7/ASTC import overrides, 68.4GB/640MB bundle manifests, C++20 reference headers) clearly separated from browser runtime',

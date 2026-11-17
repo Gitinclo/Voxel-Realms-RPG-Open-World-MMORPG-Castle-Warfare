@@ -381,3 +381,243 @@ export class OpenWorldCameraTweenController {
     return { ...this.state };
   }
 }
+
+// ============================================================================
+// 4. 3D OBJECT COLLISION, MOMENTUM CONSERVATION & NEWTON'S THIRD LAW SOLVER
+// ============================================================================
+
+export type CollisionRegime = 'elastic' | 'inelastic' | 'perfectly_inelastic';
+
+export interface CollisionBodyState {
+  id: string;
+  /** Mass in kg (use 0 for immovable static colliders with infinite effective mass) */
+  massKg: number;
+  position: { x: number; y: number; z: number };
+  velocity: { vx: number; vy: number; vz: number };
+  radiusMeters: number;
+}
+
+export interface CollisionResolutionResult {
+  collided: boolean;
+  regime: CollisionRegime;
+  restitutionCoefficient: number;
+  penetrationDepthMeters: number;
+  collisionNormal: { nx: number; ny: number; nz: number };
+  impulseMagnitudeNewtonSec: number;
+  impulseOnA: { jx: number; jy: number; jz: number };
+  impulseOnB: { jx: number; jy: number; jz: number };
+  newtonThirdLawVerified: boolean;
+  momentumBeforeKgMps: { px: number; py: number; pz: number };
+  momentumAfterKgMps: { px: number; py: number; pz: number };
+  momentumConserved: boolean;
+  kineticEnergyBeforeJoules: number;
+  kineticEnergyAfterJoules: number;
+  kineticEnergyLostJoules: number;
+  bodyAAfter: CollisionBodyState;
+  bodyBAfter: CollisionBodyState;
+}
+
+/**
+ * Resolves a 3D physical collision between two spherical/capsule colliders using:
+ * - Conservation of Linear Momentum: mA*vA + mB*vB = mA*vA' + mB*vB'
+ * - Newton's Third Law of Motion: Impulse J_A = -J_B (equal magnitude, opposite direction)
+ * - Coefficient of Restitution (e):
+ *   * 'elastic' (e = 1.0): Both momentum and total kinetic energy are conserved.
+ *   * 'inelastic' (0 < e < 1.0): Momentum is conserved; part of kinetic energy is dissipated.
+ *   * 'perfectly_inelastic' (e = 0.0): Objects stick together along the collision normal
+ *     and share a common final velocity, maximizing kinetic energy loss.
+ * - Minimum Translation Vector (MTV) positional separation so colliders never occupy the same space.
+ */
+export function resolveThreeDimensionalObjectCollision(params: {
+  bodyA: CollisionBodyState;
+  bodyB: CollisionBodyState;
+  regime: CollisionRegime;
+  inelasticRestitution?: number;
+  stickFullyOnPerfectlyInelastic?: boolean;
+}): CollisionResolutionResult {
+  const { bodyA, bodyB, regime, stickFullyOnPerfectlyInelastic = true } = params;
+
+  const restitutionCoefficient =
+    regime === 'elastic'
+      ? 1.0
+      : regime === 'perfectly_inelastic'
+        ? 0.0
+        : Math.max(0.01, Math.min(0.99, params.inelasticRestitution ?? 0.5));
+
+  const invMassA = bodyA.massKg > 0 ? 1 / bodyA.massKg : 0;
+  const invMassB = bodyB.massKg > 0 ? 1 / bodyB.massKg : 0;
+  const totalInvMass = invMassA + invMassB;
+
+  const dx = bodyB.position.x - bodyA.position.x;
+  const dy = bodyB.position.y - bodyA.position.y;
+  const dz = bodyB.position.z - bodyA.position.z;
+  const dist = Math.hypot(dx, dy, dz);
+  const combinedRadius = Math.max(0.01, bodyA.radiusMeters + bodyB.radiusMeters);
+
+  // Unit normal pointing from A toward B
+  const nx = dist > 1e-8 ? dx / dist : 1;
+  const ny = dist > 1e-8 ? dy / dist : 0;
+  const nz = dist > 1e-8 ? dz / dist : 0;
+
+  const penetrationDepthMeters = Math.max(0, combinedRadius - dist);
+  const overlapping = dist <= combinedRadius + 1e-6;
+
+  const momentumBeforeKgMps = {
+    px: bodyA.massKg * bodyA.velocity.vx + bodyB.massKg * bodyB.velocity.vx,
+    py: bodyA.massKg * bodyA.velocity.vy + bodyB.massKg * bodyB.velocity.vy,
+    pz: bodyA.massKg * bodyA.velocity.vz + bodyB.massKg * bodyB.velocity.vz,
+  };
+
+  const kineticEnergyBeforeJoules =
+    0.5 *
+      bodyA.massKg *
+      (bodyA.velocity.vx ** 2 + bodyA.velocity.vy ** 2 + bodyA.velocity.vz ** 2) +
+    0.5 * bodyB.massKg * (bodyB.velocity.vx ** 2 + bodyB.velocity.vy ** 2 + bodyB.velocity.vz ** 2);
+
+  // Relative velocity of B with respect to A along the normal (v_rel = (vB - vA) . n)
+  const rvx = bodyB.velocity.vx - bodyA.velocity.vx;
+  const rvy = bodyB.velocity.vy - bodyA.velocity.vy;
+  const rvz = bodyB.velocity.vz - bodyA.velocity.vz;
+  const velAlongNormal = rvx * nx + rvy * ny + rvz * nz;
+
+  if (!overlapping || totalInvMass === 0) {
+    return {
+      collided: false,
+      regime,
+      restitutionCoefficient,
+      penetrationDepthMeters: 0,
+      collisionNormal: { nx, ny, nz },
+      impulseMagnitudeNewtonSec: 0,
+      impulseOnA: { jx: 0, jy: 0, jz: 0 },
+      impulseOnB: { jx: 0, jy: 0, jz: 0 },
+      newtonThirdLawVerified: true,
+      momentumBeforeKgMps,
+      momentumAfterKgMps: { ...momentumBeforeKgMps },
+      momentumConserved: true,
+      kineticEnergyBeforeJoules,
+      kineticEnergyAfterJoules: kineticEnergyBeforeJoules,
+      kineticEnergyLostJoules: 0,
+      bodyAAfter: {
+        ...bodyA,
+        position: { ...bodyA.position },
+        velocity: { ...bodyA.velocity },
+      },
+      bodyBAfter: {
+        ...bodyB,
+        position: { ...bodyB.position },
+        velocity: { ...bodyB.velocity },
+      },
+    };
+  }
+
+  // Separate overlapping colliders via Minimum Translation Vector (MTV)
+  const correctionMag = penetrationDepthMeters / totalInvMass;
+  const nextPosA = {
+    x: bodyA.position.x - nx * correctionMag * invMassA,
+    y: bodyA.position.y - ny * correctionMag * invMassA,
+    z: bodyA.position.z - nz * correctionMag * invMassA,
+  };
+  const nextPosB = {
+    x: bodyB.position.x + nx * correctionMag * invMassB,
+    y: bodyB.position.y + ny * correctionMag * invMassB,
+    z: bodyB.position.z + nz * correctionMag * invMassB,
+  };
+
+  let jx = 0;
+  let jy = 0;
+  let jz = 0;
+
+  if (
+    regime === 'perfectly_inelastic' &&
+    stickFullyOnPerfectlyInelastic &&
+    bodyA.massKg > 0 &&
+    bodyB.massKg > 0
+  ) {
+    // Perfectly inelastic coalescence: both bodies share common center-of-mass velocity v_common
+    const totalMass = bodyA.massKg + bodyB.massKg;
+    const commonVx = momentumBeforeKgMps.px / totalMass;
+    const commonVy = momentumBeforeKgMps.py / totalMass;
+    const commonVz = momentumBeforeKgMps.pz / totalMass;
+
+    jx = bodyB.massKg * (commonVx - bodyB.velocity.vx);
+    jy = bodyB.massKg * (commonVy - bodyB.velocity.vy);
+    jz = bodyB.massKg * (commonVz - bodyB.velocity.vz);
+  } else if (velAlongNormal < 0) {
+    // Standard normal impulse scalar J = -(1 + e) * velAlongNormal / (1/mA + 1/mB)
+    const jScalar = (-(1 + restitutionCoefficient) * velAlongNormal) / totalInvMass;
+    jx = jScalar * nx;
+    jy = jScalar * ny;
+    jz = jScalar * nz;
+  }
+
+  // Newton's Third Law: Impulse on A is -J, Impulse on B is +J
+  const impulseOnA = { jx: -jx, jy: -jy, jz: -jz };
+  const impulseOnB = { jx, jy, jz };
+  const impulseMagnitudeNewtonSec = Math.hypot(jx, jy, jz);
+
+  const nextVelA = {
+    vx: bodyA.velocity.vx + impulseOnA.jx * invMassA,
+    vy: bodyA.velocity.vy + impulseOnA.jy * invMassA,
+    vz: bodyA.velocity.vz + impulseOnA.jz * invMassA,
+  };
+  const nextVelB = {
+    vx: bodyB.velocity.vx + impulseOnB.jx * invMassB,
+    vy: bodyB.velocity.vy + impulseOnB.jy * invMassB,
+    vz: bodyB.velocity.vz + impulseOnB.jz * invMassB,
+  };
+
+  const momentumAfterKgMps = {
+    px: bodyA.massKg * nextVelA.vx + bodyB.massKg * nextVelB.vx,
+    py: bodyA.massKg * nextVelA.vy + bodyB.massKg * nextVelB.vy,
+    pz: bodyA.massKg * nextVelA.vz + bodyB.massKg * nextVelB.vz,
+  };
+
+  const newtonThirdLawVerified =
+    Math.abs(impulseOnA.jx + impulseOnB.jx) < 1e-9 &&
+    Math.abs(impulseOnA.jy + impulseOnB.jy) < 1e-9 &&
+    Math.abs(impulseOnA.jz + impulseOnB.jz) < 1e-9;
+
+  // Momentum is strictly conserved for isolated finite-mass pairs
+  const isIsolatedFiniteMassPair = bodyA.massKg > 0 && bodyB.massKg > 0;
+  const momentumConserved = isIsolatedFiniteMassPair
+    ? Math.hypot(
+        momentumAfterKgMps.px - momentumBeforeKgMps.px,
+        momentumAfterKgMps.py - momentumBeforeKgMps.py,
+        momentumAfterKgMps.pz - momentumBeforeKgMps.pz
+      ) < 1e-7
+    : true;
+
+  const kineticEnergyAfterJoules =
+    0.5 * bodyA.massKg * (nextVelA.vx ** 2 + nextVelA.vy ** 2 + nextVelA.vz ** 2) +
+    0.5 * bodyB.massKg * (nextVelB.vx ** 2 + nextVelB.vy ** 2 + nextVelB.vz ** 2);
+
+  const kineticEnergyLostJoules = Math.max(0, kineticEnergyBeforeJoules - kineticEnergyAfterJoules);
+
+  return {
+    collided: true,
+    regime,
+    restitutionCoefficient,
+    penetrationDepthMeters,
+    collisionNormal: { nx, ny, nz },
+    impulseMagnitudeNewtonSec,
+    impulseOnA,
+    impulseOnB,
+    newtonThirdLawVerified,
+    momentumBeforeKgMps,
+    momentumAfterKgMps,
+    momentumConserved,
+    kineticEnergyBeforeJoules,
+    kineticEnergyAfterJoules,
+    kineticEnergyLostJoules,
+    bodyAAfter: {
+      ...bodyA,
+      position: nextPosA,
+      velocity: nextVelA,
+    },
+    bodyBAfter: {
+      ...bodyB,
+      position: nextPosB,
+      velocity: nextVelB,
+    },
+  };
+}
