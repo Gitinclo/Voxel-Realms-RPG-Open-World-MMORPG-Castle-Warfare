@@ -94,7 +94,8 @@ jobs:
             linux.md \
             iOS.md \
             android.md \
-            "Virtual Reality.md"
+            "Virtual Reality.md" \
+            Physics.md
           (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
 
       - name: Publish GitHub Release
