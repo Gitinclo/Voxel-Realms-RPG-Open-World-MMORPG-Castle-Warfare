@@ -11,6 +11,7 @@
 - **Authoritative Multiplayer Anti-Cheat** (`antiCheat.ts`, quarantine + pardon API)
 - **MMORPG Avatar, Clones & Shadows Console** (`avatarCloneShadow.ts`, `HeroModal.tsx`)
 - **Supreme Creator Max-Out God Character, 12-Domain All-Things Immunity & 100 Supreme Omni-Attributes (5 Divine Pillars)** (`godModeCharacter.ts`, fail-closed for `creatergame31@gmail.com`)
+- **100 Playable Species / Races in Character Creation & Admin Permission Governance** (`species.ts`, `CharacterCreationModal.tsx`, 10 Core Solara Lineages + 90 Sovereign Omniverse Races `#1–#100` for `creatergame31@gmail.com` & Admin-approved players)
 - **In-Game Economy & Marketplace Specification** ([`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md), `BigInt` ledgers, `5%` auction escrow levy & zero-loss Creator immunity)
 - **3D BVH Raycasting, Simplex Noise Biomes, Cannon-es Physics & Tween Camera** (`openWorld3DEngine.ts`)
 - **Cloud SQL Drizzle Persistence (`/api/db/*`) + Firebase ID Verification + Hardened Firestore Rules**

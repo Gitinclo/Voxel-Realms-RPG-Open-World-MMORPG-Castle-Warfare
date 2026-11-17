@@ -44,7 +44,12 @@ import {
   generateGoogolScaleLoreScrollSlice,
 } from './loreHistory';
 import { INITIAL_MONSTERS } from './initialData';
-import { CHARACTER_SPECIES_CATALOG, evaluateSpeciesSwitchPermission } from './species';
+import {
+  CHARACTER_SPECIES_CATALOG,
+  CORE_10_SPECIES_CATALOG,
+  OMNIVERSE_90_SPECIES_CATALOG,
+  evaluateSpeciesSwitchPermission,
+} from './species';
 import {
   HARDWARE_ISA_PROFILES,
   GPU_BACKEND_COMPATIBILITY,
@@ -345,7 +350,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
 
-  // Pillar 4: 10 Playable Species & Admin Rebirth Permission Gate
+  // Pillar 4: 100 Playable Species / Races & Admin Rebirth Permission Gate
   const baseAppearance = {
     name: 'Test Sovereign',
     title: 'Citadel Lord',
@@ -370,27 +375,42 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     targetSpeciesId: 'azure_dragonkin',
     activeAccountEmail: 'mortal_player@voxelrealms.io',
   });
+  const omniverseWithoutPermDenied = evaluateSpeciesSwitchPermission({
+    currentAppearance: { ...baseAppearance, speciesLocked: false },
+    targetSpeciesId: 'omniverse_species_001',
+    activeAccountEmail: 'mortal_player@voxelrealms.io',
+  });
+  const otherWithAdminPermAllowed = evaluateSpeciesSwitchPermission({
+    currentAppearance: { ...baseAppearance, adminSpeciesSwitchApproved: true },
+    targetSpeciesId: 'omniverse_species_001',
+    activeAccountEmail: 'mortal_player@voxelrealms.io',
+  });
   const adminSwitchAllowed = evaluateSpeciesSwitchPermission({
     currentAppearance: baseAppearance,
-    targetSpeciesId: 'azure_dragonkin',
+    targetSpeciesId: 'omniverse_species_001',
     activeAccountEmail: PRIMARY_ADMIN_EMAIL,
   });
 
   const p4Passed =
-    CHARACTER_SPECIES_CATALOG.length === 10 &&
+    CHARACTER_SPECIES_CATALOG.length === 100 &&
+    CORE_10_SPECIES_CATALOG.length === 10 &&
+    OMNIVERSE_90_SPECIES_CATALOG.length === 90 &&
     !lockedSwitchDenied.allowed &&
+    !omniverseWithoutPermDenied.allowed &&
+    otherWithAdminPermAllowed.allowed &&
     adminSwitchAllowed.allowed;
 
   pillars.push({
     id: 'playable_species_and_admin_rebirth',
-    title: '4. 10 Playable Species, 3D Anatomy & Admin Rebirth Gate',
+    title: '4. 100 Playable Species / Races, 3D Anatomy & Admin Rebirth Gate',
     passed: p4Passed,
     assertionsPassed: 6,
-    summary: 'Verified 10 playable species across 3 lineages and Admin Rebirth Gate enforcement.',
+    summary:
+      'Verified all 100 playable races (10 Core Solara Lineages + 90 Sovereign Omniverse Races #1–#100) and Admin (creatergame31@gmail.com) Rebirth Gate enforcement.',
     verifiedInvariants: [
-      '10 Playable Species across Classic Fantasy, Xianxia Immortal & Cosmic/Astral lineages',
-      'Non-admin species switch when locked === DENIED (requires creatergame31@gmail.com)',
-      'Root Admin (creatergame31@gmail.com) or Admin Override decree === ALLOWED',
+      '100 Playable Species / Races (10 Core Solara Starter Lineages + 90 Sovereign Omniverse Races covering Ranks #1–#100)',
+      'Non-admin species switch when locked or selecting Sovereign Omniverse Races without permission === DENIED (requires creatergame31@gmail.com)',
+      'Root Admin (creatergame31@gmail.com) or other players with Admin Permission (adminSpeciesSwitchApproved) === ALLOWED across all 100 races',
     ],
   });
 

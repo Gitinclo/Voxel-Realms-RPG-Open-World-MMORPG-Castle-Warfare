@@ -1164,12 +1164,13 @@ export const LoreHistoryModal: React.FC<LoreHistoryModalProps> = ({
 
                 <div className="p-4 rounded-xl bg-slate-950/90 border border-emerald-500/30 space-y-2.5">
                   <h4 className="text-sm font-bold font-cinzel text-emerald-300">
-                    🧬 The 10 Playable Solara Bloodlines &amp; Admin Rebirth Seal
+                    🧬 The 100 Playable Sovereign Bloodlines &amp; Admin Rebirth Seal
                   </h4>
                   <p className="text-xs text-slate-300">
-                    Awakened in Epoch III, these 10 playable species form the mortal and immortal
-                    champions of Solara Citadel. Switching species after creation requires a decree
-                    from <span className="font-mono text-amber-300">{PRIMARY_ADMIN_EMAIL}</span>:
+                    Spanning the 10 Core Solara Starter Lineages and 90 Sovereign Omniverse Races
+                    (#1–#100), all 100 races are playable in Character Creation by{' '}
+                    <span className="font-mono text-amber-300">{PRIMARY_ADMIN_EMAIL}</span> and
+                    players granted Admin permission:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
                     {CHARACTER_SPECIES_CATALOG.map((spec) => (

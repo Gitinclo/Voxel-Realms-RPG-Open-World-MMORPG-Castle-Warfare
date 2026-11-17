@@ -27,7 +27,7 @@ export interface TroopTierInfo {
   description: string;
 }
 
-export type CharacterSpeciesId =
+export type CoreCharacterSpeciesId =
   | 'human'
   | 'sylvan_elf'
   | 'ironforge_dwarf'
@@ -38,6 +38,9 @@ export type CharacterSpeciesId =
   | 'empyrean_angelic'
   | 'void_walker'
   | 'crystalline_golem';
+
+export type CharacterSpeciesId =
+  CoreCharacterSpeciesId | `omniverse_species_${string}` | (string & {});
 
 export interface CharacterAppearance {
   name: string;

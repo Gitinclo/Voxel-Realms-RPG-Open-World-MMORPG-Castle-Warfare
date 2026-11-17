@@ -1228,8 +1228,10 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         </span>
                       </h3>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Grant or revoke Admin Permission for switching Species / Race after initial
-                        character creation, or force-assign any of the 10 lineages.
+                        Grant or revoke Admin ({PRIMARY_ADMIN_EMAIL}) Permission for choosing and
+                        switching across all {CHARACTER_SPECIES_CATALOG.length} Playable Races (10
+                        Core Lineages + 90 Sovereign Omniverse Races #1–#100), or force-assign any
+                        race directly.
                       </p>
                     </div>
                     <button
@@ -1243,7 +1245,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         });
                         sound.playUpgradeFanfare();
                         addLog(
-                          `[SPECIES GOVERNANCE] ${PRIMARY_ADMIN_EMAIL} set Admin Species Switch Permission = ${nextApproved ? 'APPROVED' : 'REVOKED'}.`
+                          `[SPECIES GOVERNANCE] ${PRIMARY_ADMIN_EMAIL} set Admin 100-Race Switch Permission = ${nextApproved ? 'APPROVED' : 'REVOKED'}.`
                         );
                       }}
                       className={`px-3.5 py-2 rounded-xl text-xs font-mono font-bold border transition-all cursor-pointer ${
@@ -1253,12 +1255,12 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       }`}
                     >
                       {playerAppearance.adminSpeciesSwitchApproved
-                        ? '✓ Species Switch Permission: APPROVED'
-                        : 'Grant Species Switch Permission'}
+                        ? '✓ 100-Race Admin Permission: APPROVED'
+                        : 'Grant 100-Race Admin Permission'}
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1 max-h-52 overflow-y-auto pr-1">
                     {CHARACTER_SPECIES_CATALOG.map((spec) => {
                       const active = (playerAppearance.species || 'human') === spec.id;
                       return (
@@ -1284,7 +1286,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                           }`}
                         >
                           <span>{spec.icon}</span>
-                          <span className="truncate">{spec.name.split(' (')[0]}</span>
+                          <span className="truncate">
+                            #{spec.omniverseRank} {spec.name.split(' (')[0]}
+                          </span>
                         </button>
                       );
                     })}

@@ -48,6 +48,10 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
     species: currentAppearance.species || 'human',
   });
   const [permissionNotice, setPermissionNotice] = useState<string | null>(null);
+  const [speciesFilter, setSpeciesFilter] = useState<
+    'all' | 'core10' | 'tier1' | 'tier2' | 'tier3' | 'tier4' | 'tier5'
+  >('all');
+  const [speciesSearchQuery, setSpeciesSearchQuery] = useState<string>('');
 
   const previewMountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -60,18 +64,41 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
   const isAdminSession =
     accountPrivs.permissions.canManageRoles || accountPrivs.permissions.canUseGodmodeAndCheats;
 
+  const hasAdminSpeciesPermission =
+    Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
+    Boolean(appearance.adminSpeciesSwitchApproved) ||
+    isAdminSession;
+
   // Check if switching away from currentAppearance.species is permitted
   const switchEval = evaluateSpeciesSwitchPermission({
-    currentAppearance,
+    currentAppearance: {
+      ...currentAppearance,
+      adminSpeciesSwitchApproved:
+        Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
+        Boolean(appearance.adminSpeciesSwitchApproved),
+    },
     targetSpeciesId: appearance.species || 'human',
     activeAccountEmail,
   });
 
-  const canSwitchToAnySpecies =
-    !currentAppearance.speciesLocked ||
-    Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
-    Boolean(appearance.adminSpeciesSwitchApproved) ||
-    isAdminSession;
+  const filteredSpeciesCatalog = CHARACTER_SPECIES_CATALOG.filter((spec) => {
+    if (speciesFilter === 'core10' && !spec.isCoreStarterSpecies) return false;
+    if (speciesFilter === 'tier1' && spec.omniverseTier !== 1) return false;
+    if (speciesFilter === 'tier2' && spec.omniverseTier !== 2) return false;
+    if (speciesFilter === 'tier3' && spec.omniverseTier !== 3) return false;
+    if (speciesFilter === 'tier4' && spec.omniverseTier !== 4) return false;
+    if (speciesFilter === 'tier5' && spec.omniverseTier !== 5) return false;
+    if (speciesSearchQuery.trim()) {
+      const q = speciesSearchQuery.trim().toLowerCase();
+      return (
+        spec.name.toLowerCase().includes(q) ||
+        spec.chineseName.toLowerCase().includes(q) ||
+        spec.originCanon.toLowerCase().includes(q) ||
+        String(spec.omniverseRank) === q
+      );
+    }
+    return true;
+  });
 
   // 3D Canvas setup for character preview
   useEffect(() => {
@@ -164,16 +191,20 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
   }, [appearance]);
 
   const handleSelectSpecies = (speciesId: CharacterSpeciesId) => {
-    const currentLockedSpecies = currentAppearance.species || 'human';
-    if (
-      currentAppearance.speciesLocked &&
-      speciesId !== currentLockedSpecies &&
-      !canSwitchToAnySpecies
-    ) {
+    const evalCandidate = evaluateSpeciesSwitchPermission({
+      currentAppearance: {
+        ...currentAppearance,
+        adminSpeciesSwitchApproved:
+          Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
+          Boolean(appearance.adminSpeciesSwitchApproved),
+      },
+      targetSpeciesId: speciesId,
+      activeAccountEmail,
+    });
+
+    if (!evalCandidate.allowed) {
       sound.playSwing();
-      setPermissionNotice(
-        `Species is locked to ${getSpeciesSpec(currentLockedSpecies).name}. Switching to ${getSpeciesSpec(speciesId).name} requires permission from Admin (${PRIMARY_ADMIN_EMAIL}).`
-      );
+      setPermissionNotice(evalCandidate.reason);
       return;
     }
 
@@ -196,7 +227,7 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
       adminSpeciesSwitchApproved: true,
     }));
     setPermissionNotice(
-      `Admin Permission (${PRIMARY_ADMIN_EMAIL}) granted! You may now freely switch to any of the 10 Species / Races.`
+      `Admin Permission (${PRIMARY_ADMIN_EMAIL}) granted! You may now freely choose from all 100 Playable Races.`
     );
   };
 
@@ -210,9 +241,7 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
       ...appearance,
       species: appearance.species || 'human',
       speciesLocked: true,
-      adminSpeciesSwitchApproved: isAdminSession
-        ? Boolean(appearance.adminSpeciesSwitchApproved)
-        : false,
+      adminSpeciesSwitchApproved: isAdminSession || Boolean(appearance.adminSpeciesSwitchApproved),
     });
     onClose();
   };
@@ -235,9 +264,15 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
       'siege_mortar',
       'arcane_halberd',
     ];
-    const randomSpecies = canSwitchToAnySpecies
-      ? CHARACTER_SPECIES_CATALOG[Math.floor(Math.random() * CHARACTER_SPECIES_CATALOG.length)].id
-      : appearance.species || 'human';
+    const eligiblePool = hasAdminSpeciesPermission
+      ? CHARACTER_SPECIES_CATALOG
+      : !currentAppearance.speciesLocked
+        ? CHARACTER_SPECIES_CATALOG.filter((s) => s.isCoreStarterSpecies)
+        : [getSpeciesSpec(appearance.species)];
+    const randomSpecies =
+      eligiblePool[Math.floor(Math.random() * eligiblePool.length)]?.id ||
+      appearance.species ||
+      'human';
 
     setAppearance((prev) => ({
       ...prev,
@@ -268,12 +303,12 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
               <h2 className="text-base sm:text-xl font-bold font-cinzel text-cyan-100 flex items-center gap-2 flex-wrap">
                 <span>Character Creation Centre</span>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-mono">
-                  10 Species / Races · 3D Voxel Customizer
+                  100 Playable Species / Races · 3D Voxel Customizer
                 </span>
               </h2>
               <p className="text-xs text-cyan-200/70 truncate">
-                Choose from 10 Fantasy, Xianxia &amp; Cosmic Species with 3D Meshes, Innate Passives
-                &amp; Admin Rebirth Governance
+                Choose from all 100 Playable Races (10 Core Lineages + 90 Sovereign Omniverse Races
+                #1–#100) with Admin ({PRIMARY_ADMIN_EMAIL}) Permission Governance
               </p>
             </div>
           </div>
@@ -363,34 +398,35 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
 
           {/* Customization Controls Column */}
           <div className="lg:col-span-7 space-y-4">
-            {/* 10-Species / Race Selection Matrix & Admin Permission Gate */}
+            {/* 100-Species / Race Selection Matrix & Admin Permission Gate */}
             <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
                 <div>
                   <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                    Choose Species / Race (10 Lineages)
+                    Choose Species / Race ({CHARACTER_SPECIES_CATALOG.length} Playable Races ·
+                    #1–#100)
                   </label>
                   <p className="text-[11px] text-slate-400">
-                    Initial creation is free. Switching species after locking requires Admin
-                    Permission ({PRIMARY_ADMIN_EMAIL}).
+                    Root Creator ({PRIMARY_ADMIN_EMAIL}) &amp; players with Admin Permission can
+                    select all 100 races. Initial creation unlocks 10 Core Solara lineages.
                   </p>
                 </div>
 
                 {/* Lock / Admin Authorization Status Pill */}
-                {!currentAppearance.speciesLocked ? (
-                  <span
-                    data-testid="species-lock-status"
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1"
-                  >
-                    <Unlock className="w-3 h-3" /> Initial Creation Unlocked
-                  </span>
-                ) : canSwitchToAnySpecies ? (
+                {hasAdminSpeciesPermission ? (
                   <span
                     data-testid="species-lock-status"
                     className="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-200 text-[10px] font-mono font-bold flex items-center gap-1"
                   >
-                    <Gavel className="w-3 h-3 text-amber-400" /> Admin Authorized (
+                    <Gavel className="w-3 h-3 text-amber-400" /> All 100 Races Authorized (
                     {PRIMARY_ADMIN_EMAIL})
+                  </span>
+                ) : !currentAppearance.speciesLocked ? (
+                  <span
+                    data-testid="species-lock-status"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-mono font-bold flex items-center gap-1"
+                  >
+                    <Unlock className="w-3 h-3" /> Core 10 Unlocked · 90 Omniverse Need Admin
                   </span>
                 ) : (
                   <span
@@ -402,8 +438,8 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 )}
               </div>
 
-              {/* Admin Permission Action Bar when species is locked */}
-              {currentAppearance.speciesLocked && !canSwitchToAnySpecies && (
+              {/* Admin Permission Action Bar whenever player does not yet have full 100-race Admin permission */}
+              {!hasAdminSpeciesPermission && (
                 <div
                   data-testid="species-admin-permission-banner"
                   className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-500/40 flex flex-wrap items-center justify-between gap-2 text-xs"
@@ -411,9 +447,17 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                   <div className="flex items-center gap-2 text-rose-200">
                     <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>
-                      Species is locked to{' '}
-                      <strong>{getSpeciesSpec(currentAppearance.species).name}</strong>. Request or
-                      grant Admin approval from <strong>{PRIMARY_ADMIN_EMAIL}</strong> to switch.
+                      {currentAppearance.speciesLocked ? (
+                        <>
+                          Species is locked to{' '}
+                          <strong>{getSpeciesSpec(currentAppearance.species).name}</strong>.
+                        </>
+                      ) : (
+                        <>
+                          Selecting Ranks #1–#90 Sovereign Omniverse Races or switching after lock
+                        </>
+                      )}{' '}
+                      requires Admin permission from <strong>{PRIMARY_ADMIN_EMAIL}</strong>.
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -463,17 +507,66 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                 </div>
               )}
 
-              {/* 10 Species Cards Grid */}
+              {/* Search & Tier Filter Controls for all 100 Playable Races */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { id: 'all', label: `All (${CHARACTER_SPECIES_CATALOG.length})` },
+                    { id: 'core10', label: 'Core 10' },
+                    { id: 'tier1', label: 'T1 Cosmic' },
+                    { id: 'tier2', label: 'T2 Sci-Fi' },
+                    { id: 'tier3', label: 'T3 Divine' },
+                    { id: 'tier4', label: 'T4 Power' },
+                    { id: 'tier5', label: 'T5 Galactic' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      data-testid={`species-filter-${tab.id}`}
+                      onClick={() =>
+                        setSpeciesFilter(
+                          tab.id as
+                            'all' | 'core10' | 'tier1' | 'tier2' | 'tier3' | 'tier4' | 'tier5'
+                        )
+                      }
+                      className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold border transition-all cursor-pointer ${
+                        speciesFilter === tab.id
+                          ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  data-testid="species-search-input"
+                  value={speciesSearchQuery}
+                  onChange={(e) => setSpeciesSearchQuery(e.target.value)}
+                  placeholder="Search 100 races (e.g. Outer Gods, Saiyans, #1)..."
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-200 font-mono focus:outline-hidden focus:border-cyan-400 sm:w-56"
+                />
+              </div>
+
+              {/* 100 Species Cards Grid */}
               <div
                 data-testid="species-selection-grid"
-                className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[230px] overflow-y-auto pr-1"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[240px] overflow-y-auto pr-1"
               >
-                {CHARACTER_SPECIES_CATALOG.map((spec) => {
+                {filteredSpeciesCatalog.map((spec) => {
                   const isSelected = (appearance.species || 'human') === spec.id;
-                  const isLockedOption =
-                    Boolean(currentAppearance.speciesLocked) &&
-                    !canSwitchToAnySpecies &&
-                    spec.id !== (currentAppearance.species || 'human');
+                  const evalOption = evaluateSpeciesSwitchPermission({
+                    currentAppearance: {
+                      ...currentAppearance,
+                      adminSpeciesSwitchApproved:
+                        Boolean(currentAppearance.adminSpeciesSwitchApproved) ||
+                        Boolean(appearance.adminSpeciesSwitchApproved),
+                    },
+                    targetSpeciesId: spec.id,
+                    activeAccountEmail,
+                  });
+                  const isLockedOption = !evalOption.allowed;
 
                   return (
                     <button
@@ -494,10 +587,12 @@ export const CharacterCreationModal: React.FC<CharacterCreationModalProps> = ({
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-xs font-bold truncate">{spec.name}</span>
                           {isLockedOption ? (
-                            <Lock className="w-3 h-3 text-rose-400 shrink-0" />
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-mono text-rose-400 shrink-0">
+                              <Lock className="w-3 h-3" /> Admin
+                            </span>
                           ) : (
                             <span className="text-[10px] font-mono text-amber-400 shrink-0">
-                              {spec.chineseName}
+                              #{spec.omniverseRank} · T{spec.omniverseTier}
                             </span>
                           )}
                         </div>
