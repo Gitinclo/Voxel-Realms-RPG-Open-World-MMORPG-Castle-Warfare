@@ -84,7 +84,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          v1.5.0 (15/11/2026) · SOFTWARE &amp; HARDWARE ARCHITECT OPTIMIZED · 245K PBR + HDR
+          v1.5.0 (17/11/2026) · SOFTWARE &amp; HARDWARE ARCHITECT OPTIMIZED · 245K PBR + HDR
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -187,7 +187,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               data-testid="title-eula-btn"
               onClick={onOpenEula}
               className="px-3.5 py-2 rounded-xl bg-slate-900/85 hover:bg-slate-800/85 border border-amber-400/40 text-xs font-bold text-amber-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
-              title="Open End User License Agreement (EULA v1.5.0 · 15/11/2026)"
+              title="Open End User License Agreement (EULA v1.5.0 · 17/11/2026)"
             >
               <Scale className="w-4 h-4 text-amber-400" />
               <span>EULA</span>

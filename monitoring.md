@@ -1,6 +1,6 @@
 # 📈 Observability, Telemetry & Monitoring Runbook (`monitoring.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Primary Escalation Contact**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **SLA Uptime Target**: `>= 99.5%` Monthly Uptime (`LEGAL.md §6`)
 

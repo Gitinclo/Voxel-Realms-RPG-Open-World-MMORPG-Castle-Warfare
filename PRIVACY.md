@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** November 15, 2026 (`15/11/2026`)
+**Last updated:** November 17, 2026 (`17/11/2026`)
 
 Welcome to **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", or "us"). Your privacy is important to us. This Privacy Policy explains what information we collect, how we use and protect it, when it may be shared with third-party sub-processors (see our [Data Processing Agreement & Legal Stack in `LEGAL.md`](./LEGAL.md)), and your legal rights regarding your personal data under the **EU/UK General Data Protection Regulation (GDPR)**, the **California Consumer Privacy Act (CCPA/CPRA)**, and **India's Digital Personal Data Protection Act, 2023 (DPDP Act)**.
 

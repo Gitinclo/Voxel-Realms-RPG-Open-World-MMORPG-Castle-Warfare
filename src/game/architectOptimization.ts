@@ -5,12 +5,12 @@
 
 /**
  * Software Architect & Hardware Architect Compatibility and Optimization Engine
- * Synchronized Release Date: 15/11/2026 (2026-11-15) — v1.5.0
+ * Synchronized Release Date: 17/11/2026 (2026-11-17) — v1.5.0
  */
 
 export const ARCHITECT_RELEASE_VERSION = 'v1.5.0';
-export const ARCHITECT_RELEASE_DATE_DISPLAY = '15/11/2026';
-export const ARCHITECT_RELEASE_DATE_ISO = '2026-11-15';
+export const ARCHITECT_RELEASE_DATE_DISPLAY = '17/11/2026';
+export const ARCHITECT_RELEASE_DATE_ISO = '2026-11-17';
 
 export type HardwareIsaId = 'x86_64_avx512' | 'arm64_sve2' | 'apple_silicon_m' | 'riscv_rvv1';
 

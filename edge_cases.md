@@ -1,6 +1,6 @@
 # 🎯 Edge Cases & Boundary Conditions (`edge_cases.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 - **Precision Boundary**: `BigInt` troops capped at `1,000T` (`10n**15n`); rallies capped at `1T`.
 - **Overvoid Cap**: `attemptCreateOvervoid` rejects Overvoid index `>100`.

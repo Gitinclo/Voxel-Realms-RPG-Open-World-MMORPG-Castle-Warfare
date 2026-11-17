@@ -12,8 +12,13 @@ import {
 import {
   GOD_OMNI_ATTRIBUTES,
   GOD_OMNI_PILLAR_SPECS,
+  GOD_TELEPORT_SPEC,
   buildMaxedGodCharacterBundle,
+  computeNextGodFlightKinematics,
   evaluateGodCharacterImmunity,
+  evaluateGodFlightPermission,
+  evaluateGodTeleportPermission,
+  executeGodTeleportJump,
 } from './godModeCharacter';
 import {
   SIX_LAYER_COSMIC_HIERARCHY,
@@ -120,7 +125,7 @@ export interface ValidationPillarResult {
 
 export interface FullSystemValidationReport {
   releaseVersion: 'v1.5.0';
-  releaseDate: '15/11/2026';
+  releaseDate: '17/11/2026';
   supremeAuthorEmail: string;
   allPassed: boolean;
   totalPillars: number;
@@ -162,11 +167,36 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
   const eulaRevoked = revokeEulaAcceptance(PRIMARY_ADMIN_EMAIL);
-  const eulaSigned = acceptEulaVersion(PRIMARY_ADMIN_EMAIL, '2026-11-15T00:00:00.000Z');
+  const eulaSigned = acceptEulaVersion(PRIMARY_ADMIN_EMAIL, '2026-11-17T00:00:00.000Z');
   const eulaCompliance = evaluateEulaCompliance(eulaSigned);
   const legalCategories = new Set(LEGAL_DOCUMENT_STACK.map((d) => d.group));
   const godImmunity = evaluateGodCharacterImmunity(PRIMARY_ADMIN_EMAIL, true);
   const outsiderImmunity = evaluateGodCharacterImmunity('player@voxelrealms.example', true);
+  const godFlight = evaluateGodFlightPermission(PRIMARY_ADMIN_EMAIL, true);
+  const outsiderFlight = evaluateGodFlightPermission('player@voxelrealms.example', true);
+  const godFlightStep = computeNextGodFlightKinematics({
+    currentX: 0,
+    currentY: 8.5,
+    currentZ: 10,
+    moveInputX: 0,
+    moveInputZ: -1,
+    verticalInput: 0,
+    cameraOrbitAngle: 0,
+    dt: 0.1,
+    isFlying: true,
+    targetAltitude: 8.5,
+    permission: godFlight,
+  });
+  const godTeleport = evaluateGodTeleportPermission(PRIMARY_ADMIN_EMAIL, true);
+  const outsiderTeleport = evaluateGodTeleportPermission('player@voxelrealms.example', true);
+  const godTeleportJump = executeGodTeleportJump({
+    currentX: 0,
+    currentY: 8.5,
+    currentZ: 18,
+    mode: 'waypoint',
+    waypointId: 'ender_titan_arena',
+    permission: godTeleport,
+  });
   const godBundle = buildMaxedGodCharacterBundle();
 
   const p1Passed =
@@ -181,6 +211,19 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     godImmunity.activeOmniPillarsCount === 5 &&
     !outsiderImmunity.immuneToAllThings &&
     outsiderImmunity.activeOmniAttributesCount === 0 &&
+    godFlight.allowed &&
+    godFlight.flightSpeedMultiplier === 2.5 &&
+    godFlight.maxAltitude === 45 &&
+    !outsiderFlight.allowed &&
+    godFlightStep.isAirborne &&
+    godFlightStep.bypassesCitadelWalls &&
+    godTeleport.allowed &&
+    godTeleport.cooldownMs === 0 &&
+    GOD_TELEPORT_SPEC.waypoints.length === 8 &&
+    !outsiderTeleport.allowed &&
+    godTeleportJump.teleported &&
+    godTeleportJump.nextX === 24 &&
+    godTeleportJump.nextZ === -24 &&
     godBundle.castleLevel === 100 &&
     godBundle.cultivation.currentRealmIndex === 22 &&
     rootPriv.trustBoundary === 'UNTRUSTED_CLIENT_PREVIEW' &&
@@ -190,8 +233,8 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     rootPriv.permissions.canManageRoles &&
     rootPriv.permissions.isOfficialContact &&
     !rootSanctionAttempt.success &&
-    EULA_VERSION === '1.5.0-2026-11-15' &&
-    EULA_EFFECTIVE_DATE_DISPLAY === '15/11/2026' &&
+    EULA_VERSION === '1.5.0-2026-11-17' &&
+    EULA_EFFECTIVE_DATE_DISPLAY === '17/11/2026' &&
     EULA_LICENSOR_EMAIL === PRIMARY_ADMIN_EMAIL &&
     EULA_ARTICLES.length === 10 &&
     LEGAL_DOCUMENT_STACK.length === 10 &&
@@ -206,10 +249,10 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     title: '1. Root RBAC, EULA v1.5.0, 10-Agreement Legal Stack & Supreme Author Immutability',
     passed: p1Passed,
     assertionsPassed: 18,
-    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 12-Domain Creator God Immunity, 100 Supreme Omni-Attributes (5 Divine Pillars), Maxed Sovereign Bundle, 10-Article EULA (${EULA_VERSION}), 10-Agreement Legal Stack, explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
+    summary: `Verified Clearance Lv. ${rootPriv.clearanceLevel}, 12-Domain Creator God Immunity, 100 Supreme Omni-Attributes (5 Divine Pillars), Sovereign Divine Flight (2.5x Speed · 45m Altitude), Sovereign Divine Teleportation (8 Waypoints · +12m Blink · 0ms CD), Maxed Sovereign Bundle, 10-Article EULA (${EULA_VERSION}), 10-Agreement Legal Stack, explicit UNTRUSTED_CLIENT_PREVIEW tagging, and immutable root protection for ${PRIMARY_ADMIN_EMAIL}.`,
     verifiedInvariants: [
       `Supreme Author & EULA Licensor Email === ${PRIMARY_ADMIN_EMAIL}`,
-      'Clearance Level === 999 (owner_admin) + 12/12 All-Things God Immunity Domains + 100/100 Supreme Omni-Attributes across 5 Divine Pillars (fail-closed for non-root)',
+      'Clearance Level === 999 (owner_admin) + 12/12 All-Things God Immunity Domains + 100/100 Supreme Omni-Attributes across 5 Divine Pillars + Sovereign Divine Flight (2.5x Speed · 45m Altitude) + Sovereign Divine Teleportation (8 Waypoints · +12m Blink · Shift+Click 3D Scene, fail-closed for non-root)',
       `10-Article EULA (${EULA_VERSION}, ${EULA_EFFECTIVE_DATE_DISPLAY}) Dual-Layer Apache-2.0 + Live Service compliance & FNV-1a receipt verified`,
       '10-Agreement Legal Compliance Stack (ToS, Privacy/GDPR/CCPA/DPDP Act, Cookie, EULA, SaaS, OSS Apache-2.0, AUP, SLA, DPA, MSA) & 10-Row Comparison Matrix verified',
       'Client verifyAccountPrivileges explicitly tagged UNTRUSTED_CLIENT_PREVIEW; server routes enforce HMAC-SHA256 sessions',
@@ -342,7 +385,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     summary:
       'Verified 7 Historical Epochs (6+ sections each), 12 Dynastic Annals, 6 Sacred Codices, Auto-Populating Open-World Lore Codex (8 Biomes & Monsters), and 10^100-Word Lazy Akashic Archive.',
     verifiedInvariants: [
-      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (15/11/2026 v1.5.0) & 12 Dynastic Annals',
+      '7 Chronological Epochs from Epoch Ω-0 (The White Page) to Epoch VI (17/11/2026 v1.5.0) & 12 Dynastic Annals',
       '6 Sacred Compendium Codices covering Cosmology, Omniverse, Species, Dao, Warfare & Architect',
       'Auto-Populating Open-World Lore Codex: 8 Spatial Biomes + Canonical & Dynamic Lv. 1–1000 Monster Bestiary with one-time bounties',
       '10^100 Words Minimum (One Googol Words) Akashic Stream: 10^97 BigInt-addressable Volumes × >= 1,000 real synthesized words/volume',
@@ -414,7 +457,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
 
-  // Pillar 5: 15/11/2026 Software & Hardware Architect Compatibility & Optimization
+  // Pillar 5: 17/11/2026 Software & Hardware Architect Compatibility & Optimization
   const archEval = generateArchitectCompatibilityDiagnostic({
     isaId: 'apple_silicon_m',
     gpuBackendId: 'metal_3',
@@ -429,13 +472,13 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     Object.keys(HARDWARE_ISA_PROFILES).length === 4 &&
     Object.keys(GPU_BACKEND_COMPATIBILITY).length === 6 &&
     Object.keys(THERMAL_TDP_ENVELOPES).length === 4 &&
-    archEval.releaseDateDisplay === '15/11/2026' &&
+    archEval.releaseDateDisplay === '17/11/2026' &&
     archEval.memoryComparison.speedupVsAosMultiplier >= 4.5 &&
     archEval.overallOptimizationScore >= 90;
 
   pillars.push({
     id: 'architect_hardware_software_06_11_2026',
-    title: '5. 15/11/2026 Software & Hardware Architect Engine (v1.5.0)',
+    title: '5. 17/11/2026 Software & Hardware Architect Engine (v1.5.0)',
     passed: p5Passed,
     assertionsPassed: 7,
     summary: `Verified 4 CPU ISAs, 6 GPU Backends, 4 TDP Envelopes, SoA (${archEval.memoryComparison.speedupVsAosMultiplier}x speedup) & Lock-Free Job DAG.`,
@@ -597,7 +640,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     'us-east-solara-1',
     siegeStepped,
     1,
-    '2026-11-15T00:00:00.000Z'
+    '2026-11-17T00:00:00.000Z'
   );
 
   // Authoritative Anti-Cheat & 3D Open-World BVH / Simplex verification
@@ -672,7 +715,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
 
   return {
     releaseVersion: 'v1.5.0',
-    releaseDate: '15/11/2026',
+    releaseDate: '17/11/2026',
     supremeAuthorEmail: PRIMARY_ADMIN_EMAIL,
     allPassed: passedPillars === pillars.length,
     totalPillars: pillars.length,

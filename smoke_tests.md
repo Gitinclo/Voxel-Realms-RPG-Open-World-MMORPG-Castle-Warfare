@@ -1,6 +1,6 @@
 # 💨 Smoke Test Checklist (`smoke_tests.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 1. `GET /healthz` & `GET /readyz` return `HTTP 200`.
 2. Title screen renders `VOXEL REALMS` & `EulaModal` opens cleanly.

@@ -1,6 +1,6 @@
 # 👻 Soul Imprinting, Avatars, Clones & Shadows (`SOUL_IMPRINTING.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Supreme Author:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Supreme Author:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 Backed by [`src/game/avatarCloneShadow.ts`](./src/game/avatarCloneShadow.ts) in `HeroModal.tsx`:
 

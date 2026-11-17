@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { isPrimaryAdminAccount } from './adminModeration';
+import { PRIMARY_ADMIN_EMAIL, isPrimaryAdminAccount } from './adminModeration';
 import {
   CULTIVATION_MANUALS,
   CULTIVATION_PATH_LIST,
@@ -973,7 +973,7 @@ export function buildMaxedGodCharacterBundle(params?: {
   currentDateKey?: string;
 }): MaxedGodCharacterBundle {
   const accountEmail = 'creatergame31@gmail.com';
-  const currentDateKey = params?.currentDateKey || '2026-11-16';
+  const currentDateKey = params?.currentDateKey || '2026-11-17';
   const maxRealmIndex = CULTIVATION_REALMS.length - 1; // 22 (Ultimate Origin Supreme Realm)
   const maxLayer = 9;
   const infiniteScaleEnergy = 999_999_999_999_999_999_999_999_999_999n;
@@ -1120,5 +1120,501 @@ export function buildMaxedGodCharacterBundle(params?: {
     vipState,
     heroes: maxedHeroes,
     immunity: evaluateGodCharacterImmunity(accountEmail, true),
+  };
+}
+
+/**
+ * Sovereign Divine Flight Specification for Root Creator (`creatergame31@gmail.com`).
+ * Powered by the Presence, Space & Time and Power & Creation Omni-Attributes:
+ * - Omnimobile (Moving freely and instantaneously across all realms)
+ * - Omnipropulsive (Providing the driving force behind all motion in the cosmos)
+ * - Omnitranscendent (Rising infinitely above and beyond all physical creation)
+ * - Omnivagant (Moving throughout the entirety of the cosmos without restriction)
+ */
+export const GOD_FLIGHT_SPEC = {
+  ownerEmail: PRIMARY_ADMIN_EMAIL,
+  mountTitle: 'Sovereign Nine-Heavens Imperial Flying Sword & Astral Cloud Halo',
+  defaultCruiseAltitude: 8.5,
+  minAltitude: 0,
+  minAirborneAltitude: 1.0,
+  maxAltitude: 45.0,
+  citadelWallBypassAltitude: 2.5,
+  flightSpeedMultiplier: 2.5,
+  verticalClimbSpeedPerSec: 16.0,
+  altitudeStepDelta: 4.5,
+  linkedOmniAttributeIds: [
+    'Omnimobile',
+    'Omnipropulsive',
+    'Omnitranscendent',
+    'Omnivagant',
+  ] as const,
+  altitudePresets: [
+    { id: 'ground', label: 'Ground (0m)', altitude: 0 },
+    { id: 'cruise', label: 'Sword Cruise (8.5m)', altitude: 8.5 },
+    { id: 'citadel_roof', label: 'Citadel Keep Spire (18m)', altitude: 18.0 },
+    { id: 'celestia_island', label: 'Celestia Sky Island (28m)', altitude: 28.0 },
+    { id: 'apex_stratosphere', label: 'Apex Stratosphere (45m)', altitude: 45.0 },
+  ] as const,
+} as const;
+
+export interface GodFlightPermissionStatus {
+  email: string;
+  isRootGodAccount: boolean;
+  allowed: boolean;
+  flightSpeedMultiplier: number;
+  maxAltitude: number;
+  defaultCruiseAltitude: number;
+  citadelWallBypassAltitude: number;
+  mountTitle: string;
+  linkedOmniAttributeIds: readonly string[];
+  reason: string;
+}
+
+/**
+ * Evaluates whether the specified account is authorized for Sovereign Divine Flight.
+ * Fail-closed: only `creatergame31@gmail.com` with Godmode active is granted Sovereign Divine Flight.
+ */
+export function evaluateGodFlightPermission(
+  email: string | null | undefined,
+  godmodeEnabled: boolean = true
+): GodFlightPermissionStatus {
+  const normalized = (email || '').trim().toLowerCase();
+  const isRoot = isPrimaryAdminAccount(normalized);
+  const allowed = Boolean(isRoot && godmodeEnabled);
+
+  if (!allowed) {
+    return {
+      email: normalized || 'guest@voxelrealms.example',
+      isRootGodAccount: isRoot,
+      allowed: false,
+      flightSpeedMultiplier: 1.0,
+      maxAltitude: 0,
+      defaultCruiseAltitude: 0,
+      citadelWallBypassAltitude: GOD_FLIGHT_SPEC.citadelWallBypassAltitude,
+      mountTitle: GOD_FLIGHT_SPEC.mountTitle,
+      linkedOmniAttributeIds: [],
+      reason: isRoot
+        ? `Sovereign Divine Flight paused (Godmode toggle is currently disabled for ${PRIMARY_ADMIN_EMAIL}).`
+        : `DENIED [Fail-Closed]: Sovereign Divine Flight is reserved exclusively for Root Creator (${PRIMARY_ADMIN_EMAIL}).`,
+    };
+  }
+
+  return {
+    email: PRIMARY_ADMIN_EMAIL,
+    isRootGodAccount: true,
+    allowed: true,
+    flightSpeedMultiplier: GOD_FLIGHT_SPEC.flightSpeedMultiplier,
+    maxAltitude: GOD_FLIGHT_SPEC.maxAltitude,
+    defaultCruiseAltitude: GOD_FLIGHT_SPEC.defaultCruiseAltitude,
+    citadelWallBypassAltitude: GOD_FLIGHT_SPEC.citadelWallBypassAltitude,
+    mountTitle: GOD_FLIGHT_SPEC.mountTitle,
+    linkedOmniAttributeIds: GOD_FLIGHT_SPEC.linkedOmniAttributeIds,
+    reason: `AUTHORIZED: Sovereign Divine Flight active for ${PRIMARY_ADMIN_EMAIL} (${GOD_FLIGHT_SPEC.flightSpeedMultiplier}x Speed · 0m–${GOD_FLIGHT_SPEC.maxAltitude}m Altitude · Citadel Keep Bypass).`,
+  };
+}
+
+export interface GodFlightKinematicsInput {
+  currentX: number;
+  currentY: number;
+  currentZ: number;
+  moveInputX: number;
+  moveInputZ: number;
+  verticalInput: number; // -1 descend, 0 hold, +1 ascend
+  cameraOrbitAngle: number;
+  dt: number;
+  isFlying: boolean;
+  targetAltitude: number;
+  permission: GodFlightPermissionStatus;
+  baseGroundSpeed?: number;
+  worldHalfExtent?: number;
+}
+
+export interface GodFlightKinematicsOutput {
+  nextX: number;
+  nextY: number;
+  nextZ: number;
+  nextTargetAltitude: number;
+  isAirborne: boolean;
+  bypassesCitadelWalls: boolean;
+  effectiveSpeedMultiplier: number;
+  worldMoveX: number;
+  worldMoveZ: number;
+  isMovingHorizontally: boolean;
+}
+
+/**
+ * Pure deterministic 3D flight and ground movement kinematic solver.
+ * When `isFlying && permission.allowed`, elevates the character smoothly toward `targetAltitude`
+ * (or adjusts `targetAltitude` via `verticalInput`), applies the `2.5x` Sovereign Flight Speed
+ * multiplier, and bypasses ground Citadel keep walls when `nextY >= 2.5`.
+ */
+export function computeNextGodFlightKinematics(
+  input: GodFlightKinematicsInput
+): GodFlightKinematicsOutput {
+  const safeDt = Math.max(0, Math.min(input.dt, 0.25));
+  const baseSpeed = input.baseGroundSpeed ?? 14;
+  const halfExtent = input.worldHalfExtent ?? 36;
+  const flightActive = Boolean(input.isFlying && input.permission.allowed);
+
+  // 1. Compute target altitude & vertical elevation
+  let nextTargetAltitude = flightActive
+    ? Math.max(
+        GOD_FLIGHT_SPEC.minAirborneAltitude,
+        Math.min(
+          input.permission.maxAltitude,
+          input.targetAltitude > 0 ? input.targetAltitude : input.permission.defaultCruiseAltitude
+        )
+      )
+    : 0;
+
+  if (flightActive && Math.abs(input.verticalInput) > 0.01) {
+    nextTargetAltitude = Math.max(
+      GOD_FLIGHT_SPEC.minAirborneAltitude,
+      Math.min(
+        input.permission.maxAltitude,
+        nextTargetAltitude +
+          Math.sign(input.verticalInput) * GOD_FLIGHT_SPEC.verticalClimbSpeedPerSec * safeDt
+      )
+    );
+  }
+
+  let nextY = input.currentY;
+  if (flightActive) {
+    const altDiff = nextTargetAltitude - input.currentY;
+    const maxStep = GOD_FLIGHT_SPEC.verticalClimbSpeedPerSec * safeDt;
+    if (Math.abs(altDiff) <= maxStep) {
+      nextY = nextTargetAltitude;
+    } else {
+      nextY = input.currentY + Math.sign(altDiff) * maxStep;
+    }
+    nextY = Math.max(0, Math.min(input.permission.maxAltitude, nextY));
+  } else {
+    // Smooth rapid landing when flight is toggled off
+    const descentStep = GOD_FLIGHT_SPEC.verticalClimbSpeedPerSec * 1.5 * safeDt;
+    nextY = Math.max(0, input.currentY - descentStep);
+  }
+
+  const isAirborne = flightActive && nextY >= GOD_FLIGHT_SPEC.minAirborneAltitude * 0.5;
+  const effectiveSpeedMultiplier = isAirborne ? input.permission.flightSpeedMultiplier : 1.0;
+
+  // 2. Compute horizontal movement in camera-relative world coordinates
+  const moveLen = Math.hypot(input.moveInputX, input.moveInputZ);
+  let nextX = input.currentX;
+  let nextZ = input.currentZ;
+  let worldMoveX = 0;
+  let worldMoveZ = 0;
+  const isMovingHorizontally = moveLen > 0.05;
+
+  if (isMovingHorizontally) {
+    const normX = input.moveInputX / moveLen;
+    const normZ = input.moveInputZ / moveLen;
+    const cosCam = Math.cos(input.cameraOrbitAngle);
+    const sinCam = Math.sin(input.cameraOrbitAngle);
+
+    worldMoveX = normX * cosCam - normZ * sinCam;
+    worldMoveZ = normX * sinCam + normZ * cosCam;
+
+    const stepDist = baseSpeed * effectiveSpeedMultiplier * safeDt;
+    nextX = Math.max(-halfExtent, Math.min(halfExtent, input.currentX + worldMoveX * stepDist));
+    nextZ = Math.max(-halfExtent, Math.min(halfExtent, input.currentZ + worldMoveZ * stepDist));
+  }
+
+  const bypassesCitadelWalls = isAirborne && nextY >= input.permission.citadelWallBypassAltitude;
+
+  return {
+    nextX,
+    nextY,
+    nextZ,
+    nextTargetAltitude,
+    isAirborne,
+    bypassesCitadelWalls,
+    effectiveSpeedMultiplier,
+    worldMoveX,
+    worldMoveZ,
+    isMovingHorizontally,
+  };
+}
+
+/**
+ * Sovereign Divine Teleportation Specification for Root Creator (`creatergame31@gmail.com`).
+ * Powered by the Presence, Space & Time Omni-Attributes:
+ * - Omnipresent (Existing everywhere in the universe at the exact same moment)
+ * - Omnilocal (Occupying every physical and spiritual location at once)
+ * - Omnidistance (Spanning across infinite distances without boundary)
+ * - Omnimobile (Moving freely and instantaneously across all realms)
+ * - Omnispatial (Encompassing the entirety of space itself)
+ */
+export const GOD_TELEPORT_SPEC = {
+  ownerEmail: PRIMARY_ADMIN_EMAIL,
+  title: 'Sovereign Astral Spatial Warp & Omnipresent Teleportation',
+  abilityTitle: 'Sovereign Astral Spatial Warp & Omnipresent Teleportation',
+  forwardBlinkDistance: 12.0,
+  forwardBlinkMeters: 12.0,
+  worldHalfExtent: 36.0,
+  maxWorldBoundXZ: 36.0,
+  maxAltitude: 45.0,
+  cooldownMs: 0,
+  linkedOmniAttributeIds: [
+    'Omnipresent',
+    'Omnilocal',
+    'Omnidistance',
+    'Omnimobile',
+    'Omnispatial',
+  ] as const,
+  waypoints: [
+    {
+      id: 'citadel_gate',
+      label: 'Solara Citadel South Gate',
+      shortLabel: 'Citadel Gate',
+      icon: '🏰',
+      x: 0,
+      y: 0,
+      z: 18,
+      requiresFlight: false,
+    },
+    {
+      id: 'citadel_spire',
+      label: 'Imperial Citadel Apex Spire',
+      shortLabel: 'Citadel Spire (18m)',
+      icon: '👑',
+      x: 0,
+      y: 18.0,
+      z: 0,
+      requiresFlight: true,
+    },
+    {
+      id: 'celestia_sky_island',
+      label: 'Celestia Sky Island Sanctum',
+      shortLabel: 'Sky Island (28m)',
+      icon: '🏝️',
+      x: -18,
+      y: 28.0,
+      z: -18,
+      requiresFlight: true,
+    },
+    {
+      id: 'ender_titan_arena',
+      label: 'Apex World Boss Arena (Lv.1000 Titan)',
+      shortLabel: 'Boss Arena',
+      icon: '🐉',
+      x: 24,
+      y: 8.5,
+      z: -24,
+      requiresFlight: true,
+    },
+    {
+      id: 'diamond_leyline',
+      label: 'Diamond Crystal Leyline Outcrop',
+      shortLabel: 'Diamond Node',
+      icon: '💎',
+      x: -24,
+      y: 0,
+      z: 14,
+      requiresFlight: false,
+    },
+    {
+      id: 'eastern_sakura',
+      label: 'Eastern Sakura Spirit Grove',
+      shortLabel: 'Sakura Grove',
+      icon: '🌸',
+      x: 26,
+      y: 0,
+      z: 16,
+      requiresFlight: false,
+    },
+    {
+      id: 'northern_glacier',
+      label: 'Northern Frostpeak Glacier',
+      shortLabel: 'Frostpeak',
+      icon: '❄️',
+      x: 0,
+      y: 8.5,
+      z: -32,
+      requiresFlight: true,
+    },
+    {
+      id: 'apex_stratosphere',
+      label: 'Nine-Heavens Stratosphere Throne',
+      shortLabel: 'Stratosphere (45m)',
+      icon: '🌌',
+      x: 0,
+      y: 45.0,
+      z: 0,
+      requiresFlight: true,
+    },
+  ] as const,
+} as const;
+
+export type GodTeleportWaypointId = (typeof GOD_TELEPORT_SPEC.waypoints)[number]['id'];
+
+export interface GodTeleportPermissionStatus {
+  email: string;
+  isRootGodAccount: boolean;
+  allowed: boolean;
+  cooldownMs: number;
+  forwardBlinkDistance: number;
+  forwardBlinkMeters: number;
+  maxAltitude: number;
+  worldHalfExtent: number;
+  maxWorldBoundXZ: number;
+  title: string;
+  abilityTitle: string;
+  linkedOmniAttributeIds: readonly string[];
+  reason: string;
+}
+
+/**
+ * Evaluates whether the specified account is authorized for Sovereign Divine Teleportation.
+ * Fail-closed: only `creatergame31@gmail.com` with Godmode active is granted Sovereign Divine Teleportation.
+ */
+export function evaluateGodTeleportPermission(
+  email: string | null | undefined,
+  godmodeEnabled: boolean = true
+): GodTeleportPermissionStatus {
+  const normalized = (email || '').trim().toLowerCase();
+  const isRoot = isPrimaryAdminAccount(normalized);
+  const allowed = Boolean(isRoot && godmodeEnabled);
+
+  if (!allowed) {
+    return {
+      email: normalized || 'guest@voxelrealms.example',
+      isRootGodAccount: isRoot,
+      allowed: false,
+      cooldownMs: 30_000,
+      forwardBlinkDistance: 0,
+      forwardBlinkMeters: 0,
+      maxAltitude: 0,
+      worldHalfExtent: GOD_TELEPORT_SPEC.worldHalfExtent,
+      maxWorldBoundXZ: GOD_TELEPORT_SPEC.maxWorldBoundXZ,
+      title: GOD_TELEPORT_SPEC.title,
+      abilityTitle: GOD_TELEPORT_SPEC.abilityTitle,
+      linkedOmniAttributeIds: [],
+      reason: isRoot
+        ? `Sovereign Divine Teleportation paused (Godmode toggle is currently disabled for ${PRIMARY_ADMIN_EMAIL}).`
+        : `DENIED [Fail-Closed]: Sovereign Divine Teleportation is reserved exclusively for Root Creator (${PRIMARY_ADMIN_EMAIL}).`,
+    };
+  }
+
+  return {
+    email: PRIMARY_ADMIN_EMAIL,
+    isRootGodAccount: true,
+    allowed: true,
+    cooldownMs: 0,
+    forwardBlinkDistance: GOD_TELEPORT_SPEC.forwardBlinkDistance,
+    forwardBlinkMeters: GOD_TELEPORT_SPEC.forwardBlinkMeters,
+    maxAltitude: GOD_TELEPORT_SPEC.maxAltitude,
+    worldHalfExtent: GOD_TELEPORT_SPEC.worldHalfExtent,
+    maxWorldBoundXZ: GOD_TELEPORT_SPEC.maxWorldBoundXZ,
+    title: GOD_TELEPORT_SPEC.title,
+    abilityTitle: GOD_TELEPORT_SPEC.abilityTitle,
+    linkedOmniAttributeIds: GOD_TELEPORT_SPEC.linkedOmniAttributeIds,
+    reason: `AUTHORIZED: Sovereign Divine Teleportation active for ${PRIMARY_ADMIN_EMAIL} (0ms Cooldown · 8 Realm Waypoints · Forward Blink · Custom XYZ Warp).`,
+  };
+}
+
+export interface GodTeleportJumpInput {
+  mode: 'waypoint' | 'coordinates' | 'forward_blink';
+  waypointId?: GodTeleportWaypointId;
+  targetX?: number;
+  targetY?: number;
+  targetZ?: number;
+  currentX: number;
+  currentY: number;
+  currentZ: number;
+  facingAngleRad?: number;
+  permission: GodTeleportPermissionStatus;
+}
+
+export interface GodTeleportJumpOutput {
+  teleported: boolean;
+  nextX: number;
+  nextY: number;
+  nextZ: number;
+  distanceTraveled: number;
+  distanceMovedMeters: number;
+  activatesFlight: boolean;
+  destinationLabel: string;
+  reason: string;
+}
+
+/**
+ * Pure deterministic solver for Sovereign Divine Teleportation (`creatergame31@gmail.com`).
+ * Supports instant teleportation to any of the 8 Sovereign Waypoints, arbitrary `(X, Y, Z)`
+ * coordinates (or Shift+Click ground targets), or a `+12m` Forward Astral Blink.
+ */
+export function executeGodTeleportJump(input: GodTeleportJumpInput): GodTeleportJumpOutput {
+  if (!input.permission.allowed) {
+    return {
+      teleported: false,
+      nextX: input.currentX,
+      nextY: input.currentY,
+      nextZ: input.currentZ,
+      distanceTraveled: 0,
+      distanceMovedMeters: 0,
+      activatesFlight: false,
+      destinationLabel: 'Locked',
+      reason: input.permission.reason,
+    };
+  }
+
+  const halfExtent = input.permission.worldHalfExtent || GOD_TELEPORT_SPEC.worldHalfExtent;
+  const maxAlt = input.permission.maxAltitude || GOD_TELEPORT_SPEC.maxAltitude;
+
+  let desiredX = input.currentX;
+  let desiredY = input.currentY;
+  let desiredZ = input.currentZ;
+  let destinationLabel = 'Astral Coordinates';
+
+  if (input.mode === 'waypoint') {
+    const wp =
+      GOD_TELEPORT_SPEC.waypoints.find((w) => w.id === input.waypointId) ??
+      GOD_TELEPORT_SPEC.waypoints[0];
+    desiredX = wp.x;
+    desiredY = wp.y;
+    desiredZ = wp.z;
+    destinationLabel = `${wp.icon} ${wp.label}`;
+  } else if (input.mode === 'forward_blink') {
+    const angle = input.facingAngleRad ?? 0;
+    const dist = input.permission.forwardBlinkDistance || GOD_TELEPORT_SPEC.forwardBlinkDistance;
+    desiredX = input.currentX + Math.sin(angle) * dist;
+    desiredZ = input.currentZ + Math.cos(angle) * dist;
+    desiredY = input.currentY;
+    destinationLabel = `⚡ Forward Astral Blink (+${dist}m)`;
+  } else {
+    desiredX = Number.isFinite(input.targetX) ? Number(input.targetX) : input.currentX;
+    desiredY = Number.isFinite(input.targetY) ? Number(input.targetY) : input.currentY;
+    desiredZ = Number.isFinite(input.targetZ) ? Number(input.targetZ) : input.currentZ;
+    destinationLabel = `⚡ Astral Warp (${desiredX.toFixed(1)}, ${desiredY.toFixed(1)}m, ${desiredZ.toFixed(1)})`;
+  }
+
+  let nextX = Math.max(-halfExtent, Math.min(halfExtent, Number(desiredX.toFixed(2))));
+  let nextY = Math.max(0, Math.min(maxAlt, Number(desiredY.toFixed(2))));
+  let nextZ = Math.max(-halfExtent, Math.min(halfExtent, Number(desiredZ.toFixed(2))));
+
+  // If teleporting to ground level inside the Citadel Keep footprint, push cleanly outside the keep gate
+  // unless teleporting to an airborne elevation (nextY >= 2.5m).
+  if (
+    nextY < GOD_FLIGHT_SPEC.citadelWallBypassAltitude &&
+    Math.abs(nextX) < 5.9 &&
+    Math.abs(nextZ) < 5.9
+  ) {
+    nextZ = 6.2;
+  }
+
+  const activatesFlight = nextY >= GOD_FLIGHT_SPEC.minAirborneAltitude;
+  const distanceTraveled = Number(
+    Math.hypot(nextX - input.currentX, nextY - input.currentY, nextZ - input.currentZ).toFixed(2)
+  );
+
+  return {
+    teleported: true,
+    nextX,
+    nextY,
+    nextZ,
+    distanceTraveled,
+    distanceMovedMeters: distanceTraveled,
+    activatesFlight,
+    destinationLabel,
+    reason: `⚡ Teleported ${PRIMARY_ADMIN_EMAIL} to ${destinationLabel} [${nextX.toFixed(1)}, ${nextY.toFixed(1)}m, ${nextZ.toFixed(1)}] (${distanceTraveled}m warp · 0ms cooldown).`,
   };
 }

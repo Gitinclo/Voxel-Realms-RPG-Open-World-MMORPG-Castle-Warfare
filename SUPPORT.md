@@ -37,7 +37,7 @@ Before opening a ticket or GitHub issue, check our comprehensive documentation s
 - **[`ROADMAP.md`](./ROADMAP.md)** — Upcoming milestones (`v1.5.0` WebSocket 50v50 sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU compute).
 - **[`CONTRIBUTING.md`](./CONTRIBUTING.md)** — Developer setup, coding standards, and Pull Request workflow.
 - **[`GOVERNANCE.md`](./GOVERNANCE.md)** — Project roles, RBAC clearance hierarchy, and RFC decision-making process.
-- **[`LEGAL.md`](./LEGAL.md)**, **[`EULA.md`](./EULA.md)** & **[`TERMS.md`](./TERMS.md)** — Complete 10-Agreement Legal Stack (ToS, Privacy [GDPR/CCPA/DPDP Act], Cookie Policy, EULA `v1.5.0-2026-11-15`, SaaS, OSS Apache-2.0, AUP, SLA, DPA, MSA).
+- **[`LEGAL.md`](./LEGAL.md)**, **[`EULA.md`](./EULA.md)** & **[`TERMS.md`](./TERMS.md)** — Complete 10-Agreement Legal Stack (ToS, Privacy [GDPR/CCPA/DPDP Act], Cookie Policy, EULA `v1.5.0-2026-11-17`, SaaS, OSS Apache-2.0, AUP, SLA, DPA, MSA).
 - **[`CHANGELOG.md`](./CHANGELOG.md)** — Version history and technical release notes.
 
 ---

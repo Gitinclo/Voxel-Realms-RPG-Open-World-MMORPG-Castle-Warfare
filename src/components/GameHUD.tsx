@@ -37,6 +37,7 @@ import { CharacterAppearance, GameResources } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { getSpeciesSpec } from '../game/species';
+import { GOD_TELEPORT_SPEC, GodTeleportWaypointId } from '../game/godModeCharacter';
 import { sound } from '../game/audio';
 
 interface GameHUDProps {
@@ -84,6 +85,15 @@ interface GameHUDProps {
   targetPlatform?: 'pc_console' | 'mobile';
   onToggleTargetPlatform?: () => void;
   godmode?: boolean;
+  canFly?: boolean;
+  isFlying?: boolean;
+  flightAltitude?: number;
+  flightSpeedMultiplier?: number;
+  onToggleFlight?: () => void;
+  onAdjustFlightAltitude?: (deltaMeters: number) => void;
+  canTeleport?: boolean;
+  onTeleportToWaypoint?: (waypointId: GodTeleportWaypointId) => void;
+  onForwardBlink?: () => void;
   onTouchMove?: (delta: { x: number; y: number }) => void;
   onTouchEnd?: () => void;
   onActionClick?: (action: 'attack' | 'gather' | 'jump') => void;
@@ -134,6 +144,15 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   targetPlatform = 'pc_console',
   onToggleTargetPlatform,
   godmode,
+  canFly = false,
+  isFlying = false,
+  flightAltitude = 8.5,
+  flightSpeedMultiplier = 2.5,
+  onToggleFlight,
+  onAdjustFlightAltitude,
+  canTeleport = false,
+  onTeleportToWaypoint,
+  onForwardBlink,
   onTouchMove,
   onTouchEnd,
   onActionClick,
@@ -142,6 +161,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   const [isInventoryDrawerOpen, setIsInventoryDrawerOpen] = useState(false);
   const [isEngineSettingsOpen, setIsEngineSettingsOpen] = useState(false);
   const [isMoreHubOpen, setIsMoreHubOpen] = useState(false);
+  const [isTeleportMenuOpen, setIsTeleportMenuOpen] = useState(false);
 
   // Touch joystick tracking
   const joystickBaseRef = useRef<HTMLDivElement>(null);
@@ -306,11 +326,106 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       onOpenEula();
                     }}
                     className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-200 border border-amber-400/50 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
-                    title="Open End User License Agreement (EULA v1.5.0 · 15/11/2026)"
+                    title="Open End User License Agreement (EULA v1.5.0 · 17/11/2026)"
                   >
                     <Scale className="w-2.5 h-2.5 text-amber-400" />
                     <span>EULA</span>
                   </button>
+                )}
+                {canFly && onToggleFlight && (
+                  <button
+                    type="button"
+                    data-testid="hud-flight-toggle-btn"
+                    onClick={() => {
+                      sound.playSwing();
+                      onToggleFlight();
+                    }}
+                    className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
+                      isFlying
+                        ? 'bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 border-emerald-400 shadow-sm shadow-emerald-500/30'
+                        : 'bg-slate-900 hover:bg-slate-800 text-cyan-200 border-cyan-500/40'
+                    }`}
+                    title="Toggle Sovereign Divine Flight (creatergame31@gmail.com · Hotkey [F] · E/Space Ascend · Q/Shift Descend)"
+                  >
+                    <span>🕊️</span>
+                    <span>
+                      {isFlying
+                        ? `FLYING ${flightAltitude.toFixed(1)}m (${flightSpeedMultiplier}x)`
+                        : 'FLY [F]'}
+                    </span>
+                  </button>
+                )}
+                {canTeleport && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      data-testid="hud-teleport-toggle-btn"
+                      onClick={() => {
+                        sound.playSwing();
+                        setIsTeleportMenuOpen((prev) => !prev);
+                      }}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
+                        isTeleportMenuOpen
+                          ? 'bg-cyan-950/95 text-cyan-200 border-cyan-400 shadow-sm shadow-cyan-500/30'
+                          : 'bg-slate-900 hover:bg-slate-800 text-cyan-200 border-cyan-500/50'
+                      }`}
+                      title="Open Sovereign Divine Teleportation Waypoints (creatergame31@gmail.com · [T] Forward Blink · Shift+Click 3D Scene)"
+                    >
+                      <span>⚡</span>
+                      <span>TELEPORT [T]</span>
+                    </button>
+
+                    {isTeleportMenuOpen && (
+                      <div
+                        data-testid="hud-teleport-menu"
+                        className="absolute left-0 top-full mt-2 w-72 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-cyan-500/50 shadow-2xl z-50 space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono font-bold text-cyan-300 border-b border-slate-800 pb-1">
+                          <span>⚡ SOVEREIGN TELEPORTATION</span>
+                          <span className="text-amber-300">0ms CD · Shift+Click</span>
+                        </div>
+
+                        {onForwardBlink && (
+                          <button
+                            type="button"
+                            data-testid="hud-teleport-menu-blink-btn"
+                            onClick={() => {
+                              sound.playSwing();
+                              onForwardBlink();
+                              setIsTeleportMenuOpen(false);
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/60 text-cyan-100 text-[11px] font-mono font-bold flex items-center justify-between cursor-pointer"
+                          >
+                            <span>⚡ Forward Astral Blink (+12m)</span>
+                            <span className="text-amber-300">[T]</span>
+                          </button>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-1 max-h-56 overflow-y-auto pr-0.5">
+                          {GOD_TELEPORT_SPEC.waypoints.map((wp) => (
+                            <button
+                              key={wp.id}
+                              type="button"
+                              data-testid={`hud-teleport-wp-${wp.id}`}
+                              onClick={() => {
+                                sound.playSwing();
+                                onTeleportToWaypoint?.(wp.id);
+                                setIsTeleportMenuOpen(false);
+                              }}
+                              className="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-left flex items-center justify-between gap-2 cursor-pointer"
+                            >
+                              <span className="text-[11px] font-bold text-white truncate">
+                                {wp.icon} {wp.label}
+                              </span>
+                              <span className="text-[9px] font-mono text-cyan-300 shrink-0">
+                                ({wp.x}, {wp.y}, {wp.z})
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-mono">
@@ -594,7 +709,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               className="absolute right-0 top-full mt-2 w-72 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl z-50 space-y-2.5"
             >
               <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 border-b border-slate-800 pb-1.5">
-                <span>ARCHITECT PIPELINE (15/11/2026)</span>
+                <span>ARCHITECT PIPELINE (17/11/2026)</span>
                 <span className="text-emerald-400">v1.5.0 · 60 FPS</span>
               </div>
 
@@ -702,8 +817,79 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           />
         </div>
 
-        {/* Enlarged Quick Action Touch Buttons (Bottom Right, raised with wider spacing) */}
-        <div className="pointer-events-auto flex flex-col items-center gap-4 mr-1 sm:mr-2 mb-2">
+        {/* Enlarged Quick Action Touch Buttons + Sovereign Divine Flight Pod (Bottom Right) */}
+        <div className="pointer-events-auto flex flex-col items-center gap-3 mr-1 sm:mr-2 mb-2">
+          {canFly && onToggleFlight && (
+            <div
+              data-testid="hud-flight-control-pod"
+              className="flex flex-col items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-emerald-500/50 shadow-xl"
+            >
+              <button
+                type="button"
+                data-testid="hud-flight-ascend-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  onAdjustFlightAltitude?.(4.5);
+                }}
+                className="w-11 h-7 rounded-lg bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                title="Ascend Altitude (+4.5m · E / Space)"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+                <span>+Alt</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="hud-flight-action-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  onToggleFlight();
+                }}
+                className={`w-12 h-12 rounded-full border-2 flex flex-col items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                  isFlying
+                    ? 'bg-emerald-600/95 hover:bg-emerald-500 border-amber-300 text-white shadow-lg shadow-emerald-500/40'
+                    : 'bg-slate-900 hover:bg-slate-800 border-cyan-400/70 text-cyan-200'
+                }`}
+                title="Toggle Sovereign Divine Flight (creatergame31@gmail.com · Hotkey [F])"
+              >
+                <span className="text-sm leading-none">🕊️</span>
+                <span className="text-[9px] font-mono font-black leading-tight mt-0.5">
+                  {isFlying ? `${Math.round(flightAltitude)}m` : 'FLY'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="hud-flight-descend-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  onAdjustFlightAltitude?.(-4.5);
+                }}
+                className="w-11 h-7 rounded-lg bg-slate-900 hover:bg-amber-950 border border-amber-500/40 text-amber-300 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                title="Descend Altitude (-4.5m · Q / Shift)"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+                <span>-Alt</span>
+              </button>
+
+              {canTeleport && onForwardBlink && (
+                <button
+                  type="button"
+                  data-testid="hud-teleport-blink-btn"
+                  onClick={() => {
+                    sound.playSwing();
+                    onForwardBlink();
+                  }}
+                  className="w-11 h-7 rounded-lg bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/60 text-cyan-200 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                  title="Sovereign Forward Astral Blink (+12m · Hotkey [T])"
+                >
+                  <span>⚡</span>
+                  <span>Blink</span>
+                </button>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             data-testid="hud-action-attack-btn"

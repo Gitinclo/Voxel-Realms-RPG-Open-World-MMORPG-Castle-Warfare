@@ -1,6 +1,6 @@
 # 🔐 Secrets Management Policy (`secrets_management.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 - `.gitignore` excludes `.env`, `.env.*`, `*.pem`, `*.key`, `*.jks`, `*.keystore`.
 - Production requires `VOXEL_SESSION_SECRET` (`>=32` chars) & `VOXEL_ADMIN_PASSKEY` (`>=12` chars).

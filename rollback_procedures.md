@@ -1,6 +1,6 @@
 # ⏪ Rollback Procedures (`rollback_procedures.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 1. Shift Cloud Run traffic back to the prior healthy revision.
 2. Verify `GET /healthz` and `GET /readyz` return `HTTP 200`.

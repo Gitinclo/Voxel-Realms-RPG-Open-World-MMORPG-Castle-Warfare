@@ -18,10 +18,10 @@ import {
   generateArchitectCompatibilityDiagnostic,
 } from './architectOptimization';
 
-test('Architect Release metadata is synchronized to 15/11/2026 (2026-11-15) and v1.5.0', () => {
+test('Architect Release metadata is synchronized to 17/11/2026 (2026-11-17) and v1.5.0', () => {
   assert.equal(ARCHITECT_RELEASE_VERSION, 'v1.5.0');
-  assert.equal(ARCHITECT_RELEASE_DATE_DISPLAY, '15/11/2026');
-  assert.equal(ARCHITECT_RELEASE_DATE_ISO, '2026-11-15');
+  assert.equal(ARCHITECT_RELEASE_DATE_DISPLAY, '17/11/2026');
+  assert.equal(ARCHITECT_RELEASE_DATE_ISO, '2026-11-17');
 });
 
 test('Hardware Architect ISA profiles cover x86_64 AVX-512, ARM64 SVE2, Apple Silicon 128B UMA, and RISC-V RVV 1.0', () => {
@@ -84,7 +84,7 @@ test('Composite Architect Compatibility Diagnostic achieves 100/100 optimization
     targetRefreshHz: 60,
   });
 
-  assert.equal(report.releaseDateDisplay, '15/11/2026');
+  assert.equal(report.releaseDateDisplay, '17/11/2026');
   assert.equal(report.overallOptimizationScore, 100);
   assert.equal(GPU_BACKEND_COMPATIBILITY.vulkan_1_3.fallbackBackendId, 'webgl2');
   assert.equal(THERMAL_TDP_ENVELOPES.handheld_25w.sustainedTdpWatts, 25);

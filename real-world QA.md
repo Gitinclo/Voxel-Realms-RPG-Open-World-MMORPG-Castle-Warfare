@@ -1,6 +1,6 @@
 # 🧪 Real-World Quality Assurance & Acceptance Playbook (`real-world QA.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **QA Sign-Off Authority**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **Automated + Manual Coverage**: `171` Unit/Security Tests (`29` Suites) + `103` System Invariants + Live `verify:ops` Harness + Cross-Device Browser Matrix
 
@@ -23,7 +23,7 @@ Verify gameplay, HUD layout, and 3D rendering across these four real-world hardw
 
 ### Scenario 1 — Onboarding, EULA v1.5.0 & 10-Species Character Creation
 
-1. Load `http://localhost:3000`. Confirm the **Title Screen** displays the **EULA & Legal Compliance (`v1.5.0 · 15/11/2026`)** badge and Google Sign-In button.
+1. Load `http://localhost:3000`. Confirm the **Title Screen** displays the **EULA & Legal Compliance (`v1.5.0 · 17/11/2026`)** badge and Google Sign-In button.
 2. Open the **EULA Modal (`EulaModal.tsx`)**, filter across the **10-Agreement Legal Stack (`ToS`, `Privacy/DPDP`, `Cookie`, `EULA`, `SaaS`, `OSS Apache-2.0`, `AUP`, `SLA`, `DPA`, `MSA`)**, click **Accept EULA**, and verify a deterministic `EULA-ACK-...` FNV-1a receipt hash is generated and persisted.
 3. Open **Character Creation (`CharacterCreationModal.tsx`)**, cycle through all **10 Playable Species** (`human`, `sylvan_elf`, `ironforge_dwarf`, `warborn_orc`, `azure_dragonkin`, `celestial_kitsune`, `asura_demon`, `empyrean_angelic`, `void_walker`, `crystalline_golem`), and verify 3D procedural traits (wings, horns, tails, runic beards, void shards, chest cores) update live on the 3D turntable.
 4. Confirm that after initial creation (`speciesLocked: true`), switching species is blocked for standard accounts and unlocked when authenticated as **`creatergame31@gmail.com`** or granted a GM Rebirth Decree.

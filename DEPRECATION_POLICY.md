@@ -1,6 +1,6 @@
 # ⏳ API, Schema & Feature Deprecation Policy (`DEPRECATION_POLICY.md`)
 
-> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)  
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)  
 > **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service)
 
 1. **Notice Window**: Breaking REST (`/api/*`), WebSocket (`/ws/siege`), or save-schema changes require at least **one minor release (`>= 30 days`)** of deprecation warnings before removal.

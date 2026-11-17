@@ -1,6 +1,6 @@
 # 🚦 Severity Classification Definitions (`severity_definitions.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 |   Level   | Criteria                                                        | Target  |
 | :-------: | :-------------------------------------------------------------- | :-----: |

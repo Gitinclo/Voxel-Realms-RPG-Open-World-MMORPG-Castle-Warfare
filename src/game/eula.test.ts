@@ -21,10 +21,10 @@ import {
   searchEulaArticles,
 } from './eula';
 
-test('1. EULA metadata and 10 canonical articles are anchored to 15/11/2026 and creatergame31@gmail.com', () => {
-  assert.equal(EULA_VERSION, '1.5.0-2026-11-15');
-  assert.equal(EULA_EFFECTIVE_DATE_DISPLAY, '15/11/2026');
-  assert.equal(EULA_EFFECTIVE_DATE_ISO, '2026-11-15');
+test('1. EULA metadata and 10 canonical articles are anchored to 17/11/2026 and creatergame31@gmail.com', () => {
+  assert.equal(EULA_VERSION, '1.5.0-2026-11-17');
+  assert.equal(EULA_EFFECTIVE_DATE_DISPLAY, '17/11/2026');
+  assert.equal(EULA_EFFECTIVE_DATE_ISO, '2026-11-17');
   assert.equal(EULA_LICENSOR_EMAIL, 'creatergame31@gmail.com');
   assert.equal(EULA_ARTICLES.length, 10);
 
@@ -47,12 +47,12 @@ test('2. Initial EULA acceptance state and acceptEulaVersion produce determinist
   const hashA = computeEulaReceiptHash(
     EULA_VERSION,
     'creatergame31@gmail.com',
-    '2026-11-15T00:00:00.000Z'
+    '2026-11-17T00:00:00.000Z'
   );
   const hashB = computeEulaReceiptHash(
     EULA_VERSION,
     'CREATERGAME31@GMAIL.COM',
-    '2026-11-15T00:00:00.000Z'
+    '2026-11-17T00:00:00.000Z'
   );
   assert.equal(hashA, hashB);
 

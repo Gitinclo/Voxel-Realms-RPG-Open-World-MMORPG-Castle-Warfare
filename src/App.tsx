@@ -166,8 +166,13 @@ import {
   isPrimaryAdminAccount,
 } from './game/adminModeration';
 import {
+  GOD_FLIGHT_SPEC,
+  GodTeleportWaypointId,
   buildMaxedGodCharacterBundle,
   evaluateGodCharacterImmunity,
+  evaluateGodFlightPermission,
+  evaluateGodTeleportPermission,
+  executeGodTeleportJump,
 } from './game/godModeCharacter';
 import { getSpeciesSpec } from './game/species';
 import {
@@ -476,12 +481,196 @@ export default function App() {
   // Touch joystick vector (-1 to 1)
   const [touchVector, setTouchVector] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  // Sovereign Divine Flight & Teleportation State (Initialized airborne for Root Creator creatergame31@gmail.com)
+  const [isFlying, setIsFlying] = useState<boolean>(true);
+  const [flightAltitude, setFlightAltitude] = useState<number>(
+    GOD_FLIGHT_SPEC.defaultCruiseAltitude
+  );
+  const [teleportCommand, setTeleportCommand] = useState<{
+    seq: number;
+    x: number;
+    y: number;
+    z: number;
+  } | null>(null);
+
   // Evaluate VIP Member Subscription status & multipliers
   const vipEffectiveDateKey = getCalendarDateKey(new Date(), vipState.simulatedVipDayOffset);
   const vipEvaluation = evaluateVipSubscription(vipState, vipEffectiveDateKey);
 
-  // Evaluate Supreme Creator 12-Domain All-Things Immunity (fail-closed for all non-root accounts)
+  // Evaluate Supreme Creator 12-Domain All-Things Immunity, Sovereign Divine Flight & Sovereign Divine Teleportation (fail-closed for all non-root accounts)
   const godImmunity = evaluateGodCharacterImmunity(activeAccountEmail, godmode);
+  const godFlightPermission = evaluateGodFlightPermission(activeAccountEmail, godmode);
+  const godTeleportPermission = evaluateGodTeleportPermission(activeAccountEmail, godmode);
+
+  const handleToggleFlight = useCallback(() => {
+    const perm = evaluateGodFlightPermission(activeAccountEmail, godmode);
+    if (!perm.allowed) {
+      setIsFlying(false);
+      setFlightAltitude(0);
+      setToastMessage(`🔒 ${perm.reason}`);
+      return;
+    }
+    setIsFlying((prev) => {
+      const next = !prev;
+      if (next) {
+        setFlightAltitude((alt) =>
+          alt >= GOD_FLIGHT_SPEC.minAirborneAltitude ? alt : GOD_FLIGHT_SPEC.defaultCruiseAltitude
+        );
+        setToastMessage(
+          `🕊️ Sovereign Divine Flight: AIRBORNE (${GOD_FLIGHT_SPEC.defaultCruiseAltitude}m · ${perm.flightSpeedMultiplier}x Speed · Citadel Wall Bypass) for ${PRIMARY_ADMIN_EMAIL}!`
+        );
+      } else {
+        setToastMessage(`🕊️ Sovereign Divine Flight: LANDED (0.0m) for ${PRIMARY_ADMIN_EMAIL}.`);
+      }
+      return next;
+    });
+  }, [activeAccountEmail, godmode]);
+
+  const handleAdjustFlightAltitude = useCallback(
+    (deltaMeters: number) => {
+      const perm = evaluateGodFlightPermission(activeAccountEmail, godmode);
+      if (!perm.allowed) {
+        setToastMessage(`🔒 ${perm.reason}`);
+        return;
+      }
+      setIsFlying(true);
+      setFlightAltitude((prev) => {
+        const base = prev > 0 ? prev : perm.defaultCruiseAltitude;
+        const clamped = Math.max(
+          GOD_FLIGHT_SPEC.minAirborneAltitude,
+          Math.min(perm.maxAltitude, Number((base + deltaMeters).toFixed(1)))
+        );
+        setToastMessage(
+          `🕊️ Sovereign Flight Altitude: ${clamped.toFixed(1)}m (${perm.flightSpeedMultiplier}x Speed · ${PRIMARY_ADMIN_EMAIL})`
+        );
+        return clamped;
+      });
+    },
+    [activeAccountEmail, godmode]
+  );
+
+  const handleSetFlightAltitude = useCallback(
+    (targetAlt: number) => {
+      const perm = evaluateGodFlightPermission(activeAccountEmail, godmode);
+      if (!perm.allowed) {
+        setToastMessage(`🔒 ${perm.reason}`);
+        return;
+      }
+      if (targetAlt <= 0) {
+        setIsFlying(false);
+        setFlightAltitude(0);
+        setToastMessage(`🕊️ Sovereign Divine Flight: LANDED (0.0m) for ${PRIMARY_ADMIN_EMAIL}.`);
+        return;
+      }
+      const clamped = Math.max(
+        GOD_FLIGHT_SPEC.minAirborneAltitude,
+        Math.min(perm.maxAltitude, Number(targetAlt.toFixed(1)))
+      );
+      setIsFlying(true);
+      setFlightAltitude(clamped);
+      setToastMessage(
+        `🕊️ Sovereign Flight Altitude Set: ${clamped.toFixed(1)}m (${perm.flightSpeedMultiplier}x Speed · ${PRIMARY_ADMIN_EMAIL})`
+      );
+    },
+    [activeAccountEmail, godmode]
+  );
+
+  const handleTeleportToWaypoint = useCallback(
+    (waypointId: GodTeleportWaypointId) => {
+      const perm = evaluateGodTeleportPermission(activeAccountEmail, godmode);
+      const jump = executeGodTeleportJump({
+        currentX: playerWorldPosRef.current.x,
+        currentY: isFlying ? flightAltitude : 0,
+        currentZ: playerWorldPosRef.current.z,
+        mode: 'waypoint',
+        waypointId,
+        permission: perm,
+      });
+      if (!jump.teleported) {
+        setToastMessage(`🔒 ${jump.reason}`);
+        return;
+      }
+      playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      if (jump.nextY > 0) {
+        setIsFlying(true);
+        setFlightAltitude(jump.nextY);
+      } else {
+        setIsFlying(false);
+        setFlightAltitude(0);
+      }
+      setTeleportCommand((prev) => ({
+        seq: (prev?.seq ?? 0) + 1,
+        x: jump.nextX,
+        y: jump.nextY,
+        z: jump.nextZ,
+      }));
+      setToastMessage(`⚡ ${jump.reason}`);
+    },
+    [activeAccountEmail, godmode, isFlying, flightAltitude]
+  );
+
+  const handleTeleportToCoordinates = useCallback(
+    (targetX: number, targetY: number, targetZ: number) => {
+      const perm = evaluateGodTeleportPermission(activeAccountEmail, godmode);
+      const jump = executeGodTeleportJump({
+        currentX: playerWorldPosRef.current.x,
+        currentY: isFlying ? flightAltitude : 0,
+        currentZ: playerWorldPosRef.current.z,
+        mode: 'coordinates',
+        targetX,
+        targetY,
+        targetZ,
+        permission: perm,
+      });
+      if (!jump.teleported) {
+        setToastMessage(`🔒 ${jump.reason}`);
+        return;
+      }
+      playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      if (jump.nextY > 0) {
+        setIsFlying(true);
+        setFlightAltitude(jump.nextY);
+      } else {
+        setIsFlying(false);
+        setFlightAltitude(0);
+      }
+      setTeleportCommand((prev) => ({
+        seq: (prev?.seq ?? 0) + 1,
+        x: jump.nextX,
+        y: jump.nextY,
+        z: jump.nextZ,
+      }));
+      setToastMessage(`⚡ ${jump.reason}`);
+    },
+    [activeAccountEmail, godmode, isFlying, flightAltitude]
+  );
+
+  const handleForwardBlink = useCallback(
+    (facingAngleRad = Math.PI) => {
+      const perm = evaluateGodTeleportPermission(activeAccountEmail, godmode);
+      const jump = executeGodTeleportJump({
+        currentX: playerWorldPosRef.current.x,
+        currentY: isFlying ? flightAltitude : 0,
+        currentZ: playerWorldPosRef.current.z,
+        facingAngleRad,
+        mode: 'forward_blink',
+        permission: perm,
+      });
+      if (!jump.teleported) {
+        setToastMessage(`🔒 ${jump.reason}`);
+        return;
+      }
+      playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      setTeleportCommand((prev) => ({
+        seq: (prev?.seq ?? 0) + 1,
+        x: jump.nextX,
+        y: jump.nextY,
+        z: jump.nextZ,
+      }));
+      setToastMessage(`⚡ ${jump.reason}`);
+    },
+    [activeAccountEmail, godmode, isFlying, flightAltitude]
+  );
 
   // Calculate Trillion-scale Multiplicative Power Rating scaled by Four-Path Cultivation Resonance, Veteran Scroll Mastery & VIP Covenant
   const maxTroopCapacity = calculateCastleTroopCapacity(castleLevel);
@@ -717,6 +906,8 @@ export default function App() {
     });
     setActiveAccountEmail(PRIMARY_ADMIN_EMAIL);
     setGodmode(true);
+    setIsFlying(true);
+    setFlightAltitude(GOD_FLIGHT_SPEC.defaultCruiseAltitude);
     setCastleLevel(bundle.castleLevel);
     setPlayerAppearance(bundle.appearance);
     setResources(bundle.resources);
@@ -728,7 +919,7 @@ export default function App() {
     setVipState(bundle.vipState);
     confetti({ particleCount: 120, spread: 100, origin: { y: 0.6 } });
     setToastMessage(
-      '👑 Maxed-Out Creator God Character & 12-Domain All-Things Immunity Activated for creatergame31@gmail.com!'
+      '👑 Maxed-Out Creator God Character, 12-Domain Immunity & Sovereign Divine Flight Activated for creatergame31@gmail.com!'
     );
   };
 
@@ -2188,6 +2379,15 @@ export default function App() {
           });
         }}
         touchInput={touchVector}
+        flightPermission={godFlightPermission}
+        isFlying={isFlying && godFlightPermission.allowed}
+        flightTargetAltitude={flightAltitude}
+        onFlightAltitudeChange={(alt) => setFlightAltitude(alt)}
+        onToggleFlight={handleToggleFlight}
+        teleportPermission={godTeleportPermission}
+        teleportCommand={teleportCommand}
+        onForwardBlink={(facingRad) => handleForwardBlink(facingRad)}
+        onShiftClickTeleport={(x, y, z) => handleTeleportToCoordinates(x, y, z)}
       />
 
       {/* Floating Notification Toast */}
@@ -2302,6 +2502,15 @@ export default function App() {
             );
           }}
           godmode={godmode}
+          canFly={godFlightPermission.allowed}
+          isFlying={isFlying && godFlightPermission.allowed}
+          flightAltitude={flightAltitude}
+          flightSpeedMultiplier={godFlightPermission.flightSpeedMultiplier}
+          onToggleFlight={handleToggleFlight}
+          onAdjustFlightAltitude={handleAdjustFlightAltitude}
+          canTeleport={godTeleportPermission.allowed}
+          onTeleportToWaypoint={handleTeleportToWaypoint}
+          onForwardBlink={() => handleForwardBlink()}
           onTouchMove={(delta) => setTouchVector(delta)}
           onTouchEnd={() => setTouchVector({ x: 0, y: 0 })}
           onActionClick={handleHUDActionClick}
@@ -2528,10 +2737,13 @@ export default function App() {
               setActiveAccountEmail(email);
               const isRoot = isPrimaryAdminAccount(email);
               setGodmode(isRoot);
+              if (!isRoot) {
+                setIsFlying(false);
+              }
               setToastMessage(
                 isRoot
-                  ? `👑 Active Session Bound to Root Creator (${email}) · Godmode Immunity: ACTIVE`
-                  : `🛡️ Active Session Bound to: ${email} · Creator Godmode Disabled`
+                  ? `👑 Active Session Bound to Root Creator (${email}) · Godmode Immunity & Sovereign Flight: ACTIVE`
+                  : `🛡️ Active Session Bound to: ${email} · Creator Godmode & Flight Disabled`
               );
             }}
             moderatedPlayers={moderatedPlayers}
@@ -2560,6 +2772,15 @@ export default function App() {
             onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
             godImmunity={godImmunity}
             onActivateMaxGodCharacter={handleActivateMaxGodCharacter}
+            flightPermission={godFlightPermission}
+            isFlying={isFlying && godFlightPermission.allowed}
+            flightAltitude={flightAltitude}
+            onToggleFlight={handleToggleFlight}
+            onSetFlightAltitude={handleSetFlightAltitude}
+            teleportPermission={godTeleportPermission}
+            onTeleportToWaypoint={handleTeleportToWaypoint}
+            onTeleportToCoordinates={handleTeleportToCoordinates}
+            onForwardBlink={() => handleForwardBlink()}
             onClose={() => setActiveModal('none')}
           />
         )}

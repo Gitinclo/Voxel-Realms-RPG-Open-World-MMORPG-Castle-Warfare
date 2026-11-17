@@ -30,4 +30,4 @@ Privacy-safe metric naming conventions, readiness probe fields, and gameplay eve
 - **`cultivation.realm_breakthrough`**: Path (`qi` | `body` | `soul` | `mind`), previous realm index, new realm index, tribulation outcome.
 - **`castle.era_upgrade`**: Era tier (`1..10`), citadel level (`0..100`), troop capacity delta (`BigInt` string).
 - **`lore.codex_discovered`**: Entry category (`biome` | `monster`), biome/monster ID, diamond reward claimed.
-- **`legal.eula_accepted`**: Version (`v1.5.0-2026-11-15`), deterministic FNV-1a receipt code (`EULA-ACK-...`).
+- **`legal.eula_accepted`**: Version (`v1.5.0-2026-11-17`), deterministic FNV-1a receipt code (`EULA-ACK-...`).

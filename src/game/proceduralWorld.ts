@@ -2969,6 +2969,107 @@ export function createPlayerMesh(
 
   player.add(auraGroup);
 
+  // ==========================================================================
+  // SOVEREIGN NINE-HEAVENS IMPERIAL FLYING SWORD & ASTRAL CLOUD HALO
+  // (Activated for Root Creator creatergame31@gmail.com during Divine Flight)
+  // ==========================================================================
+  const godFlightMount = new THREE.Group();
+  godFlightMount.name = 'GodFlightMountGroup';
+  godFlightMount.position.set(0, -0.04, 0);
+  godFlightMount.visible = false;
+
+  const swordBladeMat = new THREE.MeshPhysicalMaterial({
+    color: 0xe0f2fe,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 0.95,
+    metalness: 0.96,
+    roughness: 0.06,
+    clearcoat: 1.0,
+  });
+  const swordGoldMat = new THREE.MeshStandardMaterial({
+    color: 0xffd700,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 0.85,
+    metalness: 0.95,
+    roughness: 0.1,
+  });
+
+  // Main Flying Sword Blade (oriented along +Z forward direction)
+  const flyingSwordBlade = new THREE.Mesh(
+    createChamferedBlockGeometry(0.46, 0.08, 2.75, 0.025, 2),
+    swordBladeMat
+  );
+  flyingSwordBlade.position.set(0, 0, 0.15);
+  godFlightMount.add(flyingSwordBlade);
+
+  // Flying Sword Tip Cone pointing forward (+Z)
+  const swordTipGeo = new THREE.ConeGeometry(0.26, 0.68, 4);
+  swordTipGeo.rotateX(Math.PI / 2);
+  swordTipGeo.rotateZ(Math.PI / 4);
+  const flyingSwordTip = new THREE.Mesh(swordTipGeo, swordBladeMat);
+  flyingSwordTip.position.set(0, 0, 1.82);
+  godFlightMount.add(flyingSwordTip);
+
+  // Golden Imperial Crossguard & Pommel
+  const crossguard = new THREE.Mesh(
+    createChamferedBlockGeometry(1.18, 0.12, 0.24, 0.03, 2),
+    swordGoldMat
+  );
+  crossguard.position.set(0, 0.02, -0.95);
+  godFlightMount.add(crossguard);
+
+  const hiltGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.55, 12), swordGoldMat);
+  hiltGrip.rotation.x = Math.PI / 2;
+  hiltGrip.position.set(0, 0.02, -1.32);
+  godFlightMount.add(hiltGrip);
+
+  // Rotating Astral Bagua Halo Rings around the Flying Sword
+  const flightHaloOuter = new THREE.Mesh(
+    new THREE.TorusGeometry(1.42, 0.038, 16, 48),
+    new THREE.MeshBasicMaterial({ color: 0xfde047 })
+  );
+  flightHaloOuter.rotation.x = Math.PI / 2;
+  flightHaloOuter.position.y = -0.02;
+  flightHaloOuter.name = 'GodFlightHaloOuter';
+  godFlightMount.add(flightHaloOuter);
+
+  const flightHaloInner = new THREE.Mesh(
+    new THREE.TorusGeometry(1.02, 0.03, 16, 48),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+  );
+  flightHaloInner.rotation.x = Math.PI / 2;
+  flightHaloInner.position.y = 0.02;
+  flightHaloInner.name = 'GodFlightHaloInner';
+  godFlightMount.add(flightHaloInner);
+
+  player.add(godFlightMount);
+
+  // ==========================================================================
+  // SOVEREIGN SPATIAL TELEPORT WARP PORTAL RINGS
+  // (Flashes during Instant Omnipresent Teleportation for creatergame31@gmail.com)
+  // ==========================================================================
+  const godTeleportWarp = new THREE.Group();
+  godTeleportWarp.name = 'GodTeleportWarpGroup';
+  godTeleportWarp.position.set(0, 1.25, 0);
+  godTeleportWarp.visible = false;
+
+  const warpRingHorizontal = new THREE.Mesh(
+    new THREE.TorusGeometry(1.65, 0.055, 16, 48),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 })
+  );
+  warpRingHorizontal.rotation.x = Math.PI / 2;
+  warpRingHorizontal.name = 'GodTeleportRingHorizontal';
+  godTeleportWarp.add(warpRingHorizontal);
+
+  const warpRingVertical = new THREE.Mesh(
+    new THREE.TorusGeometry(1.45, 0.045, 16, 48),
+    new THREE.MeshBasicMaterial({ color: 0xc084fc, transparent: true, opacity: 0.88 })
+  );
+  warpRingVertical.name = 'GodTeleportRingVertical';
+  godTeleportWarp.add(warpRingVertical);
+
+  player.add(godTeleportWarp);
+
   // High-DPI Retina Floating Player Name & Sect Title Banner (High-Opacity Backing + Crisp Text Outlines)
   const sprite = createCrispBillboardSprite(
     520,

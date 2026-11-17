@@ -289,4 +289,4 @@ Instead of immersion-breaking floating level numbers over characters' heads (`su
 - **[`README.md`](./README.md)** — Master project overview, architecture matrix & 17 feature pillars.
 - **[`LORE.md`](./LORE.md)** — Epoch IV (_The Han Jue Four-Path Immortal Revelation & 100x Realm Suppression_) and the `10^100`-Word Akashic Archive.
 - **[`ARCHITECTURE.md`](./ARCHITECTURE.md)** — Functional Core / Imperative Shell design and C++20 `static_assert` guardrails (`cpp/VoxelRealmsGuardrails.hpp`).
-- **[`LEGAL.md`](./LEGAL.md)** & **[`EULA.md`](./EULA.md)** — Complete 10-Agreement Legal Stack & EULA (`v1.5.0 · 15/11/2026`).
+- **[`LEGAL.md`](./LEGAL.md)** & **[`EULA.md`](./EULA.md)** — Complete 10-Agreement Legal Stack & EULA (`v1.5.0 · 17/11/2026`).

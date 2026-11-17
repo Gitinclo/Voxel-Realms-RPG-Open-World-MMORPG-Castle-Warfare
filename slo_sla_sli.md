@@ -1,6 +1,6 @@
 # 🎯 SLI, SLO & SLA Targets (`slo_sla_sli.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 | Service Indicator (SLI)     | Internal Objective (SLO) |    External Agreement (SLA)    | Probe Source                  |
 | :-------------------------- | :----------------------: | :----------------------------: | :---------------------------- |

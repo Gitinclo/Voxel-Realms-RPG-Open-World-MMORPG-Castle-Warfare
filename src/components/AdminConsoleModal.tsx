@@ -59,12 +59,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { createSupportTicketDocument } from '../lib/firestore';
 import {
+  GOD_FLIGHT_SPEC,
   GOD_IMMUNITY_DOMAIN_SPECS,
   GOD_OMNI_ATTRIBUTES,
   GOD_OMNI_PILLAR_SPECS,
+  GOD_TELEPORT_SPEC,
   GodCharacterImmunityStatus,
+  GodFlightPermissionStatus,
   GodOmniPillarId,
+  GodTeleportPermissionStatus,
+  GodTeleportWaypointId,
   evaluateGodCharacterImmunity,
+  evaluateGodFlightPermission,
+  evaluateGodTeleportPermission,
 } from '../game/godModeCharacter';
 
 interface AdminConsoleModalProps {
@@ -99,6 +106,15 @@ interface AdminConsoleModalProps {
   onOpenCosmologicalAdmin?: () => void;
   godImmunity?: GodCharacterImmunityStatus;
   onActivateMaxGodCharacter?: () => void;
+  flightPermission?: GodFlightPermissionStatus;
+  isFlying?: boolean;
+  flightAltitude?: number;
+  onToggleFlight?: () => void;
+  onSetFlightAltitude?: (altitude: number) => void;
+  teleportPermission?: GodTeleportPermissionStatus;
+  onTeleportToWaypoint?: (waypointId: GodTeleportWaypointId) => void;
+  onTeleportToCoordinates?: (x: number, y: number, z: number) => void;
+  onForwardBlink?: () => void;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
 }
@@ -133,6 +149,15 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onOpenCosmologicalAdmin,
   godImmunity,
   onActivateMaxGodCharacter,
+  flightPermission,
+  isFlying = false,
+  flightAltitude = GOD_FLIGHT_SPEC.defaultCruiseAltitude,
+  onToggleFlight,
+  onSetFlightAltitude,
+  teleportPermission,
+  onTeleportToWaypoint,
+  onTeleportToCoordinates,
+  onForwardBlink,
   initialTab = 'cheats',
   onClose,
 }) => {
@@ -143,7 +168,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     '[SecurityBoundary] Checking HMAC-SHA256 server session on /api/auth/session...',
     '[TrustModel] Client-side RBAC email checks are preview-only; /api/admin/* & /api/online/* require verified server sessions.',
     `[WhitePage/HouseOfIdeas] Layer 6 Reference Authority: ${PRIMARY_ADMIN_EMAIL}.`,
-    '[Architect 15/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
+    '[Architect 17/11/2026] v1.5.0 Software & Hardware Architect (x86_64 AVX-512 / ARM64 SVE2 / Apple Silicon 128B UMA / RISC-V RVV 1.0 + SoA Lock-Free DAG): ONLINE.',
   ]);
 
   const {
@@ -174,6 +199,9 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   );
   const [broadcastInput, setBroadcastInput] = useState<string>('');
   const [selectedOmniPillar, setSelectedOmniPillar] = useState<'all' | GodOmniPillarId>('all');
+  const [teleportXInput, setTeleportXInput] = useState<string>('0');
+  const [teleportYInput, setTeleportYInput] = useState<string>('24.0');
+  const [teleportZInput, setTeleportZInput] = useState<string>('0');
 
   // Official Contact & Ticket form state
   const [ticketCategory, setTicketCategory] = useState<ContactCategory>('administration');
@@ -1116,6 +1144,250 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                         })}
                       </div>
                     </div>
+
+                    {/* Sovereign Divine Flight Controller (creatergame31@gmail.com) */}
+                    {(() => {
+                      const resolvedFlight =
+                        flightPermission ??
+                        evaluateGodFlightPermission(activeAccountEmail, godmode);
+                      return (
+                        <div
+                          data-testid="admin-god-flight-panel"
+                          className="pt-3 border-t border-amber-500/30 space-y-2.5"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <div className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🕊️</span>
+                                <span>
+                                  Sovereign Divine Flight &amp; 3D Imperial Flying Sword (
+                                  {PRIMARY_ADMIN_EMAIL})
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-300">
+                                {resolvedFlight.mountTitle} ·{' '}
+                                <span className="font-mono font-bold text-amber-300">
+                                  {resolvedFlight.flightSpeedMultiplier}x Speed
+                                </span>{' '}
+                                ·{' '}
+                                <span className="font-mono font-bold text-cyan-300">
+                                  Altitude:{' '}
+                                  {isFlying && resolvedFlight.allowed
+                                    ? `${flightAltitude.toFixed(1)}m (Airborne)`
+                                    : '0.0m (Grounded)'}
+                                </span>{' '}
+                                · Linked Omni-Attributes:{' '}
+                                <span className="font-mono text-emerald-300">
+                                  {GOD_FLIGHT_SPEC.linkedOmniAttributeIds.join(' · ')}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              data-testid="admin-toggle-flight-btn"
+                              disabled={!resolvedFlight.allowed}
+                              onClick={() => {
+                                sound.playSwing();
+                                onToggleFlight?.();
+                                addLog(
+                                  `CMD [SOVEREIGN FLIGHT]: Toggled Divine Flight ${!isFlying ? 'AIRBORNE' : 'GROUNDED'} for ${PRIMARY_ADMIN_EMAIL}.`
+                                );
+                              }}
+                              className={`px-4 py-2 rounded-xl text-xs font-mono font-black transition-all cursor-pointer ${
+                                !resolvedFlight.allowed
+                                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                  : isFlying
+                                    ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/25'
+                                    : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
+                              }`}
+                            >
+                              {!resolvedFlight.allowed
+                                ? 'LOCKED (ROOT CREATOR ONLY)'
+                                : isFlying
+                                  ? `🕊️ FLYING (${flightAltitude.toFixed(1)}m) · CLICK TO LAND`
+                                  : '🕊️ LAUNCH SOVEREIGN FLIGHT [F]'}
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-slate-400 mr-1">
+                              Altitude Presets (E/Space Ascend · Q/Shift Descend):
+                            </span>
+                            {GOD_FLIGHT_SPEC.altitudePresets.map((preset) => (
+                              <button
+                                key={preset.id}
+                                type="button"
+                                data-testid={`admin-flight-preset-${preset.id}`}
+                                disabled={!resolvedFlight.allowed}
+                                onClick={() => {
+                                  sound.playSwing();
+                                  onSetFlightAltitude?.(preset.altitude);
+                                  addLog(
+                                    `CMD [SOVEREIGN FLIGHT]: Set target altitude to ${preset.label} for ${PRIMARY_ADMIN_EMAIL}.`
+                                  );
+                                }}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-colors cursor-pointer border ${
+                                  !resolvedFlight.allowed
+                                    ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+                                    : isFlying && Math.abs(flightAltitude - preset.altitude) < 1.2
+                                      ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
+                                      : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200'
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Sovereign Divine Teleportation Controller (creatergame31@gmail.com) */}
+                    {(() => {
+                      const resolvedTeleport =
+                        teleportPermission ??
+                        evaluateGodTeleportPermission(activeAccountEmail, godmode);
+                      return (
+                        <div
+                          data-testid="admin-god-teleport-panel"
+                          className="pt-3 border-t border-cyan-500/30 space-y-2.5"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <div className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>⚡</span>
+                                <span>
+                                  Sovereign Divine Teleportation &amp; Spatial Rift Matrix (
+                                  {PRIMARY_ADMIN_EMAIL})
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-300">
+                                {resolvedTeleport.abilityTitle} ·{' '}
+                                <span className="font-mono font-bold text-amber-300">
+                                  0ms Cooldown
+                                </span>{' '}
+                                ·{' '}
+                                <span className="font-mono font-bold text-cyan-300">
+                                  +{resolvedTeleport.forwardBlinkMeters}m Forward Blink [T]
+                                </span>{' '}
+                                · <span className="font-mono text-emerald-300">Shift + Click</span>{' '}
+                                3D Scene · Linked Omni-Attributes:{' '}
+                                <span className="font-mono text-cyan-200">
+                                  {GOD_TELEPORT_SPEC.linkedOmniAttributeIds.join(' · ')}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              data-testid="admin-teleport-blink-btn"
+                              disabled={!resolvedTeleport.allowed}
+                              onClick={() => {
+                                sound.playSwing();
+                                onForwardBlink?.();
+                                addLog(
+                                  `CMD [SOVEREIGN TELEPORT]: Executed +${resolvedTeleport.forwardBlinkMeters}m Forward Astral Blink for ${PRIMARY_ADMIN_EMAIL}.`
+                                );
+                              }}
+                              className={`px-4 py-2 rounded-xl text-xs font-mono font-black transition-all cursor-pointer ${
+                                !resolvedTeleport.allowed
+                                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
+                              }`}
+                            >
+                              {!resolvedTeleport.allowed
+                                ? 'LOCKED (ROOT CREATOR ONLY)'
+                                : `⚡ FORWARD ASTRAL BLINK (+${resolvedTeleport.forwardBlinkMeters}m) [T]`}
+                            </button>
+                          </div>
+
+                          {/* 8 Sovereign Waypoints */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                            {GOD_TELEPORT_SPEC.waypoints.map((wp) => (
+                              <button
+                                key={wp.id}
+                                type="button"
+                                data-testid={`admin-teleport-wp-${wp.id}`}
+                                disabled={!resolvedTeleport.allowed}
+                                onClick={() => {
+                                  sound.playSwing();
+                                  onTeleportToWaypoint?.(wp.id);
+                                  addLog(
+                                    `CMD [SOVEREIGN TELEPORT]: Teleported to ${wp.label} (${wp.x}, ${wp.y}, ${wp.z}) for ${PRIMARY_ADMIN_EMAIL}.`
+                                  );
+                                }}
+                                className={`p-2 rounded-xl text-left transition-colors cursor-pointer border ${
+                                  !resolvedTeleport.allowed
+                                    ? 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+                                    : 'bg-slate-900/90 hover:bg-cyan-950/60 border-cyan-500/35 hover:border-cyan-400 text-slate-100'
+                                }`}
+                              >
+                                <div className="text-[11px] font-bold truncate">
+                                  {wp.icon} {wp.label}
+                                </div>
+                                <div className="text-[9.5px] font-mono text-cyan-300 mt-0.5">
+                                  ({wp.x}m, {wp.y}m, {wp.z}m)
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Custom (X, Y, Z) Coordinate Warp */}
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <span className="text-[10px] font-mono text-slate-400">
+                              Custom Spatial Coordinates (X, Y, Z):
+                            </span>
+                            <input
+                              type="number"
+                              data-testid="admin-teleport-x-input"
+                              value={teleportXInput}
+                              onChange={(e) => setTeleportXInput(e.target.value)}
+                              className="w-20 px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                              placeholder="X"
+                            />
+                            <input
+                              type="number"
+                              data-testid="admin-teleport-y-input"
+                              value={teleportYInput}
+                              onChange={(e) => setTeleportYInput(e.target.value)}
+                              className="w-20 px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                              placeholder="Y"
+                            />
+                            <input
+                              type="number"
+                              data-testid="admin-teleport-z-input"
+                              value={teleportZInput}
+                              onChange={(e) => setTeleportZInput(e.target.value)}
+                              className="w-20 px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                              placeholder="Z"
+                            />
+                            <button
+                              type="button"
+                              data-testid="admin-teleport-coords-btn"
+                              disabled={!resolvedTeleport.allowed}
+                              onClick={() => {
+                                sound.playSwing();
+                                const x = Number(teleportXInput) || 0;
+                                const y = Number(teleportYInput) || 0;
+                                const z = Number(teleportZInput) || 0;
+                                onTeleportToCoordinates?.(x, y, z);
+                                addLog(
+                                  `CMD [SOVEREIGN TELEPORT]: Warped to custom coordinates (${x}, ${y}, ${z}) for ${PRIMARY_ADMIN_EMAIL}.`
+                                );
+                              }}
+                              className={`px-3 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors cursor-pointer ${
+                                !resolvedTeleport.allowed
+                                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                              }`}
+                            >
+                              ⚡ WARP TO (X, Y, Z)
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}

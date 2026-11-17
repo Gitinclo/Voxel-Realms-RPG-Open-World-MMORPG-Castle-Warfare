@@ -6,15 +6,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  GOD_FLIGHT_SPEC,
   GOD_IMMUNITY_DOMAINS,
   GOD_IMMUNITY_DOMAIN_SPECS,
   GOD_OMNI_ATTRIBUTES,
   GOD_OMNI_PILLAR_IDS,
   GOD_OMNI_PILLAR_SPECS,
+  GOD_TELEPORT_SPEC,
   applyGodImmunityToIncomingEffect,
   buildMaxedGodCharacterBundle,
+  computeNextGodFlightKinematics,
   evaluateGodCharacterImmunity,
+  evaluateGodFlightPermission,
   evaluateGodOmniAttribute,
+  evaluateGodTeleportPermission,
+  executeGodTeleportJump,
   getGodOmniAttributesByPillar,
 } from './godModeCharacter';
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
@@ -171,7 +177,7 @@ test('buildMaxedGodCharacterBundle creates a fully maxed-out Lv.100 / Realm 22 L
   assert.equal(bundle.cultivation.karma?.karmaValue, 100_000);
 
   // VIP 3 + Loyalty Lv. 15 verified via evaluateVipSubscription
-  const vipEval = evaluateVipSubscription(bundle.vipState, '2026-11-16');
+  const vipEval = evaluateVipSubscription(bundle.vipState, '2026-11-17');
   assert.equal(vipEval.tierConfig.id, 'celestial_sovereign');
   assert.equal(vipEval.tierConfig.rank, 3);
   assert.equal(vipEval.isActiveSubscriber, true);
@@ -184,4 +190,141 @@ test('buildMaxedGodCharacterBundle creates a fully maxed-out Lv.100 / Realm 22 L
     assert.equal(hero.star, 5);
     assert.equal(hero.rarity, 'divine');
   }
+});
+
+test('evaluateGodFlightPermission and computeNextGodFlightKinematics grant 2.5x Sovereign Divine Flight exclusively to creatergame31@gmail.com', () => {
+  const rootFlight = evaluateGodFlightPermission(PRIMARY_ADMIN_EMAIL, true);
+  assert.equal(rootFlight.allowed, true);
+  assert.equal(rootFlight.isRootGodAccount, true);
+  assert.equal(rootFlight.flightSpeedMultiplier, 2.5);
+  assert.equal(rootFlight.maxAltitude, 45.0);
+  assert.equal(rootFlight.defaultCruiseAltitude, 8.5);
+  assert.deepEqual(rootFlight.linkedOmniAttributeIds, GOD_FLIGHT_SPEC.linkedOmniAttributeIds);
+
+  // Fail-closed for non-root or when Godmode is disabled
+  const outsiderFlight = evaluateGodFlightPermission('player@voxelrealms.example', true);
+  assert.equal(outsiderFlight.allowed, false);
+  assert.equal(outsiderFlight.flightSpeedMultiplier, 1.0);
+  assert.equal(outsiderFlight.maxAltitude, 0);
+
+  const disabledGodmodeFlight = evaluateGodFlightPermission(PRIMARY_ADMIN_EMAIL, false);
+  assert.equal(disabledGodmodeFlight.allowed, false);
+  assert.equal(disabledGodmodeFlight.isRootGodAccount, true);
+
+  // Airborne kinematics for creatergame31@gmail.com: 2.5x horizontal speed + Citadel wall bypass
+  const airborneStep = computeNextGodFlightKinematics({
+    currentX: 0,
+    currentY: 8.5,
+    currentZ: 10,
+    moveInputX: 0,
+    moveInputZ: -1,
+    verticalInput: 1,
+    cameraOrbitAngle: 0,
+    dt: 0.1,
+    isFlying: true,
+    targetAltitude: 8.5,
+    permission: rootFlight,
+  });
+  assert.equal(airborneStep.isAirborne, true);
+  assert.equal(airborneStep.bypassesCitadelWalls, true);
+  assert.equal(airborneStep.effectiveSpeedMultiplier, 2.5);
+  assert.ok(airborneStep.nextY > 8.5, 'Expected ascending verticalInput to increase altitude');
+  assert.ok(Math.abs(airborneStep.nextZ - (10 - 14 * 2.5 * 0.1)) < 1e-6);
+
+  // Outsider attempting to fly remains grounded at 1.0x speed without Citadel wall bypass
+  const outsiderStep = computeNextGodFlightKinematics({
+    currentX: 0,
+    currentY: 0,
+    currentZ: 10,
+    moveInputX: 0,
+    moveInputZ: -1,
+    verticalInput: 1,
+    cameraOrbitAngle: 0,
+    dt: 0.1,
+    isFlying: true,
+    targetAltitude: 20,
+    permission: outsiderFlight,
+  });
+  assert.equal(outsiderStep.isAirborne, false);
+  assert.equal(outsiderStep.bypassesCitadelWalls, false);
+  assert.equal(outsiderStep.effectiveSpeedMultiplier, 1.0);
+  assert.equal(outsiderStep.nextY, 0);
+});
+
+test('evaluateGodTeleportPermission and executeGodTeleportJump grant instantaneous Sovereign Divine Teleportation exclusively to creatergame31@gmail.com', () => {
+  const rootTeleport = evaluateGodTeleportPermission(PRIMARY_ADMIN_EMAIL, true);
+  assert.equal(rootTeleport.allowed, true);
+  assert.equal(rootTeleport.isRootGodAccount, true);
+  assert.equal(rootTeleport.cooldownMs, 0);
+  assert.equal(rootTeleport.forwardBlinkMeters, 12.0);
+  assert.equal(GOD_TELEPORT_SPEC.waypoints.length, 8);
+  assert.deepEqual(rootTeleport.linkedOmniAttributeIds, GOD_TELEPORT_SPEC.linkedOmniAttributeIds);
+
+  // Fail-closed for non-root or when Godmode is disabled
+  const outsiderTeleport = evaluateGodTeleportPermission('player@voxelrealms.example', true);
+  assert.equal(outsiderTeleport.allowed, false);
+  const pausedRootTeleport = evaluateGodTeleportPermission(PRIMARY_ADMIN_EMAIL, false);
+  assert.equal(pausedRootTeleport.allowed, false);
+
+  // Waypoint jump for creatergame31@gmail.com
+  const waypointJump = executeGodTeleportJump({
+    currentX: 0,
+    currentY: 0,
+    currentZ: 18,
+    mode: 'waypoint',
+    waypointId: 'ender_titan_arena',
+    permission: rootTeleport,
+  });
+  assert.equal(waypointJump.teleported, true);
+  assert.equal(waypointJump.nextX, 24);
+  assert.equal(waypointJump.nextY, 8.5);
+  assert.equal(waypointJump.nextZ, -24);
+  assert.equal(waypointJump.destinationLabel, '🐉 Apex World Boss Arena (Lv.1000 Titan)');
+  assert.ok(waypointJump.distanceMovedMeters > 45);
+
+  // Forward blink jump (+12m along facing angle 0 => +12m on Z)
+  const blinkJump = executeGodTeleportJump({
+    currentX: 4,
+    currentY: 8.5,
+    currentZ: 10,
+    facingAngleRad: 0,
+    mode: 'forward_blink',
+    permission: rootTeleport,
+  });
+  assert.equal(blinkJump.teleported, true);
+  assert.equal(blinkJump.nextX, 4);
+  assert.equal(blinkJump.nextY, 8.5);
+  assert.equal(blinkJump.nextZ, 22);
+  assert.equal(blinkJump.distanceMovedMeters, 12);
+
+  // Custom coordinates jump clamped to safe bounds
+  const coordJump = executeGodTeleportJump({
+    currentX: 0,
+    currentY: 0,
+    currentZ: 0,
+    mode: 'coordinates',
+    targetX: 500,
+    targetY: 99,
+    targetZ: -500,
+    permission: rootTeleport,
+  });
+  assert.equal(coordJump.teleported, true);
+  assert.equal(coordJump.nextX, GOD_TELEPORT_SPEC.maxWorldBoundXZ);
+  assert.equal(coordJump.nextY, GOD_FLIGHT_SPEC.maxAltitude);
+  assert.equal(coordJump.nextZ, -GOD_TELEPORT_SPEC.maxWorldBoundXZ);
+
+  // Outsider attempting to teleport fails closed at original coordinates
+  const outsiderJump = executeGodTeleportJump({
+    currentX: 2,
+    currentY: 0,
+    currentZ: 14,
+    mode: 'waypoint',
+    waypointId: 'citadel_spire',
+    permission: outsiderTeleport,
+  });
+  assert.equal(outsiderJump.teleported, false);
+  assert.equal(outsiderJump.nextX, 2);
+  assert.equal(outsiderJump.nextY, 0);
+  assert.equal(outsiderJump.nextZ, 14);
+  assert.equal(outsiderJump.distanceMovedMeters, 0);
 });

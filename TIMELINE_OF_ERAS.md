@@ -1,6 +1,6 @@
 # ⏳ Timeline of the 7 Grand Historical Epochs (`TIMELINE_OF_ERAS.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Supreme Author:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Supreme Author:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 Tracked programmatically in `LORE_HISTORICAL_EPOCHS` (`src/game/loreHistory.ts`):
 
@@ -10,4 +10,4 @@ Tracked programmatically in `LORE_HISTORICAL_EPOCHS` (`src/game/loreHistory.ts`)
 - **Epoch III**: Awakening of the 100 Playable Species & Admin Rebirth Seal (`creatergame31@gmail.com`)
 - **Epoch IV**: Han Jue Four-Path Immortal Revelation & 100x Suppression
 - **Epoch V**: Ten Citadel Eras & Trillion-Scale Siege Wars
-- **Epoch VI**: `15/11/2026` Software & Hardware Architect Convergence
+- **Epoch VI**: `17/11/2026` Software & Hardware Architect Convergence

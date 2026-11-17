@@ -43,6 +43,13 @@ import {
   enableOpenWorldMeshBVH,
   resolvePlayerCitadelCollisionCannon,
 } from '../game/openWorld3DEngine';
+import {
+  GOD_FLIGHT_SPEC,
+  GodFlightPermissionStatus,
+  GodTeleportPermissionStatus,
+  computeNextGodFlightKinematics,
+  evaluateGodFlightPermission,
+} from '../game/godModeCharacter';
 
 /**
  * Custom Post-Processing ShaderPass combining:
@@ -143,6 +150,15 @@ interface GameCanvasProps {
   onSelectNPC: (npc: NPC) => void;
   onPlayerPositionChange?: (x: number, z: number) => void;
   touchInput?: { x: number; y: number }; // -1 to 1 joystick values
+  flightPermission?: GodFlightPermissionStatus;
+  isFlying?: boolean;
+  flightTargetAltitude?: number;
+  onFlightAltitudeChange?: (altitude: number) => void;
+  onToggleFlight?: () => void;
+  teleportPermission?: GodTeleportPermissionStatus;
+  teleportCommand?: { seq: number; x: number; y: number; z: number } | null;
+  onForwardBlink?: (facingAngleRad: number) => void;
+  onShiftClickTeleport?: (x: number, y: number, z: number) => void;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -165,6 +181,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onSelectNPC,
   onPlayerPositionChange,
   touchInput,
+  flightPermission,
+  isFlying = false,
+  flightTargetAltitude = GOD_FLIGHT_SPEC.defaultCruiseAltitude,
+  onFlightAltitudeChange,
+  onToggleFlight,
+  teleportPermission,
+  teleportCommand = null,
+  onForwardBlink,
+  onShiftClickTeleport,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -189,6 +214,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onSelectNPC,
     onPlayerPositionChange,
     touchInput,
+    flightPermission,
+    isFlying,
+    flightTargetAltitude,
+    onFlightAltitudeChange,
+    onToggleFlight,
+    teleportPermission,
+    teleportCommand,
+    onForwardBlink,
+    onShiftClickTeleport,
   });
 
   useEffect(() => {
@@ -212,6 +246,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       onSelectNPC,
       onPlayerPositionChange,
       touchInput,
+      flightPermission,
+      isFlying,
+      flightTargetAltitude,
+      onFlightAltitudeChange,
+      onToggleFlight,
+      teleportPermission,
+      teleportCommand,
+      onForwardBlink,
+      onShiftClickTeleport,
     };
   }, [
     castleLevel,
@@ -233,6 +276,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onSelectNPC,
     onPlayerPositionChange,
     touchInput,
+    flightPermission,
+    isFlying,
+    flightTargetAltitude,
+    onFlightAltitudeChange,
+    onToggleFlight,
+    teleportPermission,
+    teleportCommand,
+    onForwardBlink,
+    onShiftClickTeleport,
   ]);
 
   useEffect(() => {
@@ -543,21 +595,42 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     let lastBuiltRealm = propsRef.current.cultivationRealmIndex;
     let lastBuiltDaos = propsRef.current.masteredGreatDaos;
     let lastBuiltRedName = propsRef.current.isRedName;
+    let lastBuiltAppearanceSig = JSON.stringify(propsRef.current.playerAppearance);
     let playerMesh = createPlayerMesh(
       propsRef.current.playerAppearance,
       lastBuiltRealm,
       lastBuiltDaos,
       lastBuiltRedName
     );
-    playerMesh.position.set(0, 0, 18);
+    const initialY =
+      propsRef.current.isFlying && propsRef.current.flightPermission?.allowed
+        ? propsRef.current.flightTargetAltitude || GOD_FLIGHT_SPEC.defaultCruiseAltitude
+        : 0;
+    playerMesh.position.set(0, initialY, 18);
     scene.add(playerMesh);
 
     // Player position and movement physics
-    const playerPos = new THREE.Vector3(0, 0, 18);
+    const playerPos = new THREE.Vector3(0, initialY, 18);
     const keysPressed: Record<string, boolean> = {};
 
     const onKeyDown = (e: KeyboardEvent) => {
-      keysPressed[e.key.toLowerCase()] = true;
+      const target = e.target as HTMLElement | null;
+      const isInputFocused =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable);
+      if (isInputFocused) return;
+
+      const lower = e.key.toLowerCase();
+      if (lower === 'f' && !e.repeat) {
+        propsRef.current.onToggleFlight?.();
+      }
+      if (lower === 't' && !e.repeat) {
+        propsRef.current.onForwardBlink?.(playerMesh.rotation.y);
+      }
+      keysPressed[lower] = true;
     };
     const onKeyUp = (e: KeyboardEvent) => {
       keysPressed[e.key.toLowerCase()] = false;
@@ -604,6 +677,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const intersects = raycaster.intersectObjects(scene.children, true);
 
       if (intersects.length > 0) {
+        // Shift + Click in 3D World executes Instant Sovereign Teleportation for creatergame31@gmail.com
+        if (e.shiftKey && propsRef.current.teleportPermission?.allowed) {
+          const hitPt = intersects[0].point;
+          propsRef.current.onShiftClickTeleport?.(hitPt.x, Math.max(0, hitPt.y), hitPt.z);
+          return;
+        }
         let hitObj: THREE.Object3D | null = intersects[0].object;
         while (hitObj && hitObj !== scene) {
           if (hitObj.name === 'PlayerCastle') {
@@ -685,6 +764,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
 
     let lastPipelineSignature = '';
+    let lastHandledTeleportSeq = 0;
+    let teleportFlashTimer = 0;
 
     const tick = () => {
       const now = performance.now();
@@ -924,7 +1005,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         lightningLight.intensity = 0;
       }
 
-      // 2. Handle Player Movement (Keyboard WASD / Arrows + Touch Joystick)
+      // 2. Handle Sovereign Divine Teleportation Jumps, Player Movement & Flight
+      const tpCmd = propsRef.current.teleportCommand;
+      if (tpCmd && tpCmd.seq !== lastHandledTeleportSeq) {
+        lastHandledTeleportSeq = tpCmd.seq;
+        playerPos.set(tpCmd.x, tpCmd.y, tpCmd.z);
+        playerMesh.position.copy(playerPos);
+        teleportFlashTimer = 0.65;
+        propsRef.current.onPlayerPositionChange?.(playerPos.x, playerPos.z);
+      }
+
       let moveX = 0;
       let moveZ = 0;
 
@@ -939,24 +1029,45 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         moveZ += touch.y;
       }
 
-      const moveLen = Math.sqrt(moveX * moveX + moveZ * moveZ);
-      if (moveLen > 0.05) {
-        const normX = moveX / moveLen;
-        const normZ = moveZ / moveLen;
+      let verticalInput = 0;
+      if (keysPressed['e'] || keysPressed[' '] || keysPressed['pageup']) verticalInput += 1;
+      if (keysPressed['q'] || keysPressed['shift'] || keysPressed['pagedown']) verticalInput -= 1;
 
-        const cosCam = Math.cos(cameraOrbitAngle);
-        const sinCam = Math.sin(cameraOrbitAngle);
+      const activeFlightPerm =
+        propsRef.current.flightPermission ?? evaluateGodFlightPermission(null, false);
+      const kinematics = computeNextGodFlightKinematics({
+        currentX: playerPos.x,
+        currentY: playerPos.y,
+        currentZ: playerPos.z,
+        moveInputX: moveX,
+        moveInputZ: moveZ,
+        verticalInput,
+        cameraOrbitAngle,
+        dt,
+        isFlying: Boolean(propsRef.current.isFlying),
+        targetAltitude:
+          propsRef.current.flightTargetAltitude ?? GOD_FLIGHT_SPEC.defaultCruiseAltitude,
+        permission: activeFlightPerm,
+      });
 
-        const worldMoveX = normX * cosCam - normZ * sinCam;
-        const worldMoveZ = normX * sinCam + normZ * cosCam;
+      playerPos.x = kinematics.nextX;
+      playerPos.y = kinematics.nextY;
+      playerPos.z = kinematics.nextZ;
 
-        const speed = 14 * dt;
-        playerPos.x += worldMoveX * speed;
-        playerPos.z += worldMoveZ * speed;
+      if (
+        verticalInput !== 0 &&
+        propsRef.current.isFlying &&
+        activeFlightPerm.allowed &&
+        Math.abs(
+          kinematics.nextTargetAltitude -
+            (propsRef.current.flightTargetAltitude ?? GOD_FLIGHT_SPEC.defaultCruiseAltitude)
+        ) > 0.05
+      ) {
+        propsRef.current.onFlightAltitudeChange?.(Number(kinematics.nextTargetAltitude.toFixed(1)));
+      }
 
-        playerPos.x = Math.max(-36, Math.min(36, playerPos.x));
-        playerPos.z = Math.max(-36, Math.min(36, playerPos.z));
-
+      // Only enforce ground Citadel keep wall collision when below Citadel Wall Bypass Altitude
+      if (!kinematics.bypassesCitadelWalls) {
         const resolvedKeepCollision = resolvePlayerCitadelCollisionCannon({
           desiredX: playerPos.x,
           desiredZ: playerPos.z,
@@ -965,33 +1076,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
         playerPos.x = resolvedKeepCollision.resolvedX;
         playerPos.z = resolvedKeepCollision.resolvedZ;
+      }
 
-        const targetRot = Math.atan2(worldMoveX, worldMoveZ);
+      if (kinematics.isMovingHorizontally) {
+        const targetRot = Math.atan2(kinematics.worldMoveX, kinematics.worldMoveZ);
         playerMesh.rotation.y = targetRot;
-
-        playerMesh.position.y = Math.sin(now * 0.015) * 0.15;
 
         if (propsRef.current.onPlayerPositionChange) {
           propsRef.current.onPlayerPositionChange(playerPos.x, playerPos.z);
         }
-      } else {
-        playerMesh.position.y = 0;
       }
 
+      const hoverBob = kinematics.isAirborne
+        ? Math.sin(now * 0.0045) * 0.24
+        : kinematics.isMovingHorizontally
+          ? Math.sin(now * 0.015) * 0.15
+          : 0;
+
       playerMesh.position.x = playerPos.x;
+      playerMesh.position.y = playerPos.y + hoverBob;
       playerMesh.position.z = playerPos.z;
 
-      // Sync Player Aura Mesh if Realm, Great Dao Halo Count, or Red-Name Karma changed
+      // Sync Player Aura & Species Mesh if Realm, Great Dao Halo Count, Red-Name Karma, or Appearance changed
+      const currentAppearanceSig = JSON.stringify(propsRef.current.playerAppearance);
       if (
         propsRef.current.cultivationRealmIndex !== lastBuiltRealm ||
         propsRef.current.masteredGreatDaos !== lastBuiltDaos ||
-        propsRef.current.isRedName !== lastBuiltRedName
+        propsRef.current.isRedName !== lastBuiltRedName ||
+        currentAppearanceSig !== lastBuiltAppearanceSig
       ) {
         const prevRotY = playerMesh.rotation.y;
         scene.remove(playerMesh);
         lastBuiltRealm = propsRef.current.cultivationRealmIndex;
         lastBuiltDaos = propsRef.current.masteredGreatDaos;
         lastBuiltRedName = propsRef.current.isRedName;
+        lastBuiltAppearanceSig = currentAppearanceSig;
         playerMesh = createPlayerMesh(
           propsRef.current.playerAppearance,
           lastBuiltRealm,
@@ -1001,6 +1120,35 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         playerMesh.position.copy(playerPos);
         playerMesh.rotation.y = prevRotY;
         scene.add(playerMesh);
+      }
+
+      // Toggle & Animate Sovereign Nine-Heavens Imperial Flying Sword & Astral Cloud Halo
+      const godFlightMount = playerMesh.getObjectByName('GodFlightMountGroup');
+      if (godFlightMount) {
+        godFlightMount.visible = kinematics.isAirborne;
+        if (kinematics.isAirborne) {
+          const outerHalo = godFlightMount.getObjectByName('GodFlightHaloOuter');
+          if (outerHalo) outerHalo.rotation.z += dt * 2.4;
+          const innerHalo = godFlightMount.getObjectByName('GodFlightHaloInner');
+          if (innerHalo) innerHalo.rotation.z -= dt * 3.6;
+        }
+      }
+
+      // Animate Sovereign Spatial Teleport Warp Portal Rings when teleporting
+      const godTeleportWarp = playerMesh.getObjectByName('GodTeleportWarpGroup');
+      if (godTeleportWarp) {
+        if (teleportFlashTimer > 0) {
+          teleportFlashTimer = Math.max(0, teleportFlashTimer - dt);
+          godTeleportWarp.visible = true;
+          const pulseScale = 1.0 + (0.65 - teleportFlashTimer) * 0.9;
+          godTeleportWarp.scale.set(pulseScale, pulseScale, pulseScale);
+          const ringH = godTeleportWarp.getObjectByName('GodTeleportRingHorizontal');
+          if (ringH) ringH.rotation.z += dt * 9.5;
+          const ringV = godTeleportWarp.getObjectByName('GodTeleportRingVertical');
+          if (ringV) ringV.rotation.y += dt * 11.0;
+        } else {
+          godTeleportWarp.visible = false;
+        }
       }
 
       // Animate Cultivator Aura Visual Cues
@@ -1023,8 +1171,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         divineHalos.rotation.z += dt * 1.4;
       }
 
-      // 3. Smooth Damped Third-Person Horizon-Framing Camera (Genshin Impact / GTA V Vista)
-      const camDist = 17.5;
+      // 3. Smooth Damped Third-Person Horizon-Framing Camera (Genshin Impact / GTA V Vista + Aerial Flight Tracking)
+      const camDist = kinematics.isAirborne ? 19.5 : 17.5;
       const camHeight = 6.8;
       const targetCamX = playerPos.x + Math.sin(cameraOrbitAngle) * camDist;
       const targetCamZ = playerPos.z + Math.cos(cameraOrbitAngle) * camDist;

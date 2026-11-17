@@ -81,7 +81,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
   );
   const [copied, setCopied] = useState(false);
 
-  // Software & Hardware Architect Optimizer interactive state (15/11/2026 — v1.5.0)
+  // Software & Hardware Architect Optimizer interactive state (17/11/2026 — v1.5.0)
   const [isaId, setIsaId] = useState<HardwareIsaId>('x86_64_avx512');
   const [gpuBackendId, setGpuBackendId] = useState<GpuComputeBackendId>('vulkan_1_3');
   const [thermalEnvelopeId, setThermalEnvelopeId] =
@@ -168,7 +168,7 @@ export const CppArchitectureModal: React.FC<CppArchitectureModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-slate-200">
-          {/* Software Architect & Hardware Architect Compatibility & Optimization Panel (15/11/2026) */}
+          {/* Software Architect & Hardware Architect Compatibility & Optimization Panel (17/11/2026) */}
           <div
             className="p-4 rounded-xl bg-slate-950/95 border border-emerald-500/40 space-y-4"
             data-testid="architect-optimization-panel"

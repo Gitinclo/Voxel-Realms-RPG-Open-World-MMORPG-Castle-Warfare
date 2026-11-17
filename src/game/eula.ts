@@ -5,9 +5,9 @@
 
 import { PRIMARY_ADMIN_EMAIL } from './adminModeration';
 
-export const EULA_VERSION = '1.5.0-2026-11-15' as const;
-export const EULA_EFFECTIVE_DATE_DISPLAY = '15/11/2026' as const;
-export const EULA_EFFECTIVE_DATE_ISO = '2026-11-15' as const;
+export const EULA_VERSION = '1.5.0-2026-11-17' as const;
+export const EULA_EFFECTIVE_DATE_DISPLAY = '17/11/2026' as const;
+export const EULA_EFFECTIVE_DATE_ISO = '2026-11-17' as const;
 export const EULA_LICENSOR_EMAIL = PRIMARY_ADMIN_EMAIL;
 export const EULA_STORAGE_KEY = 'voxel_realms_eula_acceptance_v1' as const;
 
@@ -168,7 +168,7 @@ export const EULA_ARTICLES: readonly EulaArticle[] = [
     summary:
       'Details EULA version tracking, cryptographic acceptance receipts, and official contact routing.',
     clauses: [
-      'Versioned EULA Acceptance: Material updates increment EULA_VERSION (currently 1.5.0-2026-11-15) and prompt Commanders to review and record updated acceptance.',
+      'Versioned EULA Acceptance: Material updates increment EULA_VERSION (currently 1.5.0-2026-11-17) and prompt Commanders to review and record updated acceptance.',
       'Official Contact Directory: Direct all EULA questions, licensing inquiries, or moderation appeals to creatergame31@gmail.com or submit a verified ticket via the in-app GM / Admin / Mod Console.',
     ],
   },

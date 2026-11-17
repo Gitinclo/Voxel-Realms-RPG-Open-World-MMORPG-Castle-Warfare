@@ -1,7 +1,7 @@
 # End User License Agreement (EULA)
 
-**Effective Date & Last Updated:** November 15, 2026 (`15/11/2026`)  
-**EULA Version:** `1.5.0-2026-11-15`  
+**Effective Date & Last Updated:** November 17, 2026 (`17/11/2026`)  
+**EULA Version:** `1.5.0-2026-11-17`  
 **Licensor & Root Sovereign Administrator:** Voxel Realms RPG Studio Contributors (`Gitinclo` · [creatergame31@gmail.com](mailto:creatergame31@gmail.com))
 
 IMPORTANT — READ CAREFULLY: This End User License Agreement ("**EULA**" or "**Agreement**") is a binding agreement between you ("**User**", "**Player**", "**Commander**", or "**You**") and the **Voxel Realms RPG Studio Contributors** ("**Licensor**", "**we**", "**us**", or "**our**", administered by **[creatergame31@gmail.com](mailto:creatergame31@gmail.com)**) governing your download, installation, access to, and use of the **Voxel Realms RPG: Open World MMORPG & Castle Warfare** client application, 3D WebGL2 assets, authoritative 20Hz multiplayer siege servers, Cloud SQL / Cloud Firestore persistence services, and related online features (collectively, the "**Game**" or "**Licensed Application**").

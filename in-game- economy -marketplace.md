@@ -1,6 +1,6 @@
 # In-Game Economy & Marketplace Architecture (`in-game- economy -marketplace.md`)
 
-**Document Status:** Production Architecture & Balance Specification (`v1.5.0 · 15/11/2026`)  
+**Document Status:** Production Architecture & Balance Specification (`v1.5.0 · 17/11/2026`)  
 **Supreme Economic Authority:** `creatergame31@gmail.com` (`Clearance Lv. 999` · `Root Creator God Sovereignty`)  
 **Related Specifications:** [`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md) · [`QI_ECONOMY.md`](./QI_ECONOMY.md) · [`BALANCE_PHILOSOPHY.md`](./BALANCE_PHILOSOPHY.md) · [`SECURITY.md`](./SECURITY.md)
 

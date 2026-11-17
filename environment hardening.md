@@ -1,6 +1,6 @@
 # 🔒 Environment, Runtime & Infrastructure Hardening (`environment hardening.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Security Authority**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **Implementation Modules**: `src/game/serverAuth.ts`, `src/game/serverHardening.ts`, `src/game/antiCheat.ts`, `src/middleware/auth.ts`, `firestore.rules`, `server.ts`
 

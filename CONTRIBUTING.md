@@ -103,7 +103,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 │   ├── game/                 # Pure decoupled game logic & co-located *.test.ts suites (27 suites)
 │   │   ├── adminModeration.ts      # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── antiCheat.ts            # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
-│   │   ├── architectOptimization.ts# 15/11/2026 Software & Hardware Architect optimization engine
+│   │   ├── architectOptimization.ts# 17/11/2026 Software & Hardware Architect optimization engine
 │   │   ├── avatarCloneShadow.ts    # MMORPG Avatar, Clone (Tactical/Combat/Cosmetic) & Shadow (Mimic/Echo/Boss) engine
 │   │   ├── clanMath.ts             # Clan buffs, vault rations & 9-sector outpost math
 │   │   ├── cosmologicalTreeD3.ts   # Pure D3 hierarchy layout & radial/horizontal projection engine
@@ -144,7 +144,7 @@ For a comprehensive technical deep-dive, see **[`ARCHITECTURE.md`](./ARCHITECTUR
 ├── deployment validation.md  # 4-stage pre-deploy, verify:ops, Cloud SQL/Firestore & smoke gate
 ├── discipline.md             # Engineering Discipline, Architect-First & Anti-Spaghetti Constitution
 ├── environment hardening.md  # Fail-closed secrets, HttpOnly cookies, CSRF, WS bounds & Firestore hardening
-├── EULA.md                   # End User License Agreement (v1.5.0-2026-11-15)
+├── EULA.md                   # End User License Agreement (v1.5.0-2026-11-17)
 ├── Four-Path Cultivation.md  # Four-Path Cultivation guide, Getting Started & .env.example setup
 ├── GOVERNANCE.md             # Roles, RBAC clearances & RFC decision-making process
 ├── incident response.md      # SEV-1 to SEV-4 triage SLAs, quarantine pardons & recovery playbooks

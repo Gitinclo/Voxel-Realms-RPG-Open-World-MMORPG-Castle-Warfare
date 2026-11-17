@@ -1,6 +1,6 @@
 # 🚀 Deployment Validation Runbook (`deployment validation.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Release Authority**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **Target Environments**: Google Cloud Run (`asia-southeast1`), Cloud SQL PostgreSQL (`ai-studio-416287a7`), Cloud Firestore (`dev-ivy-6v0ns`), and GitHub Releases (`.github/workflows/release.yml`)
 

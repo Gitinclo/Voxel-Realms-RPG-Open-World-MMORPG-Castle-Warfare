@@ -1,6 +1,6 @@
 # 🧠 Architectural Philosophy (`PHILOSOPHY.md`)
 
-> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)  
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)  
 > **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service)
 
 - **Functional Core / Imperative Shell**: Every system (`math.ts`, `cultivationMath.ts`, `avatarCloneShadow.ts`, `siegeNetProtocol.ts`, `omniverse.ts`, `eula.ts`) exposes pure TypeScript functions testable without DOM, WebGL, or live sockets.

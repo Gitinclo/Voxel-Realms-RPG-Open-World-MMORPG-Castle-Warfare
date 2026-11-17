@@ -1,6 +1,6 @@
 # 🛡️ Engineering Discipline & Anti-Spaghetti Constitution (`discipline.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Sovereign Root Owner & Lead Architect**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **Enforcement Gate**: `npm run validate` (`lint` + `lint:rules` + `format:check` + `test` [`171` tests across `29` suites] + `build`)
 

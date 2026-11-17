@@ -1,6 +1,6 @@
 # 📡 20Hz 50v50 Siege Wire Protocol Specification (`PROTOCOL_SPEC.md`)
 
-> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)  
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)  
 > **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service)
 
 Implemented in [`src/game/siegeNetProtocol.ts`](./src/game/siegeNetProtocol.ts):

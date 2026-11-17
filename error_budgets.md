@@ -1,6 +1,6 @@
 # 📉 Error Budgets Policy (`error_budgets.md`)
 
-> **Project:** Voxel Realms RPG (`v1.5.0` · `15/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
+> **Project:** Voxel Realms RPG (`v1.5.0` · `17/11/2026`) · **Root Authority:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 
 - At `99.9%` monthly SLO, the rolling 30-day error budget is **`43.2 minutes`**.
 - **Green (`> 50%` remaining)**: Normal feature velocity.

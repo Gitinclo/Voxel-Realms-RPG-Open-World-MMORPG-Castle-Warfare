@@ -1,7 +1,7 @@
 # ⚖️ Complete Legal Agreements, Policies & Compliance Stack (`LEGAL.md`)
 
-**Effective Date & Last Updated:** November 15, 2026 (`15/11/2026`)  
-**Document Stack Version:** `v1.5.0-2026-11-15`  
+**Effective Date & Last Updated:** November 17, 2026 (`17/11/2026`)  
+**Document Stack Version:** `v1.5.0-2026-11-17`  
 **Service Provider / Licensor / Data Controller:** Voxel Realms RPG Studio & Sovereign Root Administrator (**[creatergame31@gmail.com](mailto:creatergame31@gmail.com)**)
 
 ---
@@ -56,7 +56,7 @@ This Cookie & LocalStorage Policy explains what browser storage mechanisms and c
 
 | Storage Key                        | Category           | Purpose & Data Stored                                                                                                        |
 | :--------------------------------- | :----------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| `voxel_realms_eula_acceptance_v1`  | Legal Compliance   | Stores your accepted `EULA_VERSION` (`1.5.0-2026-11-15`), timestamp, email, and 32-bit FNV-1a receipt hash (`EULA-ACK-...`). |
+| `voxel_realms_eula_acceptance_v1`  | Legal Compliance   | Stores your accepted `EULA_VERSION` (`1.5.0-2026-11-17`), timestamp, email, and 32-bit FNV-1a receipt hash (`EULA-ACK-...`). |
 | `voxel_realms_daily_login_v1`      | Gameplay State     | Tracks your 7-day consecutive login streak and Veteran Scroll comprehension progress.                                        |
 | `voxel_realms_vip_subscription_v1` | Subscription State | Caches your local VIP Member Covenant tier (`0–3`), billing cycle, daily stipend claim date, and loyalty points.             |
 | `voxel_realms_lore_codex_state_v1` | Gameplay State     | Persists unlocked Open-World Biome (`8`) and Monster (`Lv. 1–1000`) Lore Codex entries and claimed bounty flags.             |

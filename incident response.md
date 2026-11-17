@@ -1,6 +1,6 @@
 # 🚨 Incident Response, Quarantine & Recovery Runbook (`incident response.md`)
 
-- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `15/11/2026`)
+- **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Incident Commander & Root Owner**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
 - **Related Runbooks**: [`monitoring.md`](./monitoring.md) · [`backups.md`](./backups.md) · [`environment hardening.md`](./environment%20hardening.md) · [`deployment validation.md`](./deployment%20validation.md)
 

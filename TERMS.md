@@ -1,6 +1,6 @@
 # Terms and Conditions
 
-**Last updated:** November 15, 2026 (`15/11/2026`)
+**Last updated:** November 17, 2026 (`17/11/2026`)
 
 Please read these Terms and Conditions ("Terms") carefully before downloading, registering for, accessing, or playing **Voxel Realms: Kingdom & Cultivation RPG** ("the App", "we", "our", or "us").
 
