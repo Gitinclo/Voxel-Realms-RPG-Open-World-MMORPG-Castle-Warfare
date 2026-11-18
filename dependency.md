@@ -43,35 +43,34 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 2. Development & Build Dependencies
 
-| Package                                  | Locked Version                    | Scope       | Architectural Purpose                               |
-| :--------------------------------------- | :-------------------------------- | :---------- | :-------------------------------------------------- |
-| `@firebase/eslint-plugin-security-rules` | `0.0.2`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `@types/express`                         | `4.17.25`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `@types/node`                            | `22.20.5`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `@types/react`                           | `19.3.0`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `@types/react-dom`                       | `19.3.0`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `autoprefixer`                           | `10.6.2`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `esbuild`                                | `0.28.2`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `eslint`                                 | `10.15.0`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `picomatch`                              | `file:vendor/picomatch-4.0.8.tgz` | Dev / Build | Patched extglob ReDoS guard (`GHSA-fc5q-39xc-vjpf`) |
-| `prettier`                               | `3.10.1`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `tailwindcss`                            | `4.3.5`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
-| `typescript`                             | `7.0.2`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
+| Package                                  | Locked Version | Scope       | Architectural Purpose                     |
+| :--------------------------------------- | :------------- | :---------- | :---------------------------------------- |
+| `@firebase/eslint-plugin-security-rules` | `0.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting |
+| `@types/express`                         | `4.17.25`      | Dev / Build | Toolchain / Type checking / Rules linting |
+| `@types/node`                            | `22.20.5`      | Dev / Build | Toolchain / Type checking / Rules linting |
+| `@types/react`                           | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting |
+| `@types/react-dom`                       | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting |
+| `autoprefixer`                           | `10.6.2`       | Dev / Build | Toolchain / Type checking / Rules linting |
+| `esbuild`                                | `0.28.2`       | Dev / Build | Toolchain / Type checking / Rules linting |
+| `eslint`                                 | `10.15.0`      | Dev / Build | Toolchain / Type checking / Rules linting |
+| `prettier`                               | `3.10.1`       | Dev / Build | Toolchain / Type checking / Rules linting |
+| `tailwindcss`                            | `4.3.5`        | Dev / Build | Toolchain / Type checking / Rules linting |
+| `typescript`                             | `7.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting |
 
 ---
 
 ## 3. Security & Engine Overrides (`npm audit --audit-level=high` = `0` Vulnerabilities)
 
-| Package                     | Forced Version             | Mechanism           | Rationale                                                                    |
-| :-------------------------- | :------------------------- | :------------------ | :--------------------------------------------------------------------------- |
-| `@firebase/app`             | `0.16.2`                   | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
-| `@firebase/app-compat`      | `0.5.18`                   | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
-| `@firebase/database`        | `1.1.5`                    | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
-| `@firebase/database-compat` | `2.1.7`                    | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
-| `@grpc/grpc-js`             | `1.14.7`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
-| `esbuild`                   | `0.28.2`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
-| `minimatch`                 | `11.0.8`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
-| `picomatch`                 | `$picomatch` (`4.0.8` tgz) | Transitive Override | Mitigates `GHSA-fc5q-39xc-vjpf` single-branch extglob ReDoS (`0` high vulns) |
+| Package                     | Forced Version                  | Mechanism           | Rationale                                                                    |
+| :-------------------------- | :------------------------------ | :------------------ | :--------------------------------------------------------------------------- |
+| `@firebase/app`             | `0.16.2`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/app-compat`      | `0.5.18`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/database`        | `1.1.5`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/database-compat` | `2.1.7`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@grpc/grpc-js`             | `1.14.7`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `esbuild`                   | `0.28.2`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `minimatch`                 | `11.0.8`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `picomatch`                 | `npm:@ryotsu/picomatch@4.0.7-a` | Transitive Override | Mitigates `GHSA-fc5q-39xc-vjpf` single-branch extglob ReDoS (`0` high vulns) |
 
 ---
 
