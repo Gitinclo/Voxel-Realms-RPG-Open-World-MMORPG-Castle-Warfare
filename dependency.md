@@ -9,63 +9,69 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 1. Node.js & Runtime Dependencies (`package.json`)
 
-| Package                  | Version Range | Scope   | Architectural Purpose |
-| :----------------------- | :------------ | :------ | :-------------------- |
-| `@google/genai`          | `^2.32.0`     | Runtime | Production dependency |
-| `@tailwindcss/vite`      | `^4.3.5`      | Runtime | Production dependency |
-| `@tweenjs/tween.js`      | `^25.0.0`     | Runtime | Production dependency |
-| `@types/canvas-confetti` | `^1.9.0`      | Runtime | Production dependency |
-| `@types/d3`              | `^7.4.3`      | Runtime | Production dependency |
-| `@types/pg`              | `^8.23.1`     | Runtime | Production dependency |
-| `@types/three`           | `^0.187.0`    | Runtime | Production dependency |
-| `@vitejs/plugin-react`   | `^6.3.0`      | Runtime | Production dependency |
-| `cannon-es`              | `^0.20.0`     | Runtime | Production dependency |
-| `canvas-confetti`        | `^1.9.4`      | Runtime | Production dependency |
-| `d3`                     | `^7.9.2`      | Runtime | Production dependency |
-| `dotenv`                 | `^17.2.3`     | Runtime | Production dependency |
-| `drizzle-kit`            | `^0.31.11`    | Runtime | Production dependency |
-| `drizzle-orm`            | `^0.45.4`     | Runtime | Production dependency |
-| `express`                | `^4.21.2`     | Runtime | Production dependency |
-| `firebase`               | `^13.3.0`     | Runtime | Production dependency |
-| `firebase-admin`         | `^14.5.1`     | Runtime | Production dependency |
-| `lucide-react`           | `^0.546.0`    | Runtime | Production dependency |
-| `motion`                 | `^12.23.24`   | Runtime | Production dependency |
-| `pg`                     | `^8.23.1`     | Runtime | Production dependency |
-| `react`                  | `^19.0.1`     | Runtime | Production dependency |
-| `react-dom`              | `^19.0.1`     | Runtime | Production dependency |
-| `simplex-noise`          | `^4.0.3`      | Runtime | Production dependency |
-| `three`                  | `^0.187.0`    | Runtime | Production dependency |
-| `three-mesh-bvh`         | `^0.9.18`     | Runtime | Production dependency |
-| `tsx`                    | `^4.21.0`     | Runtime | Production dependency |
-| `vite`                   | `^8.3.8`      | Runtime | Production dependency |
+| Package                  | Locked Version | Scope   | Architectural Purpose |
+| :----------------------- | :------------- | :------ | :-------------------- |
+| `@google/genai`          | `2.32.0`       | Runtime | Production dependency |
+| `@tailwindcss/vite`      | `4.3.5`        | Runtime | Production dependency |
+| `@tweenjs/tween.js`      | `25.0.0`       | Runtime | Production dependency |
+| `@types/canvas-confetti` | `1.9.0`        | Runtime | Production dependency |
+| `@types/d3`              | `7.4.3`        | Runtime | Production dependency |
+| `@types/pg`              | `8.23.1`       | Runtime | Production dependency |
+| `@types/three`           | `0.187.0`      | Runtime | Production dependency |
+| `@vitejs/plugin-react`   | `6.3.0`        | Runtime | Production dependency |
+| `cannon-es`              | `0.20.0`       | Runtime | Production dependency |
+| `canvas-confetti`        | `1.9.4`        | Runtime | Production dependency |
+| `d3`                     | `7.9.2`        | Runtime | Production dependency |
+| `dotenv`                 | `17.4.2`       | Runtime | Production dependency |
+| `drizzle-kit`            | `0.31.11`      | Runtime | Production dependency |
+| `drizzle-orm`            | `0.45.4`       | Runtime | Production dependency |
+| `express`                | `4.22.3`       | Runtime | Production dependency |
+| `firebase`               | `12.19.0`      | Runtime | Production dependency |
+| `firebase-admin`         | `14.5.1`       | Runtime | Production dependency |
+| `lucide-react`           | `0.546.0`      | Runtime | Production dependency |
+| `motion`                 | `12.43.0`      | Runtime | Production dependency |
+| `pg`                     | `8.23.1`       | Runtime | Production dependency |
+| `react`                  | `19.3.1`       | Runtime | Production dependency |
+| `react-dom`              | `19.3.1`       | Runtime | Production dependency |
+| `simplex-noise`          | `4.0.3`        | Runtime | Production dependency |
+| `three`                  | `0.187.0`      | Runtime | Production dependency |
+| `three-mesh-bvh`         | `0.9.18`       | Runtime | Production dependency |
+| `tsx`                    | `4.23.15`      | Runtime | Production dependency |
+| `vite`                   | `8.3.8`        | Runtime | Production dependency |
 
 ---
 
 ## 2. Development & Build Dependencies
 
-| Package                                  | Version Range | Scope       | Architectural Purpose                     |
-| :--------------------------------------- | :------------ | :---------- | :---------------------------------------- |
-| `@firebase/eslint-plugin-security-rules` | `^0.0.2`      | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/express`                         | `^4.17.21`    | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/node`                            | `^22.14.0`    | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/react`                           | `^19.3.0`     | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/react-dom`                       | `^19.3.0`     | Dev / Build | Toolchain / Type checking / Rules linting |
-| `autoprefixer`                           | `^10.6.2`     | Dev / Build | Toolchain / Type checking / Rules linting |
-| `esbuild`                                | `^0.28.2`     | Dev / Build | Toolchain / Type checking / Rules linting |
-| `eslint`                                 | `^10.15.0`    | Dev / Build | Toolchain / Type checking / Rules linting |
-| `prettier`                               | `^3.10.1`     | Dev / Build | Toolchain / Type checking / Rules linting |
-| `tailwindcss`                            | `^4.3.5`      | Dev / Build | Toolchain / Type checking / Rules linting |
-| `typescript`                             | `^7.0.2`      | Dev / Build | Toolchain / Type checking / Rules linting |
+| Package                                  | Locked Version                    | Scope       | Architectural Purpose                               |
+| :--------------------------------------- | :-------------------------------- | :---------- | :-------------------------------------------------- |
+| `@firebase/eslint-plugin-security-rules` | `0.0.2`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `@types/express`                         | `4.17.25`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `@types/node`                            | `22.20.5`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `@types/react`                           | `19.3.0`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `@types/react-dom`                       | `19.3.0`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `autoprefixer`                           | `10.6.2`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `esbuild`                                | `0.28.2`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `eslint`                                 | `10.15.0`                         | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `picomatch`                              | `file:vendor/picomatch-4.0.8.tgz` | Dev / Build | Patched extglob ReDoS guard (`GHSA-fc5q-39xc-vjpf`) |
+| `prettier`                               | `3.10.1`                          | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `tailwindcss`                            | `4.3.5`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
+| `typescript`                             | `7.0.2`                           | Dev / Build | Toolchain / Type checking / Rules linting           |
 
 ---
 
-## 3. Security Overrides (`npm audit --audit-level=high` = `0` Vulnerabilities)
+## 3. Security & Engine Overrides (`npm audit --audit-level=high` = `0` Vulnerabilities)
 
-| Package         | Forced Range | Mechanism           | Rationale                                               |
-| :-------------- | :----------- | :------------------ | :------------------------------------------------------ |
-| `@grpc/grpc-js` | `^1.14.7`    | Transitive Override | Mitigates upstream security advisories (`0` high vulns) |
-| `esbuild`       | `^0.28.2`    | Transitive Override | Mitigates upstream security advisories (`0` high vulns) |
-| `minimatch`     | `^11.0.8`    | Transitive Override | Mitigates upstream security advisories (`0` high vulns) |
+| Package                     | Forced Version             | Mechanism           | Rationale                                                                    |
+| :-------------------------- | :------------------------- | :------------------ | :--------------------------------------------------------------------------- |
+| `@firebase/app`             | `0.16.2`                   | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/app-compat`      | `0.5.18`                   | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/database`        | `1.1.5`                    | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@firebase/database-compat` | `2.1.7`                    | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)    |
+| `@grpc/grpc-js`             | `1.14.7`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `esbuild`                   | `0.28.2`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `minimatch`                 | `11.0.8`                   | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                      |
+| `picomatch`                 | `$picomatch` (`4.0.8` tgz) | Transitive Override | Mitigates `GHSA-fc5q-39xc-vjpf` single-branch extglob ReDoS (`0` high vulns) |
 
 ---
 

@@ -13,5 +13,5 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm install --no-audit
+      - run: npm ci --no-audit
       - run: npm audit --audit-level=high && npm run lint:rules && npm run test:rules
