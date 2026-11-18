@@ -32,12 +32,17 @@ import {
   GitBranch,
   Mail,
   Scale,
+  ShoppingBag,
+  AlertTriangle,
+  DownloadCloud,
 } from 'lucide-react';
-import { CharacterAppearance, GameResources } from '../types/game';
+import { CharacterAppearance, GameResources, ResourceNode } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { formatBigInt } from '../game/math';
 import { getSpeciesSpec } from '../game/species';
 import { GOD_TELEPORT_SPEC, GodTeleportWaypointId } from '../game/godModeCharacter';
+import { ChunkBoundaryProximityEvaluation } from '../game/openWorld3DEngine';
+import { Minimap } from './Minimap';
 import { sound } from '../game/audio';
 
 interface GameHUDProps {
@@ -97,6 +102,16 @@ interface GameHUDProps {
   onTouchMove?: (delta: { x: number; y: number }) => void;
   onTouchEnd?: () => void;
   onActionClick?: (action: 'attack' | 'gather' | 'jump') => void;
+  playerX?: number;
+  playerZ?: number;
+  resourceNodes?: ResourceNode[];
+  onSelectResourceNode?: (node: ResourceNode) => void;
+  boundaryStatus?: ChunkBoundaryProximityEvaluation;
+  streamedChunkCount?: number;
+  onFetchNewAreaData?: () => void;
+  isMarketplaceOpen?: boolean;
+  onToggleMarketplace?: () => void;
+  onOpenMarketplace?: () => void;
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -156,12 +171,31 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onTouchMove,
   onTouchEnd,
   onActionClick,
+  playerX = 0,
+  playerZ = 18,
+  resourceNodes = [],
+  onSelectResourceNode,
+  boundaryStatus,
+  streamedChunkCount = 9,
+  onFetchNewAreaData,
+  isMarketplaceOpen = false,
+  onToggleMarketplace,
+  onOpenMarketplace,
 }) => {
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
   const [isInventoryDrawerOpen, setIsInventoryDrawerOpen] = useState(false);
   const [isEngineSettingsOpen, setIsEngineSettingsOpen] = useState(false);
   const [isMoreHubOpen, setIsMoreHubOpen] = useState(false);
   const [isTeleportMenuOpen, setIsTeleportMenuOpen] = useState(false);
+
+  const handleToggleMarketplace = () => {
+    if (onToggleMarketplace) {
+      onToggleMarketplace();
+    } else if (onOpenMarketplace) {
+      onOpenMarketplace();
+    }
+  };
+  const hasMarketplaceHandler = Boolean(onToggleMarketplace || onOpenMarketplace);
 
   // Touch joystick tracking
   const joystickBaseRef = useRef<HTMLDivElement>(null);
@@ -213,9 +247,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   };
 
   const hasMoreAlert = canClaimVipStipend || canClaimDailyLogin;
+  const isNearChunkEdge = Boolean(boundaryStatus?.isNearChunkEdge);
 
   return (
-    <div className="absolute inset-0 z-30 pointer-events-none select-none flex flex-col justify-between p-2.5 sm:p-4">
+    <div
+      data-testid="game-hud-root"
+      data-screen-shake={isNearChunkEdge ? 'active' : 'idle'}
+      style={
+        isNearChunkEdge && boundaryStatus
+          ? {
+              transform: `translate(${(boundaryStatus.shakeOffsetX * 10).toFixed(2)}px, ${(boundaryStatus.shakeOffsetY * 10).toFixed(2)}px)`,
+            }
+          : undefined
+      }
+      className="absolute inset-0 z-30 pointer-events-none select-none flex flex-col justify-between p-2.5 sm:p-4 transition-transform duration-75"
+    >
       {/* Consolidated Top Header Bar */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-2">
         {/* Top Row: Lord Identity Card + Primary Currencies & Expandable Inventory Drawer */}
@@ -484,6 +530,29 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 {formatBigInt(resources.diamond)}
               </span>
             </button>
+
+            {hasMarketplaceHandler && (
+              <button
+                type="button"
+                data-testid="hud-marketplace-btn"
+                aria-pressed={isMarketplaceOpen}
+                onClick={() => {
+                  sound.playSwing();
+                  handleToggleMarketplace();
+                }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isMarketplaceOpen
+                    ? 'bg-amber-400 text-slate-950 border-amber-200 shadow-md shadow-amber-500/40'
+                    : 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-400/60 text-amber-200'
+                }`}
+                title="Toggle Merchant Guild & Imperial Marketplace [M]"
+              >
+                <ShoppingBag
+                  className={`w-3.5 h-3.5 ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-400'}`}
+                />
+                <span>Merchant Guild</span>
+              </button>
+            )}
 
             {/* Expandable Secondary Resources & Scrolls Inventory Drawer Trigger */}
             <button
@@ -794,27 +863,79 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
       </div>
 
-      {/* Middle Interactive Touch Overlay (Raised above bottom dock with enlarged action buttons) */}
-      <div className="flex-1 flex items-end justify-between pointer-events-none pb-5 sm:pb-6 mb-1">
-        {/* On-screen Virtual Joystick (Bottom Left) */}
+      {/* Chunk Boundary Visual Warning & Area Data Fetch Prompt Banner */}
+      {isNearChunkEdge && boundaryStatus && (
         <div
-          ref={joystickBaseRef}
-          onMouseDown={handleJoystickTouchStart}
-          onTouchStart={handleJoystickTouchStart}
-          onTouchMove={handleJoystickMove}
-          onTouchEnd={handleJoystickTouchEnd}
-          className="pointer-events-auto relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-950/80 border-2 border-slate-700/80 flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100 shadow-xl"
-          title="Virtual D-Pad (Touch / Drag to move hero)"
+          data-testid="hud-chunk-boundary-warning"
+          role="alert"
+          className="pointer-events-auto mx-auto mt-1 max-w-xl w-full px-4 py-2.5 rounded-2xl bg-amber-950/95 border-2 border-amber-400 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-2.5"
         >
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 font-mono font-bold">
-            MOVE
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="min-w-0">
+              <div className="text-xs font-bold font-cinzel text-amber-100">
+                Approaching {boundaryStatus.approachingDirection} Chunk Edge (
+                {boundaryStatus.distanceToEdgeMeters.toFixed(1)}m)
+              </div>
+              <div className="text-[11px] font-mono text-amber-200/90 truncate">
+                Seismic Frontier Tremor Active · Prompting Fetch for Sector [
+                {boundaryStatus.targetChunkKey}]
+              </div>
+            </div>
           </div>
-          <div
-            className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30 transition-transform duration-75"
-            style={{
-              transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`,
-            }}
+
+          {onFetchNewAreaData && (
+            <button
+              type="button"
+              data-testid="hud-fetch-area-data-btn"
+              onClick={() => {
+                sound.playUpgradeFanfare();
+                onFetchNewAreaData();
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-mono font-black flex items-center gap-1.5 shadow-md cursor-pointer shrink-0 whitespace-nowrap"
+            >
+              <DownloadCloud className="w-4 h-4" />
+              <span>Fetch New Area Data</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Middle Interactive Touch Overlay (Minimap + Virtual Joystick on Left, Quick Actions on Right) */}
+      <div className="flex-1 flex items-end justify-between pointer-events-none pb-5 sm:pb-6 mb-1">
+        {/* Left Column: Real-Time Minimap + Virtual Touch Joystick */}
+        <div className="flex flex-col items-start gap-2.5">
+          <Minimap
+            playerX={playerX}
+            playerZ={playerZ}
+            resourceNodes={resourceNodes}
+            boundaryStatus={boundaryStatus}
+            streamedChunkCount={streamedChunkCount}
+            onSelectResourceNode={onSelectResourceNode}
+            onSelectCastle={onOpenCastle}
+            onFetchNewAreaData={onFetchNewAreaData}
           />
+
+          {/* On-screen Virtual Joystick (Bottom Left) */}
+          <div
+            ref={joystickBaseRef}
+            onMouseDown={handleJoystickTouchStart}
+            onTouchStart={handleJoystickTouchStart}
+            onTouchMove={handleJoystickMove}
+            onTouchEnd={handleJoystickTouchEnd}
+            className="pointer-events-auto relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-950/80 border-2 border-slate-700/80 flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100 shadow-xl"
+            title="Virtual D-Pad (Touch / Drag to move hero)"
+          >
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 font-mono font-bold">
+              MOVE
+            </div>
+            <div
+              className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30 transition-transform duration-75"
+              style={{
+                transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`,
+              }}
+            />
+          </div>
         </div>
 
         {/* Enlarged Quick Action Touch Buttons + Sovereign Divine Flight Pod (Bottom Right) */}
@@ -888,6 +1009,52 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 </button>
               )}
             </div>
+          )}
+
+          {hasMarketplaceHandler && (
+            <button
+              type="button"
+              data-testid="hud-merchant-guild-btn"
+              aria-label="Toggle Merchant Guild Marketplace"
+              aria-pressed={isMarketplaceOpen}
+              onClick={() => {
+                sound.playSwing();
+                handleToggleMarketplace();
+              }}
+              className={`relative w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-xl ${
+                isMarketplaceOpen
+                  ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 border-white text-slate-950 shadow-amber-400/50 ring-2 ring-amber-300'
+                  : 'bg-gradient-to-br from-amber-600/95 via-amber-700/95 to-slate-950 hover:from-amber-500 hover:to-amber-700 border-amber-300/90 text-amber-100 shadow-amber-950/90'
+              }`}
+              title="Toggle Merchant Guild & Imperial Marketplace (Hotkey [M])"
+            >
+              <span
+                className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.2 rounded-md text-[8px] font-mono font-black border ${
+                  isMarketplaceOpen
+                    ? 'bg-emerald-400 text-slate-950 border-white'
+                    : 'bg-slate-950 text-amber-300 border-amber-400/70'
+                }`}
+              >
+                {isMarketplaceOpen ? 'OPEN' : 'GUILD'}
+              </span>
+              <ShoppingBag
+                className={`w-6 h-6 ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-300'}`}
+              />
+              <span
+                className={`text-[9px] font-cinzel font-black leading-none tracking-tight text-center ${
+                  isMarketplaceOpen ? 'text-slate-950' : 'text-amber-100'
+                }`}
+              >
+                Merchant
+              </span>
+              <span
+                className={`text-[8px] font-mono font-bold leading-none ${
+                  isMarketplaceOpen ? 'text-slate-900' : 'text-amber-300'
+                }`}
+              >
+                Guild
+              </span>
+            </button>
           )}
 
           <button
@@ -1024,6 +1191,30 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Harvest</span>
               <span className="text-[9px] font-mono text-emerald-200">Lv 1-10</span>
             </button>
+
+            {hasMarketplaceHandler && (
+              <button
+                type="button"
+                data-testid="dock-marketplace-btn"
+                aria-pressed={isMarketplaceOpen}
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  handleToggleMarketplace();
+                }}
+                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                  isMarketplaceOpen
+                    ? 'bg-amber-400/30 border-amber-300 text-amber-100'
+                    : 'bg-amber-950/75 hover:bg-amber-900/75 border-amber-400/60 text-amber-200'
+                }`}
+              >
+                <ShoppingBag className="w-5 h-5 text-amber-400" />
+                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                  Merchant Guild
+                </span>
+                <span className="text-[9px] font-mono text-amber-300">Marketplace</span>
+              </button>
+            )}
 
             <button
               type="button"

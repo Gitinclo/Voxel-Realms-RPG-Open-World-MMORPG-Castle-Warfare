@@ -42,6 +42,7 @@ import {
   buildSceneBVHTrees,
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
+  evaluateChunkBoundaryProximity,
   resolvePlayerCitadelCollisionCannon,
 } from '../game/openWorld3DEngine';
 import {
@@ -160,6 +161,7 @@ interface GameCanvasProps {
   teleportCommand?: { seq: number; x: number; y: number; z: number } | null;
   onForwardBlink?: (facingAngleRad: number) => void;
   onShiftClickTeleport?: (x: number, y: number, z: number) => void;
+  fetchedBoundaryKeys?: readonly string[];
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -191,6 +193,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   teleportCommand = null,
   onForwardBlink,
   onShiftClickTeleport,
+  fetchedBoundaryKeys = [],
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -224,6 +227,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     teleportCommand,
     onForwardBlink,
     onShiftClickTeleport,
+    fetchedBoundaryKeys,
   });
 
   useEffect(() => {
@@ -256,6 +260,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       teleportCommand,
       onForwardBlink,
       onShiftClickTeleport,
+      fetchedBoundaryKeys,
     };
   }, [
     castleLevel,
@@ -286,6 +291,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     teleportCommand,
     onForwardBlink,
     onShiftClickTeleport,
+    fetchedBoundaryKeys,
   ]);
 
   useEffect(() => {
@@ -1214,8 +1220,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const targetCamZ = playerPos.z + Math.cos(cameraOrbitAngle) * camDist;
       const targetCamY = playerPos.y + camHeight;
 
-      camera.position.x += (targetCamX - camera.position.x) * (1 - Math.exp(-6 * dt));
-      camera.position.y += (targetCamY - camera.position.y) * (1 - Math.exp(-6 * dt));
+      const boundaryShake = evaluateChunkBoundaryProximity({
+        playerWorldX: playerPos.x,
+        playerWorldZ: playerPos.z,
+        fetchedBoundaryKeys: propsRef.current.fetchedBoundaryKeys,
+        timeSeconds: now * 0.001,
+      });
+
+      camera.position.x +=
+        (targetCamX - camera.position.x) * (1 - Math.exp(-6 * dt)) + boundaryShake.shakeOffsetX;
+      camera.position.y +=
+        (targetCamY - camera.position.y) * (1 - Math.exp(-6 * dt)) + boundaryShake.shakeOffsetY;
       camera.position.z += (targetCamZ - camera.position.z) * (1 - Math.exp(-6 * dt));
 
       const lookAheadX = playerPos.x - Math.sin(cameraOrbitAngle) * 8;

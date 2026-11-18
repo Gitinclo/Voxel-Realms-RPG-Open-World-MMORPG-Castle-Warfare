@@ -113,6 +113,11 @@ const GmailModal = lazy(() =>
 const EulaModal = lazy(() =>
   import('./components/EulaModal').then((m) => ({ default: m.EulaModal }))
 );
+const MarketplaceModal = lazy(() =>
+  import('./components/MarketplaceModal').then((m) => ({ default: m.MarketplaceModal }))
+);
+import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
+import { evaluateChunkBoundaryProximity } from './game/openWorld3DEngine';
 import {
   DAILY_LOGIN_STORAGE_KEY,
   INITIAL_DAILY_LOGIN_STATE,
@@ -225,7 +230,8 @@ type ActiveModal =
   | 'lore_history'
   | 'cosmological_admin'
   | 'gmail'
-  | 'eula';
+  | 'eula'
+  | 'marketplace';
 
 export default function App() {
   const {
@@ -276,6 +282,12 @@ export default function App() {
   const [leaderboard] = useState<LeaderboardEntry[]>(INITIAL_LEADERBOARD);
   const [selectedNpcId, setSelectedNpcId] = useState<string>(INITIAL_NPCS[0].id);
   const playerWorldPosRef = useRef<{ x: number; z: number }>({ x: 0, z: 18 });
+  const [hudPlayerCoords, setHudPlayerCoords] = useState<{ x: number; z: number }>({
+    x: 0,
+    z: 18,
+  });
+  const [fetchedBoundaryKeys, setFetchedBoundaryKeys] = useState<string[]>([]);
+  const [streamedChunkCount, setStreamedChunkCount] = useState<number>(9);
   const [aiLogs, setAiLogs] = useState<WorldAIEventLog[]>([
     {
       id: 'ai_init_1',
@@ -591,6 +603,7 @@ export default function App() {
         return;
       }
       playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      setHudPlayerCoords({ x: jump.nextX, z: jump.nextZ });
       if (jump.nextY > 0) {
         setIsFlying(true);
         setFlightAltitude(jump.nextY);
@@ -627,6 +640,7 @@ export default function App() {
         return;
       }
       playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      setHudPlayerCoords({ x: jump.nextX, z: jump.nextZ });
       if (jump.nextY > 0) {
         setIsFlying(true);
         setFlightAltitude(jump.nextY);
@@ -661,6 +675,7 @@ export default function App() {
         return;
       }
       playerWorldPosRef.current = { x: jump.nextX, z: jump.nextZ };
+      setHudPlayerCoords({ x: jump.nextX, z: jump.nextZ });
       setTeleportCommand((prev) => ({
         seq: (prev?.seq ?? 0) + 1,
         x: jump.nextX,
@@ -1775,11 +1790,17 @@ export default function App() {
   };
 
   const handleExecuteNPCTrade = (npcId: string, offer: NPCTradeOffer) => {
-    if (resources[offer.giveResource] < offer.giveAmount || offer.stock <= 0) return;
+    if (
+      (!godImmunity.immuneToAllThings && resources[offer.giveResource] < offer.giveAmount) ||
+      offer.stock <= 0
+    )
+      return;
 
     setResources((prev) => ({
       ...prev,
-      [offer.giveResource]: prev[offer.giveResource] - offer.giveAmount,
+      [offer.giveResource]: godImmunity.immuneToAllThings
+        ? prev[offer.giveResource]
+        : prev[offer.giveResource] - offer.giveAmount,
       [offer.receiveType]: prev[offer.receiveType] + offer.receiveAmount,
     }));
 
@@ -1796,6 +1817,100 @@ export default function App() {
       )
     );
     setToastMessage(`⚖️ Caravan Trade Complete: ${offer.label}!`);
+  };
+
+  const handleExecuteBulkExchange = (offer: BulkExchangeOffer) => {
+    if (!godImmunity.immuneToAllThings && resources[offer.costResource] < offer.costAmount) return;
+    setResources((prev) => ({
+      ...prev,
+      [offer.costResource]: godImmunity.immuneToAllThings
+        ? prev[offer.costResource]
+        : prev[offer.costResource] - offer.costAmount,
+      [offer.rewardResource]: prev[offer.rewardResource] + offer.rewardAmount,
+    }));
+    setToastMessage(
+      `⚖️ Marketplace Exchange Settled: ${offer.title} (+${formatBigInt(offer.rewardAmount)} ${offer.rewardResource.toUpperCase()})!`
+    );
+  };
+
+  const handlePurchaseCurioItem = (item: CurioMarketItem) => {
+    if (!godImmunity.immuneToAllThings && resources[item.costResource] < item.costAmount) return;
+    setResources((prev) => {
+      const next = {
+        ...prev,
+        [item.costResource]: godImmunity.immuneToAllThings
+          ? prev[item.costResource]
+          : prev[item.costResource] - item.costAmount,
+      };
+      if (item.rewardType === 'imperial_supply_crate') {
+        next.wood += 250_000n;
+        next.grain += 250_000n;
+        next.steel += 150_000n;
+        next.oil += 100_000n;
+      }
+      return next;
+    });
+    if (item.rewardType === 'veteran_scrolls') {
+      setCultivation((prev) => ({
+        ...prev,
+        veteranScrolls: (prev.veteranScrolls ?? 0) + item.rewardAmount,
+      }));
+    } else if (item.rewardType === 'spirit_stones') {
+      setCultivation((prev) => ({
+        ...prev,
+        spiritStones: (prev.spiritStones ?? 0n) + BigInt(item.rewardAmount),
+      }));
+    }
+    setToastMessage(`🛍️ Marketplace Purchase Complete: ${item.name} (${item.badgeText})!`);
+  };
+
+  const handleExecuteP2PTrade = (
+    giveResource: ResourceType,
+    giveAmount: bigint,
+    receiveResource: ResourceType,
+    receiveAmount: bigint,
+    counterpartyLabel: string
+  ) => {
+    if (!godImmunity.immuneToAllThings && resources[giveResource] < giveAmount) return;
+    setResources((prev) => ({
+      ...prev,
+      [giveResource]: godImmunity.immuneToAllThings
+        ? prev[giveResource]
+        : prev[giveResource] - giveAmount,
+      [receiveResource]: prev[receiveResource] + receiveAmount,
+    }));
+    setToastMessage(
+      `🤝 P2P Trade Settled with ${counterpartyLabel}: +${formatBigInt(receiveAmount)} ${receiveResource.toUpperCase()}!`
+    );
+  };
+
+  const handleExecuteArbitrageTrade = (
+    resource: 'copper' | 'diamond',
+    netProfit: bigint,
+    routeSummary: string
+  ) => {
+    setResources((prev) => ({
+      ...prev,
+      [resource]: prev[resource] + netProfit,
+    }));
+    setToastMessage(
+      `⚡ Arbitrage Route Settled (${routeSummary}): +${formatBigInt(netProfit)} ${resource.toUpperCase()} Net Profit!`
+    );
+  };
+
+  const currentBoundaryStatus = evaluateChunkBoundaryProximity({
+    playerWorldX: hudPlayerCoords.x,
+    playerWorldZ: hudPlayerCoords.z,
+    fetchedBoundaryKeys,
+  });
+
+  const handleFetchNewAreaData = () => {
+    const targetKey = currentBoundaryStatus.targetChunkKey;
+    setFetchedBoundaryKeys((prev) => (prev.includes(targetKey) ? prev : [...prev, targetKey]));
+    setStreamedChunkCount((prev) => prev + 3);
+    setToastMessage(
+      `🗺️ Streamed New World Chunk Sector [${targetKey}] (${currentBoundaryStatus.approachingDirection} Frontier Stabilized)!`
+    );
   };
 
   const handleSpawnScaledMonster = (newMonster: MonsterTarget) => {
@@ -2343,6 +2458,12 @@ export default function App() {
         }}
         onPlayerPositionChange={(x, z) => {
           playerWorldPosRef.current = { x, z };
+          setHudPlayerCoords((prev) => {
+            if (Math.hypot(x - prev.x, z - prev.z) >= 0.8) {
+              return { x, z };
+            }
+            return prev;
+          });
           const dx = x - lastCodexEvalPosRef.current.x;
           const dz = z - lastCodexEvalPosRef.current.z;
           if (dx * dx + dz * dz >= 4) {
@@ -2388,11 +2509,15 @@ export default function App() {
         teleportCommand={teleportCommand}
         onForwardBlink={(facingRad) => handleForwardBlink(facingRad)}
         onShiftClickTeleport={(x, y, z) => handleTeleportToCoordinates(x, y, z)}
+        fetchedBoundaryKeys={fetchedBoundaryKeys}
       />
 
       {/* Floating Notification Toast */}
       {toastMessage && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl bg-slate-900/95 border-2 border-amber-500/50 shadow-2xl text-xs sm:text-sm font-semibold text-amber-200 animate-in fade-in slide-in-from-top-4 duration-200 max-w-md text-center">
+        <div
+          data-testid="app-toast-notification"
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 rounded-2xl bg-slate-900/95 border-2 border-amber-500/60 shadow-2xl text-xs sm:text-sm font-semibold text-amber-200 animate-in fade-in slide-in-from-top-4 duration-200 max-w-lg text-center pointer-events-none"
+        >
           {toastMessage}
         </div>
       )}
@@ -2412,6 +2537,7 @@ export default function App() {
           onOpenCosmologicalAdmin={() => setActiveModal('cosmological_admin')}
           onOpenGmail={() => setActiveModal('gmail')}
           onOpenEula={() => setActiveModal('eula')}
+          onOpenMarketplace={() => setActiveModal('marketplace')}
           authUserEmail={authUser?.email ?? null}
           authLoading={authLoading}
           isSyncingAccount={isSyncingAccount}
@@ -2514,6 +2640,20 @@ export default function App() {
           onTouchMove={(delta) => setTouchVector(delta)}
           onTouchEnd={() => setTouchVector({ x: 0, y: 0 })}
           onActionClick={handleHUDActionClick}
+          playerX={hudPlayerCoords.x}
+          playerZ={hudPlayerCoords.z}
+          resourceNodes={resourceNodes}
+          onSelectResourceNode={() => setActiveModal('resources')}
+          boundaryStatus={currentBoundaryStatus}
+          streamedChunkCount={streamedChunkCount}
+          onFetchNewAreaData={handleFetchNewAreaData}
+          isMarketplaceOpen={activeModal === 'marketplace'}
+          onToggleMarketplace={() =>
+            setActiveModal((prev) => (prev === 'marketplace' ? 'none' : 'marketplace'))
+          }
+          onOpenMarketplace={() =>
+            setActiveModal((prev) => (prev === 'marketplace' ? 'none' : 'marketplace'))
+          }
         />
       )}
 
@@ -2527,6 +2667,26 @@ export default function App() {
             vipRallyBonusPct={vipEvaluation.tierConfig.perks.rallyCapacityBonusPct}
             vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
             onUpgradeCastle={handleUpgradeCastle}
+            onOpenMarketplace={() => setActiveModal('marketplace')}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
+
+        {activeModal === 'marketplace' && (
+          <MarketplaceModal
+            resources={resources}
+            npcs={npcs}
+            isGodImmune={godImmunity.immuneToAllThings}
+            activeAccountEmail={activeAccountEmail}
+            playerName={playerAppearance.name}
+            veteranScrollsOwned={cultivation.veteranScrolls ?? 0}
+            spiritStonesOwned={cultivation.spiritStones ?? 0n}
+            onExecuteNPCTrade={handleExecuteNPCTrade}
+            onExecuteBulkExchange={handleExecuteBulkExchange}
+            onPurchaseCurioItem={handlePurchaseCurioItem}
+            onExecuteP2PTrade={handleExecuteP2PTrade}
+            onExecuteArbitrageTrade={handleExecuteArbitrageTrade}
+            onNotifyToast={(msg) => setToastMessage(msg)}
             onClose={() => setActiveModal('none')}
           />
         )}

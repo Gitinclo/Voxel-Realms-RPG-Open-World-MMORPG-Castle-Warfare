@@ -18,6 +18,7 @@ import {
   computeCameraRelativeGpuTransform64,
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
+  evaluateChunkBoundaryProximity,
   evaluateInternationalMmorpgStandardCompliance,
   rebaseFloatingOriginCoord,
   resolvePlayerCitadelCollisionCannon,
@@ -325,4 +326,50 @@ test('8. Three.js OpenWorldChunkStreamingManager (256m tiles, POI stamps, hyster
   });
   assert.equal(tierCulled.tier, 'horizon_hlod_culled');
   assert.equal(tierCulled.targetUpdateHz, 0);
+});
+
+test('9. evaluateChunkBoundaryProximity triggers visual warning, screen-shake, and fetch prompt near chunk edges and clears once fetched', () => {
+  // At initial spawn (0, 18), player is safely inside the loaded chunk with no warning or shake
+  const atSpawn = evaluateChunkBoundaryProximity({
+    playerWorldX: 0,
+    playerWorldZ: 18,
+    timeSeconds: 1.25,
+  });
+  assert.equal(atSpawn.isNearChunkEdge, false);
+  assert.equal(atSpawn.promptFetchNewArea, false);
+  assert.equal(atSpawn.shakeIntensity, 0);
+
+  // Approaching Northern Frostpeak frontier (0, -34) triggers North boundary warning & screen-shake
+  const nearNorthFrontier = evaluateChunkBoundaryProximity({
+    playerWorldX: 0,
+    playerWorldZ: -34,
+    timeSeconds: 1.25,
+  });
+  assert.equal(nearNorthFrontier.isNearChunkEdge, true);
+  assert.equal(nearNorthFrontier.promptFetchNewArea, true);
+  assert.equal(nearNorthFrontier.approachingDirection, 'North');
+  assert.ok(nearNorthFrontier.shakeIntensity > 0);
+  assert.ok(nearNorthFrontier.warningMessage.includes('Fetch New Area Data'));
+
+  // Once the target chunk/sector is fetched, warning and shake clear for that boundary
+  const afterFetch = evaluateChunkBoundaryProximity({
+    playerWorldX: 0,
+    playerWorldZ: -34,
+    fetchedBoundaryKeys: [nearNorthFrontier.targetChunkKey],
+    timeSeconds: 1.25,
+  });
+  assert.equal(afterFetch.isNearChunkEdge, false);
+  assert.equal(afterFetch.promptFetchNewArea, false);
+  assert.equal(afterFetch.shakeIntensity, 0);
+
+  // Approaching 256m outer chunk East edge at (244, 120) triggers East chunk warning
+  const nearOuterEast = evaluateChunkBoundaryProximity({
+    playerWorldX: 244,
+    playerWorldZ: 120,
+    timeSeconds: 2.0,
+  });
+  assert.equal(nearOuterEast.isNearChunkEdge, true);
+  assert.equal(nearOuterEast.approachingDirection, 'East');
+  assert.equal(nearOuterEast.targetChunkKey, '1,0');
+  assert.ok(nearOuterEast.shakeIntensity > 0.25);
 });

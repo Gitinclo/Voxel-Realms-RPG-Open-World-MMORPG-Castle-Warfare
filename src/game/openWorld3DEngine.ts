@@ -1336,3 +1336,151 @@ export class ServerMeshSpatialGridAuthority {
     };
   }
 }
+
+export type ChunkEdgeDirection = 'North' | 'South' | 'East' | 'West';
+
+export interface ChunkBoundaryProximityEvaluation {
+  chunkX: number;
+  chunkZ: number;
+  currentChunkKey: string;
+  targetChunkKey: string;
+  isNearChunkEdge: boolean;
+  distanceToEdgeMeters: number;
+  approachingDirection: ChunkEdgeDirection;
+  shakeIntensity: number;
+  shakeOffsetX: number;
+  shakeOffsetY: number;
+  promptFetchNewArea: boolean;
+  warningMessage: string;
+}
+
+/**
+ * Evaluates whether the player is approaching the edge of the currently loaded world chunks
+ * (or the inner Solara Citadel basin frontier), computing a deterministic `trauma * trauma`
+ * screen-shake intensity and a prompt to fetch new area data.
+ */
+export function evaluateChunkBoundaryProximity(params: {
+  playerWorldX: number;
+  playerWorldZ: number;
+  chunkSizeMeters?: number;
+  warningDistanceMeters?: number;
+  innerBasinHalfExtentMeters?: number;
+  innerBasinWarningBandMeters?: number;
+  fetchedBoundaryKeys?: ReadonlySet<string> | readonly string[];
+  timeSeconds?: number;
+}): ChunkBoundaryProximityEvaluation {
+  const chunkSize = Math.max(64, params.chunkSizeMeters ?? 256);
+  const warningDist = Math.max(8, params.warningDistanceMeters ?? 28);
+  const innerHalfExtent = Math.max(24, params.innerBasinHalfExtentMeters ?? 40);
+  const innerWarningBand = Math.max(4, params.innerBasinWarningBandMeters ?? 10);
+  const t = params.timeSeconds ?? 0;
+
+  const chunkX = Math.floor(params.playerWorldX / chunkSize);
+  const chunkZ = Math.floor(params.playerWorldZ / chunkSize);
+  const currentChunkKey = OpenWorldChunkStreamingManager.makeChunkKey(chunkX, chunkZ);
+
+  const localX = params.playerWorldX - chunkX * chunkSize;
+  const localZ = params.playerWorldZ - chunkZ * chunkSize;
+
+  const distWest = localX;
+  const distEast = chunkSize - localX;
+  const distNorth = localZ;
+  const distSouth = chunkSize - localZ;
+
+  // Also check inner Solara Citadel sector frontier ([-40, +40]) so players walking out from spawn (0, 18)
+  // experience the chunk-edge warning & screen-shake right as they approach the ±30m..±40m sector border.
+  const absX = Math.abs(params.playerWorldX);
+  const absZ = Math.abs(params.playerWorldZ);
+  const maxAbsInner = Math.max(absX, absZ);
+  const distToInnerFrontier = Math.abs(innerHalfExtent - maxAbsInner);
+  const inInnerFrontierBand =
+    maxAbsInner >= innerHalfExtent - innerWarningBand &&
+    maxAbsInner <= innerHalfExtent + innerWarningBand * 0.5;
+
+  let distanceToEdgeMeters = Math.min(distWest, distEast, distNorth, distSouth);
+  let approachingDirection: ChunkEdgeDirection = 'South';
+  let nextChunkX = chunkX;
+  let nextChunkZ = chunkZ;
+
+  if (inInnerFrontierBand) {
+    distanceToEdgeMeters = Number(distToInnerFrontier.toFixed(2));
+    if (absZ >= absX) {
+      if (params.playerWorldZ >= 0) {
+        approachingDirection = 'South';
+        nextChunkZ = chunkZ + 1;
+      } else {
+        approachingDirection = 'North';
+        nextChunkZ = chunkZ - 1;
+      }
+    } else {
+      if (params.playerWorldX >= 0) {
+        approachingDirection = 'East';
+        nextChunkX = chunkX + 1;
+      } else {
+        approachingDirection = 'West';
+        nextChunkX = chunkX - 1;
+      }
+    }
+  } else {
+    if (distanceToEdgeMeters === distNorth) {
+      approachingDirection = 'North';
+      nextChunkZ = chunkZ - 1;
+    } else if (distanceToEdgeMeters === distSouth) {
+      approachingDirection = 'South';
+      nextChunkZ = chunkZ + 1;
+    } else if (distanceToEdgeMeters === distEast) {
+      approachingDirection = 'East';
+      nextChunkX = chunkX + 1;
+    } else {
+      approachingDirection = 'West';
+      nextChunkX = chunkX - 1;
+    }
+    distanceToEdgeMeters = Number(distanceToEdgeMeters.toFixed(2));
+  }
+
+  const targetChunkKey = inInnerFrontierBand
+    ? `sector_${approachingDirection.toLowerCase()}_${nextChunkX}_${nextChunkZ}`
+    : OpenWorldChunkStreamingManager.makeChunkKey(nextChunkX, nextChunkZ);
+
+  const fetchedSet =
+    params.fetchedBoundaryKeys instanceof Set
+      ? params.fetchedBoundaryKeys
+      : new Set(params.fetchedBoundaryKeys ?? []);
+
+  // Within the central Solara Citadel courtyard (r < 28m around origin), all 4 central quadrants
+  // are pre-streamed at startup, so no boundary warning fires at spawn (0, 18).
+  const inCitadelSafeCourtyard = Math.hypot(params.playerWorldX, params.playerWorldZ) < 28;
+  const rawNearEdge =
+    !inCitadelSafeCourtyard && (inInnerFrontierBand || distanceToEdgeMeters <= warningDist);
+  const isNearChunkEdge = rawNearEdge && !fetchedSet.has(targetChunkKey);
+
+  const effectiveThreshold = inInnerFrontierBand ? innerWarningBand : warningDist;
+  const normalizedProximity = isNearChunkEdge
+    ? Math.max(0.18, Math.min(1, 1 - distanceToEdgeMeters / Math.max(1, effectiveThreshold)))
+    : 0;
+  // Weight-scaled trauma * trauma screen-shake curve
+  const shakeIntensity = Number((normalizedProximity * normalizedProximity).toFixed(3));
+  const shakeOffsetX = isNearChunkEdge
+    ? Number((Math.sin(t * 38.0) * 0.28 * shakeIntensity).toFixed(4))
+    : 0;
+  const shakeOffsetY = isNearChunkEdge
+    ? Number((Math.cos(t * 44.0) * 0.22 * shakeIntensity).toFixed(4))
+    : 0;
+
+  return {
+    chunkX,
+    chunkZ,
+    currentChunkKey,
+    targetChunkKey,
+    isNearChunkEdge,
+    distanceToEdgeMeters,
+    approachingDirection,
+    shakeIntensity,
+    shakeOffsetX,
+    shakeOffsetY,
+    promptFetchNewArea: isNearChunkEdge,
+    warningMessage: isNearChunkEdge
+      ? `Approaching ${approachingDirection} Chunk Boundary (${distanceToEdgeMeters.toFixed(1)}m) — Fetch New Area Data [${targetChunkKey}]`
+      : 'Sector Stable — Active Chunk Streamed',
+  };
+}

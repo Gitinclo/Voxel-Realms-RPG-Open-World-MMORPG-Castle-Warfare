@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Mail,
   Scale,
+  ShoppingBag,
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
@@ -35,6 +36,7 @@ interface TitleScreenProps {
   onOpenCosmologicalAdmin?: () => void;
   onOpenGmail?: () => void;
   onOpenEula?: () => void;
+  onOpenMarketplace?: () => void;
   authUserEmail?: string | null;
   authLoading?: boolean;
   isSyncingAccount?: boolean;
@@ -58,6 +60,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenCosmologicalAdmin,
   onOpenGmail,
   onOpenEula,
+  onOpenMarketplace,
   authUserEmail = null,
   authLoading = false,
   isSyncingAccount = false,
@@ -167,6 +170,19 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <Shield className="w-4 h-4 text-cyan-400" />
             Character Creation Centre
           </button>
+
+          {onOpenMarketplace && (
+            <button
+              type="button"
+              data-testid="title-marketplace-btn"
+              onClick={onOpenMarketplace}
+              className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-xs font-bold text-amber-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title="Open Imperial Grand Marketplace & Caravan Exchange"
+            >
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              <span>Imperial Marketplace</span>
+            </button>
+          )}
 
           {onOpenGmail && (
             <button

@@ -13,6 +13,7 @@ import {
   Swords,
   Sparkles,
   CheckCircle2,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   calculateCastleTroopCapacity,
@@ -33,6 +34,7 @@ interface CastleModalProps {
   vipRallyBonusPct?: number;
   vipBadgeLabel?: string;
   onUpgradeCastle: () => void;
+  onOpenMarketplace?: () => void;
   onClose: () => void;
 }
 
@@ -43,6 +45,7 @@ export const CastleModal: React.FC<CastleModalProps> = ({
   vipRallyBonusPct = 0,
   vipBadgeLabel = 'VIP 0',
   onUpgradeCastle,
+  onOpenMarketplace,
   onClose,
 }) => {
   const currentCapacity = calculateCastleTroopCapacity(castleLevel);
@@ -89,17 +92,33 @@ export const CastleModal: React.FC<CastleModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-amber-200/70">
-                Hub of the Realm · Sovereign Fortification & Army Hub
+                Command Centre of the Realm · Fortification, Marketplace &amp; Army Hub
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
-            aria-label="Close modal"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenMarketplace && (
+              <button
+                type="button"
+                data-testid="castle-open-marketplace-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  onOpenMarketplace();
+                }}
+                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold font-cinzel flex items-center gap-1.5 shadow-md transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Imperial Marketplace</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
