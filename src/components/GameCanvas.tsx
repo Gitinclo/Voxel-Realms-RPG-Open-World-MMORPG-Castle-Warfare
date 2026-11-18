@@ -38,6 +38,7 @@ import {
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
 import { sound } from '../game/audio';
 import {
+  OpenWorldChunkStreamingManager,
   buildSceneBVHTrees,
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
@@ -309,12 +310,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const scene = new THREE.Scene();
     const bgColor = new THREE.Color(0x38bdf8);
     scene.background = bgColor;
-    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 360);
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.5, 3600);
     camera.position.set(0, 14, 22);
 
     // Preetham Physical Atmospheric Sky Dome (GTA V / Genshin Impact Atmosphere)
     const sky = new Sky();
-    sky.scale.setScalar(420);
+    sky.scale.setScalar(3200);
     scene.add(sky);
     const skyUniforms = sky.material.uniforms;
     skyUniforms['turbidity'].value = 2.4;
@@ -558,9 +559,33 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // Atmospheric Fog
     scene.fog = new THREE.FogExp2(0x87ceeb, 0.011);
 
-    // Add Voxel Terrain
+    // Add Voxel Terrain + Dynamic Open-World Chunk Streaming Manager (seamless traversal beyond spawn)
     const terrain = createVoxelTerrain();
     scene.add(terrain);
+
+    const chunkStreamer = new OpenWorldChunkStreamingManager({
+      chunkSizeMeters: 256,
+      activeRadiusChunks: 1,
+      disposeRadiusChunks: 2,
+      poiStamps: [
+        {
+          id: 'poi_solara_citadel',
+          name: 'Solara Sovereign Citadel Keep & Valley Basin',
+          centerX: 0,
+          centerZ: 0,
+          flattenRadiusMeters: 64,
+          targetElevationMeters: -0.15,
+          suppressFoliage: true,
+        },
+      ],
+    });
+    chunkStreamer.rootGroup.position.y = -0.15;
+    chunkStreamer.updateStreamingAroundPlayer(0, 18);
+    scene.add(chunkStreamer.rootGroup);
+    let lastStreamedChunkKey = OpenWorldChunkStreamingManager.makeChunkKey(
+      Math.floor(0 / 256),
+      Math.floor(18 / 256)
+    );
 
     // Add Castle
     let lastBuiltCastleLevel = propsRef.current.castleLevel;
@@ -1096,6 +1121,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       playerMesh.position.x = playerPos.x;
       playerMesh.position.y = playerPos.y + hoverBob;
       playerMesh.position.z = playerPos.z;
+      sky.position.set(playerPos.x, 0, playerPos.z);
+
+      // Stream surrounding 256m × 256m open-world terrain chunks when crossing chunk boundaries
+      const currentChunkKey = OpenWorldChunkStreamingManager.makeChunkKey(
+        Math.floor(playerPos.x / chunkStreamer.chunkSizeMeters),
+        Math.floor(playerPos.z / chunkStreamer.chunkSizeMeters)
+      );
+      if (currentChunkKey !== lastStreamedChunkKey) {
+        lastStreamedChunkKey = currentChunkKey;
+        chunkStreamer.updateStreamingAroundPlayer(playerPos.x, playerPos.z);
+      }
 
       // Sync Player Aura & Species Mesh if Realm, Great Dao Halo Count, Red-Name Karma, or Appearance changed
       const currentAppearanceSig = JSON.stringify(propsRef.current.playerAppearance);
@@ -1307,6 +1343,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (composer) {
         composer.dispose();
       }
+      chunkStreamer.disposeAll();
       disposeSceneBVHTrees(scene);
       renderer.dispose();
       container.replaceChildren();

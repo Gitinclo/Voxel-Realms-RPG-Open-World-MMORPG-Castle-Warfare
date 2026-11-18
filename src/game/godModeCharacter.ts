@@ -1253,7 +1253,7 @@ export function computeNextGodFlightKinematics(
 ): GodFlightKinematicsOutput {
   const safeDt = Math.max(0, Math.min(input.dt, 0.25));
   const baseSpeed = input.baseGroundSpeed ?? 14;
-  const halfExtent = input.worldHalfExtent ?? 36;
+  const halfExtent = input.worldHalfExtent ?? GOD_TELEPORT_SPEC.worldHalfExtent;
   const flightActive = Boolean(input.isFlying && input.permission.allowed);
 
   // 1. Compute target altitude & vertical elevation
@@ -1350,8 +1350,8 @@ export const GOD_TELEPORT_SPEC = {
   abilityTitle: 'Sovereign Astral Spatial Warp & Omnipresent Teleportation',
   forwardBlinkDistance: 12.0,
   forwardBlinkMeters: 12.0,
-  worldHalfExtent: 36.0,
-  maxWorldBoundXZ: 36.0,
+  worldHalfExtent: 100_000.0,
+  maxWorldBoundXZ: 100_000.0,
   maxAltitude: 45.0,
   cooldownMs: 0,
   linkedOmniAttributeIds: [

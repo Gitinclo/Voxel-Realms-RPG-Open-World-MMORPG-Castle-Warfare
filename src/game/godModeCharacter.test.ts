@@ -297,15 +297,50 @@ test('evaluateGodTeleportPermission and executeGodTeleportJump grant instantaneo
   assert.equal(blinkJump.nextZ, 22);
   assert.equal(blinkJump.distanceMovedMeters, 12);
 
-  // Custom coordinates jump clamped to safe bounds
+  // Verify movement beyond the old 36m spawn barrier is completely unrestricted across the open world
+  const beyondSpawnStep = computeNextGodFlightKinematics({
+    currentX: 0,
+    currentY: 0,
+    currentZ: 35.5,
+    moveInputX: 0,
+    moveInputZ: 1,
+    verticalInput: 0,
+    cameraOrbitAngle: 0,
+    dt: 0.25,
+    isFlying: false,
+    targetAltitude: 0,
+    permission: evaluateGodFlightPermission('player@voxelrealms.example', false),
+  });
+  assert.ok(
+    beyondSpawnStep.nextZ > 36,
+    `Expected player to walk freely past z=36 spawn area without barrier, got z=${beyondSpawnStep.nextZ}`
+  );
+
+  // Custom coordinates jump beyond spawn (500m, -500m) succeeds without 36m barrier
+  const openWorldJump = executeGodTeleportJump({
+    currentX: 0,
+    currentY: 0,
+    currentZ: 18,
+    mode: 'coordinates',
+    targetX: 500,
+    targetY: 25,
+    targetZ: -500,
+    permission: rootTeleport,
+  });
+  assert.equal(openWorldJump.teleported, true);
+  assert.equal(openWorldJump.nextX, 500);
+  assert.equal(openWorldJump.nextY, 25);
+  assert.equal(openWorldJump.nextZ, -500);
+
+  // Custom coordinates jump beyond 100 km continental bound is clamped to safe continental bounds
   const coordJump = executeGodTeleportJump({
     currentX: 0,
     currentY: 0,
     currentZ: 0,
     mode: 'coordinates',
-    targetX: 500,
+    targetX: 250_000,
     targetY: 99,
-    targetZ: -500,
+    targetZ: -250_000,
     permission: rootTeleport,
   });
   assert.equal(coordJump.teleported, true);
