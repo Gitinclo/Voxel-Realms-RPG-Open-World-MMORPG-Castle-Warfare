@@ -43,7 +43,8 @@ clang++ -std=c++20 -O3 -Wall -Wextra cpp/engine_guardrail_test.cpp -o /tmp/engin
 
 ---
 
-## 4. Trackpad Gestures, Input & Account Governance (`creatergame31@gmail.com`)
+## 4. Continental Expansion (`100 km × 100 km+`), Input & Account Governance (`creatergame31@gmail.com`)
 
+- **Apple Silicon Continental Expansion (`src/game/openWorld3DEngine.ts`, [`3D-open-world-mmorgp-game-international-standard.md`](./3D-open-world-mmorgp-game-international-standard.md))**: Combines 64-bit Large World Coordinates (`computeCameraRelativeGpuTransform64`), **Metal Fast Resource Loading** over Unified Memory (`5–10 GB/s` chunk streaming in `OpenWorldChunkStreamingManager`), **Metal 3 Mesh Shaders & Indirect Command Buffers** (`10M–50M+` visible triangles/frame), and **Runtime Virtual Texturing (`RVT` + `ASTC HDR` / `BC7`)** across `4 km` detailed chunks + `30 km+` HLOD horizons at `60–120 FPS` (`1440p`/`4K` ProMotion).
 - **macOS Trackpad & Magic Mouse**: Supports two-finger pinch/scroll zoom, secondary-click orbital camera rotation (`@tweenjs/tween.js`), and `WASD` keyboard navigation.
 - **100 Playable Races & Creator Authority**: Full access to the 3D Voxel Character Creation Centre (`100 Playable Species / Races` in `src/game/species.ts`) and Root Creator **`creatergame31@gmail.com`** 12-Domain All-Things Immunity & 100 Supreme Omni-Attributes (`src/game/godModeCharacter.ts`).

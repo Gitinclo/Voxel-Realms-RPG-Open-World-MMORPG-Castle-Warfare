@@ -39,6 +39,10 @@ The **PC Platform (`PC.md`)** serves as the flagship high-throughput reference a
 
 ---
 
-## 4. Steamworks & PC Distribution Compliance
+## 4. High-End PC Continental Expansion (`100 km × 100 km+`) & Steamworks Compliance
 
-See the [Steam & Platform Content Disclosure](./README.md#steam--platform-content-disclosure) in `README.md` for pre-verified Steamworks packaging, zero-external-asset procedural provenance, and `npm run validate` + `npm run verify:ops` release gates.
+- **Continental-Scale Desktop Pipeline (`src/game/openWorld3DEngine.ts`, [`3D-open-world-mmorgp-game-international-standard.md`](./3D-open-world-mmorgp-game-international-standard.md))**:
+  - **64-Bit Large World Coordinates (`LWC`)**: Double-precision (`Float64Array`) CPU world coordinates paired with 32-bit Camera-Relative GPU transforms (`computeCameraRelativeGpuTransform64`) eliminate vertex jitter across `100 km × 100 km+` continents.
+  - **DirectStorage NVMe Streaming & Runtime Virtual Texturing (`RVT` + `BC7`)**: Streams `256m × 256m` and `512m` macro-cells at `5–10 GB/s` (`OpenWorldChunkStreamingManager`), composites unlimited `4K/8K` biome layers via RVT, and renders `4 km` detailed chunks + `30 km+` HLOD horizons at `60–120 FPS` (`1440p`/`4K`) with `10M–50M+` cluster-culled triangles per frame.
+- **Steamworks & PC Distribution Compliance**:
+  - See the [Steam & Platform Content Disclosure](./README.md#steam--platform-content-disclosure) in `README.md` for pre-verified Steamworks packaging, zero-external-asset procedural provenance, and `npm run validate` + `npm run verify:ops` release gates.

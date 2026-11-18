@@ -95,7 +95,8 @@ jobs:
             iOS.md \
             android.md \
             "Virtual Reality.md" \
-            Physics.md
+            Physics.md \
+            3D-open-world-mmorgp-game-international-standard.md
           (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
 
       - name: Publish GitHub Release

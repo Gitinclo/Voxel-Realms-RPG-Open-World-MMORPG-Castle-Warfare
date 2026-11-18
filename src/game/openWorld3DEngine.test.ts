@@ -7,11 +7,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
+  HIGH_END_PC_MAC_CONTINENTAL_EXPANSION_TABLE,
+  INTERNATIONAL_MMORPG_BENCHMARK_TABLE,
+  INTERNATIONAL_MMORPG_PILLARS,
   OpenWorldCameraTweenController,
+  OpenWorldChunkStreamingManager,
   OpenWorldSimplexGenerator,
+  ServerMeshSpatialGridAuthority,
   buildSceneBVHTrees,
+  computeCameraRelativeGpuTransform64,
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
+  evaluateInternationalMmorpgStandardCompliance,
+  rebaseFloatingOriginCoord,
   resolvePlayerCitadelCollisionCannon,
   resolveThreeDimensionalObjectCollision,
   simulateSiegeArtilleryTrajectory,
@@ -159,4 +167,162 @@ test('5. resolveThreeDimensionalObjectCollision enforces Momentum Conservation, 
   assert.ok(Math.abs(perfectlyInelastic.bodyAAfter.velocity.vx - 6) < 1e-7);
   assert.ok(Math.abs(perfectlyInelastic.bodyBAfter.velocity.vx - 6) < 1e-7);
   assert.ok(perfectlyInelastic.kineticEnergyLostJoules > inelastic.kineticEnergyLostJoules);
+});
+
+test('6. evaluateInternationalMmorpgStandardCompliance verifies 4 benchmark domains and 5 core MMORPG pillars (21 subsystems)', () => {
+  assert.equal(INTERNATIONAL_MMORPG_BENCHMARK_TABLE.length, 4);
+  assert.equal(INTERNATIONAL_MMORPG_PILLARS.length, 5);
+
+  const report = evaluateInternationalMmorpgStandardCompliance({
+    openWorldServerTickHz: 20, // 20Hz authoritative siege & open-world server tick
+    mobileClientFps: 60,
+    pcConsoleClientFps: 120,
+    mobileRttMs: 95,
+    pcConsoleRttMs: 42,
+  });
+
+  assert.equal(report.compliant, true);
+  assert.equal(report.totalPillars, 5);
+  assert.equal(report.totalSubsystems, 21);
+  assert.equal(report.benchmarkDomainsVerified, 4);
+  assert.equal(report.serverTickHzInOpenWorldWindow, true);
+  assert.equal(report.mobileFpsWithinTarget, true);
+  assert.equal(report.pcConsoleFpsWithinTarget, true);
+  assert.equal(report.mobileRttWithinBudget, true);
+  assert.equal(report.pcConsoleRttWithinBudget, true);
+});
+
+test('7. High-End PC & Mac 100km×100km 64-Bit LWC Camera-Relative GPU Transform & Floating Origin Rebasing eliminate float32 jitter', () => {
+  assert.equal(HIGH_END_PC_MAC_CONTINENTAL_EXPANSION_TABLE.length, 5);
+
+  // At 100 km (100,000 meters), raw 32-bit float loses sub-centimeter precision,
+  // but 64-bit CPU world subtraction + 32-bit camera-relative GPU transform preserves millimeter accuracy
+  const lwc = computeCameraRelativeGpuTransform64({
+    entityWorldX: 100_000.125,
+    entityWorldY: 42.5,
+    entityWorldZ: -100_000.875,
+    cameraWorldX: 100_000.0,
+    cameraWorldY: 40.0,
+    cameraWorldZ: -100_000.0,
+  });
+
+  assert.equal(lwc.cameraGpuOriginZeroVerified, true);
+  assert.equal(lwc.jitterFreeAt100Km, true);
+  assert.equal(lwc.cameraRelativeGpuF32[0], 0.125);
+  assert.equal(lwc.cameraRelativeGpuF32[1], 2.5);
+  assert.equal(lwc.cameraRelativeGpuF32[2], -0.875);
+
+  // Cross-platform Floating Origin Rebasing past 5,000m into 256m x 256m tiles
+  const rebased = rebaseFloatingOriginCoord({
+    worldX: 5200.5,
+    worldZ: -1050.25,
+    chunkSizeMeters: 256,
+    rebaseThresholdMeters: 5000,
+  });
+  assert.equal(rebased.rebased, true);
+  assert.equal(rebased.chunkX, 20);
+  assert.equal(rebased.chunkZ, -5);
+  assert.ok(rebased.localOffsetX >= 0 && rebased.localOffsetX < 256);
+  assert.ok(rebased.localOffsetZ >= 0 && rebased.localOffsetZ < 256);
+  assert.equal(rebased.reconstructedWorldX, 5200.5);
+  assert.equal(rebased.reconstructedWorldZ, -1050.25);
+});
+
+test('8. Three.js OpenWorldChunkStreamingManager (256m tiles, POI stamps, hysteresis disposal) & ServerMeshSpatialGridAuthority (100m ghost buffer & replication graph)', () => {
+  const chunkMgr = new OpenWorldChunkStreamingManager({
+    chunkSizeMeters: 256,
+    activeRadiusChunks: 1, // 3x3 = 9 active chunks
+    disposeRadiusChunks: 2,
+    impostorDistanceMeters: 150,
+  });
+
+  // Step 1: Spawn at Solara Citadel (0, 0) -> loads 3x3 = 9 chunks
+  const step1 = chunkMgr.updateStreamingAroundPlayer(0, 0);
+  assert.equal(step1.activeChunkCount, 9);
+  assert.equal(step1.loadedThisStep.length, 9);
+  assert.equal(step1.disposedThisStep.length, 0);
+
+  // Verify Solara Citadel POI stamp flattens elevation at (0, 0) and suppresses foliage
+  const poiSample = chunkMgr.sampleElevationWithPoiStamps(0, 0);
+  assert.equal(poiSample.elevationMeters, 0);
+  assert.equal(poiSample.suppressFoliage, true);
+  assert.equal(poiSample.appliedPoiId, 'poi_solara_citadel');
+
+  // Step 2: Teleport player far East (chunkX = 10, worldX = 2560m) -> old 9 chunks exceed hysteresis and are strictly disposed
+  const step2 = chunkMgr.updateStreamingAroundPlayer(2560, 0);
+  assert.equal(step2.activeChunkCount, 9);
+  assert.equal(step2.disposedThisStep.length, 9);
+  assert.equal(chunkMgr.getTotalDisposedCount(), 9);
+
+  // Clean up remaining chunks
+  const finalDisposed = chunkMgr.disposeAll();
+  assert.equal(finalDisposed, 9);
+  assert.equal(chunkMgr.getTotalDisposedCount(), 18);
+
+  // Verify Server Meshing 100m Ghost Entity Boundary Overlap & < 50ms Handoff
+  const meshAuth = new ServerMeshSpatialGridAuthority({
+    zoneSizeMeters: 2000,
+    ghostOverlapMeters: 100,
+    aoiCellSizeMeters: 64,
+  });
+
+  // Near eastern border of zone (0,0) at x = 1950m (within 100m of 2000m border)
+  const nearBorder = meshAuth.evaluateZoneAndGhostBoundary({
+    worldX: 1950,
+    worldZ: 500,
+  });
+  assert.equal(nearBorder.primaryServerZoneId, 'srv_zone_0_0');
+  assert.equal(nearBorder.inBoundaryGhostBuffer, true);
+  assert.ok(nearBorder.neighborGhostZoneIds.includes('srv_zone_1_0'));
+  assert.equal(nearBorder.handoffTriggered, false);
+
+  // Step across border to x = 2010m -> triggers sub-50ms server handoff to srv_zone_1_0
+  const crossedBorder = meshAuth.evaluateZoneAndGhostBoundary({
+    worldX: 2010,
+    worldZ: 500,
+    previousZoneId: nearBorder.primaryServerZoneId,
+  });
+  assert.equal(crossedBorder.primaryServerZoneId, 'srv_zone_1_0');
+  assert.equal(crossedBorder.handoffTriggered, true);
+  assert.ok(
+    crossedBorder.estimatedHandoffLatencyMs > 0 && crossedBorder.estimatedHandoffLatencyMs < 50
+  );
+
+  // Verify Multi-Tiered Replication Graph frequencies (50m @ 30-60Hz, 300m @ 10Hz, 2km @ 2Hz, >2km @ 0Hz)
+  const tierCombat = meshAuth.evaluateReplicationGraphTier({
+    observerWorldX: 0,
+    observerWorldZ: 0,
+    targetWorldX: 30,
+    targetWorldZ: 0,
+    instancedPvpMode: true,
+  });
+  assert.equal(tierCombat.tier, 'combat_target_50m');
+  assert.equal(tierCombat.targetUpdateHz, 60);
+
+  const tierRider = meshAuth.evaluateReplicationGraphTier({
+    observerWorldX: 0,
+    observerWorldZ: 0,
+    targetWorldX: 220,
+    targetWorldZ: 0,
+  });
+  assert.equal(tierRider.tier, 'visible_rider_300m');
+  assert.equal(tierRider.targetUpdateHz, 10);
+
+  const tierBoss = meshAuth.evaluateReplicationGraphTier({
+    observerWorldX: 0,
+    observerWorldZ: 0,
+    targetWorldX: 1500,
+    targetWorldZ: 0,
+  });
+  assert.equal(tierBoss.tier, 'world_boss_siege_2km');
+  assert.equal(tierBoss.targetUpdateHz, 2);
+
+  const tierCulled = meshAuth.evaluateReplicationGraphTier({
+    observerWorldX: 0,
+    observerWorldZ: 0,
+    targetWorldX: 3500,
+    targetWorldZ: 0,
+  });
+  assert.equal(tierCulled.tier, 'horizon_hlod_culled');
+  assert.equal(tierCulled.targetUpdateHz, 0);
 });

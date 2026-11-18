@@ -46,6 +46,9 @@ import {
   canKickMember,
   validateClanCreation,
   calculateCoopBossStrike,
+  BulkVaultDonationItem,
+  evaluateBulkVaultDonation,
+  validateBulkVaultDonationConfirmation,
 } from '../game/clanMath';
 import { INITIAL_CLAN_BUFFS } from '../game/initialData';
 import { sound } from '../game/audio';
@@ -162,6 +165,13 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
   // Chat message input state
   const [chatInput, setChatInput] = useState<string>('');
+
+  // Bulk Vault Donation & Confirmation Dialog State
+  const [donationMultiplier, setDonationMultiplier] = useState<number>(1);
+  const [pendingBulkDonation, setPendingBulkDonation] = useState<BulkVaultDonationItem[] | null>(
+    null
+  );
+  const [donationAckChecked, setDonationAckChecked] = useState<boolean>(false);
 
   // Player's member object in clan (default to Aiden Skyrender)
   const currentMember = members.find((m) => m.id === 'cm_player') || members[0];
@@ -281,10 +291,43 @@ export const ClanModal: React.FC<ClanModalProps> = ({
   };
 
   const handleDonateAction = (opt: (typeof DONATION_OPTIONS)[0]) => {
-    if (resources[opt.type] >= opt.amount) {
-      sound.playUpgradeFanfare();
-      onDonate(opt.type, opt.amount, opt.coins);
+    const items = evaluateBulkVaultDonation([opt], resources, donationMultiplier);
+    if (items.length > 0) {
+      setDonationAckChecked(false);
+      setPendingBulkDonation(items);
+      sound.playSwing();
     }
+  };
+
+  const handleBulkDonateAllAction = () => {
+    const items = evaluateBulkVaultDonation(DONATION_OPTIONS, resources, donationMultiplier);
+    if (items.length > 0) {
+      setDonationAckChecked(false);
+      setPendingBulkDonation(items);
+      sound.playSwing();
+    }
+  };
+
+  const handleConfirmBulkDonation = () => {
+    if (!pendingBulkDonation) return;
+    const validation = validateBulkVaultDonationConfirmation(
+      pendingBulkDonation,
+      resources,
+      donationAckChecked
+    );
+    if (!validation.canExecute) return;
+
+    sound.playUpgradeFanfare();
+    for (const item of validation.items) {
+      onDonate(item.type, item.totalAmount, item.totalCoins);
+    }
+    setPendingBulkDonation(null);
+    setDonationAckChecked(false);
+  };
+
+  const handleCancelBulkDonation = () => {
+    setPendingBulkDonation(null);
+    setDonationAckChecked(false);
   };
 
   const handleBuy = (item: (typeof STORE_ITEMS)[0]) => {
@@ -968,13 +1011,62 @@ export const ClanModal: React.FC<ClanModalProps> = ({
 
               {/* Resource Donations to Vault */}
               <div className="space-y-3">
-                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-blue-400" /> Lord Resource Supplies (Earn Personal
-                  Honor)
-                </h4>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-blue-400" /> Lord Resource Supplies (Earn
+                    Personal Honor)
+                  </h4>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div
+                      className="flex items-center rounded-lg bg-slate-950 border border-slate-800 p-0.5 text-[11px] font-mono"
+                      role="group"
+                      aria-label="Bulk donation multiplier"
+                    >
+                      {[1, 10, 100].map((mult) => (
+                        <button
+                          key={mult}
+                          type="button"
+                          data-testid={`clan-donate-mult-${mult}x`}
+                          onClick={() => setDonationMultiplier(mult)}
+                          className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
+                            donationMultiplier === mult
+                              ? 'bg-blue-600 text-white'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {mult}x
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      data-testid="clan-bulk-donate-all-btn"
+                      onClick={handleBulkDonateAllAction}
+                      disabled={
+                        evaluateBulkVaultDonation(DONATION_OPTIONS, resources, donationMultiplier)
+                          .length === 0
+                      }
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono flex items-center gap-1.5 transition-all ${
+                        evaluateBulkVaultDonation(DONATION_OPTIONS, resources, donationMultiplier)
+                          .length > 0
+                          ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer'
+                          : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <Gift className="w-3.5 h-3.5" />
+                      Bulk Donate All Supplies ({donationMultiplier}x)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {DONATION_OPTIONS.map((opt) => {
-                    const hasEnough = resources[opt.type] >= opt.amount;
+                    const multBig = BigInt(donationMultiplier);
+                    const scaledAmount = opt.amount * multBig;
+                    const scaledCoins = opt.coins * multBig;
+                    const hasEnough = resources[opt.type] >= scaledAmount;
                     return (
                       <div
                         key={opt.type}
@@ -984,23 +1076,29 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                           <div className="flex items-center gap-2.5">
                             <span className="text-2xl">{opt.icon}</span>
                             <div>
-                              <div className="text-sm font-bold text-white">{opt.label}</div>
+                              <div className="text-sm font-bold text-white">
+                                {donationMultiplier > 1
+                                  ? `${donationMultiplier}x ${opt.label}`
+                                  : opt.label}
+                              </div>
                               <div className="text-xs text-slate-400">
                                 In stock: {formatBigInt(resources[opt.type])}
                               </div>
                             </div>
                           </div>
                           <div className="text-xs font-mono font-bold text-amber-400">
-                            +{formatBigInt(opt.coins)} 🪙
+                            +{formatBigInt(scaledCoins)} 🪙
                           </div>
                         </div>
 
                         <button
+                          type="button"
+                          data-testid={`clan-donate-btn-${opt.type}`}
                           onClick={() => handleDonateAction(opt)}
                           disabled={!hasEnough}
                           className={`w-full py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                             hasEnough
-                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 active:scale-95'
+                              ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/30 active:scale-95 cursor-pointer'
                               : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                           }`}
                         >
@@ -1720,6 +1818,127 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* BULK VAULT DONATION CONFIRMATION DIALOG */}
+        {pendingBulkDonation && (
+          <div
+            data-testid="clan-vault-donation-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clan-vault-donation-confirm-title"
+            className="absolute inset-0 z-50 bg-slate-950/90 backdrop-blur-xs p-4 sm:p-6 flex items-center justify-center animate-in fade-in duration-150"
+          >
+            <div className="w-full max-w-lg rounded-2xl bg-slate-900 border-2 border-amber-500/50 shadow-2xl p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400">
+                    <AlertCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3
+                      id="clan-vault-donation-confirm-title"
+                      className="text-base font-bold font-cinzel text-white"
+                    >
+                      Confirm Bulk Vault Resource Donation
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Review the resource supplies to transfer into [{clan.tag}] {clan.name}{' '}
+                      Treasury.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelBulkDonation}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  aria-label="Cancel bulk donation"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Donation Breakdown */}
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {pendingBulkDonation.map((item) => (
+                  <div
+                    key={item.type}
+                    className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs font-mono"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">{item.icon}</span>
+                      <div>
+                        <div className="font-bold text-white">{item.label}</div>
+                        <div className="text-[11px] text-slate-400">
+                          Transfer: -{formatBigInt(item.totalAmount)} · Remaining:{' '}
+                          {formatBigInt(item.remainingStock)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-amber-400 font-bold">
+                      +{formatBigInt(item.totalCoins)} 🪙
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Honor Earned Summary */}
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs font-mono">
+                <span className="text-amber-200 font-bold">Total Personal &amp; Vault Honor:</span>
+                <span className="text-amber-400 font-bold text-sm">
+                  +
+                  {formatBigInt(
+                    pendingBulkDonation.reduce((sum, item) => sum + item.totalCoins, 0n)
+                  )}{' '}
+                  🪙
+                </span>
+              </div>
+
+              {/* Required Checkbox Acknowledgment */}
+              <label
+                data-testid="clan-vault-donation-ack-label"
+                className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/90 border border-slate-700 hover:border-blue-400/60 cursor-pointer select-none transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  data-testid="clan-vault-donation-ack-checkbox"
+                  checked={donationAckChecked}
+                  onChange={(e) => setDonationAckChecked(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded accent-amber-500 cursor-pointer shrink-0"
+                />
+                <span className="text-xs text-slate-200 leading-relaxed">
+                  I acknowledge that these bulk resource donations to the Clan Vault are permanent
+                  and cannot be refunded.
+                </span>
+              </label>
+
+              {/* Dialog Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  data-testid="clan-vault-donation-cancel-btn"
+                  onClick={handleCancelBulkDonation}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="clan-vault-donation-confirm-btn"
+                  onClick={handleConfirmBulkDonation}
+                  disabled={!donationAckChecked}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 transition-all ${
+                    donationAckChecked
+                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
+                >
+                  <Gift className="w-3.5 h-3.5" />
+                  Confirm Vault Donation
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

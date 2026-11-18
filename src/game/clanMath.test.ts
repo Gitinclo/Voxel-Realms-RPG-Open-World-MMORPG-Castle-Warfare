@@ -16,8 +16,10 @@ import {
   calculateCoopBossStrike,
   buildClanTerritoryGrid,
   evaluateTerritoryControlSummary,
+  evaluateBulkVaultDonation,
+  validateBulkVaultDonationConfirmation,
 } from './clanMath';
-import { ClanMember } from '../types/game';
+import { ClanMember, GameResources } from '../types/game';
 import { INITIAL_CLAN_WAR } from './initialData';
 
 test('role permissions enforce strict hierarchical rights', () => {
@@ -157,4 +159,39 @@ test('buildClanTerritoryGrid and evaluateTerritoryControlSummary map 3x3 outpost
   assert.equal(updatedSummary.enemyControlledCount, 3);
   assert.equal(updatedSummary.neutralCount, 1);
   assert.equal(updatedSummary.dominanceStatus, 'Tactical Advantage');
+});
+
+test('evaluateBulkVaultDonation and validateBulkVaultDonationConfirmation enforce checkbox acknowledgment', () => {
+  const sampleResources: GameResources = {
+    wood: 1_500_000n,
+    steel: 900_000n,
+    copper: 500_000n,
+    diamond: 10_000n,
+    grain: 2_000_000n,
+    oil: 40_000n, // Below 50K threshold
+  };
+
+  const options = [
+    { type: 'wood' as const, icon: '🌲', label: '100K Wood', amount: 100_000n, coins: 200n },
+    { type: 'steel' as const, icon: '⚔️', label: '80K Steel', amount: 80_000n, coins: 250n },
+    { type: 'oil' as const, icon: '🛢️', label: '50K Oil', amount: 50_000n, coins: 300n },
+  ];
+
+  const items10x = evaluateBulkVaultDonation(options, sampleResources, 10);
+  // 10x Wood (1M <= 1.5M) and 10x Steel (800K <= 900K) qualify; Oil does not
+  assert.equal(items10x.length, 2);
+  assert.equal(items10x[0].totalAmount, 1_000_000n);
+  assert.equal(items10x[0].totalCoins, 2_000n);
+  assert.equal(items10x[1].totalAmount, 800_000n);
+  assert.equal(items10x[1].totalCoins, 2_500n);
+
+  // Unchecked acknowledgment must block execution
+  const unacknowledged = validateBulkVaultDonationConfirmation(items10x, sampleResources, false);
+  assert.equal(unacknowledged.canExecute, false);
+  assert.equal(unacknowledged.totalHonorCoins, 4_500n);
+
+  // Checked acknowledgment allows execution
+  const acknowledged = validateBulkVaultDonationConfirmation(items10x, sampleResources, true);
+  assert.equal(acknowledged.canExecute, true);
+  assert.equal(acknowledged.totalHonorCoins, 4_500n);
 });

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ClanMember, ClanRole, ClanPermissions } from '../types/game';
+import { ClanMember, ClanRole, ClanPermissions, ResourceType, GameResources } from '../types/game';
 
 export const ROLE_HIERARCHY: Record<ClanRole, number> = {
   Leader: 5,
@@ -446,5 +446,104 @@ export function evaluateTerritoryControlSummary(
     enemyPointsPerMinute,
     frontlineSectorsCount,
     dominanceStatus,
+  };
+}
+
+export interface BulkVaultDonationItem {
+  type: ResourceType;
+  icon: string;
+  label: string;
+  baseAmount: bigint;
+  baseCoins: bigint;
+  multiplier: number;
+  totalAmount: bigint;
+  totalCoins: bigint;
+  remainingStock: bigint;
+}
+
+export interface BulkVaultDonationValidation {
+  canExecute: boolean;
+  reason?: string;
+  items: BulkVaultDonationItem[];
+  totalHonorCoins: bigint;
+}
+
+export function evaluateBulkVaultDonation(
+  options: {
+    type: ResourceType;
+    icon: string;
+    label: string;
+    amount: bigint;
+    coins: bigint;
+  }[],
+  resources: GameResources,
+  multiplier: number = 1
+): BulkVaultDonationItem[] {
+  const safeMult = Math.max(1, Math.floor(multiplier));
+  const multBig = BigInt(safeMult);
+  const items: BulkVaultDonationItem[] = [];
+
+  for (const opt of options) {
+    const totalAmount = opt.amount * multBig;
+    const available = resources[opt.type] ?? 0n;
+    if (available >= totalAmount && totalAmount > 0n) {
+      items.push({
+        type: opt.type,
+        icon: opt.icon,
+        label: safeMult > 1 ? `${safeMult}x ${opt.label}` : opt.label,
+        baseAmount: opt.amount,
+        baseCoins: opt.coins,
+        multiplier: safeMult,
+        totalAmount,
+        totalCoins: opt.coins * multBig,
+        remainingStock: available - totalAmount,
+      });
+    }
+  }
+
+  return items;
+}
+
+export function validateBulkVaultDonationConfirmation(
+  items: BulkVaultDonationItem[],
+  resources: GameResources,
+  acknowledged: boolean
+): BulkVaultDonationValidation {
+  if (items.length === 0) {
+    return {
+      canExecute: false,
+      reason: 'No eligible bulk resource supplies selected for donation.',
+      items: [],
+      totalHonorCoins: 0n,
+    };
+  }
+
+  for (const item of items) {
+    const currentStock = resources[item.type] ?? 0n;
+    if (item.totalAmount <= 0n || currentStock < item.totalAmount) {
+      return {
+        canExecute: false,
+        reason: `Insufficient ${item.type} reserves for bulk vault donation.`,
+        items,
+        totalHonorCoins: 0n,
+      };
+    }
+  }
+
+  const totalHonorCoins = items.reduce((sum, item) => sum + item.totalCoins, 0n);
+
+  if (!acknowledged) {
+    return {
+      canExecute: false,
+      reason: 'Checkbox acknowledgment is required before executing bulk vault donations.',
+      items,
+      totalHonorCoins,
+    };
+  }
+
+  return {
+    canExecute: true,
+    items,
+    totalHonorCoins,
   };
 }
