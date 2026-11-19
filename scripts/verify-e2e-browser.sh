@@ -156,21 +156,59 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     await page.waitForTimeout(250);
   };
 
+  const captureModal = async (filePath) => {
+    const clip = await page.evaluate(() => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const dialog = document.querySelector("[role=dialog]");
+      let card = dialog ? (dialog.firstElementChild || dialog) : null;
+      if (card) {
+        const r = card.getBoundingClientRect();
+        if (r.width >= vw - 4 && r.height >= vh - 4 && card.firstElementChild) {
+          card = card.firstElementChild;
+        }
+      }
+      if (!card) {
+        const closeBtn = document.querySelector("button[aria-label*=\"Close\" i]");
+        let cur = closeBtn ? closeBtn.parentElement : null;
+        while (cur && cur !== document.body) {
+          const r = cur.getBoundingClientRect();
+          if (r.width >= 640 && r.width < vw - 16 && r.height >= 420 && r.height <= vh - 8) {
+            card = cur;
+            break;
+          }
+          cur = cur.parentElement;
+        }
+      }
+      const rect = card ? card.getBoundingClientRect() : null;
+      if (rect && rect.width >= 600 && rect.height >= 400 && rect.width < vw - 8) {
+        return {
+          x: Math.max(0, Math.round(rect.x)),
+          y: Math.max(0, Math.round(rect.y)),
+          width: Math.min(vw - Math.max(0, Math.round(rect.x)), Math.round(rect.width)),
+          height: Math.min(vh - Math.max(0, Math.round(rect.y)), Math.round(rect.height)),
+        };
+      }
+      return { x: 220, y: 48, width: 1000, height: 804 };
+    });
+    await page.screenshot({ path: filePath, clip, scale: "css", type: "png", timeout: 25000 });
+  };
+
   // 2a. EULA Legal acceptance dialog + screenshot capture
   await clickButtonByText("EULA");
   await page.waitForSelector("[role=dialog]", { timeout: 10000 });
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(500);
   const eulaText = await page.locator("[role=dialog]").innerText();
   if (!eulaText.toUpperCase().includes("EULA") && !eulaText.toUpperCase().includes("LICENSE")) {
     throw new Error("EULA modal did not render expected legal content");
   }
-  await page.screenshot({ path: ".playwright-cli/modal-eula.png", animations: "disabled", timeout: 20000 });
+  await captureModal(".playwright-cli/modal-eula.png");
   await closeTopDialog();
 
   // 2b. Payment-free VIP Diamond Covenant dialog (verify zero credit-card inputs) + screenshot capture
   await clickButtonByText("VIP Member Pass");
   await page.waitForSelector("[role=dialog]", { timeout: 10000 });
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(500);
   const vipCheck = await page.evaluate(() => {
     const dialog = document.querySelector("[role=dialog]");
     const text = (dialog?.textContent || "").toUpperCase();
@@ -180,7 +218,7 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (!vipCheck.hasVipTitle || vipCheck.hasCardInput) {
     throw new Error("VIP dialog check failed: " + JSON.stringify(vipCheck));
   }
-  await page.screenshot({ path: ".playwright-cli/modal-vip.png", animations: "disabled", timeout: 20000 });
+  await captureModal(".playwright-cli/modal-vip.png");
   await closeTopDialog();
 
   // 2c. Character Creation Centre modal + screenshot capture
@@ -191,7 +229,7 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     return bodyText.includes("SPECIES") || bodyText.includes("CHARACTER CREATION");
   });
   if (!charCheck) throw new Error("Character Creation Centre did not render expected content");
-  await page.screenshot({ path: ".playwright-cli/modal-character-creation.png", animations: "disabled", timeout: 20000 });
+  await captureModal(".playwright-cli/modal-character-creation.png");
   await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll("button"));
     const closeBtn = btns.find((b) => (b.getAttribute("aria-label") || "").toLowerCase().includes("close"));
@@ -201,18 +239,60 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
 
   // 2d. Enter the Realm -> active 3D WebGL canvas
   await clickButtonByText("ENTER THE REALM");
-  await page.waitForTimeout(400);
+  await page.waitForSelector("[data-testid=\"dock-castle-btn\"]", { timeout: 10000 });
+  await page.waitForTimeout(450);
   const canvasCount = await page.locator("canvas").count();
   if (canvasCount < 1) {
     throw new Error("Expected active 3D WebGL canvas after entering realm");
   }
+
+  const closeActiveGameModal = async () => {
+    await page.evaluate(() => {
+      const btn = document.querySelector("button[aria-label=\"Close modal\"]");
+      if (btn) btn.click();
+    });
+    await page.waitForTimeout(250);
+  };
+
+  // 2e. Castle Modal visual regression capture
+  await page.evaluate(() => {
+    const btn = document.querySelector("[data-testid=\"dock-castle-btn\"]");
+    if (!btn) throw new Error("dock-castle-btn not found");
+    btn.click();
+  });
+  await page.waitForSelector("button[aria-label=\"Close modal\"]", { timeout: 10000 });
+  await page.waitForTimeout(350);
+  await captureModal(".playwright-cli/modal-castle.png");
+  await closeActiveGameModal();
+
+  // 2f. Troop Barracks Modal visual regression capture
+  await page.evaluate(() => {
+    const btn = document.querySelector("[data-testid=\"dock-barracks-btn\"]");
+    if (!btn) throw new Error("dock-barracks-btn not found");
+    btn.click();
+  });
+  await page.waitForSelector("button[aria-label=\"Close modal\"]", { timeout: 10000 });
+  await page.waitForTimeout(350);
+  await captureModal(".playwright-cli/modal-troop.png");
+  await closeActiveGameModal();
+
+  // 2g. Cultivation Modal visual regression capture
+  await page.evaluate(() => {
+    const btn = document.querySelector("[data-testid=\"dock-cultivate-btn\"]");
+    if (!btn) throw new Error("dock-cultivate-btn not found");
+    btn.click();
+  });
+  await page.waitForSelector("button[aria-label=\"Close modal\"]", { timeout: 10000 });
+  await page.waitForTimeout(350);
+  await captureModal(".playwright-cli/modal-cultivation.png");
+  await closeActiveGameModal();
 }' 2>&1)" || {
   log "[VerifyE2E] FAIL in Step 2:"
   log "${STEP2_OUT}"
   exit 1
 }
 
-log "[VerifyE2E] 2b/6 Running key modal visual screenshot comparison (playwright.config.ts)..."
+log "[VerifyE2E] 2b/6 Running key modal visual screenshot comparison (EULA, VIP, Character, Castle, Troop, Cultivation)..."
 ./node_modules/.bin/tsx scripts/compare-modal-screenshots.ts 2>&1 | tee -a "${RUN_LOG}"
 
 log "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."

@@ -69,7 +69,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
   // Copy actual screenshot into visual-diff directory for CI artifact inspection
   fs.copyFileSync(actualPath, path.join(DIFF_DIR, `${spec.id}-actual.png`));
 
-  if (decoded.width !== spec.expectedWidth || decoded.height !== spec.expectedHeight) {
+  if (decoded.width < spec.minWidth || decoded.height < spec.minHeight) {
     hasFailure = true;
     report.push({
       id: spec.id,
@@ -83,7 +83,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
       diffFile: null,
-      reason: `Unexpected modal viewport size ${decoded.width}x${decoded.height} (expected ${spec.expectedWidth}x${spec.expectedHeight}).`,
+      reason: `Unexpected modal capture size ${decoded.width}x${decoded.height} (minimum ${spec.minWidth}x${spec.minHeight}).`,
     });
     continue;
   }

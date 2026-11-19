@@ -9,8 +9,8 @@ export interface ModalSnapshotSpec {
   actualFile: string;
   baselineFile: string;
   diffFile: string;
-  expectedWidth: number;
-  expectedHeight: number;
+  minWidth: number;
+  minHeight: number;
   maxDiffPixelRatio: number;
 }
 
@@ -21,8 +21,8 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     actualFile: '.playwright-cli/modal-eula.png',
     baselineFile: '.playwright-cli/baselines/modal-eula.png',
     diffFile: '.playwright-cli/visual-diff/modal-eula-diff.png',
-    expectedWidth: 1440,
-    expectedHeight: 900,
+    minWidth: 600,
+    minHeight: 400,
     maxDiffPixelRatio: 0.03,
   },
   {
@@ -31,8 +31,8 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     actualFile: '.playwright-cli/modal-vip.png',
     baselineFile: '.playwright-cli/baselines/modal-vip.png',
     diffFile: '.playwright-cli/visual-diff/modal-vip-diff.png',
-    expectedWidth: 1440,
-    expectedHeight: 900,
+    minWidth: 600,
+    minHeight: 400,
     maxDiffPixelRatio: 0.03,
   },
   {
@@ -41,8 +41,38 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     actualFile: '.playwright-cli/modal-character-creation.png',
     baselineFile: '.playwright-cli/baselines/modal-character-creation.png',
     diffFile: '.playwright-cli/visual-diff/modal-character-creation-diff.png',
-    expectedWidth: 1440,
-    expectedHeight: 900,
+    minWidth: 600,
+    minHeight: 400,
+    maxDiffPixelRatio: 0.03,
+  },
+  {
+    id: 'castle-modal',
+    label: 'Castle Citadel Upgrade Modal',
+    actualFile: '.playwright-cli/modal-castle.png',
+    baselineFile: '.playwright-cli/baselines/modal-castle.png',
+    diffFile: '.playwright-cli/visual-diff/modal-castle-diff.png',
+    minWidth: 600,
+    minHeight: 400,
+    maxDiffPixelRatio: 0.03,
+  },
+  {
+    id: 'troop-modal',
+    label: 'Troop Barracks & Unit Upgrade Modal',
+    actualFile: '.playwright-cli/modal-troop.png',
+    baselineFile: '.playwright-cli/baselines/modal-troop.png',
+    diffFile: '.playwright-cli/visual-diff/modal-troop-diff.png',
+    minWidth: 600,
+    minHeight: 400,
+    maxDiffPixelRatio: 0.03,
+  },
+  {
+    id: 'cultivation-modal',
+    label: 'Four-Path Immortal Cultivation Modal',
+    actualFile: '.playwright-cli/modal-cultivation.png',
+    baselineFile: '.playwright-cli/baselines/modal-cultivation.png',
+    diffFile: '.playwright-cli/visual-diff/modal-cultivation-diff.png',
+    minWidth: 600,
+    minHeight: 400,
     maxDiffPixelRatio: 0.03,
   },
 ] as const;
