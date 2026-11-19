@@ -104,16 +104,38 @@ import {
   upsertRealmSaveForUid,
 } from './src/db/users.ts';
 
+function parseCliFlag(flagName: string): string | undefined {
+  const args = process.argv.slice(2);
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === `--${flagName}` && i + 1 < args.length) {
+      return args[i + 1];
+    }
+    if (arg.startsWith(`--${flagName}=`)) {
+      return arg.slice(flagName.length + 3);
+    }
+  }
+  return undefined;
+}
+
 const isProductionEnv = process.env.NODE_ENV === 'production';
+const parsedCliPort = Number.parseInt(parseCliFlag('port') || '', 10);
 const parsedProdPort = Number.parseInt(process.env.PORT || '', 10);
-const parsedDevPort = Number.parseInt(process.env.VOXEL_DEV_PORT || '', 10);
-const PORT = isProductionEnv
-  ? Number.isFinite(parsedProdPort) && parsedProdPort > 0
-    ? parsedProdPort
-    : 3000
-  : Number.isFinite(parsedDevPort) && parsedDevPort > 0
-    ? parsedDevPort
-    : 3000;
+const parsedDevPort = Number.parseInt(
+  process.env.VOXEL_DEV_PORT || process.env.DEFAULT_APP_PORT || '',
+  10
+);
+const PORT =
+  Number.isFinite(parsedCliPort) && parsedCliPort > 0
+    ? parsedCliPort
+    : isProductionEnv
+      ? Number.isFinite(parsedProdPort) && parsedProdPort > 0
+        ? parsedProdPort
+        : 3000
+      : Number.isFinite(parsedDevPort) && parsedDevPort > 0
+        ? parsedDevPort
+        : 3000;
+const HOST = parseCliFlag('host') || '0.0.0.0';
 const ROOT_DIR = import.meta.dirname ?? process.cwd();
 const DATA_DIR = path.resolve(process.env.VOXEL_DATA_DIR || path.join(ROOT_DIR, 'data'));
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -2598,6 +2620,7 @@ async function startServer() {
         server: {
           middlewareMode: true,
           hmr: false,
+          ws: false,
           watch: null,
         },
         appType: 'spa',
@@ -2688,10 +2711,12 @@ async function startServer() {
   process.once('SIGINT', () => performGracefulShutdown('SIGINT'));
 
   // Bind port 3000 immediately so health/readiness probes succeed without waiting for Vite cold scan
-  await new Promise<void>((resolve) => {
-    httpServer.listen(PORT, '0.0.0.0', () => {
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once('error', reject);
+    httpServer.listen(PORT, HOST, () => {
+      httpServer.off('error', reject);
       console.log(
-        `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Atomic Persistence listening on http://0.0.0.0:${PORT}`
+        `[Voxel Realms Server] Authoritative 20Hz 50v50 Siege, RBAC Auth & Atomic Persistence listening on http://${HOST}:${PORT}`
       );
       resolve();
     });

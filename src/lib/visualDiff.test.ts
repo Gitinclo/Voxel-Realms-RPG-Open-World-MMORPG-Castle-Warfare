@@ -80,4 +80,14 @@ test('comparePngScreenshots rejects dimension mismatches and computeVisualVarian
   const mismatch = comparePngScreenshots(small, larger);
   assert.equal(mismatch.passed, false);
   assert.ok(mismatch.reason?.includes('dimensions changed'));
+
+  // With explicit maxDimensionDeltaPx, minor 1px height jitter on a 100x100 frame passes within ratio
+  const frameA = makeTestPng(100, 100, [10, 20, 30, 255]);
+  const frameB = makeTestPng(100, 101, [10, 20, 30, 255]);
+  const tolerated = comparePngScreenshots(frameA, frameB, {
+    maxDimensionDeltaPx: 4,
+    maxDiffPixelRatio: 0.05,
+  });
+  assert.equal(tolerated.passed, true);
+  assert.equal(tolerated.diffPixels, 100);
 });

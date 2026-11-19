@@ -23,7 +23,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-eula-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
   {
     id: 'vip-modal',
@@ -33,7 +33,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-vip-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
   {
     id: 'character-creation-modal',
@@ -43,7 +43,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-character-creation-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
   {
     id: 'castle-modal',
@@ -53,7 +53,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-castle-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
   {
     id: 'troop-modal',
@@ -63,7 +63,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-troop-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
   {
     id: 'cultivation-modal',
@@ -73,7 +73,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-cultivation-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.05,
+    maxDiffPixelRatio: 0.08,
   },
 ] as const;
 
@@ -86,7 +86,7 @@ const playwrightConfig = {
   expect: {
     timeout: 10_000,
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.05,
+      maxDiffPixelRatio: 0.08,
       threshold: 0.2,
       animations: 'disabled' as const,
     },

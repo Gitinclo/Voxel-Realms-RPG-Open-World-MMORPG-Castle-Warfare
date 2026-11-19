@@ -20,6 +20,12 @@ export interface VisualDiffOptions {
   channelTolerance?: number;
   /** Maximum fraction (0..1) of differing pixels allowed before failing. Default: 0.03. */
   maxDiffPixelRatio?: number;
+  /**
+   * Optional maximum width/height delta (in CSS pixels) tolerated across OS font renderers.
+   * When > 0 and both width/height deltas are within this limit, the overlapping region is compared
+   * and non-overlapping edge pixels are counted as diffs. Default: 0 (exact dimensions required).
+   */
+  maxDimensionDeltaPx?: number;
 }
 
 export interface VisualDiffResult {
@@ -221,12 +227,17 @@ export function comparePngScreenshots(
 ): VisualDiffResult {
   const channelTolerance = options.channelTolerance ?? 18;
   const maxDiffPixelRatio = options.maxDiffPixelRatio ?? 0.03;
+  const maxDimensionDeltaPx = Math.max(0, options.maxDimensionDeltaPx ?? 0);
 
   const actual = decodePngBuffer(actualBuffer);
   const baseline = decodePngBuffer(baselineBuffer);
-  const totalPixels = actual.width * actual.height;
+  const widthDelta = Math.abs(actual.width - baseline.width);
+  const heightDelta = Math.abs(actual.height - baseline.height);
+  const maxWidth = Math.max(actual.width, baseline.width);
+  const maxHeight = Math.max(actual.height, baseline.height);
+  const totalPixels = maxWidth * maxHeight;
 
-  if (actual.width !== baseline.width || actual.height !== baseline.height) {
+  if (widthDelta > maxDimensionDeltaPx || heightDelta > maxDimensionDeltaPx) {
     return {
       passed: false,
       reason: `Screenshot dimensions changed: actual ${actual.width}x${actual.height} vs baseline ${baseline.width}x${baseline.height}.`,
@@ -244,39 +255,59 @@ export function comparePngScreenshots(
   }
 
   let diffPixels = 0;
-  const diffRgba = new Uint8Array(actual.rgba.length);
+  const diffRgba = new Uint8Array(maxWidth * maxHeight * 4);
 
-  for (let i = 0; i < actual.rgba.length; i += 4) {
-    const dr = Math.abs(actual.rgba[i] - baseline.rgba[i]);
-    const dg = Math.abs(actual.rgba[i + 1] - baseline.rgba[i + 1]);
-    const db = Math.abs(actual.rgba[i + 2] - baseline.rgba[i + 2]);
-    const da = Math.abs(actual.rgba[i + 3] - baseline.rgba[i + 3]);
+  for (let y = 0; y < maxHeight; y++) {
+    for (let x = 0; x < maxWidth; x++) {
+      const dstIdx = (y * maxWidth + x) * 4;
+      const inActual = x < actual.width && y < actual.height;
+      const inBaseline = x < baseline.width && y < baseline.height;
 
-    if (
-      dr > channelTolerance ||
-      dg > channelTolerance ||
-      db > channelTolerance ||
-      da > channelTolerance
-    ) {
-      diffPixels++;
-      diffRgba[i] = 255;
-      diffRgba[i + 1] = 0;
-      diffRgba[i + 2] = 136;
-      diffRgba[i + 3] = 255;
-    } else {
-      const luma = Math.round(
-        (actual.rgba[i] * 0.299 + actual.rgba[i + 1] * 0.587 + actual.rgba[i + 2] * 0.114) * 0.45
-      );
-      diffRgba[i] = luma;
-      diffRgba[i + 1] = luma;
-      diffRgba[i + 2] = luma;
-      diffRgba[i + 3] = 255;
+      if (!inActual || !inBaseline) {
+        diffPixels++;
+        diffRgba[dstIdx] = 255;
+        diffRgba[dstIdx + 1] = 0;
+        diffRgba[dstIdx + 2] = 136;
+        diffRgba[dstIdx + 3] = 255;
+        continue;
+      }
+
+      const aIdx = (y * actual.width + x) * 4;
+      const bIdx = (y * baseline.width + x) * 4;
+      const dr = Math.abs(actual.rgba[aIdx] - baseline.rgba[bIdx]);
+      const dg = Math.abs(actual.rgba[aIdx + 1] - baseline.rgba[bIdx + 1]);
+      const db = Math.abs(actual.rgba[aIdx + 2] - baseline.rgba[bIdx + 2]);
+      const da = Math.abs(actual.rgba[aIdx + 3] - baseline.rgba[bIdx + 3]);
+
+      if (
+        dr > channelTolerance ||
+        dg > channelTolerance ||
+        db > channelTolerance ||
+        da > channelTolerance
+      ) {
+        diffPixels++;
+        diffRgba[dstIdx] = 255;
+        diffRgba[dstIdx + 1] = 0;
+        diffRgba[dstIdx + 2] = 136;
+        diffRgba[dstIdx + 3] = 255;
+      } else {
+        const luma = Math.round(
+          (actual.rgba[aIdx] * 0.299 +
+            actual.rgba[aIdx + 1] * 0.587 +
+            actual.rgba[aIdx + 2] * 0.114) *
+            0.45
+        );
+        diffRgba[dstIdx] = luma;
+        diffRgba[dstIdx + 1] = luma;
+        diffRgba[dstIdx + 2] = luma;
+        diffRgba[dstIdx + 3] = 255;
+      }
     }
   }
 
   const diffRatio = totalPixels > 0 ? diffPixels / totalPixels : 0;
   const passed = diffRatio <= maxDiffPixelRatio;
-  const diffPng = diffPixels > 0 ? encodeRgbaPng(actual.width, actual.height, diffRgba) : null;
+  const diffPng = diffPixels > 0 ? encodeRgbaPng(maxWidth, maxHeight, diffRgba) : null;
 
   return {
     passed,

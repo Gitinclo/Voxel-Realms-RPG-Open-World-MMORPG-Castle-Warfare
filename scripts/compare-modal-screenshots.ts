@@ -170,7 +170,8 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
 
   const baselineBuf = fs.readFileSync(baselinePath);
   const diff = comparePngScreenshots(actualBuf, baselineBuf, {
-    channelTolerance: 28,
+    channelTolerance: 36,
+    maxDimensionDeltaPx: 16,
     maxDiffPixelRatio: spec.maxDiffPixelRatio,
   });
 

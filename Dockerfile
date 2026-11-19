@@ -61,7 +61,7 @@ ENV NODE_ENV=test \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends bash curl ca-certificates \
+    && apt-get install -y --no-install-recommends bash curl ca-certificates fonts-noto-core fonts-noto-color-emoji fonts-jetbrains-mono \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./

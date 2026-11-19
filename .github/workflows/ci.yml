@@ -45,8 +45,12 @@ jobs:
         run: npm run lockfile:verify
       - name: Install dependencies & build production bundle
         run: npm ci --no-audit && npm run build
-      - name: Install Playwright chrome-for-testing binaries & CLI
+      - name: Install matching fonts, Playwright chrome-for-testing binaries & CLI
         run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-noto-color-emoji
+          sudo apt-get install -y --no-install-recommends fonts-jetbrains-mono || true
+          fc-cache -f
           npx playwright install --with-deps chrome-for-testing
           npm install -g @playwright/cli
           playwright-cli install-browser chrome-for-testing --with-deps
