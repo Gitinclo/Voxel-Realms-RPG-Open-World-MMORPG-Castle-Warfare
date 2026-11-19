@@ -22,9 +22,11 @@
     "test": "tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts",
     "test:rules": "tsx --test firestore.rules.test.ts",
     "test:coverage": "tsx --test --experimental-test-coverage src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts",
+    "lockfile:regenerate": "node scripts/regenerate-lockfile.mjs",
+    "lockfile:verify": "node scripts/regenerate-lockfile.mjs --verify",
     "verify:ops": "tsx scripts/verify-readiness.ts",
     "verify:e2e": "bash scripts/verify-e2e-browser.sh",
-    "validate": "npm run lint && npm run lint:rules && npm run format:check && npm test && npm run build"
+    "validate": "npm run lockfile:verify && npm run lint && npm run lint:rules && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
     "@google/genai": "2.32.0",
@@ -64,6 +66,7 @@
     "autoprefixer": "10.6.2",
     "esbuild": "0.28.2",
     "eslint": "10.15.0",
+    "playwright": "1.65.1",
     "prettier": "3.10.1",
     "tailwindcss": "4.3.5",
     "typescript": "7.0.2"

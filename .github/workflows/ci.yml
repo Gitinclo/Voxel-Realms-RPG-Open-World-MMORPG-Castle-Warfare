@@ -1,4 +1,4 @@
-name: CI — PR Validation, Audit, Coverage & Live Ops
+name: CI — PR Validation, Audit, Coverage, Live Ops & E2E Gate
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate-and-verify:
-    name: Validate, Audit, Coverage & Live Ops Probe
+    name: Lockfile Integrity, Validate, Audit, Coverage & Live Ops Probe
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+      - name: Verify package-lock.json integrity matches package.json
+        run: npm run lockfile:verify
       - name: Install deterministic dependencies
         run: npm ci --no-audit
       - name: Type-check, rules lint, Prettier, unit tests & production build
@@ -27,3 +29,33 @@ jobs:
         run: npm run test:coverage
       - name: Live production-mode ops, ledger & multi-sector WS probe
         run: npm run verify:ops
+
+  e2e-browser:
+    name: Required E2E Browser Gate (Playwright Headless Chromium)
+    needs: validate-and-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Verify package-lock.json integrity matches package.json
+        run: npm run lockfile:verify
+      - name: Install dependencies & build production bundle
+        run: npm ci --no-audit && npm run build
+      - name: Install Playwright Chromium browser binaries & CLI
+        run: |
+          npx playwright install --with-deps chromium
+          npm install -g @playwright/cli
+      - name: Run required E2E verification suite
+        run: npm run verify:e2e
+      - name: Export E2E failure logs & screenshot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-e2e-logs-and-screenshots
+          path: .playwright-cli/
+          if-no-files-found: ignore
+          retention-days: 14

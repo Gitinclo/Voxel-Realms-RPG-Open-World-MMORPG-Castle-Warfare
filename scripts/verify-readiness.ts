@@ -478,13 +478,29 @@ async function runVerification() {
     const selfMintBody = (await selfMintRes.json()) as { code?: string };
     assert.equal(selfMintBody.code, 'CLIENT_SELF_CREDIT_FORBIDDEN');
 
-    const claimKey = `ops-claim-${Date.now()}`;
-    const claimRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
+    // Forged gameplay event attempting to supply client amountWire MUST be rejected (400 CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN)
+    const forgedEventRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-forged-evt-${Date.now()}`,
+        eventType: 'SLAY_PATROL_MONSTER',
+        amountWire: '999999',
+      }),
+    });
+    assert.equal(forgedEventRes.status, 400);
+    const forgedEventBody = (await forgedEventRes.json()) as { code?: string };
+    assert.equal(forgedEventBody.code, 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN');
+
+    const claimKey = `ops-evt-${Date.now()}`;
+    const claimRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
       body: JSON.stringify({
         idempotencyKey: claimKey,
-        actionType: 'SLAY_PATROL_MONSTER',
+        eventType: 'SLAY_PATROL_MONSTER',
+        sectorId: 'A1',
+        entityId: 'patrol-mob-01',
       }),
     });
     assert.equal(claimRes.status, 200);
@@ -501,12 +517,14 @@ async function runVerification() {
     assert.equal(claimBody.integrity.valid, true);
 
     // Exact replay of claimKey must NOT double-credit
-    const claimReplayRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
+    const claimReplayRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
       body: JSON.stringify({
         idempotencyKey: claimKey,
-        actionType: 'SLAY_PATROL_MONSTER',
+        eventType: 'SLAY_PATROL_MONSTER',
+        sectorId: 'A1',
+        entityId: 'patrol-mob-01',
       }),
     });
     assert.equal(claimReplayRes.status, 200);
@@ -520,12 +538,13 @@ async function runVerification() {
     assert.equal(claimReplayBody.balances.diamonds, '110');
 
     // Fresh idempotency key inside server cooldown window MUST be rejected (429 ACTION_COOLDOWN_ACTIVE)
-    const spamClaimRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
+    const spamClaimRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
       body: JSON.stringify({
-        idempotencyKey: `ops-claim-spam-${Date.now()}`,
-        actionType: 'SLAY_PATROL_MONSTER',
+        idempotencyKey: `ops-evt-spam-${Date.now()}`,
+        eventType: 'SLAY_PATROL_MONSTER',
+        sectorId: 'A1',
       }),
     });
     assert.equal(spamClaimRes.status, 429);

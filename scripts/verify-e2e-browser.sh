@@ -11,19 +11,50 @@ set -euo pipefail
 # 3. Vertical slice: Enter the Realm -> live 3D WebGL canvas & active HUD
 # 4. Browser reload recovery & zero console errors
 # 5. Mobile viewport (390x844) layout check (no horizontal overflow)
-# 6. Browser-context fail-closed auth (401), account switching, economy ledger idempotency,
+# 6. Browser-context fail-closed auth (401), account switching, direct self-credit rejection (403),
+#    validated gameplay event rewards + anti-override (400) + replay + cooldown (429),
 #    PII export/erasure, and live WebSocket /ws/siege connect -> snapshot -> disconnect -> reconnect
+#
+# Always exports logs & screenshots into .playwright-cli/ for CI artifact collection.
 
 SESSION_NAME="vr-e2e-$$"
 SERVER_PID=""
 TMP_DATA_DIR=""
+ARTIFACT_DIR=".playwright-cli"
+RUN_LOG="${ARTIFACT_DIR}/e2e-run.log"
+SERVER_EXPORT_LOG="${ARTIFACT_DIR}/e2e-server.log"
+CONSOLE_EXPORT_LOG="${ARTIFACT_DIR}/e2e-console.log"
+BROWSER_OPENED=0
+
+mkdir -p "${ARTIFACT_DIR}"
+: > "${RUN_LOG}"
+
+log() {
+  echo "$*" | tee -a "${RUN_LOG}"
+}
 
 if ! command -v playwright-cli >/dev/null 2>&1; then
-  echo "[VerifyE2E] ERROR: playwright-cli is not installed on PATH."
+  log "[VerifyE2E] ERROR: playwright-cli is not installed on PATH."
   exit 1
 fi
 
+capture_failure_artifacts() {
+  local exit_code="$1"
+  if [ "${exit_code}" -ne 0 ]; then
+    log "[VerifyE2E] Exporting failure diagnostics (exit=${exit_code}) into ${ARTIFACT_DIR}/..."
+    if [ "${BROWSER_OPENED}" -eq 1 ]; then
+      playwright-cli -s="${SESSION_NAME}" console > "${CONSOLE_EXPORT_LOG}" 2>&1 || true
+      playwright-cli -s="${SESSION_NAME}" screenshot --filename="${ARTIFACT_DIR}/e2e-failure.png" >/dev/null 2>&1 || true
+    fi
+  fi
+  if [ -n "${TMP_DATA_DIR}" ] && [ -f "${TMP_DATA_DIR}/server.log" ]; then
+    cp "${TMP_DATA_DIR}/server.log" "${SERVER_EXPORT_LOG}" 2>/dev/null || true
+  fi
+}
+
 cleanup() {
+  local exit_code=$?
+  capture_failure_artifacts "${exit_code}"
   playwright-cli -s="${SESSION_NAME}" close >/dev/null 2>&1 || true
   if [ -n "${SERVER_PID}" ]; then
     kill "${SERVER_PID}" >/dev/null 2>&1 || true
@@ -32,6 +63,7 @@ cleanup() {
   if [ -n "${TMP_DATA_DIR}" ] && [ -d "${TMP_DATA_DIR}" ]; then
     rm -rf "${TMP_DATA_DIR}"
   fi
+  exit "${exit_code}"
 }
 trap cleanup EXIT
 
@@ -42,10 +74,10 @@ else
   TARGET_URL="http://127.0.0.1:${E2E_PORT}"
   TMP_DATA_DIR="$(mktemp -d /tmp/vr-e2e-data-XXXXXX)"
   if [ ! -f "dist/index.html" ]; then
-    echo "[VerifyE2E] dist/index.html missing; running npm run build..."
+    log "[VerifyE2E] dist/index.html missing; running npm run build..."
     npm run build >/dev/null
   fi
-  echo "[VerifyE2E] Starting isolated production server at ${TARGET_URL} (dataDir=${TMP_DATA_DIR})..."
+  log "[VerifyE2E] Starting isolated production server at ${TARGET_URL} (dataDir=${TMP_DATA_DIR})..."
   NODE_ENV=production \
   PORT="${E2E_PORT}" \
   VOXEL_DATA_DIR="${TMP_DATA_DIR}" \
@@ -57,8 +89,8 @@ else
   READY=0
   for _ in $(seq 1 40); do
     if ! kill -0 "${SERVER_PID}" >/dev/null 2>&1; then
-      echo "[VerifyE2E] FAIL: Server process exited prematurely:"
-      cat "${TMP_DATA_DIR}/server.log" || true
+      log "[VerifyE2E] FAIL: Server process exited prematurely:"
+      cat "${TMP_DATA_DIR}/server.log" | tee -a "${RUN_LOG}" || true
       exit 1
     fi
     if curl -fsS "${TARGET_URL}/readyz" >/dev/null 2>&1; then
@@ -68,25 +100,24 @@ else
     sleep 0.25
   done
   if [ "${READY}" -ne 1 ]; then
-    echo "[VerifyE2E] FAIL: Server did not become ready at ${TARGET_URL}/readyz"
-    cat "${TMP_DATA_DIR}/server.log" || true
+    log "[VerifyE2E] FAIL: Server did not become ready at ${TARGET_URL}/readyz"
+    cat "${TMP_DATA_DIR}/server.log" | tee -a "${RUN_LOG}" || true
     exit 1
   fi
 fi
 
-mkdir -p .playwright-cli
-
-echo "[VerifyE2E] 1/6 Opening ${TARGET_URL} at 1440x900..."
+log "[VerifyE2E] 1/6 Opening ${TARGET_URL} at 1440x900..."
 playwright-cli -s="${SESSION_NAME}" open --browser=chromium "${TARGET_URL}" >/dev/null
+BROWSER_OPENED=1
 playwright-cli -s="${SESSION_NAME}" resize 1440 900 >/dev/null
 
 TITLE="$(playwright-cli -s="${SESSION_NAME}" eval "document.title")"
 echo "${TITLE}" | grep -qi "Voxel Realms" || {
-  echo "[VerifyE2E] FAIL: Unexpected document title: ${TITLE}"
+  log "[VerifyE2E] FAIL: Unexpected document title: ${TITLE}"
   exit 1
 }
 
-echo "[VerifyE2E] 2/6 Checking Legal / EULA, Payment-Free VIP, Character Creation & Enter Realm..."
+log "[VerifyE2E] 2/6 Checking Legal / EULA, Payment-Free VIP, Character Creation & Enter Realm..."
 STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   const clickButtonByText = async (needle) => {
     const clicked = await page.evaluate((text) => {
@@ -159,24 +190,25 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     throw new Error("Expected active 3D WebGL canvas after entering realm");
   }
 }' 2>&1)" || {
-  echo "[VerifyE2E] FAIL in Step 2:"
-  echo "${STEP2_OUT}"
+  log "[VerifyE2E] FAIL in Step 2:"
+  log "${STEP2_OUT}"
   exit 1
 }
 
-echo "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."
+log "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."
 playwright-cli -s="${SESSION_NAME}" reload >/dev/null
 playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   await page.waitForSelector("canvas", { timeout: 10000 });
 }' >/dev/null
 CONSOLE_OUT="$(playwright-cli -s="${SESSION_NAME}" console)"
+echo "${CONSOLE_OUT}" > "${CONSOLE_EXPORT_LOG}"
 echo "${CONSOLE_OUT}" | grep -q "Errors: 0" || {
-  echo "[VerifyE2E] FAIL: Console reported errors:"
-  echo "${CONSOLE_OUT}"
+  log "[VerifyE2E] FAIL: Console reported errors:"
+  log "${CONSOLE_OUT}"
   exit 1
 }
 
-echo "[VerifyE2E] 4/6 Checking mobile viewport (390x844) horizontal overflow..."
+log "[VerifyE2E] 4/6 Checking mobile viewport (390x844) horizontal overflow..."
 playwright-cli -s="${SESSION_NAME}" resize 390 844 >/dev/null
 playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   await page.waitForTimeout(250);
@@ -189,13 +221,14 @@ playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   }
 }' >/dev/null
 
-echo "[VerifyE2E] 5/6 Checking fail-closed auth, account switch, ledger idempotency, PII erasure & WS disconnect/reconnect..."
+log "[VerifyE2E] 5/6 Checking fail-closed auth, account switch, gameplay event ledger authority, PII erasure & WS disconnect/reconnect..."
 STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   const result = await page.evaluate(async () => {
     const anonAdmin = await fetch("/api/admin/state");
     const anonEcon = await fetch("/api/online/economy/balance");
 
-    // Account A login + verify direct self-credit blocked (403) + server-derived claim-action + replay + 429 cooldown
+    // Account A login + verify direct self-credit blocked (403), forged payload override blocked (400),
+    // server-validated gameplay event granted (200), replay deduplicated, and cooldown spam blocked (429)
     const sessA = await fetch("/api/auth/player-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -212,31 +245,45 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
         reason: "MONSTER_LOOT",
       }),
     });
-    const key = "e2e-claim-" + Date.now();
-    const tx1Res = await fetch("/api/online/economy/claim-action", {
+    const forgedEventRes = await fetch("/api/online/economy/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "e2e-forged-evt-" + Date.now(),
+        eventType: "SLAY_PATROL_MONSTER",
+        amountWire: "999999",
+      }),
+    });
+    const key = "e2e-evt-" + Date.now();
+    const tx1Res = await fetch("/api/online/economy/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         idempotencyKey: key,
-        actionType: "SLAY_PATROL_MONSTER",
+        eventType: "SLAY_PATROL_MONSTER",
+        sectorId: "B2",
+        entityId: "patrol-wolf-01",
       }),
     });
     const tx1Text = await tx1Res.text();
-    const txReplayRes = await fetch("/api/online/economy/claim-action", {
+    const txReplayRes = await fetch("/api/online/economy/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         idempotencyKey: key,
-        actionType: "SLAY_PATROL_MONSTER",
+        eventType: "SLAY_PATROL_MONSTER",
+        sectorId: "B2",
+        entityId: "patrol-wolf-01",
       }),
     });
     const txReplayText = await txReplayRes.text();
-    const spamRes = await fetch("/api/online/economy/claim-action", {
+    const spamRes = await fetch("/api/online/economy/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        idempotencyKey: "e2e-claim-spam-" + Date.now(),
-        actionType: "SLAY_PATROL_MONSTER",
+        idempotencyKey: "e2e-evt-spam-" + Date.now(),
+        eventType: "SLAY_PATROL_MONSTER",
+        sectorId: "B2",
       }),
     });
 
@@ -280,6 +327,7 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
       anonEconStatus: anonEcon.status,
       sessAStatus: sessA.status,
       selfCreditStatus: selfCreditRes.status,
+      forgedEventStatus: forgedEventRes.status,
       tx1Status: tx1Res.status,
       tx1Text,
       txReplayStatus: txReplayRes.status,
@@ -298,12 +346,13 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (result.anonEconStatus !== 401) throw new Error(`Expected 401 on /api/online/economy/balance, got ${result.anonEconStatus}`);
   if (result.sessAStatus !== 200) throw new Error(`Expected 200 on sessA, got ${result.sessAStatus}`);
   if (result.selfCreditStatus !== 403) throw new Error(`Expected 403 on direct client self-credit, got ${result.selfCreditStatus}`);
-  if (result.tx1Status !== 200) throw new Error(`Expected 200 on claim-action tx1, got ${result.tx1Status}: ${result.tx1Text}`);
-  if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on claim-action replay, got ${result.txReplayStatus}: ${result.txReplayText}`);
+  if (result.forgedEventStatus !== 400) throw new Error(`Expected 400 on forged event amount override, got ${result.forgedEventStatus}`);
+  if (result.tx1Status !== 200) throw new Error(`Expected 200 on gameplay event tx1, got ${result.tx1Status}: ${result.tx1Text}`);
+  if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on gameplay event replay, got ${result.txReplayStatus}: ${result.txReplayText}`);
   if (result.spamStatus !== 429) throw new Error(`Expected 429 on fresh-key cooldown spam, got ${result.spamStatus}`);
   const tx1 = JSON.parse(result.tx1Text);
   const txReplay = JSON.parse(result.txReplayText);
-  if (!tx1?.ok || tx1?.replayed) throw new Error("Initial claim-action failed: " + result.tx1Text);
+  if (!tx1?.ok || tx1?.replayed) throw new Error("Initial gameplay event reward failed: " + result.tx1Text);
   if (!txReplay?.replayed || tx1?.balances?.diamonds !== txReplay?.balances?.diamonds || txReplay?.integrity?.valid !== true) {
     throw new Error("Idempotency replay or ledger integrity check failed: " + result.txReplayText);
   }
@@ -317,16 +366,16 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     throw new Error(`WebSocket disconnect/reconnect failed: ${result.wsConn1Ok} / ${result.wsConn2Ok}`);
   }
 }' 2>&1)" || {
-  echo "[VerifyE2E] FAIL in Step 5:"
-  echo "${STEP5_OUT}"
+  log "[VerifyE2E] FAIL in Step 5:"
+  log "${STEP5_OUT}"
   if [ -n "${TMP_DATA_DIR}" ] && [ -f "${TMP_DATA_DIR}/server.log" ]; then
-    echo "--- Server Log ---"
-    cat "${TMP_DATA_DIR}/server.log"
+    log "--- Server Log ---"
+    cat "${TMP_DATA_DIR}/server.log" | tee -a "${RUN_LOG}"
   fi
   exit 1
 }
 
-echo "[VerifyE2E] 6/6 Capturing mobile viewport proof screenshot..."
-playwright-cli -s="${SESSION_NAME}" screenshot --filename=.playwright-cli/e2e-r2-mobile.png
+log "[VerifyE2E] 6/6 Capturing mobile viewport proof screenshot..."
+playwright-cli -s="${SESSION_NAME}" screenshot --filename="${ARTIFACT_DIR}/e2e-r2-mobile.png"
 
-echo "[VerifyE2E] ✅ ALL 6 REAL CHROMIUM E2E CHECKS PASSED (0 console errors, EULA + Payment-Free VIP + Character Creation + 3D Canvas, Reload, Mobile 390x844, Fail-Closed 401, Account Switch, Ledger Idempotency, PII Erasure, WS Disconnect/Reconnect)"
+log "[VerifyE2E] ✅ ALL 6 REAL CHROMIUM E2E CHECKS PASSED (0 console errors, EULA + Payment-Free VIP + Character Creation + 3D Canvas, Reload, Mobile 390x844, Fail-Closed 401, Account Switch, Event Ledger Authority + 403/400/429 Guards, PII Erasure, WS Disconnect/Reconnect)"

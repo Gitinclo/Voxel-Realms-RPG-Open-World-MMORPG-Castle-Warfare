@@ -154,6 +154,9 @@ export type EconomyTransactionResult =
         | 'INVALID_REASON'
         | 'INVALID_AMOUNT'
         | 'INVALID_ACTION_TYPE'
+        | 'INVALID_EVENT_CONTEXT'
+        | 'INVALID_EVENT_TIMESTAMP'
+        | 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN'
         | 'CLIENT_SELF_CREDIT_FORBIDDEN'
         | 'ADMIN_REASON_FORBIDDEN'
         | 'INSUFFICIENT_FUNDS'
@@ -464,6 +467,138 @@ export function claimAuthoritativeGameplayAction(
       },
     },
   };
+}
+
+export const VALID_GAMEPLAY_SECTORS = new Set<string>([
+  'A1',
+  'A2',
+  'A3',
+  'A4',
+  'B1',
+  'B2',
+  'B3',
+  'B4',
+  'C1',
+  'C2',
+  'C3',
+  'C4',
+  'D1',
+  'D2',
+  'D3',
+  'D4',
+]);
+
+const FORBIDDEN_CLIENT_EVENT_FIELDS = [
+  'amount',
+  'amountWire',
+  'resource',
+  'direction',
+  'reason',
+  'serverAuthorizedCredit',
+  'isPrivilegedStaff',
+] as const;
+
+export const MAX_EVENT_PAST_SKEW_MS = 5 * 60 * 1000;
+export const MAX_EVENT_FUTURE_SKEW_MS = 30 * 1000;
+
+export interface GameplayEventValidationInput {
+  idempotencyKey?: unknown;
+  eventType?: unknown;
+  actionType?: unknown;
+  sectorId?: unknown;
+  entityId?: unknown;
+  occurredAtMs?: unknown;
+  [extraKey: string]: unknown;
+}
+
+/**
+ * Validates an untrusted client gameplay event payload and grants the corresponding
+ * server-derived reward via `claimAuthoritativeGameplayAction`.
+ *
+ * Explicitly rejects any attempt by the client to smuggle ledger mutation fields
+ * (`amountWire`, `resource`, `direction`, `reason`, `serverAuthorizedCredit`, `isPrivilegedStaff`).
+ */
+export function validateAndApplyGameplayEvent(
+  account: CommanderEconomyAccount,
+  rawPayload: GameplayEventValidationInput,
+  nowMs: number = Date.now()
+): EconomyTransactionResult {
+  if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_EVENT_CONTEXT',
+      error: 'Gameplay event payload must be a JSON object.',
+    };
+  }
+
+  for (const forbiddenField of FORBIDDEN_CLIENT_EVENT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(rawPayload, forbiddenField)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN',
+        error: `Clients cannot supply ledger field "${forbiddenField}" in gameplay events. Rewards are computed exclusively on the server.`,
+      };
+    }
+  }
+
+  if (rawPayload.sectorId !== undefined && rawPayload.sectorId !== null) {
+    const sector = typeof rawPayload.sectorId === 'string' ? rawPayload.sectorId.trim() : '';
+    if (!VALID_GAMEPLAY_SECTORS.has(sector)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'INVALID_EVENT_CONTEXT',
+        error: `Invalid gameplay sectorId: ${String(rawPayload.sectorId)}`,
+      };
+    }
+  }
+
+  if (rawPayload.entityId !== undefined && rawPayload.entityId !== null) {
+    const entityId = typeof rawPayload.entityId === 'string' ? rawPayload.entityId.trim() : '';
+    if (entityId.length < 2 || entityId.length > 64 || !/^[a-zA-Z0-9:._-]+$/.test(entityId)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'INVALID_EVENT_CONTEXT',
+        error: 'entityId must be 2-64 safe identifier characters.',
+      };
+    }
+  }
+
+  if (rawPayload.occurredAtMs !== undefined && rawPayload.occurredAtMs !== null) {
+    if (typeof rawPayload.occurredAtMs !== 'number' || !Number.isFinite(rawPayload.occurredAtMs)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'INVALID_EVENT_TIMESTAMP',
+        error: 'occurredAtMs must be a finite epoch millisecond timestamp.',
+      };
+    }
+    const skewMs = nowMs - rawPayload.occurredAtMs;
+    if (skewMs > MAX_EVENT_PAST_SKEW_MS || skewMs < -MAX_EVENT_FUTURE_SKEW_MS) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'INVALID_EVENT_TIMESTAMP',
+        error: 'Gameplay event timestamp falls outside the server acceptance window.',
+      };
+    }
+  }
+
+  const resolvedAction = (rawPayload.eventType ??
+    rawPayload.actionType) as AuthoritativeGameplayActionType;
+
+  return claimAuthoritativeGameplayAction(
+    account,
+    {
+      idempotencyKey:
+        typeof rawPayload.idempotencyKey === 'string' ? rawPayload.idempotencyKey : '',
+      actionType: resolvedAction,
+    },
+    nowMs
+  );
 }
 
 export function verifyEconomyLedgerIntegrity(account: CommanderEconomyAccount): {

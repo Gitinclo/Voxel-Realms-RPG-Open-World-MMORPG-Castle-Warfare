@@ -48,6 +48,34 @@ ENTRYPOINT []
 CMD ["nginx", "-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]
 
 # ==============================================================================
+# Optional Stage: Headless Browser E2E Runner (Node 24 Debian + Playwright Chromium)
+# Build explicitly with: docker build --target e2e-runner -t voxel-e2e:ci .
+# Run with: docker run --rm voxel-e2e:ci
+# Skipped automatically by BuildKit during default production builds.
+# ==============================================================================
+FROM node:24-bookworm-slim AS e2e-runner
+
+WORKDIR /app
+
+ENV NODE_ENV=test \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends bash curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit \
+    && npx playwright install --with-deps chromium \
+    && npm install -g @playwright/cli \
+    && npm cache clean --force
+
+COPY . .
+COPY --from=builder /app/dist ./dist
+
+CMD ["npm", "run", "verify:e2e"]
+
+# ==============================================================================
 # Stage 2 (Default): Production Runtime (Node.js 24 Alpine)
 # Serves the compiled Vite bundle (/app/dist), Express API (/api/*), and 20Hz
 # WebSocket Siege server (/ws/siege) as non-root user `node` on port 3000.

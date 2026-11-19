@@ -59,14 +59,14 @@ import {
   sanitizeAndValidateSyncPayload,
 } from './src/game/serverAuth';
 import {
-  AuthoritativeGameplayActionType,
   CommanderEconomyAccount,
+  GameplayEventValidationInput,
   LedgerResourceKey,
   LedgerTxDirection,
   LedgerTxReason,
   applyAuthoritativeEconomyTransaction,
-  claimAuthoritativeGameplayAction,
   createInitialEconomyAccount,
+  validateAndApplyGameplayEvent,
   verifyEconomyLedgerIntegrity,
 } from './src/game/economyLedger';
 import {
@@ -1789,6 +1789,7 @@ async function startServer() {
       amountWire: body.amountWire || '',
       reason: body.reason as LedgerTxReason,
       isPrivilegedStaff: session.permissions.canUseGodmodeAndCheats,
+      serverAuthorizedCredit: false,
     });
 
     if (!txResult.ok) {
@@ -1831,50 +1832,60 @@ async function startServer() {
     });
   });
 
-  app.post('/api/online/economy/claim-action', (req, res) => {
+  const handleValidatedGameplayEvent = (req: express.Request, res: express.Response) => {
     const session = requireAuthenticatedSession(req, res);
     if (!session) return;
 
-    const body = (req.body || {}) as {
-      idempotencyKey?: string;
-      actionType?: AuthoritativeGameplayActionType;
-    };
-
+    const rawPayload = (req.body || {}) as GameplayEventValidationInput;
     const currentAccount = getOrCreateEconomyAccount(session.commanderId);
-    const claimResult = claimAuthoritativeGameplayAction(currentAccount, {
-      idempotencyKey: body.idempotencyKey || '',
-      actionType: body.actionType as AuthoritativeGameplayActionType,
-    });
+    const eventResult = validateAndApplyGameplayEvent(currentAccount, rawPayload);
 
-    if (!claimResult.ok) {
-      if (claimResult.retryAfterSec) {
-        res.setHeader('Retry-After', String(claimResult.retryAfterSec));
+    if (!eventResult.ok) {
+      if (eventResult.retryAfterSec) {
+        res.setHeader('Retry-After', String(eventResult.retryAfterSec));
       }
-      if (claimResult.code === 'ACTION_COOLDOWN_ACTIVE') {
+      if (
+        eventResult.code === 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN' ||
+        eventResult.code === 'ACTION_COOLDOWN_ACTIVE'
+      ) {
         opsCounters.antiCheatRejections += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `Gameplay reward event rejected (${eventResult.code}): ${eventResult.error}`,
+          })
+        );
+        persistStoreToDisk(store);
       }
-      res.status(claimResult.statusCode).json({
+      res.status(eventResult.statusCode).json({
         ok: false,
-        code: claimResult.code,
-        retryAfterSec: claimResult.retryAfterSec,
-        error: claimResult.error,
+        code: eventResult.code,
+        retryAfterSec: eventResult.retryAfterSec,
+        error: eventResult.error,
       });
       return;
     }
 
-    if (!claimResult.replayed) {
-      store.economyAccounts![session.commanderId] = claimResult.account;
+    if (!eventResult.replayed) {
+      store.economyAccounts![session.commanderId] = eventResult.account;
       persistStoreToDisk(store);
     }
 
     res.json({
       ok: true,
-      replayed: claimResult.replayed,
-      entry: claimResult.entry,
-      balances: claimResult.account.balances,
-      integrity: verifyEconomyLedgerIntegrity(claimResult.account),
+      replayed: eventResult.replayed,
+      entry: eventResult.entry,
+      balances: eventResult.account.balances,
+      integrity: verifyEconomyLedgerIntegrity(eventResult.account),
     });
-  });
+  };
+
+  app.post('/api/online/economy/events', handleValidatedGameplayEvent);
+  app.post('/api/online/economy/claim-action', handleValidatedGameplayEvent);
 
   // ==========================================================================
   // SELF-SERVICE PII EXPORT & ACCOUNT DELETION (PRIVACY / RIGHT TO ERASURE)

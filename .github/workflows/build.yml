@@ -30,6 +30,9 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Verify package-lock.json integrity matches package.json
+        run: npm run lockfile:verify
+
       - name: Install dependencies
         run: npm ci --no-audit
 
@@ -66,12 +69,21 @@ jobs:
           retention-days: 14
 
   docker-build:
-    name: Container Verification (Multi-Stage Node 24 Alpine)
+    name: Container Verification (Multi-Stage Node 24 Alpine + E2E Stage)
+    needs: quality-check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup Node.js for lockfile integrity gate
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify package-lock.json integrity matches package.json
+        run: npm run lockfile:verify
 
       - name: Build production Node runner image
         run: docker build --target runner -t voxel-realms-rpg:ci .
@@ -79,8 +91,12 @@ jobs:
       - name: Build optional Nginx static edge image
         run: docker build --target nginx-runner -t voxel-realms-rpg:nginx-ci .
 
+      - name: Build Playwright E2E browser image
+        run: docker build --target e2e-runner -t voxel-realms-rpg:e2e-ci .
+
   e2e-browser:
-    name: Real Browser E2E Verification (Headless Chromium)
+    name: Required Real Browser E2E Gate (Headless Chromium)
+    needs: quality-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -93,18 +109,21 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      - name: Verify package-lock.json integrity matches package.json
+        run: npm run lockfile:verify
+
       - name: Install dependencies & build production bundle
         run: npm ci --no-audit && npm run build
 
-      - name: Install Playwright CLI & headless Chromium
+      - name: Install Playwright Chromium browser binaries & CLI
         run: |
+          npx playwright install --with-deps chromium
           npm install -g @playwright/cli
-          playwright-cli install-browser chromium --only-shell
 
       - name: Run real headless Chromium E2E suite
         run: npm run verify:e2e
 
-      - name: Upload E2E screenshots & logs
+      - name: Export E2E failure logs & screenshot artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:

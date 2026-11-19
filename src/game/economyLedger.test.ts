@@ -6,55 +6,144 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ALLOWED_LEDGER_REASONS,
   applyAuthoritativeEconomyTransaction,
   claimAuthoritativeGameplayAction,
   createInitialEconomyAccount,
+  validateAndApplyGameplayEvent,
   verifyEconomyLedgerIntegrity,
 } from './economyLedger';
 
-test('clients CANNOT mint rewards directly via arbitrary credits even with fresh idempotency keys', () => {
+test('ledger strictly rejects arbitrary credits across all non-authorized reasons for players and staff', () => {
   const initial = createInitialEconomyAccount('cmdr-exploit-1', '2026-11-18T00:00:00.000Z');
 
-  const selfCreditLoot = applyAuthoritativeEconomyTransaction(initial, {
-    idempotencyKey: 'fresh-mint-key-001',
+  for (const reason of ALLOWED_LEDGER_REASONS) {
+    const playerAttempt = applyAuthoritativeEconomyTransaction(initial, {
+      idempotencyKey: `player-arbitrary-${reason}`,
+      resource: 'diamonds',
+      direction: 'credit',
+      amountWire: '500',
+      reason,
+      isPrivilegedStaff: false,
+    });
+    assert.equal(playerAttempt.ok, false, `Expected player credit with ${reason} to be rejected`);
+    if (!playerAttempt.ok) {
+      assert.equal(playerAttempt.statusCode, 403);
+      assert.equal(
+        playerAttempt.code,
+        reason === 'ADMIN_ADJUSTMENT' ? 'ADMIN_REASON_FORBIDDEN' : 'CLIENT_SELF_CREDIT_FORBIDDEN'
+      );
+    }
+
+    if (reason !== 'ADMIN_ADJUSTMENT') {
+      const staffArbitraryAttempt = applyAuthoritativeEconomyTransaction(initial, {
+        idempotencyKey: `staff-arbitrary-${reason}`,
+        resource: 'wood',
+        direction: 'credit',
+        amountWire: '500',
+        reason,
+        isPrivilegedStaff: true,
+      });
+      assert.equal(
+        staffArbitraryAttempt.ok,
+        false,
+        `Expected non-ADMIN_ADJUSTMENT staff credit with ${reason} to be rejected`
+      );
+      if (!staffArbitraryAttempt.ok) {
+        assert.equal(staffArbitraryAttempt.statusCode, 403);
+        assert.equal(staffArbitraryAttempt.code, 'CLIENT_SELF_CREDIT_FORBIDDEN');
+      }
+    }
+  }
+
+  // Only explicit privileged ADMIN_ADJUSTMENT credits succeed directly without a gameplay event
+  const validStaffGrant = applyAuthoritativeEconomyTransaction(initial, {
+    idempotencyKey: 'staff-valid-grant-001',
     resource: 'diamonds',
     direction: 'credit',
-    amountWire: '50',
-    reason: 'MONSTER_LOOT',
-    isPrivilegedStaff: false,
-  });
-  assert.equal(selfCreditLoot.ok, false);
-  if (!selfCreditLoot.ok) {
-    assert.equal(selfCreditLoot.statusCode, 403);
-    assert.equal(selfCreditLoot.code, 'CLIENT_SELF_CREDIT_FORBIDDEN');
-  }
-
-  const selfCreditGather = applyAuthoritativeEconomyTransaction(initial, {
-    idempotencyKey: 'fresh-mint-key-002',
-    resource: 'wood',
-    direction: 'credit',
-    amountWire: '500',
-    reason: 'GATHER_REWARD',
-    isPrivilegedStaff: false,
-  });
-  assert.equal(selfCreditGather.ok, false);
-  if (!selfCreditGather.ok) {
-    assert.equal(selfCreditGather.statusCode, 403);
-    assert.equal(selfCreditGather.code, 'CLIENT_SELF_CREDIT_FORBIDDEN');
-  }
-
-  const adminForged = applyAuthoritativeEconomyTransaction(initial, {
-    idempotencyKey: 'forged-admin-001',
-    resource: 'wood',
-    direction: 'credit',
-    amountWire: '500',
+    amountWire: '25',
     reason: 'ADMIN_ADJUSTMENT',
-    isPrivilegedStaff: false,
+    isPrivilegedStaff: true,
   });
-  assert.equal(adminForged.ok, false);
-  if (!adminForged.ok) {
-    assert.equal(adminForged.statusCode, 403);
-    assert.equal(adminForged.code, 'ADMIN_REASON_FORBIDDEN');
+  assert.equal(validStaffGrant.ok, true);
+  if (validStaffGrant.ok) {
+    assert.equal(validStaffGrant.account.balances.diamonds, '125');
+  }
+});
+
+test('validateAndApplyGameplayEvent rejects client payload overrides, invalid sectors, and forged timestamps', () => {
+  const t0 = 1_800_000_000_000;
+  const initial = createInitialEconomyAccount('cmdr-event-sec', new Date(t0).toISOString());
+
+  const forgedOverrides: Array<Record<string, unknown>> = [
+    { idempotencyKey: 'evt-override-1', eventType: 'SLAY_PATROL_MONSTER', amountWire: '999999' },
+    { idempotencyKey: 'evt-override-2', eventType: 'SLAY_PATROL_MONSTER', resource: 'diamonds' },
+    { idempotencyKey: 'evt-override-3', eventType: 'SLAY_PATROL_MONSTER', direction: 'credit' },
+    { idempotencyKey: 'evt-override-4', eventType: 'SLAY_PATROL_MONSTER', reason: 'MONSTER_LOOT' },
+    {
+      idempotencyKey: 'evt-override-5',
+      eventType: 'SLAY_PATROL_MONSTER',
+      serverAuthorizedCredit: true,
+    },
+    {
+      idempotencyKey: 'evt-override-6',
+      eventType: 'SLAY_PATROL_MONSTER',
+      isPrivilegedStaff: true,
+    },
+  ];
+
+  for (const payload of forgedOverrides) {
+    const res = validateAndApplyGameplayEvent(initial, payload, t0);
+    assert.equal(res.ok, false);
+    if (!res.ok) {
+      assert.equal(res.statusCode, 400);
+      assert.equal(res.code, 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN');
+    }
+  }
+
+  const badSector = validateAndApplyGameplayEvent(
+    initial,
+    { idempotencyKey: 'evt-bad-sector-1', eventType: 'GATHER_WOOD_NODE', sectorId: 'Z99' },
+    t0
+  );
+  assert.equal(badSector.ok, false);
+  if (!badSector.ok) {
+    assert.equal(badSector.statusCode, 400);
+    assert.equal(badSector.code, 'INVALID_EVENT_CONTEXT');
+  }
+
+  const staleEvent = validateAndApplyGameplayEvent(
+    initial,
+    {
+      idempotencyKey: 'evt-stale-1',
+      eventType: 'GATHER_WOOD_NODE',
+      sectorId: 'A1',
+      occurredAtMs: t0 - 10 * 60 * 1000,
+    },
+    t0
+  );
+  assert.equal(staleEvent.ok, false);
+  if (!staleEvent.ok) {
+    assert.equal(staleEvent.statusCode, 400);
+    assert.equal(staleEvent.code, 'INVALID_EVENT_TIMESTAMP');
+  }
+
+  const validEvent = validateAndApplyGameplayEvent(
+    initial,
+    {
+      idempotencyKey: 'evt-valid-wood-01',
+      eventType: 'GATHER_WOOD_NODE',
+      sectorId: 'B2',
+      entityId: 'node-forest-12',
+      occurredAtMs: t0 - 500,
+    },
+    t0
+  );
+  assert.equal(validEvent.ok, true);
+  if (validEvent.ok) {
+    assert.equal(validEvent.account.balances.wood, '5150');
+    assert.equal(validEvent.entry.amountWire, '150');
+    assert.equal(validEvent.entry.reason, 'GATHER_REWARD');
   }
 });
 
