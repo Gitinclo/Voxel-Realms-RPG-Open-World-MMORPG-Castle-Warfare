@@ -42,8 +42,8 @@
 
 ### C. Response Header & Cross-Origin Preview Hardening
 
-- Every response from `server.ts` sets:
-  - `Content-Security-Policy` (restricting script/style/font/connect/frame sources and `frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://aistudio.google.com`)
+- Every response from `server.ts` (and `nginx.conf` for static edge deployments) sets:
+  - `Content-Security-Policy` (restricting script/style/font/connect/worker/frame sources, including `worker-src 'self' blob:` and `frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://aistudio.google.com`)
   - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (in production or over HTTPS)
   - `X-Frame-Options: SAMEORIGIN` (in production unless `ALLOW_PREVIEW_IFRAME=true`)
   - `X-Content-Type-Options: nosniff`
@@ -53,15 +53,21 @@
   - `Cache-Control: no-store` on all `/api/*` responses
   - `app.disable('x-powered-by')`
 
+### D. Global Realm State Isolation (`/api/online/*`)
+
+- `GET /api/online/status?sector=` is strictly read-only and never mutates global `store.activeSector`.
+- `POST /api/online/sync` restricts global `primaryClusterId` and `activeSector` mutations exclusively to GM/admin sessions (`canAccessGmConsole`); non-admin/guest sessions persist only their own `preferredRegion` while unauthorized global field mutations are clamped and logged.
+- The 20Hz siege tick loop ticks every sector with active subscribed peers independently.
+
 ---
 
 ## 3. RFC 6455 WebSocket & Authoritative Anti-Cheat Hardening (`/ws/siege`)
 
-1. **Bounded Frame Decoder (`decodeWsFramesHardened`)**:
-   - Rejects unmasked client frames (RFC 6455 §5.1 compliance).
-   - Enforces a **`32 KiB`** maximum single-frame payload (`1009 Message Too Big`) and **`64 KiB`** maximum per-peer accumulation buffer.
-   - Disconnects peers exceeding **`30 messages / second`** after 3 warnings (`1008 Policy Violation`).
-   - Disconnects slow consumers whose socket write buffer (`socket.writableLength`) exceeds **`256 KiB`**.
+1. **Upgrade Handshake & Bounded Frame Hardening (`verifyWebSocketOrigin`, `resolveClientIpFromHeaders`, `decodeWsFramesHardened`)**:
+   - Validates browser `Origin` headers against `Host` / `APP_URL` to block Cross-Site WebSocket Hijacking (`HTTP 403`).
+   - Rejects `?token=` query-string credentials on WebSocket upgrades (`HTTP 400`), requiring `HttpOnly` session cookies or `Authorization: Bearer` headers.
+   - Resolves real client IPs from trusted reverse-proxy `X-Forwarded-For` headers (with IPv6-mapped IPv4 normalization) so per-IP connection limits do not collapse load-balanced players onto one proxy IP.
+   - Rejects unmasked client frames (RFC 6455 §5.1 compliance), enforces a **`32 KiB`** max frame payload (`1009 Message Too Big`) and **`64 KiB`** max accumulation buffer, disconnects peers exceeding **`30 messages / second`** after 3 warnings (`1008 Policy Violation`), and drops slow consumers exceeding **`256 KiB`** outbound backpressure.
 2. **Authoritative Multiplayer Anti-Cheat (`src/game/antiCheat.ts`)**:
    - Validates cohort movement velocity (`<= 45.0 m/s`), teleports (`<= 120.0 m/tick`), monotonic `clientSeq` numbers, rally troop caps (`<= 1T`), and cloud save stat deltas (`sanitizeCloudProfilePatch`), automatically quarantining repeat offenders (`>= 6` strikes).
 

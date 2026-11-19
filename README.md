@@ -1,10 +1,11 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 [![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-178_Passing_(29_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-187_Passing_(30_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
 [![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./Physics.md)
+[![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![Cloud Persistence](https://img.shields.io/badge/Cloud_Data-Cloud_SQL_%2B_Firestore-6366f1?style=flat-square&logo=firebase&logoColor=white)](#16-️-cloud-sql-postgresql-firebase-auth-hardened-firestore--gmail-dispatch-center)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![EULA: v1.5.0](<https://img.shields.io/badge/EULA-v1.5.0_(17%2F11%2F2026)-14b8a6?style=flat-square>)](./EULA.md)
@@ -84,23 +85,27 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 - **7-Day Consecutive Decree Cycle**: Daily scaling rewards of diamonds, spirit stones, resources, and scripture fragments scaled by both Citadel Level and Cultivation Realm.
 - **Veteran Scroll Sanctum**: Imbue sacred scrolls across individual or all cultivation paths for permanent lineage mastery buffs.
 
-### 8. 👑 Imperial VIP Member Covenant, In-Game Economy & Marketplace (`src/game/vipSubscription.ts`, [`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md))
+### 8. 👑 Imperial VIP Member Covenant, In-Game Economy & Marketplace (`src/game/vipSubscription.ts`, `src/game/marketplaceSparklineD3.ts`, [`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md))
 
-- **4 Tier Levels (`Free Sovereign`, `VIP 1 Silver Archon`, `VIP 2 Golden Sovereign`, `VIP 3 Celestial Emperor`)**:
-  - Monthly and Annual billing cycles (activatable via Store Pass or Kingdom Diamonds), daily VIP Stipend Chests, Loyalty Level progression (`Lv. 1–15`), Castle Upgrade cost discounts (`-5%` to `-25%`), Extra Gathering March queues, and custom Realm Aura overrides.
+- **4 Tier Levels (`Free Sovereign`, `VIP 1 Silver Vanguard`, `VIP 2 Golden Immortal`, `VIP 3 Celestial Sovereign`)**:
+  - Monthly (`30 Days`) and Annual (`365 Days`) in-game Diamond Covenant redemption (real-money Store Pass billing is disabled so no unverified charges or free bypasses occur), daily VIP Stipend Chests, Loyalty Level progression (`Lv. 1–15`), Castle Upgrade cost discounts (`-15%` to `-35%`), Extra Gathering March queues, and custom Realm Aura overrides.
 - **8 Core Kingdom & Cultivation Currencies + Clan Honor Coins ([`in-game- economy -marketplace.md`](./in-game-%20economy%20-marketplace.md))**:
   - Lossless `BigInt` (`bigint`) treasury ledgers across **Wood**, **Steel**, **Copper**, **Grain**, **Oil**, **Kingdom Diamonds (`💎`)**, **Spirit Stones (`🔮`)**, **Scripture Fragments (`📜`)**, and **Clan Honor Coins**, supporting `1,000T` (`10^15`) garrisons and `~1Q` Creator reserves without IEEE-754 precision loss.
-  - **Marketplace, Caravan Barter & Sovereign Auction House ([`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md))**: Server-authoritative `BigInt` escrow, `5%` Sovereign Auction Levy sink, `+45s` soft-close anti-sniping extensions, Master–Disciple `5%–20%` Spirit Stone lineage taxation, tradable Jade Skill Scrolls, and Root Creator Zero-Loss Economic Immunity (`creatergame31@gmail.com`).
+  - **Marketplace Bulk Trade Liquidity Score Matrix (`MarketplaceModal.tsx`, `src/game/marketplaceSparklineD3.ts`)**: Computes a `0–100` **Liquidity Score**, tier (`Instant`, `High`, `Moderate`, `Thin`, `Depleted`), and estimated execution speed from live NPC stock and average daily trade volume across **Commodity Exchange**, **Caravan Barter**, and **Scrolls & Curios**, with category filters, score sorting, and one-click bulk settlement.
+  - **Caravan Barter & Sovereign Auction House ([`AUCTION_HOUSE_MECHANICS.md`](./AUCTION_HOUSE_MECHANICS.md))**: Server-authoritative `BigInt` escrow, `5%` Sovereign Auction Levy sink, `+45s` soft-close anti-sniping extensions, Master–Disciple `5%–20%` Spirit Stone lineage taxation, tradable Jade Skill Scrolls, and Root Creator Zero-Loss Economic Immunity (`creatergame31@gmail.com`).
 
 ### 9. 🛡️ Clan Alliances, 9-Sector Territory Wars, Authoritative 20Hz 50v50 WebSocket Siege Server & Multi-Region Persistence (`server.ts`, `src/game/siegeNetProtocol.ts`)
 
 - **Heraldic Alliances & 9-Sector Territory War Map (`A1`–`C3`)**: Create and customize heraldic SVG clan emblems, manage membership hierarchies, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
-- **Authoritative 20Hz (`50ms`) 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
-- **Atomic Disk Persistence, Crash Recovery & Single-Instance Bounds (`src/game/serverPersistence.ts`, `/readyz`, `/api/ops/readiness`)**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Live capacity bounds (`<=250` WS peers, `<=5,000` cached commanders) apply to this single-instance architecture; horizontal multi-pod clustering requires an external DB and Redis pub/sub adapter.
+- **Authoritative 20Hz (`50ms`) Multi-Sector 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) ticking all peer-subscribed sectors independently and broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
+- **Atomic Disk Persistence, Crash Recovery & Containerized Production Deployment (`src/game/serverPersistence.ts`, `Dockerfile`, `.dockerignore`, `nginx.conf`, [`DEPLOYMENT.md`](./DEPLOYMENT.md))**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Multi-stage `node:24-alpine` containerization (`Dockerfile`) excludes `devDependencies`, runs as non-root `USER node` on port `3000`, exposes `/healthz` + `/readyz` + `/api/ops/readiness`, and includes an optional `--target nginx-runner` non-root Alpine/Nginx static edge stage.
 
 ### 10. ⚖️ Server-Enforced Administration, GM, Admin & Moderator RBAC Control & Supreme Creator God Character (`creatergame31@gmail.com`)
 
-- **Server-Side Cryptographic & Exploit Hardening (`server.ts`, `src/game/serverAuth.ts`, `src/game/serverHardening.ts`)**: Privileged RBAC actions (`GET /api/admin/state`, `POST /api/admin/moderation`, `POST /api/admin/tickets/resolve`, `POST /api/admin/decree`, `POST /api/admin/species-rebirth`) and online mutations (`/api/online/sync`, `/api/online/siege/cmd`, WebSocket `C2S_*`) fail closed (`401`/`403`) without an HMAC-SHA256 `HttpOnly` session cookie, guarded by sliding-window API write rate limits (`120/min`), 5-attempt admin login brute-force lockouts (`429` + `Retry-After`), Same-Origin CSRF checks, recursive `__proto__` payload filtering (`400`), WS frame/flood caps (`32 KiB` frame / `30 msg/s`), and slow-consumer backpressure disconnects.
+- **Server-Side Cryptographic, Global-State & WebSocket Hardening (`server.ts`, `src/game/serverAuth.ts`, `src/game/serverHardening.ts`)**:
+  - **Fail-Closed Startup Secrets**: `server.ts` refuses to start (`process.exit(1)`) if `VOXEL_SESSION_SECRET` (`>= 32` chars in prod, `>= 16` in dev) or `VOXEL_ADMIN_PASSKEY` (`>= 12` chars) is missing, weak, or matches `.env.example` placeholders—zero ephemeral secret fallbacks.
+  - **Global State Isolation & RBAC**: `GET /api/online/status?sector=` is strictly read-only; global `primaryClusterId` and `activeSector` mutations on `POST /api/online/sync` are restricted to GM/admin sessions (`canAccessGmConsole`); privileged `/api/admin/*` routes and `/api/online/siege/cmd` fail closed (`401`/`403`) without HMAC-SHA256 `HttpOnly` session cookies.
+  - **WebSocket & HTTP Defenses**: Enforces browser `Origin` validation on `/ws/siege` (`403` CSWSH protection), rejects `?token=` query-string credentials (`400`), resolves real client IPs behind trusted proxies via `X-Forwarded-For` (`resolveClientIpFromHeaders`), enforces sliding-window API write rate limits (`120/min`), 5-attempt admin login brute-force lockouts (`429` + `Retry-After`), Same-Origin CSRF checks, recursive `__proto__` payload filtering (`400`), WS frame/flood caps (`32 KiB` frame / `30 msg/s`), slow-consumer backpressure drops, and hardened HTTP headers (`Content-Security-Policy` including `worker-src 'self' blob:`, `Strict-Transport-Security`, `X-Frame-Options`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `X-Content-Type-Options`, `Referrer-Policy`).
 - **Explicit Client Trust Boundary (`src/game/adminModeration.ts`, `AdminConsoleModal.tsx`)**: Client-side email switches, `localStorage` caches, and single-player canvas cheats are explicitly marked **`UNTRUSTED_CLIENT_PREVIEW`** and cannot escalate server permissions or spoof multiplayer state. Root account **`creatergame31@gmail.com`** retains immutable Clearance `Lv. 999` protection plus **Supreme Creator Max-Out God Character, 12-Domain All-Things Immunity & 100 Supreme Omni-Attributes (5 Divine Pillars)** (`src/game/godModeCharacter.ts`, strictly fail-closed for all other emails), with all security events persisted to `securityAuditLog` and verified end-to-end against a live server via `npm run verify:ops` (`scripts/verify-readiness.ts`). See [`SECURITY.md`](./SECURITY.md) for deployment hardening requirements.
 - **Supreme Creator Max-Out God Character, 12-Domain All-Things Immunity & 100 Supreme Omni-Attributes (`src/game/godModeCharacter.ts`, `AdminConsoleModal.tsx`, `CultivationModal.tsx`)**:
   - **Maxed-Out God Character Bundle (`buildMaxedGodCharacterBundle`)**: Exclusively bound to **`creatergame31@gmail.com`** (`Castle Lv. 100 Omnipotent Citadel`, `Armor Tier 20`, `1,000T` T20 troops across Shieldbearers/Shooters/Bombers, `999.999T` [`~1Q`] treasury reserves across Wood/Steel/Copper/Grain/Oil/Diamonds/Spirit Stones/Scripture Fragments, **Realm 22 `Ultimate Origin Supreme Realm` Layer 9** across Qi/Body/Soul/Mind, all 12 Ancient Manuals at `Lv. 10`, all 4 Mystical Skills, 12 Comprehended Great Daos, `100%` Chaos Spirit Root, Supreme Gold Justice Karma `+100,000`, `VIP 3 Celestial Sovereign` Loyalty `Lv. 15`, and `Lv. 999` Divine Heroes).
@@ -649,14 +654,17 @@ npm run preview       # Preview production build locally
 │   └── main.tsx                       # Application entry point wrapped in AuthProvider
 ├── .clang-format                      # C++20 LLVM code formatter rules (IndentWidth: 4, ColumnLimit: 100)
 ├── .clang-tidy                        # C++20 static analyzer rules (enforces smart pointers)
+├── .dockerignore                      # Excludes node_modules, dist, .git, .env, npm-debug.log & local artifacts
 ├── .editorconfig                      # Unified cross-IDE charset, LF endings, and indent defaults
-├── .env.example                       # Environment variable template (safe placeholders)
+├── .env.example                       # Environment variable template (safe placeholders; fail-closed in runtime)
 ├── .gitattributes                     # LF text normalization & binary file heuristics
 ├── .gitignore                         # Git ignore rules (node_modules, dist, build, data, .env, keystores)
 ├── .LOCAL_DEVELOPMENT.md              # Workstation boot sequence, Cloud SQL proxy & local QA loops
 ├── .pre-commit-config.yaml            # Pre-commit secret, YAML/JSON, Prettier, tsc & Firestore rule hooks
 ├── .prettierignore                    # Excluded paths for Prettier formatting checks
 ├── .prettierrc                        # Prettier code style configuration
+├── Dockerfile                         # Multi-stage node:24-alpine build (non-root USER node) + optional nginx-runner
+├── DEPLOYMENT.md                      # Docker build/run, fail-closed secrets & container verification guide
 ├── Justfile                           # Command runner shortcuts (just dev, just validate, just ops, just cpp-test)
 ├── ARCHITECTURE.md                    # System architecture & Functional Core / Imperative Shell guide
 ├── backups.md                         # Backup, Atomic .bak failover, Cloud SQL PITR & Firestore DR runbook
@@ -685,6 +693,7 @@ npm run preview       # Preview production build locally
 ├── LORE.md                            # Imperial Lore, Auto-Populating Codex, 12 Annals & 10^100 Akashic Archive
 ├── metadata.json                      # Applet configuration & capabilities
 ├── monitoring.md                      # Live /healthz, /readyz, /api/ops/readiness & 20Hz latency SLO runbook
+├── nginx.conf                         # Hardened non-root Nginx SPA configuration (port 8080, CSP, HSTS, /healthz)
 ├── NOTICE                             # Apache 2.0 Section 4(d) mandatory attribution notice
 ├── package.json                       # Project dependencies (pinned versions), metadata & npm scripts
 ├── Physics.md                         # 3D Physics, Object Collision (Elastic/Inelastic/Perfectly Inelastic), Momentum & Newton's 3rd Law spec
@@ -715,7 +724,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **174 unit, security, and regression tests across 29 decoupled TypeScript suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **187 unit, security, and regression tests across 30 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -738,14 +747,14 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`174/174 Passing` across 29 TypeScript Suites + Live Ops Readiness + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`187/187 Passing` across 30 TypeScript Test Files + Live Ops Readiness + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
 - **`avatarCloneShadow.test.ts`**: Verifies the 4-row `Clone` vs. `Shadow` vs. `Avatar` comparison matrix, Tactical Illusion / Combat Summon / Cosmetic Clone Avatar subtypes, Umbral Action Mimics, 3.0s Time Echoes, Dark Doppelgänger Bosses, instant Shadow Swap teleportation, per-Avatar duplication caps (`<=3` clones, `<=2` shadows), and 50-player Raid 200-entity `int16` delta-packet compression within the `20Hz` (`50ms`) server tick budget.
 - **`openWorld3DEngine.test.ts`**: Verifies deterministic 2D/3D/4D `simplex-noise` multi-octave fBm biome & subterranean cavern synthesis, `three-mesh-bvh` (`MeshBVH`, `acceleratedRaycast`) O(log N) 3D picking & tree disposal, `cannon-es` rigid-body siege artillery trajectory & Citadel keep collision resolution, `@tweenjs/tween.js` camera orbit interpolation, and `resolveThreeDimensionalObjectCollision` (`Physics.md`: Conservation of Linear Momentum, Newton's Third Law Impulse symmetry, MTV collider separation, and Elastic / Inelastic / Perfectly Inelastic collision regimes).
 - **`architectOptimization.test.ts`**: Verifies `17/11/2026` (`v1.5.0`) Hardware Architect CPU ISA profiles (`x86_64 AVX-512`, `ARM64 SVE2`, `Apple Silicon 128B UMA`, `RISC-V RVV 1.0`), GPU compute backends, Thermal TDP envelopes, Software Architect `SoA` vs `AoS` cache efficiency, Lock-Free Work-Stealing Job DAG scaling, and Frame-Budget Auto-Scaler determinism.
-- **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations, territory war outpost assaults, and co-op boss damage milestones.
+- **`clanMath.test.ts`**: Validates clan level scaling, alliance vault donations (including bulk donation confirmation gate), territory war outpost assaults, and co-op boss damage milestones.
 - **`cosmologicalTreeD3.test.ts`**: Verifies D3 hierarchy construction (`buildCosmologicalD3TreeData`) and Horizontal/Radial layout coordinate projection (`computeCosmologicalD3Layout`) from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) to leaf `Universe` (`Tier 1`) nodes.
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
@@ -754,11 +763,12 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
 - **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`6+` sections each), 12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`), Auto-Populating Open-World Lore Codex (8 spatial biomes + canonical/dynamic Lv. 1–1000 monster discovery & bounty claims), the `10^100`-Word Minimum Akashic Lore Stream (`generateGoogolScaleLoreScrollSlice` synthesizing `>= 1,000` real words/volume across `10^97` `BigInt` coordinates), 6 Sacred Compendium Codices, `comprehendLoreEpoch`, and full-text `searchLoreHistory`.
+- **`marketplaceSparklineD3.test.ts`**: Verifies D3 market sparkline paths (`computeMarketplaceSparkline`) and **Bulk Trade Liquidity Score** calculations (`computeItemLiquidityScore`, `computeMarketplaceLiquidityRows`) across Depleted, Thin, Moderate, High, and Instant liquidity tiers from live NPC stock and average daily volume.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
 - **`omniverse.test.ts`**: Verifies `COSMIC_LIMITS` (`WHITE_PAGE_COUNT: 1`, `OVERVOID_MAX_COUNT: 100`, `Infinity` for Tiers 1–4), `InfiniteCollection<T>`, the strict 6-Tier Nested Cosmological Tree (`WhitePageRoot` singleton → `100` bounded `Overvoid` instances → `Omniverse` → `Megaverse` / `Hyperverse` → `Multiverse` → `Universe` leaf), `attemptCreateOvervoid` hard cap enforcement (`> 100` rejected), `lazilyGenerateInfiniteTierSlice` procedural pagination, Tier 5 `Overvoid` logic overrides and Tier 1 `Universe` physics overrides (`evaluateEffectiveUniversePhysicsAndLogic`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), and Layer-6 White Page / House of Ideas authorial decrees.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, live `applyCrossPlatformPipeline` mutations (`THREE.LOD`, `InstancedMesh.count`, `normalScale`/`bumpScale`, small-prop shadow culling), and C++20 engine telemetry.
-- **`serverAuth.test.ts`**: Verifies HMAC-SHA256 signed `HttpOnly` session cookies, timing-safe `VOXEL_ADMIN_PASSKEY` verification, fail-closed startup enforcement for missing/placeholder secrets + fail-closed operator login, `401`/`403` RBAC rejection, immediate role revocation re-evaluation, anti-tamper `/api/online/sync` field clamping, WebSocket command session binding, and email redaction on `/api/online/status`.
-- **`serverHardening.test.ts`**: Verifies sliding-window rate limits, brute-force login lockout timers, Same-Origin CSRF checks, recursive prototype-pollution detection, fragmented/bounded RFC 6455 WebSocket decoding, 20Hz tick latency percentile tracking, and LRU/oldest commander pruning.
+- **`serverAuth.test.ts`**: Verifies HMAC-SHA256 signed `HttpOnly` session cookies, timing-safe `VOXEL_ADMIN_PASSKEY` verification, fail-closed startup enforcement for missing/short/placeholder secrets in both production and development, `401`/`403` RBAC rejection, immediate role revocation re-evaluation, anti-tamper `/api/online/sync` field clamping, WebSocket command session binding, and email redaction on `/api/online/status`.
+- **`serverHardening.test.ts`**: Verifies sliding-window rate limits, brute-force login lockout timers, Same-Origin CSRF checks, `verifyWebSocketOrigin` CSWSH protection, `resolveClientIpFromHeaders` trusted-proxy IP isolation, recursive prototype-pollution detection, fragmented/bounded RFC 6455 WebSocket decoding, 20Hz tick latency percentile tracking, and LRU/oldest commander pruning.
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
 - **`species.test.ts`**: Verifies all 100 playable species (`10 Core Solara Lineages + 90 Sovereign Omniverse Races #1–#100`) across Fantasy, Xianxia, and Cosmic lineages and Tiers 1–5, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
@@ -781,8 +791,9 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 174 TypeScript unit, Gmail MIME, EULA/Legal & Firestore rule tests (29 suites)
+npm test                      # 4. Run all 187 TypeScript unit, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (30 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
+docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
 ```
 
 ---
@@ -800,7 +811,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)       | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                 | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)               | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 174 automated unit/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 187 automated unit/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -822,9 +833,10 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 174 unit, security, EULA/Legal, and Firestore rule tests across 29 TypeScript test suites
+- [x] `npm test` passes all 187 unit, liquidity, security, EULA/Legal, and Firestore rule tests across 30 TypeScript test files
 - [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
+- [x] Multi-stage non-root `Dockerfile`, `.dockerignore`, `nginx.conf`, and `DEPLOYMENT.md` are up to date
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile (`real-world QA.md`)
 - [x] GitHub Actions CI Guardrails workflow (`.github/workflows/build.yml`), Release workflow (`.github/workflows/release.yml`), and Operational Runbooks (`discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `environment hardening.md`, `incident response.md`) are up to date
 - [x] Steam & Platform AI Disclosure documentation (`README.md`) is up to date
@@ -882,10 +894,11 @@ Before tagging or publishing a release, confirm all release gates pass:
 ### Operational Runbooks, Engineering Discipline & QA Playbooks
 
 - **[Engineering Discipline & Anti-Spaghetti Constitution (`discipline.md`)](./discipline.md)** — Functional Core / Imperative Shell boundaries, Architect-First pre-flight rules, 3–4 feature refactor cadence, `BigInt` precision, Three.js WebGL2 disposal, and C++20 smart-pointer guardrails.
+- **[Containerized Deployment Guide (`DEPLOYMENT.md`)](./DEPLOYMENT.md)** — Multi-stage `node:24-alpine` Docker build (`Dockerfile`, `.dockerignore`, optional `--target nginx-runner` with `nginx.conf`), mandatory fail-closed production secrets, persistent volume mounting, and `/healthz` + `/readyz` + security header verification.
 - **[Deployment Validation Runbook (`deployment validation.md`)](./deployment%20validation.md)** — 4-stage pre-deploy, live ops harness (`npm run verify:ops`), Cloud SQL / Firestore rules sync, and post-deploy smoke & rollback criteria.
 - **[Observability, Telemetry & Monitoring Runbook (`monitoring.md`)](./monitoring.md)** — Live `/healthz`, `/readyz`, `/api/ops/readiness`, `/api/online/status`, and `/api/online/anti-cheat` probes, Four Golden Signals, `20Hz` (`50ms`) siege tick latency SLOs, and `securityAuditLog` events.
 - **[Backup, Persistence & Disaster Recovery Runbook (`backups.md`)](./backups.md)** — RPO/RTO matrix, `AtomicRealmPersistence` (`.tmp` → `fsync` → SHA-256 `.bak` → POSIX rename), Cloud SQL `pg_dump`/`pg_restore`, and Firestore GCS export/import drills.
-- **[Environment, Runtime & Infrastructure Hardening (`environment hardening.md`)](./environment%20hardening.md)** — Fail-closed production secret validation (`VOXEL_SESSION_SECRET`, `VOXEL_ADMIN_PASSKEY`), `HttpOnly` HMAC-SHA256 cookies, CSRF/prototype-pollution defenses, RFC 6455 WebSocket bounds, and zero-trust `firestore.rules`.
+- **[Environment, Runtime & Infrastructure Hardening (`environment hardening.md`)](./environment%20hardening.md)** — Fail-closed production secret validation (`VOXEL_SESSION_SECRET`, `VOXEL_ADMIN_PASSKEY`), `HttpOnly` HMAC-SHA256 cookies, CSRF/prototype-pollution defenses, global state isolation, RFC 6455 WebSocket Origin/proxy-IP/frame bounds, and zero-trust `firestore.rules`.
 - **[Real-World QA & Acceptance Playbook (`real-world QA.md`)](./real-world%20QA.md)** — Hardware GPU vs. Mobile ASTC vs. Software WebGL2 device matrix, end-to-end functional scenarios (including Avatar/Clone/Shadow & 50v50 Siege), and adversarial/network-jitter playbooks.
 - **[Incident Response, Quarantine & Recovery Runbook (`incident response.md`)](./incident%20response.md)** — `SEV-1`–`SEV-4` triage SLAs, live recovery playbooks, GM anti-cheat quarantine pardons, emergency secret rotation, and blameless post-mortem template.
 
@@ -906,12 +919,12 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **Legal, Compliance & Trust (`17` Docs)**: [`ACCEPTABLE_USE_POLICY.md`](./ACCEPTABLE_USE_POLICY.md), [`COOKIE_POLICY.md`](./COOKIE_POLICY.md), [`DATA_PROCESSING_AGREEMENT.md`](./DATA_PROCESSING_AGREEMENT.md), [`GDPR_COMPLIANCE.md`](./GDPR_COMPLIANCE.md), [`CCPA_COMPLIANCE.md`](./CCPA_COMPLIANCE.md), [`EXPORT_COMPLIANCE.md`](./EXPORT_COMPLIANCE.md), [`PATENTS.md`](./PATENTS.md), [`TRADEMARKS.md`](./TRADEMARKS.md), [`COPYRIGHT.md`](./COPYRIGHT.md), [`DMCA_POLICY.md`](./DMCA_POLICY.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md), [`SUBPROCESSORS.md`](./SUBPROCESSORS.md), [`WAIVER.md`](./WAIVER.md), [`ETHICS.md`](./ETHICS.md), [`AI_USAGE_POLICY.md`](./AI_USAGE_POLICY.md), [`CONTENT_MODERATION_POLICY.md`](./CONTENT_MODERATION_POLICY.md).
 - **Platform Engineering, Console, Mobile & Spatial VR Targets (`9` Docs)**: [`Windows.md`](./Windows.md), [`PC.md`](./PC.md), [`playstation.md`](./playstation.md), [`xbox.md`](./xbox.md), [`mac.md`](./mac.md), [`linux.md`](./linux.md), [`iOS.md`](./iOS.md), [`android.md`](./android.md), [`Virtual Reality.md`](./Virtual%20Reality.md).
 
-#### Complete Repository Markdown Inventory (`225` Verified `.md` Files)
+#### Complete Repository Markdown Inventory (`226` Verified `.md` Files)
 
 | Documentation Domain                                          | File Count | Verification Gate                                                                                                       |
 | :------------------------------------------------------------ | :--------: | :---------------------------------------------------------------------------------------------------------------------- |
 | **Primary Hub, Legal, History & Support Guides**              |    `16`    | `README.md`, `LEGAL.md`, `EULA.md`, `LORE.md`, `Four-Path Cultivation.md`, `CHANGELOG.md`, etc.                         |
-| **Operational Runbooks, Engineering Discipline & QA**         |    `7`     | `discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `real-world QA.md`                          |
+| **Operational Runbooks, Container Deploy, Discipline & QA**   |    `8`     | `DEPLOYMENT.md`, `discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `real-world QA.md`         |
 | **GitHub Issue, PR & Code of Conduct Templates (`.github/`)** |    `17`    | `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE/*`, `CODE_OF_CONDUCT_ENFORCEMENT.md`                         |
 | **Core Repository, Onboarding & Governance**                  |    `25`    | `VISION.md` – `MEETING_NOTES.md`, `.LOCAL_DEVELOPMENT.md`, `CLI_REFERENCE.md`, `DOC_CONVENTIONS.md`                     |
 | **Architecture, Simulation, Physics, Tooling, ADRs & RFCs**   |    `34`    | `3D-open-world-mmorgp-game-international-standard.md`, `Physics.md`, `dependency.md`, `SYSTEM_DESIGN.md` – `docs/adr/*` |
@@ -921,7 +934,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 | **Cultivation, Worldbuilding, Economy & Game Systems**        |    `40`    | `COSMOLOGY.md` – `BALANCE_PHILOSOPHY.md`, `in-game- economy -marketplace.md`                                            |
 | **Legal, Compliance & Trust**                                 |    `17`    | `ACCEPTABLE_USE_POLICY.md` – `CONTENT_MODERATION_POLICY.md`                                                             |
 | **Platform Engineering, Console, Mobile & Spatial VR**        |    `9`     | `Windows.md`, `PC.md`, `playstation.md`, `xbox.md`, `mac.md`, `linux.md`, `iOS.md`, `android.md`, `Virtual Reality.md`  |
-| **Total Tracked Markdown Files in Repository**                | **`225`**  | **100% Indexed in `README.md` · Verified by `.github/workflows/docs_deploy.yml` & Prettier**                            |
+| **Total Tracked Markdown Files in Repository**                | **`226`**  | **100% Indexed in `README.md` · Verified by `.github/workflows/docs_deploy.yml` & Prettier**                            |
 
 ---
 

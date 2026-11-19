@@ -1,11 +1,16 @@
 node_modules
 dist
 data
+**/online_realm_state.json*
 .git
 .gitignore
 .env
 .env.*
 !.env.example
+Dockerfile
+.dockerignore
+npm-debug.log
+npm-debug.log*
 .playwright-cli
 .aistudio
 coverage

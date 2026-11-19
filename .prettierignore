@@ -10,5 +10,6 @@ bun.lock
 *.log
 public/assets/
 data/
+**/online_realm_state.json*
 .playwright-cli/
 
