@@ -100,6 +100,9 @@ const WorldAIDirectorModal = lazy(() =>
 const DailyLoginModal = lazy(() =>
   import('./components/DailyLoginModal').then((m) => ({ default: m.DailyLoginModal }))
 );
+const DailyMissionModal = lazy(() =>
+  import('./components/DailyMissionModal').then((m) => ({ default: m.DailyMissionModal }))
+);
 const VipSubscriptionModal = lazy(() =>
   import('./components/VipSubscriptionModal').then((m) => ({ default: m.VipSubscriptionModal }))
 );
@@ -131,6 +134,22 @@ import {
   calculateVeteranScrollBonuses,
   applyVeteranScrollToCultivation,
 } from './game/dailyLogin';
+import {
+  DAILY_MISSIONS_STORAGE_KEY,
+  DailyMissionBoardState,
+  DailyMissionCategory,
+  DailyMissionDestinationModal,
+  advanceDailyMissionById,
+  applyMissionRewardBundle,
+  claimDailyMissionMilestone,
+  claimDailyMissionReward,
+  countClaimableDailyMissions,
+  deserializeDailyMissionBoard,
+  recordDailyMissionEvent,
+  refreshDailyMissionBoard,
+  serializeDailyMissionBoard,
+  syncBoardForDate,
+} from './game/dailyMissions';
 import {
   VIP_SUBSCRIPTION_STORAGE_KEY,
   INITIAL_VIP_SUBSCRIPTION_STATE,
@@ -228,6 +247,7 @@ type ActiveModal =
   | 'cultivation'
   | 'world_ai'
   | 'daily_login'
+  | 'daily_missions'
   | 'vip_subscription'
   | 'lore_history'
   | 'cosmological_admin'
@@ -355,6 +375,25 @@ export default function App() {
       }
     }
     return INITIAL_DAILY_LOGIN_STATE;
+  });
+
+  // Daily Cultivation Missions State (persisted in localStorage, cultivation-level scaled & repeatable)
+  const [dailyMissionBoard, setDailyMissionBoard] = useState<DailyMissionBoardState>(() => {
+    const initDateKey = getCalendarDateKey(new Date(), 0);
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.localStorage.getItem(DAILY_MISSIONS_STORAGE_KEY);
+        if (raw) {
+          const hydrated = deserializeDailyMissionBoard(raw);
+          if (hydrated) {
+            return syncBoardForDate(hydrated, initDateKey, initialGodBundle.cultivation);
+          }
+        }
+      } catch {
+        // Fallback to freshly generated board
+      }
+    }
+    return syncBoardForDate(null, initDateKey, initialGodBundle.cultivation);
   });
 
   // VIP Member Subscription State (persisted in localStorage; Root Creator defaults to VIP 3 Celestial)
@@ -729,6 +768,37 @@ export default function App() {
     totalDaysClaimed: dailyLoginState.totalDaysClaimed,
   });
 
+  const activeDailyMissionBoard = syncBoardForDate(
+    dailyMissionBoard,
+    effectiveDateKey,
+    cultivation
+  );
+  const claimableDailyMissionsCount = countClaimableDailyMissions(activeDailyMissionBoard);
+  const dailyMissionsClaimedCount = activeDailyMissionBoard.missions.filter(
+    (m) => m.claimed
+  ).length;
+
+  // Keep dailyMissionBoard synced when calendar date / simulated day advances
+  useEffect(() => {
+    if (dailyMissionBoard.dateKey !== effectiveDateKey) {
+      setDailyMissionBoard((prev) => syncBoardForDate(prev, effectiveDateKey, cultivation));
+    }
+  }, [dailyMissionBoard.dateKey, effectiveDateKey, cultivation]);
+
+  // Persist dailyMissionBoard to localStorage (BigInt-safe)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(
+          DAILY_MISSIONS_STORAGE_KEY,
+          serializeDailyMissionBoard(dailyMissionBoard)
+        );
+      } catch {
+        // Ignore storage quota errors
+      }
+    }
+  }, [dailyMissionBoard]);
+
   // Sync gameState to document.body.dataset.state
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -979,6 +1049,7 @@ export default function App() {
       setToastMessage(`🏰 Imperial Citadel upgraded to Level ${next}! Troop capacity expanded!`);
       return next;
     });
+    recordDailyMissionProgress('citadel_expansion', 1);
   };
 
   // Troop Training
@@ -1007,6 +1078,7 @@ export default function App() {
 
     const info = getTroopTierInfo(type, tier);
     setToastMessage(`⚔️ Enlisted +${formatBigInt(amount)} ${info.name} into your grand army!`);
+    recordDailyMissionProgress('troop_muster', 1);
   };
 
   // Troop Tier Promotion (Low-Tier -> Higher Unlocked Tier)
@@ -1083,6 +1155,7 @@ export default function App() {
         totalPower: prev.totalPower + coins * 100n,
       };
     });
+    recordDailyMissionProgress('citadel_expansion', 1);
     handleSendClanChat(
       `Leader Aiden Skyrender contributed ${formatBigInt(amount)} ${type} to the Alliance Vault!`,
       true,
@@ -1186,6 +1259,7 @@ export default function App() {
       };
     });
     setToastMessage(`🐉 Dealt ${formatBigInt(damage)} damage to the Void Leviathan!`);
+    recordDailyMissionProgress('boss_skirmish', 1);
   };
 
   // Claim Co-op Boss Milestone Chest
@@ -1355,6 +1429,7 @@ export default function App() {
     setToastMessage(
       `${meta.icon} ${meta.actionVerb}! Absorbed +${formatBigInt(burst)} ${meta.energyName}.`
     );
+    recordDailyMissionProgress('cultivation_meditate', 1, { path });
   };
 
   const handleCultivationBreakthrough = (
@@ -1415,6 +1490,7 @@ export default function App() {
     setToastMessage(
       `🧪 Refined ${pill.name}! Gained +${formatBigInt(pill.qiBonus)} instant ${meta.energyName}.`
     );
+    recordDailyMissionProgress('pill_alchemy', 1, { path: activePath });
   };
 
   const handleConsumePill = (pillId: string) => {
@@ -1508,6 +1584,7 @@ export default function App() {
     }));
     confetti({ particleCount: 40, spread: 60 });
     setToastMessage(`📜 Upgraded ${manual.name} to Mastery Level ${nextLevel}!`);
+    recordDailyMissionProgress('manual_study', 1);
   };
 
   const handleDiscoverManual = (freeDeduction: boolean = false) => {
@@ -1517,6 +1594,7 @@ export default function App() {
         scriptureFragments: prev.scriptureFragments + 25,
       }));
       setToastMessage('📜 Secluded Scripture Deduction complete! Gained +25 Scripture Fragments.');
+      recordDailyMissionProgress('manual_study', 1);
       return;
     }
 
@@ -1547,6 +1625,7 @@ export default function App() {
       confetti({ particleCount: 65, spread: 80 });
     }
     setToastMessage(result.message);
+    recordDailyMissionProgress('manual_study', 1);
   };
 
   const handleUnlockManualDirect = (manualId: string) => {
@@ -1655,6 +1734,7 @@ export default function App() {
 
     confetti({ particleCount: 80, spread: 90 });
     setToastMessage(`🏆 Victory! Gained +${formatBigInt(exp)} EXP and massive spoils of war!`);
+    recordDailyMissionProgress('boss_skirmish', 1);
   };
 
   // Casualties
@@ -1736,6 +1816,7 @@ export default function App() {
     setToastMessage(
       `🌾 Harvested +${formatBigInt(gatheredAmount)} ${node.type.toUpperCase()} (${Math.round(weatherMult * 100)}% ${WEATHER_CONFIGS[weather].name} yield)!`
     );
+    recordDailyMissionProgress('resource_harvest', 1, { resource: node.type });
   };
 
   // Focus Node
@@ -1866,6 +1947,7 @@ export default function App() {
       )
     );
     setToastMessage(`⚖️ Caravan Trade Complete: ${offer.label}!`);
+    recordDailyMissionProgress('market_caravan', 1, { resource: offer.giveResource });
   };
 
   const handleExecuteBulkExchange = (offer: BulkExchangeOffer) => {
@@ -1880,6 +1962,7 @@ export default function App() {
     setToastMessage(
       `⚖️ Marketplace Exchange Settled: ${offer.title} (+${formatBigInt(offer.rewardAmount)} ${offer.rewardResource.toUpperCase()})!`
     );
+    recordDailyMissionProgress('market_caravan', 1, { resource: offer.rewardResource });
   };
 
   const handlePurchaseCurioItem = (item: CurioMarketItem) => {
@@ -1931,6 +2014,7 @@ export default function App() {
     setToastMessage(
       `🤝 P2P Trade Settled with ${counterpartyLabel}: +${formatBigInt(receiveAmount)} ${receiveResource.toUpperCase()}!`
     );
+    recordDailyMissionProgress('market_caravan', 1, { resource: receiveResource });
   };
 
   const handleExecuteArbitrageTrade = (
@@ -2061,6 +2145,164 @@ export default function App() {
     setCultivation(result.updatedCultivation);
     confetti({ particleCount: 60, spread: 70 });
     setToastMessage(result.message);
+  };
+
+  // Daily Cultivation Mission System Handlers (Cultivation-scaled, randomized & repeatable)
+  function recordDailyMissionProgress(
+    category: DailyMissionCategory,
+    delta: number = 1,
+    filter?: { path?: CultivationPath; resource?: ResourceType }
+  ) {
+    setDailyMissionBoard((prev) => {
+      const synced = syncBoardForDate(prev, effectiveDateKey, cultivation);
+      const res = recordDailyMissionEvent(synced, category, delta, filter);
+      return res.updatedBoard;
+    });
+  }
+
+  const handleAdvanceDailyMission = (missionId: string) => {
+    const result = advanceDailyMissionById(activeDailyMissionBoard, missionId, 1);
+    if (!result.advancedMission) return;
+    setDailyMissionBoard(result.updatedBoard);
+
+    const m = result.advancedMission;
+    if (m.completed) {
+      sound.playUpgradeFanfare();
+      setToastMessage(`Commission complete: "${m.title}" is ready to claim!`);
+    } else {
+      setToastMessage(`Commission progress: "${m.title}" (${m.currentCount}/${m.targetCount}).`);
+    }
+  };
+
+  const handleClaimDailyMission = (missionId: string) => {
+    const result = claimDailyMissionReward(activeDailyMissionBoard, missionId);
+    if (!result.claimed || !result.reward || !result.mission) return;
+
+    setDailyMissionBoard(result.updatedBoard);
+    const applied = applyMissionRewardBundle({
+      resources,
+      cultivation,
+      reward: result.reward,
+    });
+    setResources(applied.nextResources);
+    setCultivation(applied.nextCultivation);
+
+    sound.playUpgradeFanfare();
+    confetti({ particleCount: 55, spread: 70, origin: { y: 0.65 } });
+    setToastMessage(
+      `Claimed "${result.mission.title}": +${formatBigInt(result.reward.resources.diamond)} Diamonds, +${formatBigInt(result.reward.spiritStones)} Spirit Stones & scaled materials.`
+    );
+  };
+
+  const handleClaimDailyMissionMilestone = (milestoneId: 'milestone_3' | 'milestone_5') => {
+    const result = claimDailyMissionMilestone(activeDailyMissionBoard, milestoneId);
+    if (!result.claimed || !result.reward || !result.milestone) return;
+
+    setDailyMissionBoard(result.updatedBoard);
+    const applied = applyMissionRewardBundle({
+      resources,
+      cultivation,
+      reward: result.reward,
+    });
+    setResources(applied.nextResources);
+    setCultivation(applied.nextCultivation);
+
+    sound.playUpgradeFanfare();
+    confetti({ particleCount: 75, spread: 85, origin: { y: 0.6 } });
+    setToastMessage(
+      `Opened ${result.milestone.title}: +${formatBigInt(result.reward.resources.diamond)} Diamonds, +${formatBigInt(result.reward.spiritStones)} Spirit Stones${
+        result.reward.veteranScrolls > 0 ? `, +${result.reward.veteranScrolls} Veteran Scroll` : ''
+      }!`
+    );
+  };
+
+  const handleClaimAllDailyMissions = () => {
+    let workingBoard = activeDailyMissionBoard;
+    let workingResources = resources;
+    let workingCultivation = cultivation;
+    let totalClaimedCount = 0;
+    let totalDiamonds = 0n;
+    let totalSpiritStones = 0n;
+
+    for (const mission of workingBoard.missions) {
+      if (mission.completed && !mission.claimed) {
+        const res = claimDailyMissionReward(workingBoard, mission.id);
+        if (res.claimed && res.reward) {
+          workingBoard = res.updatedBoard;
+          const applied = applyMissionRewardBundle({
+            resources: workingResources,
+            cultivation: workingCultivation,
+            reward: res.reward,
+          });
+          workingResources = applied.nextResources;
+          workingCultivation = applied.nextCultivation;
+          totalClaimedCount += 1;
+          totalDiamonds += res.reward.resources.diamond;
+          totalSpiritStones += res.reward.spiritStones;
+        }
+      }
+    }
+
+    for (const ms of workingBoard.milestones) {
+      const msRes = claimDailyMissionMilestone(workingBoard, ms.id);
+      if (msRes.claimed && msRes.reward) {
+        workingBoard = msRes.updatedBoard;
+        const applied = applyMissionRewardBundle({
+          resources: workingResources,
+          cultivation: workingCultivation,
+          reward: msRes.reward,
+        });
+        workingResources = applied.nextResources;
+        workingCultivation = applied.nextCultivation;
+        totalClaimedCount += 1;
+        totalDiamonds += msRes.reward.resources.diamond;
+        totalSpiritStones += msRes.reward.spiritStones;
+      }
+    }
+
+    if (totalClaimedCount === 0) return;
+
+    setDailyMissionBoard(workingBoard);
+    setResources(workingResources);
+    setCultivation(workingCultivation);
+    sound.playUpgradeFanfare();
+    confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
+    setToastMessage(
+      `Claimed ${totalClaimedCount} daily mission rewards: +${formatBigInt(totalDiamonds)} Diamonds & +${formatBigInt(totalSpiritStones)} Spirit Stones!`
+    );
+  };
+
+  const handleRefreshDailyMissionBoard = () => {
+    const res = refreshDailyMissionBoard({
+      board: activeDailyMissionBoard,
+      cultivation,
+      playerDiamonds: resources.diamond,
+      bypassCost: godImmunity.immuneToAllThings,
+    });
+
+    if (!res.ok) {
+      setToastMessage(res.reason || 'Unable to refresh daily mission board.');
+      return;
+    }
+
+    if (res.diamondCostPaid > 0n) {
+      setResources((prev) => ({
+        ...prev,
+        diamond: prev.diamond - res.diamondCostPaid,
+      }));
+    }
+
+    setDailyMissionBoard(res.updatedBoard);
+    setToastMessage(
+      `Generated 5 randomized commissions for Cycle ${res.updatedBoard.cycleIndex} scaled to your cultivation realm.`
+    );
+  };
+
+  const handleNavigateFromDailyMission = (destination: DailyMissionDestinationModal) => {
+    if (destination === 'world_boss') {
+      setSelectedMonster(monsters[monsters.length - 1]);
+    }
+    setActiveModal(destination);
   };
 
   // VIP Member Covenant Handlers (in-game Diamond treasury redemption only — no real-money billing)
@@ -2570,6 +2812,8 @@ export default function App() {
           onOpenCharacterCreation={() => setActiveModal('character')}
           onOpenDailyLogin={() => setActiveModal('daily_login')}
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
+          onOpenDailyMissions={() => setActiveModal('daily_missions')}
+          claimableDailyMissionsCount={claimableDailyMissionsCount}
           onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
           canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
@@ -2641,6 +2885,10 @@ export default function App() {
           canClaimDailyLogin={dailyLoginEvaluation.canClaimToday}
           dailyStreakDays={dailyLoginEvaluation.currentStreak}
           veteranScrollsOwned={cultivation.veteranScrolls ?? 0}
+          onOpenDailyMissions={() => setActiveModal('daily_missions')}
+          claimableDailyMissionsCount={claimableDailyMissionsCount}
+          dailyMissionsClaimedCount={dailyMissionsClaimedCount}
+          dailyMissionsTotalCount={activeDailyMissionBoard.missions.length}
           onOpenVipSubscription={() => setActiveModal('vip_subscription')}
           vipBadgeLabel={vipEvaluation.tierConfig.badgeLabel}
           canClaimVipStipend={vipEvaluation.canClaimDailyStipend}
@@ -3060,6 +3308,23 @@ export default function App() {
             onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
             onComprehendVeteranScroll={handleComprehendVeteranScroll}
             onOpenCultivationModal={() => setActiveModal('cultivation')}
+            onClose={() => setActiveModal('none')}
+          />
+        )}
+
+        {activeModal === 'daily_missions' && (
+          <DailyMissionModal
+            board={activeDailyMissionBoard}
+            resources={resources}
+            cultivation={cultivation}
+            bypassRerollCost={godImmunity.immuneToAllThings}
+            onAdvanceMission={handleAdvanceDailyMission}
+            onClaimMission={handleClaimDailyMission}
+            onClaimMilestone={handleClaimDailyMissionMilestone}
+            onClaimAllReady={handleClaimAllDailyMissions}
+            onRefreshBoard={handleRefreshDailyMissionBoard}
+            onAdvanceSimulatedDay={handleAdvanceSimulatedDay}
+            onNavigateToModal={handleNavigateFromDailyMission}
             onClose={() => setActiveModal('none')}
           />
         )}

@@ -35,6 +35,7 @@ import {
   ShoppingBag,
   AlertTriangle,
   DownloadCloud,
+  ClipboardList,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources, ResourceNode } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -81,6 +82,10 @@ interface GameHUDProps {
   canClaimDailyLogin?: boolean;
   dailyStreakDays?: number;
   veteranScrollsOwned?: number;
+  onOpenDailyMissions?: () => void;
+  claimableDailyMissionsCount?: number;
+  dailyMissionsClaimedCount?: number;
+  dailyMissionsTotalCount?: number;
   onOpenVipSubscription?: () => void;
   vipBadgeLabel?: string;
   canClaimVipStipend?: boolean;
@@ -150,6 +155,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   canClaimDailyLogin = false,
   dailyStreakDays = 0,
   veteranScrollsOwned = 0,
+  onOpenDailyMissions,
+  claimableDailyMissionsCount = 0,
+  dailyMissionsClaimedCount = 0,
+  dailyMissionsTotalCount = 5,
   onOpenVipSubscription,
   vipBadgeLabel = 'VIP 0',
   canClaimVipStipend = false,
@@ -246,7 +255,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
     if (onTouchEnd) onTouchEnd();
   };
 
-  const hasMoreAlert = canClaimVipStipend || canClaimDailyLogin;
+  const hasMoreAlert = canClaimVipStipend || canClaimDailyLogin || claimableDailyMissionsCount > 0;
   const isNearChunkEdge = Boolean(boundaryStatus?.isNearChunkEdge);
 
   return (
@@ -678,6 +687,35 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     </span>
                     <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[10px] font-mono font-black">
                       {canClaimDailyLogin ? 'CLAIM' : 'OPEN'}
+                    </span>
+                  </button>
+                )}
+
+                {onOpenDailyMissions && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playSwing();
+                      setIsInventoryDrawerOpen(false);
+                      onOpenDailyMissions();
+                    }}
+                    data-testid="hud-daily-missions-btn"
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all cursor-pointer ${
+                      claimableDailyMissionsCount > 0
+                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-100'
+                        : 'bg-slate-900 border-cyan-500/40 text-cyan-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 text-xs font-mono font-bold tabular-nums">
+                      <ClipboardList className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>
+                        Missions ({dailyMissionsClaimedCount}/{dailyMissionsTotalCount})
+                      </span>
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded bg-cyan-400 text-slate-950 text-[10px] font-mono font-black">
+                      {claimableDailyMissionsCount > 0
+                        ? `CLAIM ${claimableDailyMissionsCount}`
+                        : 'OPEN'}
                     </span>
                   </button>
                 )}
@@ -1132,6 +1170,33 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 </span>
                 <span className="text-[9px] font-mono text-amber-300 tabular-nums">
                   {canClaimDailyLogin ? 'READY!' : `${dailyStreakDays}d`}
+                </span>
+              </button>
+            )}
+
+            {onOpenDailyMissions && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  onOpenDailyMissions();
+                }}
+                data-testid="dock-daily-missions-btn"
+                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                  claimableDailyMissionsCount > 0
+                    ? 'bg-cyan-500/25 border-cyan-300 text-cyan-100'
+                    : 'bg-slate-900 hover:bg-slate-800 border-cyan-500/40 text-cyan-200'
+                }`}
+              >
+                <ClipboardList className="w-5 h-5 text-cyan-400" />
+                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                  Missions
+                </span>
+                <span className="text-[9px] font-mono text-cyan-300 tabular-nums">
+                  {claimableDailyMissionsCount > 0
+                    ? `CLAIM (${claimableDailyMissionsCount})`
+                    : `${dailyMissionsClaimedCount}/${dailyMissionsTotalCount}`}
                 </span>
               </button>
             )}

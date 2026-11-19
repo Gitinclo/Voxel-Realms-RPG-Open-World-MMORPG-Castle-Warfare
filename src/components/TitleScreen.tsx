@@ -18,6 +18,7 @@ import {
   Mail,
   Scale,
   ShoppingBag,
+  ClipboardList,
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
@@ -28,6 +29,8 @@ interface TitleScreenProps {
   onOpenCharacterCreation: () => void;
   onOpenDailyLogin?: () => void;
   canClaimDailyLogin?: boolean;
+  onOpenDailyMissions?: () => void;
+  claimableDailyMissionsCount?: number;
   onOpenVipSubscription?: () => void;
   vipBadgeLabel?: string;
   canClaimVipStipend?: boolean;
@@ -52,6 +55,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenCharacterCreation,
   onOpenDailyLogin,
   canClaimDailyLogin = false,
+  onOpenDailyMissions,
+  claimableDailyMissionsCount = 0,
   onOpenVipSubscription,
   vipBadgeLabel = 'VIP 0',
   canClaimVipStipend = false,
@@ -145,6 +150,24 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               {canClaimDailyLogin && (
                 <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mono font-black text-[10px] animate-pulse">
                   NEW
+                </span>
+              )}
+            </button>
+          )}
+
+          {onOpenDailyMissions && (
+            <button
+              type="button"
+              data-testid="title-daily-missions-btn"
+              onClick={onOpenDailyMissions}
+              className="relative px-3.5 py-2 rounded-xl bg-cyan-950/85 hover:bg-cyan-900/85 border border-cyan-500/50 text-xs font-bold text-cyan-200 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              title="Open Daily Cultivation Missions & Repeatable Material Commissions"
+            >
+              <ClipboardList className="w-4 h-4 text-cyan-400" />
+              <span>Daily Missions</span>
+              {claimableDailyMissionsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mono font-black text-[10px] tabular-nums">
+                  {claimableDailyMissionsCount}
                 </span>
               )}
             </button>
