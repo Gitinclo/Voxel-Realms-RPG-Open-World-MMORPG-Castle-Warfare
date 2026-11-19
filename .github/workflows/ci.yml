@@ -57,5 +57,6 @@ jobs:
         with:
           name: ci-e2e-logs-and-screenshots
           path: .playwright-cli/
-          if-no-files-found: ignore
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 14

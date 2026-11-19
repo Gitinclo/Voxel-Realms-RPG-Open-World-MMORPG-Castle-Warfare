@@ -129,7 +129,8 @@ jobs:
         with:
           name: voxel-realms-e2e-artifacts
           path: .playwright-cli/
-          if-no-files-found: ignore
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 14
 
   cpp20-guardrails:
