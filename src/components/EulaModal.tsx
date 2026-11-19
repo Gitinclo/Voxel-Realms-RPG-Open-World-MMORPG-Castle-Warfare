@@ -98,6 +98,9 @@ export const EulaModal: React.FC<EulaModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6">
       <div
         data-testid="eula-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="eula-modal-title"
         className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-amber-500/40 shadow-2xl overflow-hidden text-slate-100"
       >
         {/* Header */}
@@ -108,7 +111,10 @@ export const EulaModal: React.FC<EulaModalProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-black font-cinzel text-amber-300">
+                <h2
+                  id="eula-modal-title"
+                  className="text-base sm:text-lg font-black font-cinzel text-amber-300"
+                >
                   End User License Agreement (EULA) &amp; Legal Compliance Stack
                 </h2>
                 <span className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-[10px] font-mono font-bold text-amber-200">

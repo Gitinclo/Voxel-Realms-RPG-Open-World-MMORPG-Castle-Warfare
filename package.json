@@ -22,6 +22,7 @@
     "test": "tsx --test src/game/*.test.ts src/lib/*.test.ts firestore.rules.test.ts",
     "test:rules": "tsx --test firestore.rules.test.ts",
     "verify:ops": "tsx scripts/verify-readiness.ts",
+    "verify:e2e": "bash scripts/verify-e2e-browser.sh",
     "validate": "npm run lint && npm run lint:rules && npm run format:check && npm test && npm run build"
   },
   "dependencies": {

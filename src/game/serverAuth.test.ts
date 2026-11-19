@@ -429,3 +429,41 @@ test('issueSessionTokenFromVerifiedFirebaseUser requires verified email and deri
     assert.equal(verifiedPlayer.session.permissions.canAccessGmConsole, false);
   }
 });
+
+test('production security mode disables God-mode by default and enforces 1-hour operator TTL', () => {
+  const prodConfig = resolveServerRuntimeSecurityConfig({
+    NODE_ENV: 'production',
+    VOXEL_SESSION_SECRET: TEST_SECRET,
+    VOXEL_ADMIN_PASSKEY: TEST_PASSKEY,
+  });
+  assert.equal(prodConfig.failClosedMisconfigured, false);
+  assert.equal(prodConfig.allowProductionGodMode, false);
+
+  const now = 1_800_000_000_000;
+  const op = issueSessionTokenForOperator({
+    email: PRIMARY_ADMIN_EMAIL,
+    passkey: TEST_PASSKEY,
+    configuredPasskey: TEST_PASSKEY,
+    roster: INITIAL_MODERATED_PLAYERS,
+    secret: TEST_SECRET,
+    allowGodMode: prodConfig.allowProductionGodMode,
+    nowMs: now,
+  });
+  assert.equal(op.ok, true);
+  if (!op.ok) return;
+  assert.equal(op.payload.exp - op.payload.iat, 60 * 60 * 1000);
+  assert.equal(op.session.permissions.canAccessGmConsole, true);
+  assert.equal(op.session.permissions.canUseGodmodeAndCheats, false);
+
+  const resolved = resolveAuthenticatedSession({
+    token: op.token,
+    secret: TEST_SECRET,
+    roster: INITIAL_MODERATED_PLAYERS,
+    allowGodMode: false,
+    nowMs: now + 10_000,
+  });
+  assert.equal(resolved.authenticated, true);
+  if (resolved.authenticated) {
+    assert.equal(resolved.session.permissions.canUseGodmodeAndCheats, false);
+  }
+});

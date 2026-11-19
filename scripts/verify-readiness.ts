@@ -385,6 +385,16 @@ async function runVerification() {
       }),
     });
     assert.equal(opLoginRes.status, 200);
+    const opLoginBody = (await opLoginRes.json()) as {
+      ok: boolean;
+      session: { permissions: { canAccessGmConsole: boolean; canUseGodmodeAndCheats: boolean } };
+    };
+    assert.equal(opLoginBody.session.permissions.canAccessGmConsole, true);
+    assert.equal(
+      opLoginBody.session.permissions.canUseGodmodeAndCheats,
+      false,
+      'Production operator sessions must isolate God-mode by default'
+    );
     const opCookie = opLoginRes.headers.get('set-cookie')?.split(';')[0] || '';
 
     const decreeMarker = `OPS_DURABILITY_DECREE_${Date.now()}`;
@@ -452,8 +462,95 @@ async function runVerification() {
     const badEnumHttpBody = (await badEnumHttpRes.json()) as { violation?: string };
     assert.equal(badEnumHttpBody.violation, 'INVALID_ENUM_INJECTION');
 
+    // 1i. Authoritative Economy Ledger: idempotency replay protection, overdraft 409, inflation 403, SHA-256 hash chain
+    const ledgerKey = `ops-loot-${Date.now()}`;
+    const tx1Res = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: ledgerKey,
+        resource: 'diamonds',
+        direction: 'credit',
+        amountWire: '50',
+        reason: 'MONSTER_LOOT',
+      }),
+    });
+    assert.equal(tx1Res.status, 200);
+    const tx1Body = (await tx1Res.json()) as {
+      ok: boolean;
+      replayed: boolean;
+      entry: { txId: string };
+      balances: { diamonds: string };
+      integrity: { valid: boolean };
+    };
+    assert.equal(tx1Body.replayed, false);
+    assert.equal(tx1Body.balances.diamonds, '150');
+    assert.equal(tx1Body.integrity.valid, true);
+
+    // Exact replay must NOT double-credit
+    const tx1ReplayRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: ledgerKey,
+        resource: 'diamonds',
+        direction: 'credit',
+        amountWire: '50',
+        reason: 'MONSTER_LOOT',
+      }),
+    });
+    assert.equal(tx1ReplayRes.status, 200);
+    const tx1ReplayBody = (await tx1ReplayRes.json()) as {
+      replayed: boolean;
+      entry: { txId: string };
+      balances: { diamonds: string };
+    };
+    assert.equal(tx1ReplayBody.replayed, true);
+    assert.equal(tx1ReplayBody.entry.txId, tx1Body.entry.txId);
+    assert.equal(tx1ReplayBody.balances.diamonds, '150');
+
+    // Overdraft rejected with 409
+    const overdraftRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-overdraft-${Date.now()}`,
+        resource: 'diamonds',
+        direction: 'debit',
+        amountWire: '999',
+        reason: 'VIP_DIAMOND_COVENANT',
+      }),
+    });
+    assert.equal(overdraftRes.status, 409);
+
+    // Inflation exploit rejected with 403
+    const inflationRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-inflate-${Date.now()}`,
+        resource: 'diamonds',
+        direction: 'credit',
+        amountWire: '99999999',
+        reason: 'MONSTER_LOOT',
+      }),
+    });
+    assert.equal(inflationRes.status, 403);
+
+    const balanceRes = await fetch(`${BASE_URL}/api/online/economy/balance`, {
+      headers: { Cookie: playerCookie },
+    });
+    assert.equal(balanceRes.status, 200);
+    const balanceBody = (await balanceRes.json()) as {
+      balances: { diamonds: string };
+      integrity: { valid: boolean; checkedEntries: number };
+    };
+    assert.equal(balanceBody.balances.diamonds, '150');
+    assert.equal(balanceBody.integrity.valid, true);
+    assert.equal(balanceBody.integrity.checkedEntries, 1);
+
     console.log(
-      '[VerifyOps] ✅ HTTP Exploit Resistance & Anti-Cheat (401/403, Ownership Hijack, Invalid Enum, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
+      '[VerifyOps] ✅ HTTP Exploit Resistance, Economy Ledger & Anti-Cheat (401/403, Prod God-Mode Isolation, Idempotency Replay, Overdraft 409, Ownership Hijack, Invalid Enum, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
     );
 
     // =========================================================================

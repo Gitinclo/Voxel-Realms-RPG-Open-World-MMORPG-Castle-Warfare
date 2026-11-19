@@ -42,6 +42,7 @@ import {
 } from './src/game/siegeNetProtocol';
 import {
   ALLOWED_CLUSTER_IDS,
+  DEFAULT_OPERATOR_SESSION_TTL_MS,
   SESSION_COOKIE_NAME,
   authorizeStaffPermission,
   buildClearSessionCookieHeader,
@@ -57,6 +58,15 @@ import {
   resolveServerRuntimeSecurityConfig,
   sanitizeAndValidateSyncPayload,
 } from './src/game/serverAuth';
+import {
+  CommanderEconomyAccount,
+  LedgerResourceKey,
+  LedgerTxDirection,
+  LedgerTxReason,
+  applyAuthoritativeEconomyTransaction,
+  createInitialEconomyAccount,
+  verifyEconomyLedgerIntegrity,
+} from './src/game/economyLedger';
 import {
   BruteForceLockoutGuard,
   OPERATIONAL_LIMITS,
@@ -119,6 +129,7 @@ interface PersistedMultiRegionStore {
   securityAuditLog: SecurityAuditEntry[];
   activeDecrees: ServerDecreeRecord[];
   speciesSwitchGlobalApproved: boolean;
+  economyAccounts?: Record<string, CommanderEconomyAccount>;
 }
 
 function appendAuditEntry(store: PersistedMultiRegionStore, entry: SecurityAuditEntry): void {
@@ -173,6 +184,7 @@ function createDefaultStore(): PersistedMultiRegionStore {
     securityAuditLog: [],
     activeDecrees: [],
     speciesSwitchGlobalApproved: false,
+    economyAccounts: {},
   };
 }
 
@@ -500,6 +512,7 @@ async function startServer() {
       token,
       secret: securityConfig.sessionSecret,
       roster: store.moderatedPlayers,
+      allowGodMode: securityConfig.allowProductionGodMode,
     });
     return resolved.authenticated ? resolved.session : null;
   };
@@ -757,6 +770,7 @@ async function startServer() {
       displayName: typeof decoded.name === 'string' ? decoded.name : undefined,
       roster: store.moderatedPlayers,
       secret: securityConfig.sessionSecret,
+      allowGodMode: securityConfig.allowProductionGodMode,
     });
 
     if (!result.ok) {
@@ -861,6 +875,7 @@ async function startServer() {
       configuredPasskey: securityConfig.adminPasskey,
       roster: store.moderatedPlayers,
       secret: securityConfig.sessionSecret,
+      allowGodMode: securityConfig.allowProductionGodMode,
     });
 
     if (!result.ok) {
@@ -889,7 +904,14 @@ async function startServer() {
     }
 
     loginLockoutGuard.recordSuccess(lockoutKey);
-    res.setHeader('Set-Cookie', buildSessionSetCookieHeader(result.token, isHttpsRequest(req)));
+    res.setHeader(
+      'Set-Cookie',
+      buildSessionSetCookieHeader(
+        result.token,
+        isHttpsRequest(req),
+        Math.floor(DEFAULT_OPERATOR_SESSION_TTL_MS / 1000)
+      )
+    );
 
     appendAuditEntry(
       store,
@@ -1715,6 +1737,94 @@ async function startServer() {
     });
   });
 
+  // ==========================================================================
+  // AUTHORITATIVE ECONOMY LEDGER & IDEMPOTENCY ENDPOINTS
+  // ==========================================================================
+  const getOrCreateEconomyAccount = (commanderId: string): CommanderEconomyAccount => {
+    if (!store.economyAccounts) {
+      store.economyAccounts = {};
+    }
+    if (!store.economyAccounts[commanderId]) {
+      store.economyAccounts[commanderId] = createInitialEconomyAccount(commanderId);
+    }
+    return store.economyAccounts[commanderId];
+  };
+
+  app.get('/api/online/economy/balance', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const account = getOrCreateEconomyAccount(session.commanderId);
+    const integrity = verifyEconomyLedgerIntegrity(account);
+    res.json({
+      ok: true,
+      commanderId: account.commanderId,
+      balances: account.balances,
+      recentEntries: account.ledger.slice(-25),
+      integrity,
+      updatedAtIso: account.updatedAtIso,
+    });
+  });
+
+  app.post('/api/online/economy/transact', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const body = (req.body || {}) as {
+      idempotencyKey?: string;
+      resource?: LedgerResourceKey;
+      direction?: LedgerTxDirection;
+      amountWire?: string;
+      reason?: LedgerTxReason;
+    };
+
+    const currentAccount = getOrCreateEconomyAccount(session.commanderId);
+    const txResult = applyAuthoritativeEconomyTransaction(currentAccount, {
+      idempotencyKey: body.idempotencyKey || '',
+      resource: body.resource as LedgerResourceKey,
+      direction: body.direction as LedgerTxDirection,
+      amountWire: body.amountWire || '',
+      reason: body.reason as LedgerTxReason,
+      isPrivilegedStaff: session.permissions.canUseGodmodeAndCheats,
+    });
+
+    if (!txResult.ok) {
+      if (txResult.code === 'CREDIT_LIMIT_EXCEEDED' || txResult.code === 'ADMIN_REASON_FORBIDDEN') {
+        opsCounters.antiCheatRejections += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `Economy ledger transaction rejected (${txResult.code}): ${txResult.error}`,
+          })
+        );
+        persistStoreToDisk(store);
+      }
+      res.status(txResult.statusCode).json({
+        ok: false,
+        code: txResult.code,
+        error: txResult.error,
+      });
+      return;
+    }
+
+    if (!txResult.replayed) {
+      store.economyAccounts![session.commanderId] = txResult.account;
+      persistStoreToDisk(store);
+    }
+
+    res.json({
+      ok: true,
+      replayed: txResult.replayed,
+      entry: txResult.entry,
+      balances: txResult.account.balances,
+      integrity: verifyEconomyLedgerIntegrity(txResult.account),
+    });
+  });
+
   const httpServer = http.createServer(app);
 
   // ==========================================================================
@@ -1818,6 +1928,7 @@ async function startServer() {
       token: wsToken,
       secret: securityConfig.sessionSecret,
       roster: store.moderatedPlayers,
+      allowGodMode: securityConfig.allowProductionGodMode,
     });
 
     const peerId = `peer-${crypto.randomUUID().slice(0, 8)}`;

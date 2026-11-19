@@ -25,6 +25,8 @@ import {
 
 export const SESSION_COOKIE_NAME = 'vr_session';
 export const DEFAULT_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/** Short-lived operator session TTL (1 hour) to reduce blast radius of leaked staff cookies. */
+export const DEFAULT_OPERATOR_SESSION_TTL_MS = 60 * 60 * 1000;
 
 export const ALLOWED_CLUSTER_IDS: readonly MultiRegionClusterId[] = [
   'us-east-solara-1',
@@ -49,6 +51,7 @@ export interface ServerRuntimeSecurityConfig {
   ephemeralSessionSecretGenerated: boolean;
   adminPasskey: string | null;
   ephemeralDevPasskeyGenerated: boolean;
+  allowProductionGodMode: boolean;
   failClosedMisconfigured: boolean;
   misconfigurationReason: string | null;
 }
@@ -103,6 +106,9 @@ export function resolveServerRuntimeSecurityConfig(
     );
   }
 
+  const allowProductionGodMode =
+    !isProduction || (env.VOXEL_ALLOW_PRODUCTION_GODMODE || '').trim().toLowerCase() === 'true';
+
   if (reasons.length > 0) {
     return {
       isProduction,
@@ -110,6 +116,7 @@ export function resolveServerRuntimeSecurityConfig(
       ephemeralSessionSecretGenerated: false,
       adminPasskey: null,
       ephemeralDevPasskeyGenerated: false,
+      allowProductionGodMode,
       failClosedMisconfigured: true,
       misconfigurationReason: reasons.join(' '),
     };
@@ -121,6 +128,7 @@ export function resolveServerRuntimeSecurityConfig(
     ephemeralSessionSecretGenerated: false,
     adminPasskey: configuredPasskey,
     ephemeralDevPasskeyGenerated: false,
+    allowProductionGodMode,
     failClosedMisconfigured: false,
     misconfigurationReason: null,
   };
@@ -268,6 +276,7 @@ export function issueSessionTokenFromVerifiedFirebaseUser(params: {
   displayName?: string;
   roster: ModeratedPlayerRecord[];
   secret: string;
+  allowGodMode?: boolean;
   nowMs?: number;
   ttlMs?: number;
 }):
@@ -319,6 +328,11 @@ export function issueSessionTokenFromVerifiedFirebaseUser(params: {
     exp: nowMs + ttlMs,
   };
 
+  const effectivePermissions: AdminPermissions =
+    params.allowGodMode === false
+      ? { ...liveProfile.permissions, canUseGodmodeAndCheats: false }
+      : liveProfile.permissions;
+
   const token = signSessionToken(payload, params.secret);
   const session: ServerSessionInfo = {
     sessionId: payload.jti,
@@ -328,7 +342,7 @@ export function issueSessionTokenFromVerifiedFirebaseUser(params: {
     role: liveProfile.primaryRole,
     clearanceLevel: liveProfile.clearanceLevel,
     isRootOwner: liveProfile.isRootOwner,
-    permissions: liveProfile.permissions,
+    permissions: effectivePermissions,
     issuedAtIso: new Date(payload.iat).toISOString(),
     expiresAtIso: new Date(payload.exp).toISOString(),
   };
@@ -342,6 +356,7 @@ export function issueSessionTokenForOperator(params: {
   configuredPasskey: string | null;
   roster: ModeratedPlayerRecord[];
   secret: string;
+  allowGodMode?: boolean;
   nowMs?: number;
   ttlMs?: number;
 }):
@@ -393,7 +408,7 @@ export function issueSessionTokenForOperator(params: {
   }
 
   const nowMs = params.nowMs ?? Date.now();
-  const ttlMs = params.ttlMs ?? DEFAULT_SESSION_TTL_MS;
+  const ttlMs = params.ttlMs ?? DEFAULT_OPERATOR_SESSION_TTL_MS;
   const payload: SignedSessionTokenPayload = {
     jti: crypto.randomUUID(),
     sub: matchedRecord?.id || 'usr_root_creator',
@@ -405,6 +420,11 @@ export function issueSessionTokenForOperator(params: {
     exp: nowMs + ttlMs,
   };
 
+  const effectivePermissions: AdminPermissions =
+    params.allowGodMode === false
+      ? { ...profile.permissions, canUseGodmodeAndCheats: false }
+      : profile.permissions;
+
   const token = signSessionToken(payload, params.secret);
   const session: ServerSessionInfo = {
     sessionId: payload.jti,
@@ -414,7 +434,7 @@ export function issueSessionTokenForOperator(params: {
     role: profile.primaryRole,
     clearanceLevel: profile.clearanceLevel,
     isRootOwner: profile.isRootOwner,
-    permissions: profile.permissions,
+    permissions: effectivePermissions,
     issuedAtIso: new Date(payload.iat).toISOString(),
     expiresAtIso: new Date(payload.exp).toISOString(),
   };
@@ -426,6 +446,7 @@ export function resolveAuthenticatedSession(params: {
   token: string | undefined | null;
   secret: string;
   roster: ModeratedPlayerRecord[];
+  allowGodMode?: boolean;
   nowMs?: number;
 }): { authenticated: true; session: ServerSessionInfo } | { authenticated: false; reason: string } {
   const verified = verifySessionToken(params.token, params.secret, params.nowMs);
@@ -477,6 +498,11 @@ export function resolveAuthenticatedSession(params: {
     return { authenticated: false, reason: 'Account suspended on authoritative server roster.' };
   }
 
+  const effectivePermissions: AdminPermissions =
+    params.allowGodMode === false
+      ? { ...liveProfile.permissions, canUseGodmodeAndCheats: false }
+      : liveProfile.permissions;
+
   return {
     authenticated: true,
     session: {
@@ -487,7 +513,7 @@ export function resolveAuthenticatedSession(params: {
       role: liveProfile.primaryRole,
       clearanceLevel: liveProfile.clearanceLevel,
       isRootOwner: liveProfile.isRootOwner,
-      permissions: liveProfile.permissions,
+      permissions: effectivePermissions,
       issuedAtIso: new Date(payload.iat).toISOString(),
       expiresAtIso: new Date(payload.exp).toISOString(),
     },
