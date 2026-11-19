@@ -18,6 +18,7 @@ import {
   XCircle,
   Lock,
   Crown,
+  ArrowUpCircle,
 } from 'lucide-react';
 import { TroopType, GameResources, PlayerTroopRoster } from '../types/game';
 import { getTroopTierInfo, formatBigInt } from '../game/math';
@@ -28,6 +29,9 @@ import {
   accelerateTrainingJob,
   completeTrainingJobInstantly,
   formatTrainingCountdown,
+  countPromotableTroops,
+  getMaxUnlockedTroopTier,
+  getTroopRosterKey,
 } from '../game/troopTraining';
 import {
   INITIAL_VIP_SUBSCRIPTION_STATE,
@@ -36,6 +40,7 @@ import {
   evaluateVipSubscription,
 } from '../game/vipSubscription';
 import { sound } from '../game/audio';
+import { UnitUpgradeModal } from './UnitUpgradeModal';
 
 interface TroopBarracksModalProps {
   troops: PlayerTroopRoster;
@@ -45,6 +50,7 @@ interface TroopBarracksModalProps {
   vipSpeedBonusPct?: number;
   vipState?: PersistedVipSubscriptionState;
   vipEffectiveDateKey?: string;
+  zeroResourceCost?: boolean;
   onOpenVipSubscription?: () => void;
   onTrainTroops: (
     type: TroopType,
@@ -52,6 +58,12 @@ interface TroopBarracksModalProps {
     amount: bigint,
     cost: Partial<GameResources>
   ) => void;
+  onPromoteTroops?: (
+    type: TroopType,
+    sourceTier: number,
+    targetTier: number,
+    amount: bigint
+  ) => { ok: boolean; error?: string; powerGained?: bigint };
   onClose: () => void;
 }
 
@@ -63,13 +75,16 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
   vipSpeedBonusPct = 0,
   vipState = INITIAL_VIP_SUBSCRIPTION_STATE,
   vipEffectiveDateKey = '2026-01-01',
+  zeroResourceCost = false,
   onOpenVipSubscription,
   onTrainTroops,
+  onPromoteTroops,
   onClose,
 }) => {
   const [selectedType, setSelectedType] = useState<TroopType>('shieldbearer');
   const [selectedTier, setSelectedTier] = useState<number>(1);
   const [trainMultiplier, setTrainMultiplier] = useState<bigint>(1000n);
+  const [showUnitUpgradeModal, setShowUnitUpgradeModal] = useState<boolean>(false);
 
   // Active & queued training jobs
   const [activeJob, setActiveJob] = useState<TroopTrainingJob | null>(null);
@@ -124,7 +139,9 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
   };
 
   // Max unlocked tier based on castle level (Tier 1 at lv 0, up to Tier 20 at Lv 95+)
-  const maxUnlockedTier = Math.min(20, Math.max(1, Math.floor(castleLevel / 5) + 1));
+  const maxUnlockedTier = getMaxUnlockedTroopTier(castleLevel);
+  const promotableSummary = countPromotableTroops(troops, maxUnlockedTier);
+  const ownedSelectedTierCount = troops[getTroopRosterKey(selectedType, selectedTier)] ?? 0n;
 
   // Required resources for the selected training batch
   const totalWood = currentInfo.woodCost * trainMultiplier;
@@ -307,7 +324,7 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto px-5 py-3.5 space-y-3 text-slate-200">
-          {/* Total Army Capacity Gauge */}
+          {/* Total Army Capacity Gauge + Unit Promotion Trigger */}
           <div className="px-3.5 py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-amber-400 shrink-0" />
@@ -321,16 +338,37 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
                 </div>
               </div>
             </div>
-            <div className="w-full sm:w-48 bg-slate-700 h-2.5 rounded-full overflow-hidden">
-              <div
-                className="bg-amber-400 h-full rounded-full transition-transform duration-200 origin-left"
-                style={{
-                  transform: `scaleX(${Math.min(
-                    1,
-                    Number((displayedTroopsCount * 1000n) / (maxCapacity || 1n)) / 1000
-                  )})`,
-                }}
-              />
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              <div className="w-full sm:w-36 bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-amber-400 h-full rounded-full transition-transform duration-200 origin-left"
+                  style={{
+                    transform: `scaleX(${Math.min(
+                      1,
+                      Number((displayedTroopsCount * 1000n) / (maxCapacity || 1n)) / 1000
+                    )})`,
+                  }}
+                />
+              </div>
+              {onPromoteTroops && (
+                <button
+                  type="button"
+                  data-testid="barracks-open-upgrade-btn"
+                  onClick={() => {
+                    sound.playSwing();
+                    setShowUnitUpgradeModal(true);
+                  }}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/50 text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <ArrowUpCircle className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>
+                    Promote Units
+                    {promotableSummary.total > 0n
+                      ? ` · ${formatBigInt(promotableSummary.total)} ready`
+                      : ''}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -556,10 +594,21 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
                 </h3>
                 <p className="text-xs text-slate-400">{currentInfo.description}</p>
               </div>
-              <div className="text-right">
-                <div className="text-xs text-slate-400">Power / Unit</div>
-                <div className="text-base font-bold font-mono tabular-nums text-amber-300">
-                  {formatBigInt(currentInfo.powerPerUnit)}
+              <div className="flex items-center gap-4 sm:text-right shrink-0">
+                <div>
+                  <div className="text-xs text-slate-400">Stationed</div>
+                  <div
+                    data-testid="barracks-selected-tier-owned"
+                    className="text-base font-bold font-mono tabular-nums text-white"
+                  >
+                    {formatBigInt(ownedSelectedTierCount)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400">Power / Unit</div>
+                  <div className="text-base font-bold font-mono tabular-nums text-amber-300">
+                    {formatBigInt(currentInfo.powerPerUnit)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -725,6 +774,20 @@ export const TroopBarracksModal: React.FC<TroopBarracksModalProps> = ({
           </button>
         </div>
       </div>
+
+      {showUnitUpgradeModal && onPromoteTroops && (
+        <UnitUpgradeModal
+          troops={troops}
+          resources={availableResources}
+          castleLevel={castleLevel}
+          maxUnlockedTier={maxUnlockedTier}
+          initialType={selectedType}
+          initialSourceTier={selectedTier < maxUnlockedTier ? selectedTier : undefined}
+          zeroResourceCost={zeroResourceCost}
+          onPromoteTroops={onPromoteTroops}
+          onClose={() => setShowUnitUpgradeModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -40,6 +40,7 @@ import {
   INITIAL_MONSTERS,
   INITIAL_NPCS,
   INITIAL_RESOURCE_NODES,
+  INITIAL_TROOPS,
 } from './game/initialData';
 import {
   calculateCastleTroopCapacity,
@@ -50,6 +51,7 @@ import {
   MAX_CASTLE_LEVEL,
 } from './game/math';
 import { calculateOutpostAssault } from './game/clanMath';
+import { applyTroopPromotion } from './game/troopTraining';
 import { applySkinToHero, HERO_SKIN_CATALOG, HeroSkinId } from './game/heroSkins';
 import { sound } from './game/audio';
 import { GameCanvas } from './components/GameCanvas';
@@ -267,7 +269,19 @@ export default function App() {
   );
   const [castleLevel, setCastleLevel] = useState<number>(initialGodBundle.castleLevel);
   const [resources, setResources] = useState<GameResources>(initialGodBundle.resources);
-  const [troops, setTroops] = useState<PlayerTroopRoster>(initialGodBundle.troops);
+  const [troops, setTroops] = useState<PlayerTroopRoster>(() => {
+    const reserveTotal = Object.values(INITIAL_TROOPS).reduce((sum, count) => sum + count, 0n);
+    const recruitmentHeadroom = 50_000_000n;
+    const baseT20Bombers = initialGodBundle.troops.bomber_t20 ?? 0n;
+    return {
+      ...INITIAL_TROOPS,
+      ...initialGodBundle.troops,
+      bomber_t20:
+        baseT20Bombers > reserveTotal + recruitmentHeadroom
+          ? baseT20Bombers - reserveTotal - recruitmentHeadroom
+          : baseT20Bombers,
+    };
+  });
   const [heroes, setHeroes] = useState<Hero[]>(initialGodBundle.heroes);
   const [playerExp, setPlayerExp] = useState<bigint>(initialGodBundle.playerExp);
   const [clan, setClan] = useState<Clan>(INITIAL_CLAN);
@@ -992,6 +1006,40 @@ export default function App() {
 
     const info = getTroopTierInfo(type, tier);
     setToastMessage(`⚔️ Enlisted +${formatBigInt(amount)} ${info.name} into your grand army!`);
+  };
+
+  // Troop Tier Promotion (Low-Tier -> Higher Unlocked Tier)
+  const handlePromoteTroops = (
+    type: TroopType,
+    sourceTier: number,
+    targetTier: number,
+    amount: bigint
+  ): { ok: boolean; error?: string; powerGained?: bigint } => {
+    const result = applyTroopPromotion({
+      troops,
+      resources,
+      type,
+      sourceTier,
+      targetTier,
+      amount,
+      castleLevel,
+      zeroResourceCost: godImmunity.immuneToAllThings,
+    });
+
+    if (!result.ok) {
+      if (result.error) {
+        setToastMessage(`⚠️ ${result.error}`);
+      }
+      return { ok: false, error: result.error };
+    }
+
+    setTroops(result.nextTroops);
+    if (!godImmunity.immuneToAllThings) {
+      setResources(result.nextResources);
+    }
+
+    confetti({ particleCount: 36, spread: 52, origin: { y: 0.65 } });
+    return { ok: true, powerGained: result.quote.statDeltas.totalPowerGain };
   };
 
   // Clan Chat System
@@ -2697,8 +2745,10 @@ export default function App() {
             vipSpeedBonusPct={vipEvaluation.tierConfig.perks.gatherSpeedBonusPct}
             vipState={vipState}
             vipEffectiveDateKey={vipEffectiveDateKey}
+            zeroResourceCost={godImmunity.immuneToAllThings}
             onOpenVipSubscription={() => setActiveModal('vip_subscription')}
             onTrainTroops={handleTrainTroops}
+            onPromoteTroops={handlePromoteTroops}
             onClose={() => setActiveModal('none')}
           />
         )}
