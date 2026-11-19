@@ -68,6 +68,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit \
     && npx playwright install --with-deps chromium \
     && npm install -g @playwright/cli \
+    && playwright-cli install-browser chromium --with-deps \
     && npm cache clean --force
 
 COPY . .

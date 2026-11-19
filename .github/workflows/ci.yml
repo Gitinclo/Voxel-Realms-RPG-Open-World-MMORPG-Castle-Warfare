@@ -49,6 +49,7 @@ jobs:
         run: |
           npx playwright install --with-deps chromium
           npm install -g @playwright/cli
+          playwright-cli install-browser chromium --with-deps
       - name: Run required E2E verification suite
         run: npm run verify:e2e
       - name: Export E2E failure logs & screenshot artifacts
