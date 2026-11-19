@@ -115,16 +115,30 @@ jobs:
       - name: Install dependencies & build production bundle
         run: npm ci --no-audit && npm run build
 
-      - name: Install Playwright Chromium browser binaries & CLI
+      - name: Install Playwright chrome-for-testing binaries & CLI
         run: |
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chrome-for-testing
           npm install -g @playwright/cli
-          playwright-cli install-browser chromium --with-deps
+          playwright-cli install-browser chrome-for-testing --with-deps
 
       - name: Run real headless Chromium E2E suite
         run: npm run verify:e2e
 
-      - name: Export E2E failure logs & screenshot artifacts
+      - name: Upload modal visual diff & failure screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voxel-realms-e2e-visual-diff-on-failure
+          path: |
+            .playwright-cli/visual-diff/
+            .playwright-cli/modal-*.png
+            .playwright-cli/e2e-failure.png
+            .playwright-cli/*.log
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Export E2E logs & screenshot artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:

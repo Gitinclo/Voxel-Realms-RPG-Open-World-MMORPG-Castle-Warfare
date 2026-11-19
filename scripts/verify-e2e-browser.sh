@@ -63,6 +63,8 @@ cleanup() {
   if [ -n "${TMP_DATA_DIR}" ] && [ -d "${TMP_DATA_DIR}" ]; then
     rm -rf "${TMP_DATA_DIR}"
   fi
+  # Sweep any temporary vr-e2e-data-* directories to prevent CI runner storage bloat between runs
+  rm -rf /tmp/vr-e2e-data-* 2>/dev/null || true
   exit "${exit_code}"
 }
 trap cleanup EXIT
@@ -117,7 +119,7 @@ echo "${TITLE}" | grep -qi "Voxel Realms" || {
   exit 1
 }
 
-log "[VerifyE2E] 2/6 Checking Legal / EULA, Payment-Free VIP, Character Creation & Enter Realm..."
+log "[VerifyE2E] 2/6 Checking Legal / EULA, Payment-Free VIP, Character Creation (with modal screenshots) & Enter Realm..."
 STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   const clickButtonByText = async (needle) => {
     const clicked = await page.evaluate((text) => {
@@ -144,18 +146,21 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     await page.waitForTimeout(250);
   };
 
-  // 2a. EULA Legal acceptance dialog
+  // 2a. EULA Legal acceptance dialog + screenshot capture
   await clickButtonByText("EULA");
   await page.waitForSelector("[role=dialog]", { timeout: 10000 });
+  await page.waitForTimeout(250);
   const eulaText = await page.locator("[role=dialog]").innerText();
   if (!eulaText.toUpperCase().includes("EULA") && !eulaText.toUpperCase().includes("LICENSE")) {
     throw new Error("EULA modal did not render expected legal content");
   }
+  await page.screenshot({ path: ".playwright-cli/modal-eula.png", animations: "disabled", timeout: 20000 });
   await closeTopDialog();
 
-  // 2b. Payment-free VIP Diamond Covenant dialog (verify zero credit-card inputs)
+  // 2b. Payment-free VIP Diamond Covenant dialog (verify zero credit-card inputs) + screenshot capture
   await clickButtonByText("VIP Member Pass");
   await page.waitForSelector("[role=dialog]", { timeout: 10000 });
+  await page.waitForTimeout(250);
   const vipCheck = await page.evaluate(() => {
     const dialog = document.querySelector("[role=dialog]");
     const text = (dialog?.textContent || "").toUpperCase();
@@ -165,16 +170,18 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (!vipCheck.hasVipTitle || vipCheck.hasCardInput) {
     throw new Error("VIP dialog check failed: " + JSON.stringify(vipCheck));
   }
+  await page.screenshot({ path: ".playwright-cli/modal-vip.png", animations: "disabled", timeout: 20000 });
   await closeTopDialog();
 
-  // 2c. Character Creation Centre modal
+  // 2c. Character Creation Centre modal + screenshot capture
   await clickButtonByText("Character Creation Centre");
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(400);
   const charCheck = await page.evaluate(() => {
     const bodyText = (document.body.textContent || "").toUpperCase();
     return bodyText.includes("SPECIES") || bodyText.includes("CHARACTER CREATION");
   });
   if (!charCheck) throw new Error("Character Creation Centre did not render expected content");
+  await page.screenshot({ path: ".playwright-cli/modal-character-creation.png", animations: "disabled", timeout: 20000 });
   await page.evaluate(() => {
     const btns = Array.from(document.querySelectorAll("button"));
     const closeBtn = btns.find((b) => (b.getAttribute("aria-label") || "").toLowerCase().includes("close"));
@@ -194,6 +201,9 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   log "${STEP2_OUT}"
   exit 1
 }
+
+log "[VerifyE2E] 2b/6 Running key modal visual screenshot comparison (playwright.config.ts)..."
+./node_modules/.bin/tsx scripts/compare-modal-screenshots.ts 2>&1 | tee -a "${RUN_LOG}"
 
 log "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."
 playwright-cli -s="${SESSION_NAME}" reload >/dev/null

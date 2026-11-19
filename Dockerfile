@@ -66,9 +66,9 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit \
-    && npx playwright install --with-deps chromium \
+    && npx playwright install --with-deps chrome-for-testing \
     && npm install -g @playwright/cli \
-    && playwright-cli install-browser chromium --with-deps \
+    && playwright-cli install-browser chrome-for-testing --with-deps \
     && npm cache clean --force
 
 COPY . .
