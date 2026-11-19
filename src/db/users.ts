@@ -231,3 +231,27 @@ export async function createSupportTicketForUid(
     throw new Error('Database query failed. Please try again later.', { cause: error });
   }
 }
+
+export async function deleteUserDataForUid(uid: string): Promise<{ deleted: boolean }> {
+  try {
+    return await db.transaction(async (tx) => {
+      const existing = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.uid, uid))
+        .limit(1);
+      if (existing.length === 0) {
+        return { deleted: false };
+      }
+      const userId = existing[0].id;
+      await tx.delete(supportTickets).where(eq(supportTickets.userId, userId));
+      await tx.delete(realmSaves).where(eq(realmSaves.userId, userId));
+      await tx.delete(commanderProfiles).where(eq(commanderProfiles.userId, userId));
+      await tx.delete(users).where(eq(users.id, userId));
+      return { deleted: true };
+    });
+  } catch (error) {
+    console.error('Database query failed in deleteUserDataForUid:', error);
+    throw new Error('Database query failed. Please try again later.', { cause: error });
+  }
+}

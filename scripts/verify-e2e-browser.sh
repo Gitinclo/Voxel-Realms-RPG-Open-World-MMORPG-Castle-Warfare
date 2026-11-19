@@ -2,16 +2,17 @@
 set -euo pipefail
 
 # Repeatable Real Headless Chromium E2E Verification Suite (playwright-cli)
-# Runs against E2E_URL if provided, or spawns an isolated NODE_ENV=production server on port 3099
+# Runs against E2E_URL if provided, or spawns an isolated NODE_ENV=production server on an ephemeral port
 # serving the production Vite dist/ build with an isolated temp VOXEL_DATA_DIR.
 #
 # Verifies:
 # 1. Initial load & title on desktop (1440x900)
-# 2. Legal / EULA modal opens and renders 10-Article legal framework, then closes cleanly
-# 3. Vertical slice: Enter the Realm -> live 3D WebGL canvas & active gameplay HUD
+# 2. Legal / EULA modal, Character Creation Centre modal, Payment-free VIP Diamond Covenant modal
+# 3. Vertical slice: Enter the Realm -> live 3D WebGL canvas & active HUD
 # 4. Browser reload recovery & zero console errors
 # 5. Mobile viewport (390x844) layout check (no horizontal overflow)
-# 6. Browser-context fail-closed auth (401) & authoritative economy ledger idempotency + integrity
+# 6. Browser-context fail-closed auth (401), account switching, economy ledger idempotency,
+#    PII export/erasure, and live WebSocket /ws/siege connect -> snapshot -> disconnect -> reconnect
 
 SESSION_NAME="vr-e2e-$$"
 SERVER_PID=""
@@ -85,50 +86,83 @@ echo "${TITLE}" | grep -qi "Voxel Realms" || {
   exit 1
 }
 
-echo "[VerifyE2E] 2/6 Checking Legal / EULA modal & Enter Realm vertical slice..."
-playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
-  const clickedEula = await page.evaluate(() => {
-    const btns = Array.from(document.querySelectorAll("button"));
-    const eulaBtn = btns.find((b) => (b.textContent || "").trim() === "EULA");
-    if (!eulaBtn) return false;
-    eulaBtn.click();
-    return true;
-  });
-  if (!clickedEula) throw new Error("EULA button not found on landing screen");
+echo "[VerifyE2E] 2/6 Checking Legal / EULA, Payment-Free VIP, Character Creation & Enter Realm..."
+STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
+  const clickButtonByText = async (needle) => {
+    const clicked = await page.evaluate((text) => {
+      const btns = Array.from(document.querySelectorAll("button"));
+      const match = btns.find((b) => (b.textContent || "").toUpperCase().includes(text.toUpperCase()));
+      if (!match) return false;
+      match.click();
+      return true;
+    }, needle);
+    if (!clicked) throw new Error(`Button containing "${needle}" not found`);
+  };
 
+  const closeTopDialog = async () => {
+    await page.evaluate(() => {
+      const dialog = document.querySelector("[role=dialog]");
+      if (!dialog) return;
+      const btns = Array.from(dialog.querySelectorAll("button"));
+      const closeBtn = btns.find((b) => {
+        const label = (b.getAttribute("aria-label") || b.textContent || "").toLowerCase();
+        return label.includes("close");
+      }) || btns[0];
+      if (closeBtn) closeBtn.click();
+    });
+    await page.waitForTimeout(250);
+  };
+
+  // 2a. EULA Legal acceptance dialog
+  await clickButtonByText("EULA");
   await page.waitForSelector("[role=dialog]", { timeout: 10000 });
-  const dialogText = await page.locator("[role=dialog]").innerText();
-  if (!dialogText.toUpperCase().includes("EULA") && !dialogText.toUpperCase().includes("LICENSE")) {
+  const eulaText = await page.locator("[role=dialog]").innerText();
+  if (!eulaText.toUpperCase().includes("EULA") && !eulaText.toUpperCase().includes("LICENSE")) {
     throw new Error("EULA modal did not render expected legal content");
   }
+  await closeTopDialog();
 
-  await page.evaluate(() => {
+  // 2b. Payment-free VIP Diamond Covenant dialog (verify zero credit-card inputs)
+  await clickButtonByText("VIP Member Pass");
+  await page.waitForSelector("[role=dialog]", { timeout: 10000 });
+  const vipCheck = await page.evaluate(() => {
     const dialog = document.querySelector("[role=dialog]");
-    if (!dialog) return;
-    const buttons = Array.from(dialog.querySelectorAll("button"));
-    const closeBtn = buttons.find((b) => {
-      const label = (b.getAttribute("aria-label") || b.textContent || "").toLowerCase();
-      return label.includes("close") || label.includes("accept");
-    }) || buttons[0];
+    const text = (dialog?.textContent || "").toUpperCase();
+    const hasCardInput = Boolean(dialog?.querySelector("input[autocomplete*=\"cc-\"], input[name*=\"card\"]"));
+    return { hasVipTitle: text.includes("VIP"), hasCardInput };
+  });
+  if (!vipCheck.hasVipTitle || vipCheck.hasCardInput) {
+    throw new Error("VIP dialog check failed: " + JSON.stringify(vipCheck));
+  }
+  await closeTopDialog();
+
+  // 2c. Character Creation Centre modal
+  await clickButtonByText("Character Creation Centre");
+  await page.waitForTimeout(350);
+  const charCheck = await page.evaluate(() => {
+    const bodyText = (document.body.textContent || "").toUpperCase();
+    return bodyText.includes("SPECIES") || bodyText.includes("CHARACTER CREATION");
+  });
+  if (!charCheck) throw new Error("Character Creation Centre did not render expected content");
+  await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll("button"));
+    const closeBtn = btns.find((b) => (b.getAttribute("aria-label") || "").toLowerCase().includes("close"));
     if (closeBtn) closeBtn.click();
   });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(250);
 
-  const enteredRealm = await page.evaluate(() => {
-    const btns = Array.from(document.querySelectorAll("button"));
-    const enterBtn = btns.find((b) => (b.textContent || "").toUpperCase().includes("ENTER THE REALM"));
-    if (!enterBtn) return false;
-    enterBtn.click();
-    return true;
-  });
-  if (!enteredRealm) throw new Error("ENTER THE REALM button not found");
+  // 2d. Enter the Realm -> active 3D WebGL canvas
+  await clickButtonByText("ENTER THE REALM");
   await page.waitForTimeout(400);
-
   const canvasCount = await page.locator("canvas").count();
   if (canvasCount < 1) {
     throw new Error("Expected active 3D WebGL canvas after entering realm");
   }
-}' >/dev/null
+}' 2>&1)" || {
+  echo "[VerifyE2E] FAIL in Step 2:"
+  echo "${STEP2_OUT}"
+  exit 1
+}
 
 echo "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."
 playwright-cli -s="${SESSION_NAME}" reload >/dev/null
@@ -155,17 +189,18 @@ playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   }
 }' >/dev/null
 
-echo "[VerifyE2E] 5/6 Checking browser-context fail-closed auth & economy ledger idempotency..."
+echo "[VerifyE2E] 5/6 Checking fail-closed auth, account switch, ledger idempotency, PII erasure & WS disconnect/reconnect..."
 STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   const result = await page.evaluate(async () => {
     const anonAdmin = await fetch("/api/admin/state");
     const anonEcon = await fetch("/api/online/economy/balance");
-    const sessRes = await fetch("/api/auth/player-session", {
+
+    // Account A login + economy ledger credit + idempotency replay + PII export/erasure
+    const sessA = await fetch("/api/auth/player-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ commanderId: "e2e-browser-cmdr", displayName: "BrowserTester" }),
+      body: JSON.stringify({ commanderId: "e2e-browser-a", displayName: "BrowserA" }),
     });
-    const sessText = await sessRes.text();
     const key = "e2e-browser-" + Date.now();
     const tx1Res = await fetch("/api/online/economy/transact", {
       method: "POST",
@@ -191,21 +226,62 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
       }),
     });
     const txReplayText = await txReplayRes.text();
+
+    const exportRes = await fetch("/api/online/account/export");
+    const deleteRes = await fetch("/api/online/account", { method: "DELETE" });
+    const postDeleteEcon = await fetch("/api/online/economy/balance");
+
+    // Account B switch + real browser WebSocket connect -> snapshot -> disconnect -> reconnect
+    const sessB = await fetch("/api/auth/player-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commanderId: "e2e-browser-b", displayName: "BrowserB" }),
+    });
+    const sessBJson = await sessB.json();
+
+    const connectWsAndReceiveSnapshot = () =>
+      new Promise((resolve, reject) => {
+        const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+        const ws = new WebSocket(`${wsProto}//${location.host}/ws/siege?sector=B2`);
+        const timer = setTimeout(() => {
+          ws.close();
+          reject(new Error("WebSocket snapshot timeout"));
+        }, 5000);
+        ws.onmessage = (ev) => {
+          clearTimeout(timer);
+          ws.close();
+          resolve(typeof ev.data === "string" && ev.data.includes("sectorState"));
+        };
+        ws.onerror = () => {
+          clearTimeout(timer);
+          reject(new Error("WebSocket connection error"));
+        };
+      });
+
+    const wsConn1Ok = await connectWsAndReceiveSnapshot();
+    const wsConn2Ok = await connectWsAndReceiveSnapshot();
+
     await fetch("/api/auth/logout", { method: "POST" });
     return {
       anonAdminStatus: anonAdmin.status,
       anonEconStatus: anonEcon.status,
-      sessStatus: sessRes.status,
-      sessText,
+      sessAStatus: sessA.status,
       tx1Status: tx1Res.status,
       tx1Text,
       txReplayStatus: txReplayRes.status,
       txReplayText,
+      exportStatus: exportRes.status,
+      deleteStatus: deleteRes.status,
+      postDeleteStatus: postDeleteEcon.status,
+      sessBStatus: sessB.status,
+      sessBCmdr: sessBJson?.session?.commanderId,
+      wsConn1Ok,
+      wsConn2Ok,
     };
   });
   if (result.anonAdminStatus !== 401) throw new Error(`Expected 401 on /api/admin/state, got ${result.anonAdminStatus}`);
   if (result.anonEconStatus !== 401) throw new Error(`Expected 401 on /api/online/economy/balance, got ${result.anonEconStatus}`);
-  if (result.sessStatus !== 200) throw new Error(`Expected 200 on player-session, got ${result.sessStatus}: ${result.sessText}`);
+  if (result.sessAStatus !== 200) throw new Error(`Expected 200 on sessA, got ${result.sessAStatus}`);
   if (result.tx1Status !== 200) throw new Error(`Expected 200 on tx1, got ${result.tx1Status}: ${result.tx1Text}`);
   if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on txReplay, got ${result.txReplayStatus}: ${result.txReplayText}`);
   const tx1 = JSON.parse(result.tx1Text);
@@ -213,6 +289,15 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (!tx1?.ok || tx1?.replayed) throw new Error("Initial ledger tx failed: " + result.tx1Text);
   if (!txReplay?.replayed || tx1?.balances?.diamonds !== txReplay?.balances?.diamonds || txReplay?.integrity?.valid !== true) {
     throw new Error("Idempotency replay or ledger integrity check failed: " + result.txReplayText);
+  }
+  if (result.exportStatus !== 200) throw new Error(`Expected 200 on account export, got ${result.exportStatus}`);
+  if (result.deleteStatus !== 200) throw new Error(`Expected 200 on account delete, got ${result.deleteStatus}`);
+  if (result.postDeleteStatus !== 401) throw new Error(`Expected 401 after account delete, got ${result.postDeleteStatus}`);
+  if (result.sessBStatus !== 200 || result.sessBCmdr !== "guest-e2e-browser-b") {
+    throw new Error(`Account switch failed: ${result.sessBStatus} / ${result.sessBCmdr}`);
+  }
+  if (!result.wsConn1Ok || !result.wsConn2Ok) {
+    throw new Error(`WebSocket disconnect/reconnect failed: ${result.wsConn1Ok} / ${result.wsConn2Ok}`);
   }
 }' 2>&1)" || {
   echo "[VerifyE2E] FAIL in Step 5:"
@@ -225,6 +310,6 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
 }
 
 echo "[VerifyE2E] 6/6 Capturing mobile viewport proof screenshot..."
-playwright-cli -s="${SESSION_NAME}" screenshot --filename=.playwright-cli/e2e-r1-mobile.png
+playwright-cli -s="${SESSION_NAME}" screenshot --filename=.playwright-cli/e2e-r2-mobile.png
 
-echo "[VerifyE2E] ✅ ALL 6 REAL CHROMIUM E2E CHECKS PASSED (0 console errors, EULA + Enter Realm + 3D Canvas, Reload, Mobile 390x844 overflow-free, Fail-Closed Auth 401, Economy Ledger Idempotency)"
+echo "[VerifyE2E] ✅ ALL 6 REAL CHROMIUM E2E CHECKS PASSED (0 console errors, EULA + Payment-Free VIP + Character Creation + 3D Canvas, Reload, Mobile 390x844, Fail-Closed 401, Account Switch, Ledger Idempotency, PII Erasure, WS Disconnect/Reconnect)"

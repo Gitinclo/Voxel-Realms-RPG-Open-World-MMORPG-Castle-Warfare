@@ -549,8 +549,36 @@ async function runVerification() {
     assert.equal(balanceBody.integrity.valid, true);
     assert.equal(balanceBody.integrity.checkedEntries, 1);
 
+    // 1j. Self-service PII export & right-to-erasure deletion on disposable account
+    const piiSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commanderId: 'pii-erasure-tester', displayName: 'ErasureTester' }),
+    });
+    assert.equal(piiSessRes.status, 200);
+    const piiCookie = piiSessRes.headers.get('set-cookie')?.split(';')[0] || '';
+    const exportRes = await fetch(`${BASE_URL}/api/online/account/export`, {
+      headers: { Cookie: piiCookie },
+    });
+    assert.equal(exportRes.status, 200);
+    const exportBody = (await exportRes.json()) as {
+      ok: boolean;
+      account: { commanderId: string };
+    };
+    assert.equal(exportBody.ok, true);
+    assert.equal(exportBody.account.commanderId, 'guest-pii-erasure-tester');
+
+    const deleteRes = await fetch(`${BASE_URL}/api/online/account`, {
+      method: 'DELETE',
+      headers: { Cookie: piiCookie },
+    });
+    assert.equal(deleteRes.status, 200);
+    const deleteBody = (await deleteRes.json()) as { ok: boolean; erased: boolean };
+    assert.equal(deleteBody.erased, true);
+    assert.ok((deleteRes.headers.get('set-cookie') || '').includes('Max-Age=0'));
+
     console.log(
-      '[VerifyOps] ✅ HTTP Exploit Resistance, Economy Ledger & Anti-Cheat (401/403, Prod God-Mode Isolation, Idempotency Replay, Overdraft 409, Ownership Hijack, Invalid Enum, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
+      '[VerifyOps] ✅ HTTP Exploit Resistance, Economy Ledger, PII Erasure & Anti-Cheat (401/403, Prod God-Mode Isolation, Idempotency Replay, Overdraft 409, PII Export/Delete, Ownership Hijack, Invalid Enum, Clamp, CSRF, __proto__, Brute-Force 429) PASSED'
     );
 
     // =========================================================================

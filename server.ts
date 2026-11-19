@@ -89,6 +89,7 @@ import {
 import { AuthRequest, requireAuth, verifyFirebaseBearerToken } from './src/middleware/auth.ts';
 import {
   createSupportTicketForUid,
+  deleteUserDataForUid,
   getCommanderProfileForUid,
   getOrCreateUser,
   getRealmSaveForUid,
@@ -1822,6 +1823,83 @@ async function startServer() {
       entry: txResult.entry,
       balances: txResult.account.balances,
       integrity: verifyEconomyLedgerIntegrity(txResult.account),
+    });
+  });
+
+  // ==========================================================================
+  // SELF-SERVICE PII EXPORT & ACCOUNT DELETION (PRIVACY / RIGHT TO ERASURE)
+  // ==========================================================================
+  app.get('/api/online/account/export', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const commander = store.commanders[session.commanderId] ?? null;
+    const economy = store.economyAccounts?.[session.commanderId] ?? null;
+    const tickets = store.supportTickets.filter(
+      (t) => t.senderEmail.toLowerCase() === session.email.toLowerCase()
+    );
+
+    res.json({
+      ok: true,
+      exportedAtIso: new Date().toISOString(),
+      account: {
+        commanderId: session.commanderId,
+        email: session.email,
+        displayName: session.displayName,
+        role: session.role,
+      },
+      commanderSnapshot: commander,
+      economyAccount: economy,
+      supportTickets: tickets,
+    });
+  });
+
+  app.delete('/api/online/account', async (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const existedCommander = Boolean(store.commanders[session.commanderId]);
+    const existedEconomy = Boolean(store.economyAccounts?.[session.commanderId]);
+    delete store.commanders[session.commanderId];
+    if (store.economyAccounts) {
+      delete store.economyAccounts[session.commanderId];
+    }
+
+    let sqlDeleted = false;
+    if (process.env.SQL_HOST && process.env.SQL_USER && process.env.SQL_DB_NAME) {
+      try {
+        const sqlRes = await deleteUserDataForUid(session.commanderId);
+        sqlDeleted = sqlRes.deleted;
+      } catch (err) {
+        console.warn(
+          'Non-fatal PostgreSQL erasure warning during DELETE /api/online/account:',
+          err
+        );
+      }
+    }
+
+    appendAuditEntry(
+      store,
+      createAuditEntry({
+        eventType: 'SESSION_LOGOUT',
+        actorEmail: session.email,
+        actorRole: session.role,
+        outcome: 'allowed',
+        detail: `Self-service account/PII erasure executed for ${session.commanderId} (commander=${existedCommander}, economy=${existedEconomy}, sql=${sqlDeleted})`,
+      })
+    );
+    persistStoreToDisk(store);
+
+    res.setHeader('Set-Cookie', buildClearSessionCookieHeader(isHttpsRequest(req)));
+    res.json({
+      ok: true,
+      erased: true,
+      commanderId: session.commanderId,
+      erasedRecords: {
+        commanderProfile: existedCommander,
+        economyLedger: existedEconomy,
+        postgresUser: sqlDeleted,
+      },
     });
   });
 

@@ -1,15 +1,29 @@
-name: CI — Fast PR Feedback
+name: CI — PR Validation, Audit, Coverage & Live Ops
+
 on:
   pull_request:
     branches: [main, master]
+  push:
+    branches: [main, master]
+
 jobs:
-  fast-check:
+  validate-and-verify:
+    name: Validate, Audit, Coverage & Live Ops Probe
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm ci --no-audit
-      - run: npm run validate
+      - name: Install deterministic dependencies
+        run: npm ci --no-audit
+      - name: Type-check, rules lint, Prettier, unit tests & production build
+        run: npm run validate
+      - name: High/Critical vulnerability audit gate
+        run: npm audit --audit-level=high
+      - name: Run unit & security coverage report
+        run: npm run test:coverage
+      - name: Live production-mode ops, ledger & multi-sector WS probe
+        run: npm run verify:ops
