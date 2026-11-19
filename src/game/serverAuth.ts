@@ -62,56 +62,65 @@ function fromBase64Url(encoded: string): Buffer {
   return Buffer.from(encoded, 'base64url');
 }
 
+const PLACEHOLDER_SESSION_SECRETS = new Set([
+  'replace-with-at-least-32-char-csprng-secret',
+  'your-session-secret-here',
+  'changeme',
+  'dev-secret',
+]);
+
+const PLACEHOLDER_ADMIN_PASSKEYS = new Set([
+  'replace-with-strong-operator-passkey',
+  'your-admin-passkey-here',
+  'changeme',
+  'admin123',
+]);
+
 export function resolveServerRuntimeSecurityConfig(
   env: Record<string, string | undefined> = process.env
 ): ServerRuntimeSecurityConfig {
   const isProduction = env.NODE_ENV === 'production';
   const configuredSecret = (env.VOXEL_SESSION_SECRET || '').trim();
   const configuredPasskey = (env.VOXEL_ADMIN_PASSKEY || '').trim();
+  const minSecretLength = isProduction ? 32 : 16;
+  const minPasskeyLength = 12;
 
-  if (isProduction) {
-    const hasValidSecret = configuredSecret.length >= 32;
-    const sessionSecret = hasValidSecret
-      ? configuredSecret
-      : crypto.randomBytes(32).toString('hex');
-    const hasValidPasskey = configuredPasskey.length >= 12;
-    const reasons: string[] = [];
+  const isPlaceholderSecret = PLACEHOLDER_SESSION_SECRETS.has(configuredSecret.toLowerCase());
+  const isPlaceholderPasskey = PLACEHOLDER_ADMIN_PASSKEYS.has(configuredPasskey.toLowerCase());
 
-    if (!hasValidSecret) {
-      reasons.push(
-        'VOXEL_SESSION_SECRET not set (>=32 chars); using ephemeral per-instance 256-bit CSPRNG signing key (sessions reset on container restart).'
-      );
-    }
-    if (!hasValidPasskey) {
-      reasons.push(
-        'VOXEL_ADMIN_PASSKEY unset or <12 chars in production; operator /api/auth/admin-login disabled (fail-closed).'
-      );
-    }
+  const hasValidSecret = configuredSecret.length >= minSecretLength && !isPlaceholderSecret;
+  const hasValidPasskey = configuredPasskey.length >= minPasskeyLength && !isPlaceholderPasskey;
+  const reasons: string[] = [];
 
+  if (!hasValidSecret) {
+    reasons.push(
+      `VOXEL_SESSION_SECRET is missing, a placeholder, or shorter than ${minSecretLength} characters.`
+    );
+  }
+  if (!hasValidPasskey) {
+    reasons.push(
+      `VOXEL_ADMIN_PASSKEY is missing, a placeholder, or shorter than ${minPasskeyLength} characters.`
+    );
+  }
+
+  if (reasons.length > 0) {
     return {
-      isProduction: true,
-      sessionSecret,
-      ephemeralSessionSecretGenerated: !hasValidSecret,
-      adminPasskey: hasValidPasskey ? configuredPasskey : null,
+      isProduction,
+      sessionSecret: '',
+      ephemeralSessionSecretGenerated: false,
+      adminPasskey: null,
       ephemeralDevPasskeyGenerated: false,
-      failClosedMisconfigured: false,
-      misconfigurationReason: reasons.length > 0 ? reasons.join(' ') : null,
+      failClosedMisconfigured: true,
+      misconfigurationReason: reasons.join(' '),
     };
   }
 
-  const hasDevSecret = configuredSecret.length >= 16;
-  const devSessionSecret = hasDevSecret ? configuredSecret : crypto.randomBytes(32).toString('hex');
-  const ephemeralDevPasskeyGenerated = configuredPasskey.length === 0;
-  const adminPasskey = ephemeralDevPasskeyGenerated
-    ? crypto.randomBytes(16).toString('hex')
-    : configuredPasskey;
-
   return {
-    isProduction: false,
-    sessionSecret: devSessionSecret,
-    ephemeralSessionSecretGenerated: !hasDevSecret,
-    adminPasskey,
-    ephemeralDevPasskeyGenerated,
+    isProduction,
+    sessionSecret: configuredSecret,
+    ephemeralSessionSecretGenerated: false,
+    adminPasskey: configuredPasskey,
+    ephemeralDevPasskeyGenerated: false,
     failClosedMisconfigured: false,
     misconfigurationReason: null,
   };

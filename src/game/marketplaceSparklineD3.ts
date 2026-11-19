@@ -647,3 +647,211 @@ export function computeCurioArbitrageOpportunities(params?: {
     };
   });
 }
+
+export type LiquidityTier = 'Instant' | 'High' | 'Moderate' | 'Low' | 'Illiquid';
+
+export interface LiquidityScoreResult {
+  score: number; // 0..100
+  tier: LiquidityTier;
+  npcStock: number;
+  avgDailyVolume: number;
+  turnoverRatio: number;
+  clearanceDays: number | null;
+  estimatedTradeSpeed: string;
+  bulkTradeAdvice: string;
+}
+
+export interface MarketplaceLiquidityRow {
+  id: string;
+  name: string;
+  category: 'Bulk Exchange' | 'Caravan Barter' | 'Curio Market';
+  targetTab: 'exchange' | 'caravan' | 'curios';
+  pairSummary: string;
+  liquidity: LiquidityScoreResult;
+}
+
+export const BULK_EXCHANGE_LIQUIDITY_BASELINE: Readonly<
+  Record<string, { npcStock: number; avgDailyVolume: number }>
+> = {
+  ex_wood_to_copper: { npcStock: 42, avgDailyVolume: 210 },
+  ex_grain_to_steel: { npcStock: 36, avgDailyVolume: 175 },
+  ex_steel_to_oil: { npcStock: 28, avgDailyVolume: 130 },
+  ex_copper_to_diamond: { npcStock: 18, avgDailyVolume: 92 },
+  ex_diamond_to_all_pack: { npcStock: 22, avgDailyVolume: 115 },
+  ex_oil_to_diamond: { npcStock: 12, avgDailyVolume: 48 },
+};
+
+export const CARAVAN_DAILY_VOLUME_BASELINE: Readonly<Record<string, number>> = {
+  trade_wood_for_diamonds: 85,
+  trade_grain_for_oil: 96,
+  trade_steel_for_diamonds: 58,
+};
+
+/**
+ * Computes a 0-100 Liquidity Score indicating how quickly an item can be traded
+ * based on current NPC stock and average daily trade volume, helping users
+ * decide on bulk trades.
+ */
+export function computeItemLiquidityScore(params: {
+  npcStock: number;
+  avgDailyVolume: number;
+}): LiquidityScoreResult {
+  const npcStock = Math.max(0, Math.floor(Number.isFinite(params.npcStock) ? params.npcStock : 0));
+  const avgDailyVolume = Math.max(
+    0,
+    Math.round(Number.isFinite(params.avgDailyVolume) ? params.avgDailyVolume : 0)
+  );
+
+  if (npcStock <= 0 || avgDailyVolume <= 0) {
+    return {
+      score: 0,
+      tier: 'Illiquid',
+      npcStock,
+      avgDailyVolume,
+      turnoverRatio: 0,
+      clearanceDays: null,
+      estimatedTradeSpeed: npcStock <= 0 ? 'Out of Stock' : 'No Volume',
+      bulkTradeAdvice:
+        npcStock <= 0
+          ? 'NPC stock depleted — wait for caravan restock'
+          : 'Insufficient daily trade volume for bulk orders',
+    };
+  }
+
+  const volumeDepthScore = 55 * (avgDailyVolume / (avgDailyVolume + 40));
+  const stockDepthScore = 30 * (npcStock / (npcStock + 5));
+  const turnoverRatio = Number((avgDailyVolume / Math.max(1, npcStock)).toFixed(2));
+  const velocityScore = 15 * Math.min(1, turnoverRatio / 10);
+
+  const score = Math.max(
+    1,
+    Math.min(100, Math.round(volumeDepthScore + stockDepthScore + velocityScore))
+  );
+  const clearanceDays = Number((npcStock / avgDailyVolume).toFixed(2));
+
+  let tier: LiquidityTier;
+  let estimatedTradeSpeed: string;
+  let bulkTradeAdvice: string;
+
+  if (score >= 80) {
+    tier = 'Instant';
+    estimatedTradeSpeed = '< 5 min';
+    bulkTradeAdvice = 'Optimal for full bulk trades (minimal slippage)';
+  } else if (score >= 60) {
+    tier = 'High';
+    estimatedTradeSpeed = '~15 min';
+    bulkTradeAdvice = 'Bulk friendly — clears rapidly across NPC desks';
+  } else if (score >= 40) {
+    tier = 'Moderate';
+    estimatedTradeSpeed = '~1–2 hrs';
+    bulkTradeAdvice = 'Split large bulk orders into 2–3 batches';
+  } else {
+    tier = 'Low';
+    estimatedTradeSpeed = '~6+ hrs';
+    bulkTradeAdvice = 'Thin NPC stock — execute small lots only';
+  }
+
+  return {
+    score,
+    tier,
+    npcStock,
+    avgDailyVolume,
+    turnoverRatio,
+    clearanceDays,
+    estimatedTradeSpeed,
+    bulkTradeAdvice,
+  };
+}
+
+/**
+ * Builds unified Marketplace Liquidity rows across Bulk Exchange offers,
+ * Caravan Barter NPC offers, and Curio Market items.
+ */
+export function computeMarketplaceLiquidityRows(params: {
+  bulkOffers: readonly {
+    id: string;
+    title: string;
+    costResource: ResourceType;
+    costAmount: bigint;
+    rewardResource: ResourceType;
+    rewardAmount: bigint;
+  }[];
+  bulkExecutionsById?: Readonly<Record<string, number>>;
+  caravanOffers?: readonly {
+    id: string;
+    label: string;
+    stock: number;
+  }[];
+  curioItems: readonly {
+    id: string;
+    name: string;
+    costResource: 'copper' | 'diamond';
+    costAmount: bigint;
+  }[];
+  curioSessionPurchasesById?: Readonly<Record<string, number>>;
+  arbitrageExecutionsById?: Readonly<Record<string, number>>;
+}): MarketplaceLiquidityRow[] {
+  const bulkExec = params.bulkExecutionsById ?? {};
+  const curioPurch = params.curioSessionPurchasesById ?? {};
+  const arbExec = params.arbitrageExecutionsById ?? {};
+
+  const rows: MarketplaceLiquidityRow[] = [];
+
+  for (const offer of params.bulkOffers) {
+    const base = BULK_EXCHANGE_LIQUIDITY_BASELINE[offer.id] ?? {
+      npcStock: 20,
+      avgDailyVolume: 100,
+    };
+    const used = bulkExec[offer.id] ?? 0;
+    const npcStock = Math.max(0, base.npcStock - used);
+    const avgDailyVolume = base.avgDailyVolume + used;
+    rows.push({
+      id: offer.id,
+      name: offer.title,
+      category: 'Bulk Exchange',
+      targetTab: 'exchange',
+      pairSummary: `${offer.costResource.toUpperCase()} → ${offer.rewardResource.toUpperCase()}`,
+      liquidity: computeItemLiquidityScore({ npcStock, avgDailyVolume }),
+    });
+  }
+
+  for (const caravan of params.caravanOffers ?? []) {
+    const avgDailyVolume = CARAVAN_DAILY_VOLUME_BASELINE[caravan.id] ?? 60;
+    rows.push({
+      id: caravan.id,
+      name: caravan.label,
+      category: 'Caravan Barter',
+      targetTab: 'caravan',
+      pairSummary: 'NPC Caravan Stock',
+      liquidity: computeItemLiquidityScore({
+        npcStock: caravan.stock,
+        avgDailyVolume,
+      }),
+    });
+  }
+
+  for (const curio of params.curioItems) {
+    const history = CURIO_SEVEN_DAY_PRICE_HISTORY[curio.id] ?? [];
+    const baseAvgVol = d3.mean(history, (h) => h.volume) ?? 50;
+    const extraPurchases = curioPurch[curio.id] ?? 0;
+    const arbCount = arbExec[curio.id] ?? 0;
+
+    const nodeSpec = CURIO_MERCHANT_NODE_PRICING[curio.id];
+    const totalNodeStock = nodeSpec
+      ? nodeSpec.nodes.reduce((sum, n) => sum + Math.max(1, n.stock - arbCount), 0)
+      : 12;
+    const npcStock = Math.max(0, totalNodeStock - extraPurchases);
+    const avgDailyVolume = Math.round(baseAvgVol + extraPurchases / 7);
+
+    rows.push({
+      id: curio.id,
+      name: curio.name,
+      category: 'Curio Market',
+      targetTab: 'curios',
+      pairSummary: `${curio.costResource.toUpperCase()} Curio`,
+      liquidity: computeItemLiquidityScore({ npcStock, avgDailyVolume }),
+    });
+  }
+
+  return rows;
+}

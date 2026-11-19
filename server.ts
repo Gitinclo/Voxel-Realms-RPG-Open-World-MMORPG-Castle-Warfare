@@ -222,17 +222,16 @@ function encodeWsCloseFrame(code: number, reason: string = ''): Buffer {
 
 async function startServer() {
   const securityConfig = resolveServerRuntimeSecurityConfig(process.env);
-  if (securityConfig.failClosedMisconfigured) {
-    console.error(`[SECURITY FATAL] ${securityConfig.misconfigurationReason}`);
+  if (
+    securityConfig.failClosedMisconfigured ||
+    !securityConfig.sessionSecret ||
+    !securityConfig.adminPasskey
+  ) {
+    const fatalReason =
+      securityConfig.misconfigurationReason ||
+      'Critical secrets VOXEL_SESSION_SECRET and VOXEL_ADMIN_PASSKEY must be configured.';
+    console.error(`[SECURITY FATAL] Refusing to start server (fail-closed): ${fatalReason}`);
     process.exit(1);
-  }
-
-  if (securityConfig.ephemeralDevPasskeyGenerated && securityConfig.adminPasskey) {
-    console.info(
-      `[Voxel Realms Security] Development mode: generated ephemeral operator passkey for this boot: ${securityConfig.adminPasskey} (set VOXEL_ADMIN_PASSKEY in .env to override).`
-    );
-  } else if (securityConfig.misconfigurationReason) {
-    console.warn(`[Voxel Realms Security] ${securityConfig.misconfigurationReason}`);
   }
 
   const persistence = new AtomicRealmPersistence<PersistedMultiRegionStore>({
@@ -302,6 +301,29 @@ async function startServer() {
     opsCounters.httpRequestsTotal += 1;
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    res.setHeader(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "img-src 'self' data: blob: https:",
+        "connect-src 'self' ws: wss: https:",
+        "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
+        "frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://aistudio.google.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+      ].join('; ')
+    );
+    if (securityConfig.isProduction && process.env.ALLOW_PREVIEW_IFRAME !== 'true') {
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
+    if (securityConfig.isProduction || isHttpsRequest(req)) {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     if (req.path.startsWith('/api/')) {
       res.setHeader('Cache-Control', 'no-store');
     }

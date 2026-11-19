@@ -21,17 +21,25 @@ import {
   Activity,
   Radar,
   MapPin,
+  Gauge,
+  ArrowUpDown,
 } from 'lucide-react';
 import { GameResources, NPC, NPCTradeOffer, ResourceType } from '../types/game';
 import { formatBigInt } from '../game/math';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
 import {
+  BULK_EXCHANGE_LIQUIDITY_BASELINE,
+  CARAVAN_DAILY_VOLUME_BASELINE,
   CurioArbitrageOpportunity,
   CurioPriceAlert,
   INITIAL_P2P_TRADE_LISTINGS,
+  LiquidityScoreResult,
+  LiquidityTier,
   PlayerToPlayerTradeListing,
   computeCurioArbitrageOpportunities,
   computeCurioSparklineD3,
+  computeItemLiquidityScore,
+  computeMarketplaceLiquidityRows,
   evaluateCurioPriceAlerts,
 } from '../game/marketplaceSparklineD3';
 import { sound } from '../game/audio';
@@ -166,6 +174,62 @@ const PEER_LORDS = [
   { name: 'Vanguard Thorne', clanTag: 'ASTRAL', speciesIcon: '⚡' },
 ] as const;
 
+const LIQUIDITY_TIER_STYLES: Record<LiquidityTier, { badge: string; bar: string; text: string }> = {
+  Instant: {
+    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50',
+    bar: 'bg-emerald-400',
+    text: 'text-emerald-300',
+  },
+  High: {
+    badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50',
+    bar: 'bg-cyan-400',
+    text: 'text-cyan-300',
+  },
+  Moderate: {
+    badge: 'bg-amber-500/20 text-amber-300 border-amber-400/50',
+    bar: 'bg-amber-400',
+    text: 'text-amber-300',
+  },
+  Low: {
+    badge: 'bg-orange-500/20 text-orange-300 border-orange-400/50',
+    bar: 'bg-orange-400',
+    text: 'text-orange-300',
+  },
+  Illiquid: {
+    badge: 'bg-rose-500/20 text-rose-300 border-rose-400/50',
+    bar: 'bg-rose-500',
+    text: 'text-rose-300',
+  },
+};
+
+const LiquidityScoreCell: React.FC<{ liquidity: LiquidityScoreResult; testId?: string }> = ({
+  liquidity,
+  testId,
+}) => {
+  const style = LIQUIDITY_TIER_STYLES[liquidity.tier];
+  return (
+    <div data-testid={testId} className="space-y-1 min-w-[165px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`font-mono font-bold text-xs tabular-nums ${style.text}`}>
+          {liquidity.score}/100
+        </span>
+        <span
+          className={`px-1.5 py-0.5 rounded border text-[10px] font-mono font-bold ${style.badge}`}
+        >
+          {liquidity.tier}
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${style.bar}`}
+          style={{ width: `${liquidity.score}%` }}
+        />
+      </div>
+      <div className="text-[10px] text-slate-400 leading-tight">{liquidity.bulkTradeAdvice}</div>
+    </div>
+  );
+};
+
 interface CurioSparklineCardProps {
   item: CurioMarketItem;
   sessionPurchasesCount: number;
@@ -211,9 +275,7 @@ const CurioPriceSparkline: React.FC<CurioSparklineCardProps> = ({
       className="p-2.5 rounded-xl bg-slate-950/85 border border-slate-800 space-y-1.5"
     >
       <div className="flex items-center justify-between gap-1.5 text-[10px] font-mono">
-        <span className="text-slate-400 uppercase tracking-wider font-bold">
-          7D D3 Price Trend
-        </span>
+        <span className="text-slate-400 uppercase tracking-wider font-bold">7D D3 Price Trend</span>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -251,11 +313,7 @@ const CurioPriceSparkline: React.FC<CurioSparklineCardProps> = ({
                 : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
             }`}
           >
-            {isBullish ? (
-              <TrendingUp className="w-3 h-3" />
-            ) : (
-              <TrendingDown className="w-3 h-3" />
-            )}
+            {isBullish ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {geometry.sevenDayDeltaPct > 0
               ? `+${geometry.sevenDayDeltaPct}%`
               : `${geometry.sevenDayDeltaPct}%`}
@@ -407,17 +465,22 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
   const [lastTransactionBanner, setLastTransactionBanner] = useState<string | null>(null);
   const [curioPurchaseCounts, setCurioPurchaseCounts] = useState<Record<string, number>>({});
   const [curioPriceAdjustments, setCurioPriceAdjustments] = useState<Record<string, number>>({});
-  const [arbitrageExecutionCounts, setArbitrageExecutionCounts] = useState<
-    Record<string, number>
-  >({});
+  const [bulkExecutionCounts, setBulkExecutionCounts] = useState<Record<string, number>>({});
+  const [liquidityCategoryFilter, setLiquidityCategoryFilter] = useState<
+    'all' | 'Bulk Exchange' | 'Caravan Barter' | 'Curio Market'
+  >('all');
+  const [liquiditySortDesc, setLiquiditySortDesc] = useState<boolean>(true);
+  const [arbitrageExecutionCounts, setArbitrageExecutionCounts] = useState<Record<string, number>>(
+    {}
+  );
 
   // Price Alerts State
   const [isPriceAlertPanelOpen, setIsPriceAlertPanelOpen] = useState(false);
-  const [selectedAlertItemId, setSelectedAlertItemId] = useState<string>(
-    CURIO_MARKET_ITEMS[0].id
-  );
+  const [selectedAlertItemId, setSelectedAlertItemId] = useState<string>(CURIO_MARKET_ITEMS[0].id);
   const [alertTargetPriceInput, setAlertTargetPriceInput] = useState<string>('1220');
-  const [alertCondition, setAlertCondition] = useState<'at_or_below' | 'at_or_above'>('at_or_above');
+  const [alertCondition, setAlertCondition] = useState<'at_or_below' | 'at_or_above'>(
+    'at_or_above'
+  );
   const [priceAlerts, setPriceAlerts] = useState<CurioPriceAlert[]>([]);
 
   // Player-to-Player (P2P) Trade State
@@ -457,6 +520,32 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
       }),
     [npcs, arbitrageExecutionCounts]
   );
+
+  // Compute Liquidity Score Matrix across Bulk Exchange, Caravan Barter, and Curio Market
+  const liquidityRows = useMemo(
+    () =>
+      computeMarketplaceLiquidityRows({
+        bulkOffers: BULK_EXCHANGE_OFFERS,
+        bulkExecutionsById: bulkExecutionCounts,
+        caravanOffers: merchantNpc?.tradeOffers ?? [],
+        curioItems: CURIO_MARKET_ITEMS,
+        curioSessionPurchasesById: curioPurchaseCounts,
+        arbitrageExecutionsById: arbitrageExecutionCounts,
+      }),
+    [bulkExecutionCounts, merchantNpc?.tradeOffers, curioPurchaseCounts, arbitrageExecutionCounts]
+  );
+
+  const visibleLiquidityRows = useMemo(() => {
+    const filtered =
+      liquidityCategoryFilter === 'all'
+        ? liquidityRows
+        : liquidityRows.filter((row) => row.category === liquidityCategoryFilter);
+    return [...filtered].sort((a, b) =>
+      liquiditySortDesc
+        ? b.liquidity.score - a.liquidity.score
+        : a.liquidity.score - b.liquidity.score
+    );
+  }, [liquidityRows, liquidityCategoryFilter, liquiditySortDesc]);
 
   const checkAndTriggerAlerts = (
     alertsToEvaluate: readonly CurioPriceAlert[],
@@ -506,10 +595,7 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
       createdAtMs: Date.now(),
     };
 
-    const nextAlerts = [
-      ...priceAlerts.filter((a) => a.itemId !== targetItem.id),
-      newAlert,
-    ];
+    const nextAlerts = [...priceAlerts.filter((a) => a.itemId !== targetItem.id), newAlert];
 
     const resourceLabel = RESOURCE_LABELS[targetItem.costResource].name;
     const creationMsg = `🔔 Price Alert Armed for ${targetItem.name} at ${alertCondition === 'at_or_below' ? '≤' : '≥'} ${formatBigInt(BigInt(parsedTarget))} ${resourceLabel}!`;
@@ -568,9 +654,7 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
 
     setP2pListings((prev) =>
       prev.map((item) =>
-        item.id === listing.id
-          ? { ...item, status: 'completed', completedBy: playerName }
-          : item
+        item.id === listing.id ? { ...item, status: 'completed', completedBy: playerName } : item
       )
     );
 
@@ -835,58 +919,240 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
         {/* Body Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 text-slate-200">
           {activeTab === 'exchange' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {BULK_EXCHANGE_OFFERS.map((offer) => {
-                const costMeta = RESOURCE_LABELS[offer.costResource];
-                const rewardMeta = RESOURCE_LABELS[offer.rewardResource];
-                const canAfford = isGodImmune || resources[offer.costResource] >= offer.costAmount;
+            <div className="space-y-5">
+              {/* Bulk Trade Liquidity Score Matrix */}
+              <div
+                data-testid="marketplace-liquidity-panel"
+                className="rounded-2xl bg-slate-950/90 border border-amber-500/35 overflow-hidden"
+              >
+                <div className="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-bold font-cinzel text-amber-200 flex items-center gap-2">
+                      <Gauge className="w-4 h-4 text-amber-400" />
+                      <span>Bulk Trade Liquidity Score Matrix</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      Calculates execution speed from live NPC stock &amp; average daily trade
+                      volume to guide bulk orders.
+                    </p>
+                  </div>
 
-                return (
-                  <div
-                    key={offer.id}
-                    data-testid={`marketplace-offer-${offer.id}`}
-                    className="p-4 rounded-xl bg-slate-800/70 border border-slate-700 flex flex-col justify-between gap-3"
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+                    {(['all', 'Bulk Exchange', 'Caravan Barter', 'Curio Market'] as const).map(
+                      (cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          data-testid={`liquidity-filter-${cat.toLowerCase().replace(/\s+/g, '-')}`}
+                          onClick={() => setLiquidityCategoryFilter(cat)}
+                          className={`px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                            liquidityCategoryFilter === cat
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
+                              : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800'
+                          }`}
+                        >
+                          {cat === 'all' ? 'All Items' : cat}
+                        </button>
+                      )
+                    )}
+                    <button
+                      type="button"
+                      data-testid="liquidity-sort-btn"
+                      onClick={() => setLiquiditySortDesc((prev) => !prev)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <ArrowUpDown className="w-3 h-3" />
+                      <span>{liquiditySortDesc ? 'Highest Score' : 'Lowest Score'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table
+                    data-testid="marketplace-liquidity-table"
+                    className="w-full text-left text-xs border-collapse"
                   >
-                    <div>
-                      <div className="text-sm font-bold text-white font-cinzel">{offer.title}</div>
-                      <p className="text-xs text-slate-400 mt-0.5">{offer.subtitle}</p>
-                    </div>
+                    <thead>
+                      <tr className="bg-slate-900/90 text-[11px] font-mono uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <th className="py-2.5 px-4">Item / Pair</th>
+                        <th className="py-2.5 px-3 text-right">NPC Stock</th>
+                        <th className="py-2.5 px-3 text-right">Avg Daily Vol</th>
+                        <th className="py-2.5 px-3">Est. Speed</th>
+                        <th className="py-2.5 px-3">Liquidity Score</th>
+                        <th className="py-2.5 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {visibleLiquidityRows.map((row) => {
+                        const bulkMatch =
+                          row.targetTab === 'exchange'
+                            ? BULK_EXCHANGE_OFFERS.find((o) => o.id === row.id)
+                            : undefined;
+                        const canBulkExecute =
+                          bulkMatch &&
+                          row.liquidity.npcStock > 0 &&
+                          (isGodImmune ||
+                            resources[bulkMatch.costResource] >= bulkMatch.costAmount);
 
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-700/70">
-                      <div className="text-xs font-mono tabular-nums">
-                        <span className="text-slate-400">Pay: </span>
-                        <span className="text-amber-300 font-bold">
-                          {costMeta.icon} {formatBigInt(offer.costAmount)} {costMeta.name}
-                        </span>
-                        <span className="mx-1.5 text-slate-500">→</span>
-                        <span className="text-emerald-300 font-bold">
-                          {rewardMeta.icon} +{formatBigInt(offer.rewardAmount)} {rewardMeta.name}
+                        return (
+                          <tr
+                            key={`${row.targetTab}-${row.id}`}
+                            data-testid={`liquidity-row-${row.id}`}
+                            className="hover:bg-slate-900/50 transition-colors"
+                          >
+                            <td className="py-2.5 px-4">
+                              <div className="font-semibold text-white">{row.name}</div>
+                              <div className="text-[10px] font-mono text-slate-400">
+                                {row.category} · {row.pairSummary}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-200">
+                              {row.liquidity.npcStock}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-300">
+                              {row.liquidity.avgDailyVolume}/day
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-cyan-300 whitespace-nowrap">
+                              {row.liquidity.estimatedTradeSpeed}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <LiquidityScoreCell
+                                liquidity={row.liquidity}
+                                testId={`liquidity-score-${row.id}`}
+                              />
+                            </td>
+                            <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                              {bulkMatch ? (
+                                <button
+                                  type="button"
+                                  data-testid={`liquidity-quick-trade-${row.id}`}
+                                  disabled={!canBulkExecute}
+                                  onClick={() => {
+                                    sound.playUpgradeFanfare();
+                                    onExecuteBulkExchange(bulkMatch);
+                                    setBulkExecutionCounts((prev) => ({
+                                      ...prev,
+                                      [bulkMatch.id]: (prev[bulkMatch.id] ?? 0) + 1,
+                                    }));
+                                    const rewardMeta = RESOURCE_LABELS[bulkMatch.rewardResource];
+                                    const msg = `Settled ${bulkMatch.title}: +${formatBigInt(bulkMatch.rewardAmount)} ${rewardMeta.name}`;
+                                    setLastTransactionBanner(msg);
+                                    onNotifyToast?.(msg);
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                                    canBulkExecute
+                                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {row.liquidity.npcStock <= 0 ? 'Depleted' : 'Bulk Trade'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  data-testid={`liquidity-goto-${row.id}`}
+                                  onClick={() => {
+                                    sound.playSwing();
+                                    setActiveTab(row.targetTab);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-200 text-[11px] font-bold cursor-pointer"
+                                >
+                                  Open {row.targetTab === 'caravan' ? 'Caravan' : 'Curios'}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {BULK_EXCHANGE_OFFERS.map((offer) => {
+                  const costMeta = RESOURCE_LABELS[offer.costResource];
+                  const rewardMeta = RESOURCE_LABELS[offer.rewardResource];
+                  const baseLiq = BULK_EXCHANGE_LIQUIDITY_BASELINE[offer.id] ?? {
+                    npcStock: 20,
+                    avgDailyVolume: 100,
+                  };
+                  const usedCount = bulkExecutionCounts[offer.id] ?? 0;
+                  const liveStock = Math.max(0, baseLiq.npcStock - usedCount);
+                  const liveLiquidity = computeItemLiquidityScore({
+                    npcStock: liveStock,
+                    avgDailyVolume: baseLiq.avgDailyVolume + usedCount,
+                  });
+                  const canAfford =
+                    liveStock > 0 &&
+                    (isGodImmune || resources[offer.costResource] >= offer.costAmount);
+                  const tierStyle = LIQUIDITY_TIER_STYLES[liveLiquidity.tier];
+
+                  return (
+                    <div
+                      key={offer.id}
+                      data-testid={`marketplace-offer-${offer.id}`}
+                      className="p-4 rounded-xl bg-slate-800/70 border border-slate-700 flex flex-col justify-between gap-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-bold text-white font-cinzel">
+                            {offer.title}
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">{offer.subtitle}</p>
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded-lg border text-[10px] font-mono font-bold shrink-0 ${tierStyle.badge}`}
+                        >
+                          Liq {liveLiquidity.score}/100 · {liveLiquidity.estimatedTradeSpeed}
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        data-testid={`marketplace-buy-${offer.id}`}
-                        disabled={!canAfford}
-                        onClick={() => {
-                          sound.playUpgradeFanfare();
-                          onExecuteBulkExchange(offer);
-                          const msg = `Settled ${offer.title}: +${formatBigInt(offer.rewardAmount)} ${rewardMeta.name}`;
-                          setLastTransactionBanner(msg);
-                          onNotifyToast?.(msg);
-                        }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
-                          canAfford
-                            ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                        }`}
-                      >
-                        Exchange
-                      </button>
+                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 tabular-nums">
+                        <span>NPC Stock: {liveLiquidity.npcStock}</span>
+                        <span>Avg Daily Vol: {liveLiquidity.avgDailyVolume}/day</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-700/70">
+                        <div className="text-xs font-mono tabular-nums">
+                          <span className="text-slate-400">Pay: </span>
+                          <span className="text-amber-300 font-bold">
+                            {costMeta.icon} {formatBigInt(offer.costAmount)} {costMeta.name}
+                          </span>
+                          <span className="mx-1.5 text-slate-500">→</span>
+                          <span className="text-emerald-300 font-bold">
+                            {rewardMeta.icon} +{formatBigInt(offer.rewardAmount)} {rewardMeta.name}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          data-testid={`marketplace-buy-${offer.id}`}
+                          disabled={!canAfford}
+                          onClick={() => {
+                            sound.playUpgradeFanfare();
+                            onExecuteBulkExchange(offer);
+                            setBulkExecutionCounts((prev) => ({
+                              ...prev,
+                              [offer.id]: (prev[offer.id] ?? 0) + 1,
+                            }));
+                            const msg = `Settled ${offer.title}: +${formatBigInt(offer.rewardAmount)} ${rewardMeta.name}`;
+                            setLastTransactionBanner(msg);
+                            onNotifyToast?.(msg);
+                          }}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
+                            canAfford
+                              ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {liveStock <= 0 ? 'Depleted' : 'Exchange'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -1096,10 +1362,65 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
                 </span>
               </div>
 
+              {/* Caravan Barter Liquidity Score Table */}
+              <div className="rounded-2xl bg-slate-950/90 border border-cyan-500/35 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table
+                    data-testid="caravan-liquidity-table"
+                    className="w-full text-left text-xs border-collapse"
+                  >
+                    <thead>
+                      <tr className="bg-slate-900/90 text-[11px] font-mono uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <th className="py-2.5 px-4">Caravan Barter Lot</th>
+                        <th className="py-2.5 px-3 text-right">NPC Stock</th>
+                        <th className="py-2.5 px-3 text-right">Avg Daily Vol</th>
+                        <th className="py-2.5 px-3">Est. Speed</th>
+                        <th className="py-2.5 px-4">Liquidity Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {(merchantNpc?.tradeOffers || []).map((offer) => {
+                        const avgVol = CARAVAN_DAILY_VOLUME_BASELINE[offer.id] ?? 60;
+                        const liq = computeItemLiquidityScore({
+                          npcStock: offer.stock,
+                          avgDailyVolume: avgVol,
+                        });
+                        return (
+                          <tr key={offer.id} className="hover:bg-slate-900/50">
+                            <td className="py-2.5 px-4 font-semibold text-white">{offer.label}</td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-200">
+                              {offer.stock}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-300">
+                              {avgVol}/day
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-cyan-300 whitespace-nowrap">
+                              {liq.estimatedTradeSpeed}
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <LiquidityScoreCell
+                                liquidity={liq}
+                                testId={`caravan-liquidity-score-${offer.id}`}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {(merchantNpc?.tradeOffers || []).map((offer) => {
                   const costMeta = RESOURCE_LABELS[offer.giveResource];
                   const rewardMeta = RESOURCE_LABELS[offer.receiveType];
+                  const avgVol = CARAVAN_DAILY_VOLUME_BASELINE[offer.id] ?? 60;
+                  const liq = computeItemLiquidityScore({
+                    npcStock: offer.stock,
+                    avgDailyVolume: avgVol,
+                  });
+                  const liqStyle = LIQUIDITY_TIER_STYLES[liq.tier];
                   const canTrade =
                     offer.stock > 0 &&
                     (isGodImmune || resources[offer.giveResource] >= offer.giveAmount);
@@ -1110,10 +1431,17 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
                       data-testid={`marketplace-caravan-${offer.id}`}
                       className="p-4 rounded-xl bg-slate-800/70 border border-slate-700 flex flex-col justify-between gap-3"
                     >
-                      <div>
-                        <div className="text-sm font-bold text-white">{offer.label}</div>
-                        <div className="text-xs font-mono text-slate-400 mt-1 tabular-nums">
-                          Stock Remaining: {offer.stock}
+                      <div className="space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-sm font-bold text-white">{offer.label}</div>
+                          <span
+                            className={`px-1.5 py-0.5 rounded border text-[10px] font-mono font-bold shrink-0 ${liqStyle.badge}`}
+                          >
+                            Liq {liq.score}/100
+                          </span>
+                        </div>
+                        <div className="text-xs font-mono text-slate-400 tabular-nums">
+                          Stock: {offer.stock} · Avg Vol: {avgVol}/day
                         </div>
                       </div>
 
@@ -1242,8 +1570,7 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
                               : 'bg-slate-900 border-amber-500/40 text-amber-200'
                           }`}
                         >
-                          {al.itemName.split(' ')[0]}{' '}
-                          {al.condition === 'at_or_below' ? '≤' : '≥'}
+                          {al.itemName.split(' ')[0]} {al.condition === 'at_or_below' ? '≤' : '≥'}
                           {formatBigInt(BigInt(al.targetPrice))}{' '}
                           {al.triggered ? '(TRIGGERED)' : '(ARMED)'}
                         </span>
@@ -1310,6 +1637,12 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
                   const purchasesCount = curioPurchaseCounts[item.id] ?? 0;
                   const priceAdjustment = curioPriceAdjustments[item.id] ?? 0;
                   const activeAlert = priceAlerts.find((a) => a.itemId === item.id);
+                  const curioLiqRow = liquidityRows.find(
+                    (r) => r.targetTab === 'curios' && r.id === item.id
+                  );
+                  const curioLiqStyle = curioLiqRow
+                    ? LIQUIDITY_TIER_STYLES[curioLiqRow.liquidity.tier]
+                    : null;
 
                   return (
                     <div
@@ -1322,8 +1655,24 @@ export const MarketplaceModal: React.FC<MarketplaceModalProps> = ({
                           <span className="text-sm font-bold text-white font-cinzel">
                             {item.name}
                           </span>
+                          {curioLiqRow && curioLiqStyle && (
+                            <span
+                              className={`px-1.5 py-0.5 rounded border text-[10px] font-mono font-bold shrink-0 ${curioLiqStyle.badge}`}
+                            >
+                              Liq {curioLiqRow.liquidity.score}/100
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-400">{item.description}</p>
+                        {curioLiqRow && (
+                          <div className="text-[10px] font-mono text-slate-400 flex items-center justify-between tabular-nums">
+                            <span>NPC Stock: {curioLiqRow.liquidity.npcStock}</span>
+                            <span>
+                              Avg Vol: {curioLiqRow.liquidity.avgDailyVolume}/d ·{' '}
+                              {curioLiqRow.liquidity.estimatedTradeSpeed}
+                            </span>
+                          </div>
+                        )}
 
                         {/* D3 7-Day Price Trend Sparkline + Target Alert Line */}
                         <CurioPriceSparkline

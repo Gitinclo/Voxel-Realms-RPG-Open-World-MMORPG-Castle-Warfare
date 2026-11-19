@@ -460,7 +460,7 @@ Clone the repository and install dependencies:
 git clone <repository-url>
 cd <repository-folder>
 npm install
-cp .env.example .env   # Optional: configure VOXEL_SESSION_SECRET, VOXEL_ADMIN_PASSKEY, SQL_*
+cp .env.example .env   # Mandatory: set non-placeholder VOXEL_SESSION_SECRET and VOXEL_ADMIN_PASSKEY (and optional SQL_*)
 ```
 
 ### Development Server
@@ -757,7 +757,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
 - **`omniverse.test.ts`**: Verifies `COSMIC_LIMITS` (`WHITE_PAGE_COUNT: 1`, `OVERVOID_MAX_COUNT: 100`, `Infinity` for Tiers 1–4), `InfiniteCollection<T>`, the strict 6-Tier Nested Cosmological Tree (`WhitePageRoot` singleton → `100` bounded `Overvoid` instances → `Omniverse` → `Megaverse` / `Hyperverse` → `Multiverse` → `Universe` leaf), `attemptCreateOvervoid` hard cap enforcement (`> 100` rejected), `lazilyGenerateInfiniteTierSlice` procedural pagination, Tier 5 `Overvoid` logic overrides and Tier 1 `Universe` physics overrides (`evaluateEffectiveUniversePhysicsAndLogic`), all 100 Fictional Species Background NPCs (`TOP_100_OMNIVERSE_SPECIES_NPCS`), and Layer-6 White Page / House of Ideas authorial decrees.
 - **`proceduralWorld.test.ts`**: Regression-tests 3D voxel terrain generation, castle era crystal upgrades, articulated NPC/Monster meshes, cultivator aura scene graphs, live `applyCrossPlatformPipeline` mutations (`THREE.LOD`, `InstancedMesh.count`, `normalScale`/`bumpScale`, small-prop shadow culling), and C++20 engine telemetry.
-- **`serverAuth.test.ts`**: Verifies HMAC-SHA256 signed `HttpOnly` session cookies, timing-safe `VOXEL_ADMIN_PASSKEY` verification, ephemeral fallback + fail-closed operator login, `401`/`403` RBAC rejection, immediate role revocation re-evaluation, anti-tamper `/api/online/sync` field clamping, WebSocket command session binding, and email redaction on `/api/online/status`.
+- **`serverAuth.test.ts`**: Verifies HMAC-SHA256 signed `HttpOnly` session cookies, timing-safe `VOXEL_ADMIN_PASSKEY` verification, fail-closed startup enforcement for missing/placeholder secrets + fail-closed operator login, `401`/`403` RBAC rejection, immediate role revocation re-evaluation, anti-tamper `/api/online/sync` field clamping, WebSocket command session binding, and email redaction on `/api/online/status`.
 - **`serverHardening.test.ts`**: Verifies sliding-window rate limits, brute-force login lockout timers, Same-Origin CSRF checks, recursive prototype-pollution detection, fragmented/bounded RFC 6455 WebSocket decoding, 20Hz tick latency percentile tracking, and LRU/oldest commander pruning.
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).

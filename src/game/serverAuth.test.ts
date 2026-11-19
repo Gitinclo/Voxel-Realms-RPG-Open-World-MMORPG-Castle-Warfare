@@ -29,16 +29,31 @@ import {
 const TEST_SECRET = '0123456789abcdef0123456789abcdef';
 const TEST_PASSKEY = 'super-secret-operator-key-2026';
 
-test('resolveServerRuntimeSecurityConfig uses ephemeral CSPRNG secret if unset in production while keeping admin login fail-closed', () => {
-  const prodFallback = resolveServerRuntimeSecurityConfig({
+test('resolveServerRuntimeSecurityConfig fails closed when VOXEL_SESSION_SECRET or VOXEL_ADMIN_PASSKEY is missing, short, or placeholder', () => {
+  const prodShortSecret = resolveServerRuntimeSecurityConfig({
     NODE_ENV: 'production',
     VOXEL_SESSION_SECRET: 'too-short',
+    VOXEL_ADMIN_PASSKEY: TEST_PASSKEY,
   });
-  assert.equal(prodFallback.isProduction, true);
-  assert.equal(prodFallback.failClosedMisconfigured, false);
-  assert.equal(prodFallback.ephemeralSessionSecretGenerated, true);
-  assert.ok(prodFallback.sessionSecret.length >= 64);
-  assert.equal(prodFallback.adminPasskey, null);
+  assert.equal(prodShortSecret.isProduction, true);
+  assert.equal(prodShortSecret.failClosedMisconfigured, true);
+  assert.equal(prodShortSecret.ephemeralSessionSecretGenerated, false);
+  assert.equal(prodShortSecret.sessionSecret, '');
+  assert.equal(prodShortSecret.adminPasskey, null);
+
+  const prodMissingPasskey = resolveServerRuntimeSecurityConfig({
+    NODE_ENV: 'production',
+    VOXEL_SESSION_SECRET: TEST_SECRET,
+  });
+  assert.equal(prodMissingPasskey.failClosedMisconfigured, true);
+  assert.equal(prodMissingPasskey.adminPasskey, null);
+
+  const placeholderAttempt = resolveServerRuntimeSecurityConfig({
+    NODE_ENV: 'production',
+    VOXEL_SESSION_SECRET: 'replace-with-at-least-32-char-csprng-secret',
+    VOXEL_ADMIN_PASSKEY: 'replace-with-strong-operator-passkey',
+  });
+  assert.equal(placeholderAttempt.failClosedMisconfigured, true);
 
   const prodGood = resolveServerRuntimeSecurityConfig({
     NODE_ENV: 'production',
@@ -47,13 +62,23 @@ test('resolveServerRuntimeSecurityConfig uses ephemeral CSPRNG secret if unset i
   });
   assert.equal(prodGood.failClosedMisconfigured, false);
   assert.equal(prodGood.ephemeralSessionSecretGenerated, false);
+  assert.equal(prodGood.sessionSecret, TEST_SECRET);
   assert.equal(prodGood.adminPasskey, TEST_PASSKEY);
 
-  const devEphemeral = resolveServerRuntimeSecurityConfig({ NODE_ENV: 'development' });
-  assert.equal(devEphemeral.failClosedMisconfigured, false);
-  assert.equal(devEphemeral.ephemeralDevPasskeyGenerated, true);
-  assert.ok(devEphemeral.sessionSecret.length >= 32);
-  assert.ok(devEphemeral.adminPasskey && devEphemeral.adminPasskey.length >= 16);
+  const devMissing = resolveServerRuntimeSecurityConfig({ NODE_ENV: 'development' });
+  assert.equal(devMissing.failClosedMisconfigured, true);
+  assert.equal(devMissing.ephemeralDevPasskeyGenerated, false);
+  assert.equal(devMissing.ephemeralSessionSecretGenerated, false);
+  assert.equal(devMissing.sessionSecret, '');
+  assert.equal(devMissing.adminPasskey, null);
+
+  const devGood = resolveServerRuntimeSecurityConfig({
+    NODE_ENV: 'development',
+    VOXEL_SESSION_SECRET: 'dev-session-secret-16ch',
+    VOXEL_ADMIN_PASSKEY: 'dev-passkey-12ch',
+  });
+  assert.equal(devGood.failClosedMisconfigured, false);
+  assert.equal(devGood.adminPasskey, 'dev-passkey-12ch');
 });
 
 test('HMAC-SHA256 session tokens verify cleanly and reject tampering or expiry', () => {

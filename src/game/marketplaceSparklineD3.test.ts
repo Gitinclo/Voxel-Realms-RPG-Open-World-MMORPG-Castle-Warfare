@@ -11,6 +11,8 @@ import {
   INITIAL_P2P_TRADE_LISTINGS,
   computeCurioArbitrageOpportunities,
   computeCurioSparklineD3,
+  computeItemLiquidityScore,
+  computeMarketplaceLiquidityRows,
   evaluateCurioPriceAlerts,
   settlePlayerToPlayerTrade,
 } from './marketplaceSparklineD3';
@@ -146,5 +148,49 @@ describe('Marketplace Curio 7-Day D3 Sparkline, Price Alerts, P2P Trade & Arbitr
       assert.ok(opp.roiPct > 25, `Expected >25% arbitrage ROI for ${opp.itemId}`);
       assert.ok(opp.routeDistanceMeters > 0);
     }
+  });
+
+  it('calculates Liquidity Score from NPC stock and average daily volume for bulk trade decisions', () => {
+    const depleted = computeItemLiquidityScore({ npcStock: 0, avgDailyVolume: 120 });
+    assert.equal(depleted.score, 0);
+    assert.equal(depleted.tier, 'Illiquid');
+    assert.equal(depleted.clearanceDays, null);
+
+    const instant = computeItemLiquidityScore({ npcStock: 42, avgDailyVolume: 210 });
+    assert.ok(instant.score >= 80 && instant.score <= 100);
+    assert.equal(instant.tier, 'Instant');
+    assert.equal(instant.estimatedTradeSpeed, '< 5 min');
+
+    const thin = computeItemLiquidityScore({ npcStock: 2, avgDailyVolume: 12 });
+    assert.ok(thin.score > 0 && thin.score < 60);
+
+    // Higher stock + higher daily volume yields higher liquidity score than thin stock + low volume
+    assert.ok(instant.score > thin.score);
+
+    const rows = computeMarketplaceLiquidityRows({
+      bulkOffers: [
+        {
+          id: 'ex_wood_to_copper',
+          title: 'Timber Consortium Liquidation',
+          costResource: 'wood',
+          costAmount: 50_000n,
+          rewardResource: 'copper',
+          rewardAmount: 45_000n,
+        },
+      ],
+      caravanOffers: [
+        { id: 'trade_wood_for_diamonds', label: '150K Wood → 750 Diamonds', stock: 5 },
+      ],
+      curioItems: [
+        {
+          id: 'curio_spirit_stone_coffer',
+          name: 'Nine-Heavens Spirit Stone Coffer',
+          costResource: 'copper',
+          costAmount: 120_000n,
+        },
+      ],
+    });
+    assert.equal(rows.length, 3);
+    assert.ok(rows.every((r) => r.liquidity.score > 0 && r.liquidity.avgDailyVolume > 0));
   });
 });

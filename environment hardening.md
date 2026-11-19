@@ -12,8 +12,8 @@
 
 | Variable                                                 | Development Behavior (`NODE_ENV=development`)                                                                             | Production Requirement (`NODE_ENV=production`)                                                                                | Fail-Closed Guardrail                                                                                                                        |
 | :------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VOXEL_SESSION_SECRET`                                   | Generates an ephemeral 256-bit CSPRNG key (`crypto.randomBytes(32)`) if omitted or left as `.env.example` placeholder.    | Must be an explicit CSPRNG secret of **`>= 32` characters** (`256+ bits` entropy) and not match `.env.example` placeholders.  | Server logs `[SECURITY FATAL]` and exits immediately (`process.exit(1)`) if missing or weak in production.                                   |
-| `VOXEL_ADMIN_PASSKEY`                                    | Generates an ephemeral per-boot operator passkey (`dev-op-...`) printed once to local stdout.                             | Must be **`>= 12` characters** and verified via constant-time `crypto.timingSafeEqual` on `POST /api/auth/admin-login`.       | Operator passkey login fails closed with **`HTTP 503`** if unset or left as placeholder in production.                                       |
+| `VOXEL_SESSION_SECRET`                                   | Must be explicitly configured (`>= 16` characters, non-placeholder). No ephemeral defaults are generated.                 | Must be an explicit CSPRNG secret of **`>= 32` characters** (`256+ bits` entropy) and not match `.env.example` placeholders.  | Server logs `[SECURITY FATAL]` and exits immediately (`process.exit(1)`) if missing, weak, or placeholder in any environment.                |
+| `VOXEL_ADMIN_PASSKEY`                                    | Must be explicitly configured (`>= 12` characters, non-placeholder). No ephemeral defaults are generated.                 | Must be **`>= 12` characters**, non-placeholder, and verified via constant-time `crypto.timingSafeEqual` on admin login.      | Server logs `[SECURITY FATAL]` and exits immediately (`process.exit(1)`) if missing, weak, or placeholder in any environment.                |
 | `SQL_HOST` / `SQL_USER` / `SQL_PASSWORD` / `SQL_DB_NAME` | Connects via local Cloud SQL Auth Proxy Unix socket (`/app/cloudsql/...`) or local Postgres instance (`src/db/index.ts`). | Connects over IAM-impersonated Cloud SQL Auth Proxy socket with lazy `pg.Pool` (`max: 10`, `connectionTimeoutMillis: 15000`). | Parameterized Drizzle ORM queries (`src/db/users.ts`) prevent SQL injection; all routes require verified Firebase ID tokens (`requireAuth`). |
 | `GEMINI_API_KEY`                                         | Read exclusively on the server (`process.env.GEMINI_API_KEY`).                                                            | Never exposed in `VITE_*` client bundle variables or returned by `/api/*` endpoints.                                          | Enforced by `.gitignore` and build bundle inspection.                                                                                        |
 
@@ -42,12 +42,16 @@
 
 ### C. Response Header & Cross-Origin Preview Hardening
 
-- Every response sets:
+- Every response from `server.ts` sets:
+  - `Content-Security-Policy` (restricting script/style/font/connect/frame sources and `frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://aistudio.google.com`)
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains` (in production or over HTTPS)
+  - `X-Frame-Options: SAMEORIGIN` (in production unless `ALLOW_PREVIEW_IFRAME=true`)
   - `X-Content-Type-Options: nosniff`
   - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - `Cross-Origin-Opener-Policy: same-origin-allow-popups`
   - `Cache-Control: no-store` on all `/api/*` responses
   - `app.disable('x-powered-by')`
-- Frame embedding is governed by the edge Nginx proxy (`Content-Security-Policy: frame-ancestors 'self' https://*.google.com ...`), avoiding conflicting `X-Frame-Options: SAMEORIGIN` headers in preview iframe environments.
 
 ---
 
