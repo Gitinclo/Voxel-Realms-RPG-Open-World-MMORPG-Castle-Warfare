@@ -2557,7 +2557,7 @@ export default function App() {
       {toastMessage && (
         <div
           data-testid="app-toast-notification"
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] px-5 py-2.5 rounded-2xl bg-slate-900/95 border-2 border-amber-500/60 shadow-2xl text-xs sm:text-sm font-semibold text-amber-200 animate-in fade-in slide-in-from-top-4 duration-200 max-w-lg text-center pointer-events-none"
+          className={`absolute top-4 left-1/2 -translate-x-1/2 ${activeModal ? 'z-[45]' : 'z-[60]'} px-5 py-2.5 rounded-2xl bg-slate-900/95 border-2 border-amber-500/60 shadow-2xl text-xs sm:text-sm font-semibold text-amber-200 animate-in fade-in slide-in-from-top-4 duration-200 max-w-lg text-center pointer-events-none`}
         >
           {toastMessage}
         </div>

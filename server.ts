@@ -64,7 +64,10 @@ import {
   LedgerResourceKey,
   LedgerTxDirection,
   LedgerTxReason,
+  applyAuthoritativeCastleUpgrade,
   applyAuthoritativeEconomyTransaction,
+  applyAuthoritativeMarketTrade,
+  applyAuthoritativeTroopPurchase,
   createInitialEconomyAccount,
   validateAndApplyGameplayEvent,
   verifyEconomyLedgerIntegrity,
@@ -89,6 +92,7 @@ import {
   validateTroopCommandAuthority,
 } from './src/game/antiCheat';
 import { AuthRequest, requireAuth, verifyFirebaseBearerToken } from './src/middleware/auth.ts';
+import { isPostgresConfigured } from './src/db/index.ts';
 import {
   createSupportTicketForUid,
   deleteUserDataForUid,
@@ -100,8 +104,16 @@ import {
   upsertRealmSaveForUid,
 } from './src/db/users.ts';
 
-const parsedPort = Number.parseInt(process.env.PORT || '', 10);
-const PORT = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
+const isProductionEnv = process.env.NODE_ENV === 'production';
+const parsedProdPort = Number.parseInt(process.env.PORT || '', 10);
+const parsedDevPort = Number.parseInt(process.env.VOXEL_DEV_PORT || '', 10);
+const PORT = isProductionEnv
+  ? Number.isFinite(parsedProdPort) && parsedProdPort > 0
+    ? parsedProdPort
+    : 3000
+  : Number.isFinite(parsedDevPort) && parsedDevPort > 0
+    ? parsedDevPort
+    : 3000;
 const ROOT_DIR = import.meta.dirname ?? process.cwd();
 const DATA_DIR = path.resolve(process.env.VOXEL_DATA_DIR || path.join(ROOT_DIR, 'data'));
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -238,17 +250,34 @@ function encodeWsCloseFrame(code: number, reason: string = ''): Buffer {
 }
 
 async function startServer() {
-  const securityConfig = resolveServerRuntimeSecurityConfig(process.env);
+  const rawSecurityConfig = resolveServerRuntimeSecurityConfig(process.env);
   if (
-    securityConfig.failClosedMisconfigured ||
-    !securityConfig.sessionSecret ||
-    !securityConfig.adminPasskey
+    rawSecurityConfig.isProduction &&
+    (rawSecurityConfig.failClosedMisconfigured ||
+      !rawSecurityConfig.sessionSecret ||
+      !rawSecurityConfig.adminPasskey)
   ) {
     const fatalReason =
-      securityConfig.misconfigurationReason ||
+      rawSecurityConfig.misconfigurationReason ||
       'Critical secrets VOXEL_SESSION_SECRET and VOXEL_ADMIN_PASSKEY must be configured.';
     console.error(`[SECURITY FATAL] Refusing to start server (fail-closed): ${fatalReason}`);
     process.exit(1);
+  }
+
+  const securityConfig = rawSecurityConfig.failClosedMisconfigured
+    ? {
+        ...rawSecurityConfig,
+        sessionSecret: rawSecurityConfig.sessionSecret || crypto.randomBytes(32).toString('hex'),
+        ephemeralSessionSecretGenerated: !rawSecurityConfig.sessionSecret,
+        adminPasskey: rawSecurityConfig.adminPasskey,
+        failClosedMisconfigured: false,
+      }
+    : rawSecurityConfig;
+
+  if (securityConfig.ephemeralSessionSecretGenerated || !securityConfig.adminPasskey) {
+    console.warn(
+      '[Voxel Realms Dev] Running in development mode with ephemeral in-memory session signing; operator passkey login remains disabled until VOXEL_ADMIN_PASSKEY is configured.'
+    );
   }
 
   const persistence = new AtomicRealmPersistence<PersistedMultiRegionStore>({
@@ -1762,7 +1791,11 @@ async function startServer() {
     res.json({
       ok: true,
       commanderId: account.commanderId,
+      castleLevel: account.castleLevel ?? 1,
       balances: account.balances,
+      troops: account.troops ?? { shieldbearers: {}, shooters: {}, bombers: {} },
+      totalTaxCollectedWire: account.totalTaxCollectedWire ?? '0',
+      version: account.version ?? 1,
       recentEntries: account.ledger.slice(-25),
       integrity,
       updatedAtIso: account.updatedAtIso,
@@ -1887,6 +1920,174 @@ async function startServer() {
   app.post('/api/online/economy/events', handleValidatedGameplayEvent);
   app.post('/api/online/economy/claim-action', handleValidatedGameplayEvent);
 
+  app.post('/api/online/economy/castle-upgrade', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const currentAccount = getOrCreateEconomyAccount(session.commanderId);
+    const result = applyAuthoritativeCastleUpgrade(
+      currentAccount,
+      (req.body || {}) as Record<string, unknown>
+    );
+
+    if (!result.ok) {
+      if (result.code === 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN') {
+        opsCounters.antiCheatRejections += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `Castle upgrade rejected (${result.code}): ${result.error}`,
+          })
+        );
+        persistStoreToDisk(store);
+      }
+      res.status(result.statusCode).json({
+        ok: false,
+        code: result.code,
+        error: result.error,
+      });
+      return;
+    }
+
+    if (!result.replayed) {
+      store.economyAccounts![session.commanderId] = result.account;
+      persistStoreToDisk(store);
+    }
+
+    res.json({
+      ok: true,
+      replayed: result.replayed,
+      eventId: result.eventId,
+      previousLevel: result.previousLevel,
+      newLevel: result.newLevel,
+      costs: result.costs,
+      entries: result.entries,
+      castleLevel: result.account.castleLevel,
+      balances: result.account.balances,
+      version: result.account.version,
+      integrity: verifyEconomyLedgerIntegrity(result.account),
+    });
+  });
+
+  app.post('/api/online/economy/purchase-troops', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const currentAccount = getOrCreateEconomyAccount(session.commanderId);
+    const result = applyAuthoritativeTroopPurchase(
+      currentAccount,
+      (req.body || {}) as Record<string, unknown>
+    );
+
+    if (!result.ok) {
+      if (
+        result.code === 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN' ||
+        result.code === 'TIER_LOCKED_BY_CASTLE_LEVEL'
+      ) {
+        opsCounters.antiCheatRejections += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `Troop purchase rejected (${result.code}): ${result.error}`,
+          })
+        );
+        persistStoreToDisk(store);
+      }
+      res.status(result.statusCode).json({
+        ok: false,
+        code: result.code,
+        error: result.error,
+      });
+      return;
+    }
+
+    if (!result.replayed) {
+      store.economyAccounts![session.commanderId] = result.account;
+      persistStoreToDisk(store);
+    }
+
+    res.json({
+      ok: true,
+      replayed: result.replayed,
+      eventId: result.eventId,
+      branch: result.branch,
+      tier: result.tier,
+      quantity: result.quantity,
+      newBranchTierCount: result.newBranchTierCount,
+      costs: result.costs,
+      entries: result.entries,
+      troops: result.account.troops,
+      balances: result.account.balances,
+      version: result.account.version,
+      integrity: verifyEconomyLedgerIntegrity(result.account),
+    });
+  });
+
+  app.post('/api/online/economy/market-trade', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const currentAccount = getOrCreateEconomyAccount(session.commanderId);
+    const result = applyAuthoritativeMarketTrade(
+      currentAccount,
+      (req.body || {}) as Record<string, unknown>
+    );
+
+    if (!result.ok) {
+      if (result.code === 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN') {
+        opsCounters.antiCheatRejections += 1;
+        appendAuditEntry(
+          store,
+          createAuditEntry({
+            eventType: 'ANTI_CHEAT_TRIGGERED',
+            actorEmail: session.email,
+            actorRole: session.role,
+            outcome: 'denied',
+            detail: `Marketplace trade rejected (${result.code}): ${result.error}`,
+          })
+        );
+        persistStoreToDisk(store);
+      }
+      res.status(result.statusCode).json({
+        ok: false,
+        code: result.code,
+        error: result.error,
+      });
+      return;
+    }
+
+    if (!result.replayed) {
+      store.economyAccounts![session.commanderId] = result.account;
+      persistStoreToDisk(store);
+    }
+
+    res.json({
+      ok: true,
+      replayed: result.replayed,
+      eventId: result.eventId,
+      fromResource: result.fromResource,
+      toResource: result.toResource,
+      inputAmountWire: result.inputAmountWire,
+      grossOutputWire: result.grossOutputWire,
+      taxAmountWire: result.taxAmountWire,
+      netOutputWire: result.netOutputWire,
+      taxBps: result.taxBps,
+      totalTaxCollectedWire: result.account.totalTaxCollectedWire,
+      entries: result.entries,
+      balances: result.account.balances,
+      version: result.account.version,
+      integrity: verifyEconomyLedgerIntegrity(result.account),
+    });
+  });
+
   // ==========================================================================
   // SELF-SERVICE PII EXPORT & ACCOUNT DELETION (PRIVACY / RIGHT TO ERASURE)
   // ==========================================================================
@@ -1927,7 +2128,7 @@ async function startServer() {
     }
 
     let sqlDeleted = false;
-    if (process.env.SQL_HOST && process.env.SQL_USER && process.env.SQL_DB_NAME) {
+    if (isPostgresConfigured()) {
       try {
         const sqlRes = await deleteUserDataForUid(session.commanderId);
         sqlDeleted = sqlRes.deleted;

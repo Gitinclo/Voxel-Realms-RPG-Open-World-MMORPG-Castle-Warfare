@@ -157,6 +157,13 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   };
 
   const captureModal = async (filePath) => {
+    await page.evaluate(async () => {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      const toast = document.querySelector("[data-testid=\"app-toast-notification\"]");
+      if (toast) toast.style.visibility = "hidden";
+    });
     const clip = await page.evaluate(() => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -245,6 +252,7 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (canvasCount < 1) {
     throw new Error("Expected active 3D WebGL canvas after entering realm");
   }
+  await page.screenshot({ path: ".playwright-cli/e2e-r1-desktop.png", scale: "css", type: "png", timeout: 25000 });
 
   const closeActiveGameModal = async () => {
     await page.evaluate(() => {
@@ -387,6 +395,51 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
       }),
     });
 
+    // Server-authoritative Castle Upgrade, Troop Purchase (+403 tier lock), and Marketplace 5% Tax Trade
+    const castleKey = "e2e-castle-" + Date.now();
+    const castleRes = await fetch("/api/online/economy/castle-upgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idempotencyKey: castleKey }),
+    });
+    const castleJson = await castleRes.json();
+
+    const lockedTroopRes = await fetch("/api/online/economy/purchase-troops", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "e2e-locked-troop-" + Date.now(),
+        branch: "bombers",
+        tier: 2,
+        quantity: 2,
+      }),
+    });
+
+    const troopRes = await fetch("/api/online/economy/purchase-troops", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "e2e-troop-" + Date.now(),
+        branch: "shieldbearers",
+        tier: 1,
+        quantity: 2,
+      }),
+    });
+    const troopJson = await troopRes.json();
+
+    const mktKey = "e2e-mkt-" + Date.now();
+    const marketRes = await fetch("/api/online/economy/market-trade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: mktKey,
+        fromResource: "wood",
+        toResource: "grain",
+        inputAmountWire: "1000",
+      }),
+    });
+    const marketJson = await marketRes.json();
+
     const exportRes = await fetch("/api/online/account/export");
     const deleteRes = await fetch("/api/online/account", { method: "DELETE" });
     const postDeleteEcon = await fetch("/api/online/economy/balance");
@@ -433,6 +486,14 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
       txReplayStatus: txReplayRes.status,
       txReplayText,
       spamStatus: spamRes.status,
+      castleStatus: castleRes.status,
+      castleLevel: castleJson?.castleLevel,
+      lockedTroopStatus: lockedTroopRes.status,
+      troopStatus: troopRes.status,
+      troopCount: troopJson?.newBranchTierCount,
+      marketStatus: marketRes.status,
+      marketTax: marketJson?.taxAmountWire,
+      marketNet: marketJson?.netOutputWire,
       exportStatus: exportRes.status,
       deleteStatus: deleteRes.status,
       postDeleteStatus: postDeleteEcon.status,
@@ -450,6 +511,12 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (result.tx1Status !== 200) throw new Error(`Expected 200 on gameplay event tx1, got ${result.tx1Status}: ${result.tx1Text}`);
   if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on gameplay event replay, got ${result.txReplayStatus}: ${result.txReplayText}`);
   if (result.spamStatus !== 429) throw new Error(`Expected 429 on fresh-key cooldown spam, got ${result.spamStatus}`);
+  if (result.castleStatus !== 200 || result.castleLevel !== 2) throw new Error(`Castle upgrade failed: ${result.castleStatus} lvl=${result.castleLevel}`);
+  if (result.lockedTroopStatus !== 403) throw new Error(`Expected 403 on locked T2 troop purchase, got ${result.lockedTroopStatus}`);
+  if (result.troopStatus !== 200 || result.troopCount !== 12) throw new Error(`Troop purchase failed: ${result.troopStatus} count=${result.troopCount}`);
+  if (result.marketStatus !== 200 || result.marketTax !== "50" || result.marketNet !== "950") {
+    throw new Error(`Market 5% tax trade failed: status=${result.marketStatus} tax=${result.marketTax} net=${result.marketNet}`);
+  }
   const tx1 = JSON.parse(result.tx1Text);
   const txReplay = JSON.parse(result.txReplayText);
   if (!tx1?.ok || tx1?.replayed) throw new Error("Initial gameplay event reward failed: " + result.tx1Text);

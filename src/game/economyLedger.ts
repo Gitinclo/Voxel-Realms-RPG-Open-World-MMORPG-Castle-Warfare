@@ -13,15 +13,34 @@ export type LedgerTxDirection = 'credit' | 'debit';
 export type LedgerTxReason =
   | 'GATHER_REWARD'
   | 'MONSTER_LOOT'
+  | 'QUEST_REWARD'
   | 'MARKET_TRADE'
+  | 'MARKET_TAX_FEE'
+  | 'TROOP_PURCHASE'
   | 'TROOP_PROMOTION'
   | 'CASTLE_UPGRADE'
   | 'VIP_DIAMOND_COVENANT'
+  | 'VIP_DAILY_STIPEND'
   | 'SIEGE_REWARD'
   | 'ADMIN_ADJUSTMENT';
 
+export type TroopBranchKey = 'shieldbearers' | 'shooters' | 'bombers';
+
+export const ALLOWED_TROOP_BRANCHES: readonly TroopBranchKey[] = [
+  'shieldbearers',
+  'shooters',
+  'bombers',
+] as const;
+
 export type AuthoritativeGameplayActionType =
-  'GATHER_WOOD_NODE' | 'GATHER_GRAIN_NODE' | 'SLAY_PATROL_MONSTER' | 'SIEGE_CHECKPOINT_REWARD';
+  | 'GATHER_WOOD_NODE'
+  | 'GATHER_GRAIN_NODE'
+  | 'GATHER_STEEL_NODE'
+  | 'GATHER_OIL_NODE'
+  | 'SLAY_PATROL_MONSTER'
+  | 'COMPLETE_QUEST_MILESTONE'
+  | 'SIEGE_CHECKPOINT_REWARD'
+  | 'CLAIM_VIP_DAILY_STIPEND';
 
 export interface GameplayActionRewardSpec {
   actionType: AuthoritativeGameplayActionType;
@@ -33,7 +52,7 @@ export interface GameplayActionRewardSpec {
 
 /**
  * Server-owned deterministic gameplay reward table.
- * Clients submit ONLY the action type; the server derives resource, amount, reason, and cooldown.
+ * Clients submit ONLY the event/action type; the server derives resource, amount, reason, and cooldown.
  */
 export const AUTHORITATIVE_GAMEPLAY_ACTIONS: Record<
   AuthoritativeGameplayActionType,
@@ -53,6 +72,20 @@ export const AUTHORITATIVE_GAMEPLAY_ACTIONS: Record<
     reason: 'GATHER_REWARD',
     cooldownMs: 5_000,
   },
+  GATHER_STEEL_NODE: {
+    actionType: 'GATHER_STEEL_NODE',
+    resource: 'steel',
+    amountWire: '120',
+    reason: 'GATHER_REWARD',
+    cooldownMs: 5_000,
+  },
+  GATHER_OIL_NODE: {
+    actionType: 'GATHER_OIL_NODE',
+    resource: 'oil',
+    amountWire: '80',
+    reason: 'GATHER_REWARD',
+    cooldownMs: 8_000,
+  },
   SLAY_PATROL_MONSTER: {
     actionType: 'SLAY_PATROL_MONSTER',
     resource: 'diamonds',
@@ -60,12 +93,26 @@ export const AUTHORITATIVE_GAMEPLAY_ACTIONS: Record<
     reason: 'MONSTER_LOOT',
     cooldownMs: 10_000,
   },
+  COMPLETE_QUEST_MILESTONE: {
+    actionType: 'COMPLETE_QUEST_MILESTONE',
+    resource: 'diamonds',
+    amountWire: '25',
+    reason: 'QUEST_REWARD',
+    cooldownMs: 30_000,
+  },
   SIEGE_CHECKPOINT_REWARD: {
     actionType: 'SIEGE_CHECKPOINT_REWARD',
     resource: 'steel',
     amountWire: '250',
     reason: 'SIEGE_REWARD',
     cooldownMs: 15_000,
+  },
+  CLAIM_VIP_DAILY_STIPEND: {
+    actionType: 'CLAIM_VIP_DAILY_STIPEND',
+    resource: 'diamonds',
+    amountWire: '50',
+    reason: 'VIP_DAILY_STIPEND',
+    cooldownMs: 24 * 60 * 60 * 1000,
   },
 };
 
@@ -82,24 +129,51 @@ export const ALLOWED_LEDGER_RESOURCES: readonly LedgerResourceKey[] = [
 export const ALLOWED_LEDGER_REASONS: readonly LedgerTxReason[] = [
   'GATHER_REWARD',
   'MONSTER_LOOT',
+  'QUEST_REWARD',
   'MARKET_TRADE',
+  'MARKET_TAX_FEE',
+  'TROOP_PURCHASE',
   'TROOP_PROMOTION',
   'CASTLE_UPGRADE',
   'VIP_DIAMOND_COVENANT',
+  'VIP_DAILY_STIPEND',
   'SIEGE_REWARD',
   'ADMIN_ADJUSTMENT',
 ] as const;
+
+/**
+ * Authoritative base exchange value per 1 unit of each resource (scaled integer weight)
+ * used exclusively by the server to price Marketplace conversions.
+ */
+export const MARKET_RESOURCE_WEIGHT: Record<LedgerResourceKey, bigint> = {
+  wood: 1n,
+  grain: 1n,
+  copper: 2n,
+  steel: 3n,
+  oil: 4n,
+  spiritStones: 10n,
+  diamonds: 50n,
+};
+
+/** 5.00% Imperial Marketplace tax (500 basis points out of 10,000). */
+export const MARKET_TAX_BPS = 500n;
+export const BPS_DENOMINATOR = 10_000n;
 
 /** Hard upper cap for any single ledger transaction (including privileged admin adjustments). */
 export const MAX_ABSOLUTE_SINGLE_TX = 1_000_000_000_000n;
 export const GENESIS_LEDGER_HASH = '0'.repeat(64);
 export const MAX_RETAINED_LEDGER_ENTRIES = 500;
+export const MAX_AUTHORITATIVE_CASTLE_LEVEL = 100;
+export const MAX_SINGLE_TROOP_PURCHASE_QTY = 10_000;
 
 export type AuthoritativeWalletBalances = Record<LedgerResourceKey, string>;
+
+export type AuthoritativeTroopInventory = Record<TroopBranchKey, Record<number, number>>;
 
 export interface EconomyLedgerEntry {
   seq: number;
   txId: string;
+  eventId: string;
   idempotencyKey: string;
   commanderId: string;
   resource: LedgerResourceKey;
@@ -114,12 +188,16 @@ export interface EconomyLedgerEntry {
 
 export interface CommanderEconomyAccount {
   commanderId: string;
+  castleLevel: number;
   balances: AuthoritativeWalletBalances;
+  troops: AuthoritativeTroopInventory;
+  totalTaxCollectedWire: string;
   ledger: EconomyLedgerEntry[];
   /** Maps idempotencyKey -> txId for deterministic replay protection. */
   idempotencyIndex: Record<string, string>;
   /** Server-tracked last claim timestamp (ms) per gameplay action type to prevent mint spamming. */
   lastActionClaimMs?: Partial<Record<AuthoritativeGameplayActionType, number>>;
+  version: number;
   updatedAtIso: string;
 }
 
@@ -129,12 +207,41 @@ export interface EconomyTransactionRequest {
   direction: LedgerTxDirection;
   amountWire: string;
   reason: LedgerTxReason;
+  eventId?: string;
   isPrivilegedStaff?: boolean;
   /**
    * Internal server-only authorization flag set exclusively by trusted server gameplay handlers
-   * (such as claimAuthoritativeGameplayAction). NEVER read from HTTP request bodies.
+   * (such as claimAuthoritativeGameplayAction or applyAuthoritativeMarketTrade).
+   * NEVER read from HTTP request bodies.
    */
   serverAuthorizedCredit?: boolean;
+}
+
+export type EconomyErrorCode =
+  | 'INVALID_IDEMPOTENCY_KEY'
+  | 'INVALID_RESOURCE'
+  | 'INVALID_DIRECTION'
+  | 'INVALID_REASON'
+  | 'INVALID_AMOUNT'
+  | 'INVALID_ACTION_TYPE'
+  | 'INVALID_EVENT_CONTEXT'
+  | 'INVALID_EVENT_TIMESTAMP'
+  | 'INVALID_TROOP_REQUEST'
+  | 'INVALID_MARKET_PAIR'
+  | 'MAX_CASTLE_LEVEL_REACHED'
+  | 'TIER_LOCKED_BY_CASTLE_LEVEL'
+  | 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN'
+  | 'CLIENT_SELF_CREDIT_FORBIDDEN'
+  | 'ADMIN_REASON_FORBIDDEN'
+  | 'INSUFFICIENT_FUNDS'
+  | 'ACTION_COOLDOWN_ACTIVE';
+
+export interface EconomyErrorResult {
+  ok: false;
+  statusCode: 400 | 403 | 409 | 429;
+  code: EconomyErrorCode;
+  retryAfterSec?: number;
+  error: string;
 }
 
 export type EconomyTransactionResult =
@@ -144,26 +251,58 @@ export type EconomyTransactionResult =
       entry: EconomyLedgerEntry;
       account: CommanderEconomyAccount;
     }
+  | EconomyErrorResult;
+
+export interface CastleUpgradeCost {
+  wood: bigint;
+  steel: bigint;
+  grain: bigint;
+}
+
+export type CastleUpgradeResult =
   | {
-      ok: false;
-      statusCode: 400 | 403 | 409 | 429;
-      code:
-        | 'INVALID_IDEMPOTENCY_KEY'
-        | 'INVALID_RESOURCE'
-        | 'INVALID_DIRECTION'
-        | 'INVALID_REASON'
-        | 'INVALID_AMOUNT'
-        | 'INVALID_ACTION_TYPE'
-        | 'INVALID_EVENT_CONTEXT'
-        | 'INVALID_EVENT_TIMESTAMP'
-        | 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN'
-        | 'CLIENT_SELF_CREDIT_FORBIDDEN'
-        | 'ADMIN_REASON_FORBIDDEN'
-        | 'INSUFFICIENT_FUNDS'
-        | 'ACTION_COOLDOWN_ACTIVE';
-      retryAfterSec?: number;
-      error: string;
-    };
+      ok: true;
+      replayed: boolean;
+      eventId: string;
+      previousLevel: number;
+      newLevel: number;
+      costs: Record<'wood' | 'steel' | 'grain', string>;
+      entries: EconomyLedgerEntry[];
+      account: CommanderEconomyAccount;
+    }
+  | EconomyErrorResult;
+
+export type TroopPurchaseResult =
+  | {
+      ok: true;
+      replayed: boolean;
+      eventId: string;
+      branch: TroopBranchKey;
+      tier: number;
+      quantity: number;
+      newBranchTierCount: number;
+      costs: Record<'wood' | 'grain' | 'steel', string>;
+      entries: EconomyLedgerEntry[];
+      account: CommanderEconomyAccount;
+    }
+  | EconomyErrorResult;
+
+export type MarketTradeResult =
+  | {
+      ok: true;
+      replayed: boolean;
+      eventId: string;
+      fromResource: LedgerResourceKey;
+      toResource: LedgerResourceKey;
+      inputAmountWire: string;
+      grossOutputWire: string;
+      taxAmountWire: string;
+      netOutputWire: string;
+      taxBps: number;
+      entries: EconomyLedgerEntry[];
+      account: CommanderEconomyAccount;
+    }
+  | EconomyErrorResult;
 
 export function createInitialEconomyAccount(
   commanderId: string,
@@ -171,6 +310,7 @@ export function createInitialEconomyAccount(
 ): CommanderEconomyAccount {
   return {
     commanderId,
+    castleLevel: 1,
     balances: {
       diamonds: '100',
       wood: '5000',
@@ -180,10 +320,67 @@ export function createInitialEconomyAccount(
       oil: '1500',
       spiritStones: '250',
     },
+    troops: {
+      shieldbearers: { 1: 10 },
+      shooters: { 1: 10 },
+      bombers: { 1: 5 },
+    },
+    totalTaxCollectedWire: '0',
     ledger: [],
     idempotencyIndex: {},
     lastActionClaimMs: {},
+    version: 1,
     updatedAtIso: nowIso,
+  };
+}
+
+function normalizeAccountDefaults(account: CommanderEconomyAccount): CommanderEconomyAccount {
+  return {
+    ...account,
+    castleLevel:
+      typeof account.castleLevel === 'number' && account.castleLevel >= 1 ? account.castleLevel : 1,
+    troops: account.troops ?? {
+      shieldbearers: {},
+      shooters: {},
+      bombers: {},
+    },
+    totalTaxCollectedWire: account.totalTaxCollectedWire ?? '0',
+    version: typeof account.version === 'number' && account.version >= 1 ? account.version : 1,
+  };
+}
+
+export function generateServerEventId(prefix = 'evt'): string {
+  return `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
+}
+
+export function computeMaxUnlockedTroopTier(castleLevel: number): number {
+  const clamped = Math.max(1, Math.min(MAX_AUTHORITATIVE_CASTLE_LEVEL, Math.floor(castleLevel)));
+  return Math.min(20, Math.max(1, Math.floor((clamped - 1) / 5) + 1));
+}
+
+export function computeAuthoritativeCastleUpgradeCost(currentLevel: number): CastleUpgradeCost {
+  const lvl = BigInt(Math.max(1, Math.floor(currentLevel)));
+  return {
+    wood: 400n * lvl * lvl,
+    steel: 250n * lvl * lvl,
+    grain: 300n * lvl * lvl,
+  };
+}
+
+export function computeAuthoritativeTroopPurchaseCost(
+  branch: TroopBranchKey,
+  tier: number,
+  quantity: number
+): { wood: bigint; grain: bigint; steel: bigint } {
+  const t = BigInt(Math.max(1, Math.min(20, Math.floor(tier))));
+  const qty = BigInt(Math.max(1, Math.floor(quantity)));
+  const branchSteelMult = branch === 'bombers' ? 3n : branch === 'shieldbearers' ? 2n : 1n;
+  const branchWoodMult = branch === 'shooters' ? 3n : 2n;
+  const tierFactor = t * t;
+  return {
+    wood: 20n * branchWoodMult * tierFactor * qty,
+    grain: 25n * tierFactor * qty,
+    steel: 15n * branchSteelMult * tierFactor * qty,
   };
 }
 
@@ -191,6 +388,7 @@ export function computeLedgerEntryHash(entry: Omit<EconomyLedgerEntry, 'entryHas
   const canonical = JSON.stringify({
     seq: entry.seq,
     txId: entry.txId,
+    eventId: entry.eventId ?? '',
     idempotencyKey: entry.idempotencyKey,
     commanderId: entry.commanderId,
     resource: entry.resource,
@@ -204,13 +402,22 @@ export function computeLedgerEntryHash(entry: Omit<EconomyLedgerEntry, 'entryHas
   return crypto.createHash('sha256').update(canonical, 'utf8').digest('hex');
 }
 
+function validateIdempotencyKey(rawKey: unknown): string | null {
+  const key = typeof rawKey === 'string' ? rawKey.trim() : '';
+  if (key.length < 6 || key.length > 128 || !/^[a-zA-Z0-9:._-]+$/.test(key)) {
+    return null;
+  }
+  return key;
+}
+
 export function applyAuthoritativeEconomyTransaction(
-  account: CommanderEconomyAccount,
+  rawAccount: CommanderEconomyAccount,
   req: EconomyTransactionRequest,
   nowIso: string = new Date().toISOString()
 ): EconomyTransactionResult {
-  const key = typeof req.idempotencyKey === 'string' ? req.idempotencyKey.trim() : '';
-  if (key.length < 6 || key.length > 128 || !/^[a-zA-Z0-9:._-]+$/.test(key)) {
+  const account = normalizeAccountDefaults(rawAccount);
+  const key = validateIdempotencyKey(req.idempotencyKey);
+  if (!key) {
     return {
       ok: false,
       statusCode: 400,
@@ -272,7 +479,7 @@ export function applyAuthoritativeEconomyTransaction(
 
   // CRITICAL AUTHORITY GATE:
   // Clients may NEVER directly mint currency/resource credits via arbitrary transactions.
-  // Credits are granted ONLY by server-validated gameplay actions (serverAuthorizedCredit=true)
+  // Credits are granted ONLY by server-validated gameplay/market handlers (serverAuthorizedCredit=true)
   // or privileged staff ADMIN_ADJUSTMENT operations.
   if (req.direction === 'credit' && !req.serverAuthorizedCredit) {
     const isStaffAdminGrant = Boolean(req.isPrivilegedStaff && req.reason === 'ADMIN_ADJUSTMENT');
@@ -326,10 +533,12 @@ export function applyAuthoritativeEconomyTransaction(
   const seq = lastEntry ? lastEntry.seq + 1 : 1;
   const prevHash = lastEntry ? lastEntry.entryHash : GENESIS_LEDGER_HASH;
   const txId = `tx_${seq}_${crypto.randomUUID().slice(0, 8)}`;
+  const eventId = req.eventId || generateServerEventId('evt');
 
   const unsignedEntry: Omit<EconomyLedgerEntry, 'entryHash'> = {
     seq,
     txId,
+    eventId,
     idempotencyKey: key,
     commanderId: account.commanderId,
     resource: req.resource,
@@ -358,7 +567,7 @@ export function applyAuthoritativeEconomyTransaction(
   }
 
   const nextAccount: CommanderEconomyAccount = {
-    commanderId: account.commanderId,
+    ...account,
     balances: {
       ...account.balances,
       [req.resource]: nextBalance.toString(),
@@ -366,6 +575,7 @@ export function applyAuthoritativeEconomyTransaction(
     ledger: trimmedLedger,
     idempotencyIndex: nextIndex,
     lastActionClaimMs: { ...(account.lastActionClaimMs || {}) },
+    version: account.version + 1,
     updatedAtIso: nowIso,
   };
 
@@ -380,18 +590,19 @@ export function applyAuthoritativeEconomyTransaction(
 /**
  * Server-authoritative gameplay reward grant:
  * Client submits ONLY `{ idempotencyKey, actionType }`.
- * The server enforces per-action cooldowns and derives the exact resource, amount, and reason.
+ * The server enforces per-action cooldowns and derives the exact resource, amount, eventId, and reason.
  */
 export function claimAuthoritativeGameplayAction(
-  account: CommanderEconomyAccount,
+  rawAccount: CommanderEconomyAccount,
   req: {
     idempotencyKey: string;
     actionType: AuthoritativeGameplayActionType;
   },
   nowMs: number = Date.now()
 ): EconomyTransactionResult {
-  const key = typeof req.idempotencyKey === 'string' ? req.idempotencyKey.trim() : '';
-  if (key.length < 6 || key.length > 128 || !/^[a-zA-Z0-9:._-]+$/.test(key)) {
+  const account = normalizeAccountDefaults(rawAccount);
+  const key = validateIdempotencyKey(req.idempotencyKey);
+  if (!key) {
     return {
       ok: false,
       statusCode: 400,
@@ -448,6 +659,7 @@ export function claimAuthoritativeGameplayAction(
       direction: 'credit',
       amountWire: spec.amountWire,
       reason: spec.reason,
+      eventId: generateServerEventId('reward'),
       serverAuthorizedCredit: true,
     },
     new Date(nowMs).toISOString()
@@ -494,6 +706,11 @@ const FORBIDDEN_CLIENT_EVENT_FIELDS = [
   'resource',
   'direction',
   'reason',
+  'cost',
+  'costs',
+  'tax',
+  'taxAmount',
+  'outputAmount',
   'serverAuthorizedCredit',
   'isPrivilegedStaff',
 ] as const;
@@ -515,8 +732,7 @@ export interface GameplayEventValidationInput {
  * Validates an untrusted client gameplay event payload and grants the corresponding
  * server-derived reward via `claimAuthoritativeGameplayAction`.
  *
- * Explicitly rejects any attempt by the client to smuggle ledger mutation fields
- * (`amountWire`, `resource`, `direction`, `reason`, `serverAuthorizedCredit`, `isPrivilegedStaff`).
+ * Explicitly rejects any attempt by the client to smuggle ledger mutation fields.
  */
 export function validateAndApplyGameplayEvent(
   account: CommanderEconomyAccount,
@@ -599,6 +815,563 @@ export function validateAndApplyGameplayEvent(
     },
     nowMs
   );
+}
+
+/**
+ * Server-authoritative Castle Upgrade:
+ * Derives Wood/Steel/Grain costs strictly from `account.castleLevel`, checks all balances atomically,
+ * deducts resources, increments castleLevel, and supports deterministic idempotency replays.
+ */
+export function applyAuthoritativeCastleUpgrade(
+  rawAccount: CommanderEconomyAccount,
+  rawPayload: { idempotencyKey?: unknown; [extra: string]: unknown },
+  nowIso: string = new Date().toISOString()
+): CastleUpgradeResult {
+  const account = normalizeAccountDefaults(rawAccount);
+  if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_EVENT_CONTEXT',
+      error: 'Castle upgrade payload must be a JSON object.',
+    };
+  }
+  for (const forbiddenField of FORBIDDEN_CLIENT_EVENT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(rawPayload, forbiddenField)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN',
+        error: `Clients cannot supply "${forbiddenField}" for castle upgrades. Upgrade costs are server-derived.`,
+      };
+    }
+  }
+
+  const key = validateIdempotencyKey(rawPayload.idempotencyKey);
+  if (!key) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+      error: 'idempotencyKey must be 6-128 valid characters.',
+    };
+  }
+
+  const woodKey = `${key}:wood`;
+  const steelKey = `${key}:steel`;
+  const grainKey = `${key}:grain`;
+  if (account.idempotencyIndex[woodKey]) {
+    const existingEntries = [woodKey, steelKey, grainKey]
+      .map((k) => account.ledger.find((e) => e.txId === account.idempotencyIndex[k]))
+      .filter((e): e is EconomyLedgerEntry => Boolean(e));
+    if (existingEntries.length === 3) {
+      return {
+        ok: true,
+        replayed: true,
+        eventId: existingEntries[0].eventId,
+        previousLevel: Math.max(1, account.castleLevel - 1),
+        newLevel: account.castleLevel,
+        costs: {
+          wood: existingEntries[0].amountWire,
+          steel: existingEntries[1].amountWire,
+          grain: existingEntries[2].amountWire,
+        },
+        entries: existingEntries,
+        account,
+      };
+    }
+  }
+
+  if (account.castleLevel >= MAX_AUTHORITATIVE_CASTLE_LEVEL) {
+    return {
+      ok: false,
+      statusCode: 409,
+      code: 'MAX_CASTLE_LEVEL_REACHED',
+      error: `Castle has already reached maximum authoritative level ${MAX_AUTHORITATIVE_CASTLE_LEVEL}.`,
+    };
+  }
+
+  const costs = computeAuthoritativeCastleUpgradeCost(account.castleLevel);
+  const availWood = BigInt(account.balances.wood || '0');
+  const availSteel = BigInt(account.balances.steel || '0');
+  const availGrain = BigInt(account.balances.grain || '0');
+
+  if (availWood < costs.wood || availSteel < costs.steel || availGrain < costs.grain) {
+    return {
+      ok: false,
+      statusCode: 409,
+      code: 'INSUFFICIENT_FUNDS',
+      error: `Insufficient resources for Castle Lv.${account.castleLevel + 1}: need wood=${costs.wood}, steel=${costs.steel}, grain=${costs.grain}.`,
+    };
+  }
+
+  const eventId = generateServerEventId('castle');
+  const t1 = applyAuthoritativeEconomyTransaction(
+    account,
+    {
+      idempotencyKey: woodKey,
+      resource: 'wood',
+      direction: 'debit',
+      amountWire: costs.wood.toString(),
+      reason: 'CASTLE_UPGRADE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t1.ok) return t1;
+
+  const t2 = applyAuthoritativeEconomyTransaction(
+    t1.account,
+    {
+      idempotencyKey: steelKey,
+      resource: 'steel',
+      direction: 'debit',
+      amountWire: costs.steel.toString(),
+      reason: 'CASTLE_UPGRADE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t2.ok) return t2;
+
+  const t3 = applyAuthoritativeEconomyTransaction(
+    t2.account,
+    {
+      idempotencyKey: grainKey,
+      resource: 'grain',
+      direction: 'debit',
+      amountWire: costs.grain.toString(),
+      reason: 'CASTLE_UPGRADE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t3.ok) return t3;
+
+  const nextLevel = account.castleLevel + 1;
+  const finalAccount: CommanderEconomyAccount = {
+    ...t3.account,
+    castleLevel: nextLevel,
+  };
+
+  return {
+    ok: true,
+    replayed: false,
+    eventId,
+    previousLevel: account.castleLevel,
+    newLevel: nextLevel,
+    costs: {
+      wood: costs.wood.toString(),
+      steel: costs.steel.toString(),
+      grain: costs.grain.toString(),
+    },
+    entries: [t1.entry, t2.entry, t3.entry],
+    account: finalAccount,
+  };
+}
+
+/**
+ * Server-authoritative Troop Purchase:
+ * Enforces castle-level tier unlock, derives unit costs server-side, checks all balances atomically,
+ * deducts resources, and increments server-authoritative garrison counts.
+ */
+export function applyAuthoritativeTroopPurchase(
+  rawAccount: CommanderEconomyAccount,
+  rawPayload: {
+    idempotencyKey?: unknown;
+    branch?: unknown;
+    tier?: unknown;
+    quantity?: unknown;
+    [extra: string]: unknown;
+  },
+  nowIso: string = new Date().toISOString()
+): TroopPurchaseResult {
+  const account = normalizeAccountDefaults(rawAccount);
+  if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_TROOP_REQUEST',
+      error: 'Troop purchase payload must be a JSON object.',
+    };
+  }
+  for (const forbiddenField of FORBIDDEN_CLIENT_EVENT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(rawPayload, forbiddenField)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN',
+        error: `Clients cannot supply "${forbiddenField}" when purchasing troops. Unit pricing is server-derived.`,
+      };
+    }
+  }
+
+  const key = validateIdempotencyKey(rawPayload.idempotencyKey);
+  if (!key) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+      error: 'idempotencyKey must be 6-128 valid characters.',
+    };
+  }
+
+  const branch = rawPayload.branch as TroopBranchKey;
+  if (!ALLOWED_TROOP_BRANCHES.includes(branch)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_TROOP_REQUEST',
+      error: `Invalid troop branch: ${String(rawPayload.branch)}`,
+    };
+  }
+
+  const tier = typeof rawPayload.tier === 'number' ? rawPayload.tier : Number.NaN;
+  const quantity = typeof rawPayload.quantity === 'number' ? rawPayload.quantity : Number.NaN;
+  if (!Number.isInteger(tier) || tier < 1 || tier > 20) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_TROOP_REQUEST',
+      error: 'Troop tier must be an integer between 1 and 20.',
+    };
+  }
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_SINGLE_TROOP_PURCHASE_QTY) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_TROOP_REQUEST',
+      error: `Troop quantity must be an integer between 1 and ${MAX_SINGLE_TROOP_PURCHASE_QTY}.`,
+    };
+  }
+
+  const woodKey = `${key}:wood`;
+  const grainKey = `${key}:grain`;
+  const steelKey = `${key}:steel`;
+  if (account.idempotencyIndex[woodKey]) {
+    const existingEntries = [woodKey, grainKey, steelKey]
+      .map((k) => account.ledger.find((e) => e.txId === account.idempotencyIndex[k]))
+      .filter((e): e is EconomyLedgerEntry => Boolean(e));
+    if (existingEntries.length === 3) {
+      return {
+        ok: true,
+        replayed: true,
+        eventId: existingEntries[0].eventId,
+        branch,
+        tier,
+        quantity,
+        newBranchTierCount: account.troops[branch]?.[tier] ?? 0,
+        costs: {
+          wood: existingEntries[0].amountWire,
+          grain: existingEntries[1].amountWire,
+          steel: existingEntries[2].amountWire,
+        },
+        entries: existingEntries,
+        account,
+      };
+    }
+  }
+
+  const maxUnlockedTier = computeMaxUnlockedTroopTier(account.castleLevel);
+  if (tier > maxUnlockedTier) {
+    return {
+      ok: false,
+      statusCode: 403,
+      code: 'TIER_LOCKED_BY_CASTLE_LEVEL',
+      error: `Tier T${tier} requires a higher Castle level (current Castle Lv.${account.castleLevel} unlocks up to T${maxUnlockedTier}).`,
+    };
+  }
+
+  const costs = computeAuthoritativeTroopPurchaseCost(branch, tier, quantity);
+  const availWood = BigInt(account.balances.wood || '0');
+  const availGrain = BigInt(account.balances.grain || '0');
+  const availSteel = BigInt(account.balances.steel || '0');
+
+  if (availWood < costs.wood || availGrain < costs.grain || availSteel < costs.steel) {
+    return {
+      ok: false,
+      statusCode: 409,
+      code: 'INSUFFICIENT_FUNDS',
+      error: `Insufficient resources to train ${quantity}x T${tier} ${branch}: need wood=${costs.wood}, grain=${costs.grain}, steel=${costs.steel}.`,
+    };
+  }
+
+  const eventId = generateServerEventId('troop');
+  const t1 = applyAuthoritativeEconomyTransaction(
+    account,
+    {
+      idempotencyKey: woodKey,
+      resource: 'wood',
+      direction: 'debit',
+      amountWire: costs.wood.toString(),
+      reason: 'TROOP_PURCHASE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t1.ok) return t1;
+
+  const t2 = applyAuthoritativeEconomyTransaction(
+    t1.account,
+    {
+      idempotencyKey: grainKey,
+      resource: 'grain',
+      direction: 'debit',
+      amountWire: costs.grain.toString(),
+      reason: 'TROOP_PURCHASE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t2.ok) return t2;
+
+  const t3 = applyAuthoritativeEconomyTransaction(
+    t2.account,
+    {
+      idempotencyKey: steelKey,
+      resource: 'steel',
+      direction: 'debit',
+      amountWire: costs.steel.toString(),
+      reason: 'TROOP_PURCHASE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!t3.ok) return t3;
+
+  const prevCount = account.troops[branch]?.[tier] ?? 0;
+  const nextCount = prevCount + quantity;
+  const nextTroops: AuthoritativeTroopInventory = {
+    shieldbearers: { ...(account.troops.shieldbearers || {}) },
+    shooters: { ...(account.troops.shooters || {}) },
+    bombers: { ...(account.troops.bombers || {}) },
+  };
+  nextTroops[branch][tier] = nextCount;
+
+  const finalAccount: CommanderEconomyAccount = {
+    ...t3.account,
+    troops: nextTroops,
+  };
+
+  return {
+    ok: true,
+    replayed: false,
+    eventId,
+    branch,
+    tier,
+    quantity,
+    newBranchTierCount: nextCount,
+    costs: {
+      wood: costs.wood.toString(),
+      grain: costs.grain.toString(),
+      steel: costs.steel.toString(),
+    },
+    entries: [t1.entry, t2.entry, t3.entry],
+    account: finalAccount,
+  };
+}
+
+/**
+ * Server-authoritative Marketplace Trade with Imperial 5% Tax Fee:
+ * Client specifies `{ idempotencyKey, fromResource, toResource, inputAmountWire }`.
+ * Server computes the exact exchange output, deducts the 5% tax fee, atomically debits input
+ * and credits net output, and records tax collected.
+ */
+export function applyAuthoritativeMarketTrade(
+  rawAccount: CommanderEconomyAccount,
+  rawPayload: {
+    idempotencyKey?: unknown;
+    fromResource?: unknown;
+    toResource?: unknown;
+    inputAmountWire?: unknown;
+    [extra: string]: unknown;
+  },
+  nowIso: string = new Date().toISOString()
+): MarketTradeResult {
+  const account = normalizeAccountDefaults(rawAccount);
+  if (!rawPayload || typeof rawPayload !== 'object' || Array.isArray(rawPayload)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_MARKET_PAIR',
+      error: 'Market trade payload must be a JSON object.',
+    };
+  }
+  for (const forbiddenField of FORBIDDEN_CLIENT_EVENT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(rawPayload, forbiddenField)) {
+      return {
+        ok: false,
+        statusCode: 400,
+        code: 'CLIENT_PAYLOAD_OVERRIDE_FORBIDDEN',
+        error: `Clients cannot supply "${forbiddenField}" in marketplace trades. Exchange rates and taxes are server-derived.`,
+      };
+    }
+  }
+
+  const key = validateIdempotencyKey(rawPayload.idempotencyKey);
+  if (!key) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+      error: 'idempotencyKey must be 6-128 valid characters.',
+    };
+  }
+
+  const fromResource = rawPayload.fromResource as LedgerResourceKey;
+  const toResource = rawPayload.toResource as LedgerResourceKey;
+  if (
+    !ALLOWED_LEDGER_RESOURCES.includes(fromResource) ||
+    !ALLOWED_LEDGER_RESOURCES.includes(toResource) ||
+    fromResource === toResource
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_MARKET_PAIR',
+      error: 'fromResource and toResource must be two distinct supported resources.',
+    };
+  }
+
+  if (
+    typeof rawPayload.inputAmountWire !== 'string' ||
+    !/^\d+$/.test(rawPayload.inputAmountWire.trim())
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_AMOUNT',
+      error: 'inputAmountWire must be a positive base-10 integer string.',
+    };
+  }
+
+  const inputAmount = BigInt(rawPayload.inputAmountWire.trim());
+  if (inputAmount <= 0n || inputAmount > MAX_ABSOLUTE_SINGLE_TX) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_AMOUNT',
+      error: `inputAmountWire must be between 1 and ${MAX_ABSOLUTE_SINGLE_TX.toString()}.`,
+    };
+  }
+
+  const debitKey = `${key}:debit`;
+  const creditKey = `${key}:credit`;
+  if (account.idempotencyIndex[debitKey]) {
+    const existingDebit = account.ledger.find((e) => e.txId === account.idempotencyIndex[debitKey]);
+    const existingCredit = account.ledger.find(
+      (e) => e.txId === account.idempotencyIndex[creditKey]
+    );
+    if (existingDebit && existingCredit) {
+      const fromWeight = MARKET_RESOURCE_WEIGHT[fromResource];
+      const toWeight = MARKET_RESOURCE_WEIGHT[toResource];
+      const grossOutput = (BigInt(existingDebit.amountWire) * fromWeight) / toWeight;
+      const netOutput = BigInt(existingCredit.amountWire);
+      const taxAmount = grossOutput > netOutput ? grossOutput - netOutput : 0n;
+      return {
+        ok: true,
+        replayed: true,
+        eventId: existingDebit.eventId,
+        fromResource,
+        toResource,
+        inputAmountWire: existingDebit.amountWire,
+        grossOutputWire: grossOutput.toString(),
+        taxAmountWire: taxAmount.toString(),
+        netOutputWire: existingCredit.amountWire,
+        taxBps: Number(MARKET_TAX_BPS),
+        entries: [existingDebit, existingCredit],
+        account,
+      };
+    }
+  }
+
+  const fromWeight = MARKET_RESOURCE_WEIGHT[fromResource];
+  const toWeight = MARKET_RESOURCE_WEIGHT[toResource];
+  const grossOutput = (inputAmount * fromWeight) / toWeight;
+  if (grossOutput < 2n) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_AMOUNT',
+      error: `Trade input ${inputAmount.toString()} ${fromResource} is too small to yield positive net ${toResource} after 5% market tax.`,
+    };
+  }
+
+  // Round tax upward to at least 1 unit so small trades cannot evade marketplace taxes
+  const rawTax = (grossOutput * MARKET_TAX_BPS) / BPS_DENOMINATOR;
+  const taxAmount = rawTax > 0n ? rawTax : 1n;
+  const netOutput = grossOutput - taxAmount;
+  if (netOutput <= 0n) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_AMOUNT',
+      error: 'Net output after marketplace tax must be at least 1 unit.',
+    };
+  }
+
+  const availFrom = BigInt(account.balances[fromResource] || '0');
+  if (availFrom < inputAmount) {
+    return {
+      ok: false,
+      statusCode: 409,
+      code: 'INSUFFICIENT_FUNDS',
+      error: `Insufficient ${fromResource}: available=${availFrom.toString()}, required=${inputAmount.toString()}.`,
+    };
+  }
+
+  const eventId = generateServerEventId('mkt');
+  const debitRes = applyAuthoritativeEconomyTransaction(
+    account,
+    {
+      idempotencyKey: debitKey,
+      resource: fromResource,
+      direction: 'debit',
+      amountWire: inputAmount.toString(),
+      reason: 'MARKET_TRADE',
+      eventId,
+    },
+    nowIso
+  );
+  if (!debitRes.ok) return debitRes;
+
+  const creditRes = applyAuthoritativeEconomyTransaction(
+    debitRes.account,
+    {
+      idempotencyKey: creditKey,
+      resource: toResource,
+      direction: 'credit',
+      amountWire: netOutput.toString(),
+      reason: 'MARKET_TRADE',
+      eventId,
+      serverAuthorizedCredit: true,
+    },
+    nowIso
+  );
+  if (!creditRes.ok) return creditRes;
+
+  const taxValueInBaseUnits = taxAmount * toWeight;
+  const nextTotalTax = BigInt(creditRes.account.totalTaxCollectedWire || '0') + taxValueInBaseUnits;
+
+  const finalAccount: CommanderEconomyAccount = {
+    ...creditRes.account,
+    totalTaxCollectedWire: nextTotalTax.toString(),
+  };
+
+  return {
+    ok: true,
+    replayed: false,
+    eventId,
+    fromResource,
+    toResource,
+    inputAmountWire: inputAmount.toString(),
+    grossOutputWire: grossOutput.toString(),
+    taxAmountWire: taxAmount.toString(),
+    netOutputWire: netOutput.toString(),
+    taxBps: Number(MARKET_TAX_BPS),
+    entries: [debitRes.entry, creditRes.entry],
+    account: finalAccount,
+  };
 }
 
 export function verifyEconomyLedgerIntegrity(account: CommanderEconomyAccount): {

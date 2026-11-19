@@ -12,9 +12,10 @@ import {
   decodePngBuffer,
 } from '../src/lib/visualDiff';
 
-const UPDATE_BASELINES = process.env.E2E_UPDATE_BASELINES === '1';
-const DIFF_DIR = path.resolve('.playwright-cli/visual-diff');
-const BASELINE_DIR = path.resolve('.playwright-cli/baselines');
+const IS_CI = process.env.CI === 'true';
+const UPDATE_BASELINES = process.env.E2E_UPDATE_BASELINES === '1' && !IS_CI;
+const DIFF_DIR = path.resolve(playwrightConfig.outputDir);
+const BASELINE_DIR = path.resolve(playwrightConfig.snapshotDir);
 
 fs.mkdirSync(DIFF_DIR, { recursive: true });
 fs.mkdirSync(BASELINE_DIR, { recursive: true });
@@ -128,7 +129,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
   }
   seenHashes.set(decoded.sha256, spec.id);
 
-  if (UPDATE_BASELINES || !fs.existsSync(baselinePath)) {
+  if (UPDATE_BASELINES) {
     fs.copyFileSync(actualPath, baselinePath);
     fs.copyFileSync(baselinePath, path.join(DIFF_DIR, `${spec.id}-expected.png`));
     report.push({
@@ -148,8 +149,28 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
     continue;
   }
 
+  if (!fs.existsSync(baselinePath)) {
+    hasFailure = true;
+    report.push({
+      id: spec.id,
+      label: spec.label,
+      status: 'failed',
+      width: decoded.width,
+      height: decoded.height,
+      varianceRatio,
+      diffRatio: 1,
+      diffPixels: decoded.width * decoded.height,
+      actualFile: spec.actualFile,
+      baselineFile: spec.baselineFile,
+      diffFile: null,
+      reason: `Missing versioned visual baseline at ${spec.baselineFile}. Run "E2E_UPDATE_BASELINES=1 npm run verify:e2e" locally and commit ${spec.baselineFile}.`,
+    });
+    continue;
+  }
+
   const baselineBuf = fs.readFileSync(baselinePath);
   const diff = comparePngScreenshots(actualBuf, baselineBuf, {
+    channelTolerance: 28,
     maxDiffPixelRatio: spec.maxDiffPixelRatio,
   });
 

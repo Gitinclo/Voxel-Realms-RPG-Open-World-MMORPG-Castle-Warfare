@@ -84,6 +84,7 @@ function connectRawWebSocket(params: {
   cookie?: string;
   origin?: string;
   queryExtra?: string;
+  forwardedFor?: string;
 }): Promise<{
   socket: net.Socket;
   receivedTexts: string[];
@@ -117,6 +118,9 @@ function connectRawWebSocket(params: {
       }
       if (params.cookie) {
         headers.push(`Cookie: ${params.cookie}`);
+      }
+      if (params.forwardedFor) {
+        headers.push(`X-Forwarded-For: ${params.forwardedFor}`);
       }
       headers.push('', '');
       socket.write(headers.join('\r\n'));
@@ -580,17 +584,163 @@ async function runVerification() {
     });
     assert.equal(overdraftRes.status, 409);
 
+    // Server-authoritative Quest Milestone (+25 diamonds) and VIP Daily Stipend (+50 diamonds + 24h cooldown)
+    const questRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-quest-${Date.now()}`,
+        eventType: 'COMPLETE_QUEST_MILESTONE',
+        sectorId: 'B2',
+      }),
+    });
+    assert.equal(questRes.status, 200);
+    const questBody = (await questRes.json()) as { balances: { diamonds: string } };
+    assert.equal(questBody.balances.diamonds, '105');
+
+    const vipRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-vip-${Date.now()}`,
+        eventType: 'CLAIM_VIP_DAILY_STIPEND',
+      }),
+    });
+    assert.equal(vipRes.status, 200);
+    const vipBody = (await vipRes.json()) as { balances: { diamonds: string } };
+    assert.equal(vipBody.balances.diamonds, '155');
+
+    const vipRepeatRes = await fetch(`${BASE_URL}/api/online/economy/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-vip-repeat-${Date.now()}`,
+        eventType: 'CLAIM_VIP_DAILY_STIPEND',
+      }),
+    });
+    assert.equal(vipRepeatRes.status, 429);
+
+    // Server-authoritative Castle Upgrade (Lv.1 -> Lv.2 + replay + override rejection)
+    const forgedCastleRes = await fetch(`${BASE_URL}/api/online/economy/castle-upgrade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-castle-bad-${Date.now()}`,
+        costs: { wood: '0' },
+      }),
+    });
+    assert.equal(forgedCastleRes.status, 400);
+
+    const castleKey = `ops-castle-${Date.now()}`;
+    const castleRes = await fetch(`${BASE_URL}/api/online/economy/castle-upgrade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({ idempotencyKey: castleKey }),
+    });
+    assert.equal(castleRes.status, 200);
+    const castleBody = (await castleRes.json()) as {
+      replayed: boolean;
+      newLevel: number;
+      balances: { wood: string; steel: string; grain: string };
+    };
+    assert.equal(castleBody.replayed, false);
+    assert.equal(castleBody.newLevel, 2);
+    assert.equal(castleBody.balances.wood, '4600');
+
+    const castleReplayRes = await fetch(`${BASE_URL}/api/online/economy/castle-upgrade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({ idempotencyKey: castleKey }),
+    });
+    assert.equal(castleReplayRes.status, 200);
+    const castleReplayBody = (await castleReplayRes.json()) as {
+      replayed: boolean;
+      newLevel: number;
+    };
+    assert.equal(castleReplayBody.replayed, true);
+    assert.equal(castleReplayBody.newLevel, 2);
+
+    // Server-authoritative Troop Purchase (locked T3 rejected 403, valid T1 accepted 200)
+    const lockedTroopRes = await fetch(`${BASE_URL}/api/online/economy/purchase-troops`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-troop-locked-${Date.now()}`,
+        branch: 'bombers',
+        tier: 3,
+        quantity: 2,
+      }),
+    });
+    assert.equal(lockedTroopRes.status, 403);
+    const lockedTroopBody = (await lockedTroopRes.json()) as { code?: string };
+    assert.equal(lockedTroopBody.code, 'TIER_LOCKED_BY_CASTLE_LEVEL');
+
+    const troopRes = await fetch(`${BASE_URL}/api/online/economy/purchase-troops`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-troop-t1-${Date.now()}`,
+        branch: 'shieldbearers',
+        tier: 1,
+        quantity: 5,
+      }),
+    });
+    assert.equal(troopRes.status, 200);
+    const troopBody = (await troopRes.json()) as { newBranchTierCount: number };
+    assert.equal(troopBody.newBranchTierCount, 15);
+
+    // Server-authoritative Marketplace Trade with 5% Imperial Tax + idempotency replay
+    const mktKey = `ops-mkt-${Date.now()}`;
+    const mktRes = await fetch(`${BASE_URL}/api/online/economy/market-trade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: mktKey,
+        fromResource: 'wood',
+        toResource: 'grain',
+        inputAmountWire: '1000',
+      }),
+    });
+    assert.equal(mktRes.status, 200);
+    const mktBody = (await mktRes.json()) as {
+      taxAmountWire: string;
+      netOutputWire: string;
+      totalTaxCollectedWire: string;
+      replayed: boolean;
+    };
+    assert.equal(mktBody.replayed, false);
+    assert.equal(mktBody.taxAmountWire, '50');
+    assert.equal(mktBody.netOutputWire, '950');
+    assert.equal(mktBody.totalTaxCollectedWire, '50');
+
+    const mktReplayRes = await fetch(`${BASE_URL}/api/online/economy/market-trade`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: mktKey,
+        fromResource: 'wood',
+        toResource: 'grain',
+        inputAmountWire: '1000',
+      }),
+    });
+    assert.equal(mktReplayRes.status, 200);
+    assert.equal(((await mktReplayRes.json()) as { replayed: boolean }).replayed, true);
+
     const balanceRes = await fetch(`${BASE_URL}/api/online/economy/balance`, {
       headers: { Cookie: playerCookie },
     });
     assert.equal(balanceRes.status, 200);
     const balanceBody = (await balanceRes.json()) as {
+      castleLevel: number;
+      totalTaxCollectedWire: string;
       balances: { diamonds: string };
       integrity: { valid: boolean; checkedEntries: number };
     };
-    assert.equal(balanceBody.balances.diamonds, '80');
+    assert.equal(balanceBody.castleLevel, 2);
+    assert.equal(balanceBody.totalTaxCollectedWire, '50');
+    assert.equal(balanceBody.balances.diamonds, '155');
     assert.equal(balanceBody.integrity.valid, true);
-    assert.equal(balanceBody.integrity.checkedEntries, 2);
+    assert.equal(balanceBody.integrity.checkedEntries, 12);
 
     // 1j. Self-service PII export & right-to-erasure deletion on disposable account
     const piiSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {
@@ -752,14 +902,16 @@ async function runVerification() {
     );
     cheaterWs.socket.destroy();
 
-    // 2d. Multi-sector multiplayer load test: 12 concurrent WS peers across A1/B2/C3 + 200 concurrent HTTP requests
-    const sectors = ['A1', 'B2', 'C3'] as const;
+    // 2d. Multi-sector multiplayer load test: 50 simultaneous WS peers across A1/B2/C3/D4 + 200 concurrent HTTP requests
+    const sectors = ['A1', 'B2', 'C3', 'D4'] as const;
+    const SIMULTANEOUS_WS_PEERS = 50;
     const peers = await Promise.all(
-      Array.from({ length: 12 }, (_, idx) =>
+      Array.from({ length: SIMULTANEOUS_WS_PEERS }, (_, idx) =>
         connectRawWebSocket({
           port: TEST_PORT,
           sector: sectors[idx % sectors.length],
           cookie: playerCookie,
+          forwardedFor: `10.240.0.${idx + 1}`,
         }).then((p) => ({ idx, sector: sectors[idx % sectors.length], ...p }))
       )
     );
@@ -865,7 +1017,7 @@ async function runVerification() {
     assert.ok(metricsAfterLoad.includes('voxel_anticheat_rejections_total '));
 
     console.log(
-      `[VerifyOps] ✅ Multi-Sector Load, Multiplayer Sync & Observability PASSED (${latenciesMs.length} reqs @ ${concurrency}-way concurrency, ${rps} req/s, p50=${p50.toFixed(1)}ms, p95=${p95.toFixed(1)}ms, p99=${p99.toFixed(1)}ms, 12 WS peers across A1/B2/C3 @ 20Hz with 0 tick overruns)`
+      `[VerifyOps] ✅ Multi-Sector Load, Multiplayer Sync & Observability PASSED (${latenciesMs.length} reqs @ ${concurrency}-way concurrency, ${rps} req/s, p50=${p50.toFixed(1)}ms, p95=${p95.toFixed(1)}ms, p99=${p99.toFixed(1)}ms, ${SIMULTANEOUS_WS_PEERS} simultaneous WS peers across A1/B2/C3/D4 @ 20Hz with 0 tick overruns)`
     );
 
     // =========================================================================
