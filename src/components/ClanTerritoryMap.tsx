@@ -517,7 +517,6 @@ export const ClanTerritoryMap: React.FC<ClanTerritoryMapProps> = ({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
-          primaryClusterId: clusterId,
           sector: selectedSectorCode,
           commanderId: activeCommanderId,
           commanderName: activeCommanderName,

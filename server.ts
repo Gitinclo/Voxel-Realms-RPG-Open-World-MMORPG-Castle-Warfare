@@ -65,7 +65,9 @@ import {
   containsUnsafePrototypeKey,
   decodeWsFramesHardened,
   pruneCommanderMap,
+  resolveClientIpFromHeaders,
   verifySameOriginRequest,
+  verifyWebSocketOrigin,
 } from './src/game/serverHardening';
 import { AtomicRealmPersistence } from './src/game/serverPersistence';
 import {
@@ -312,6 +314,7 @@ async function startServer() {
         "font-src 'self' data: https://fonts.gstatic.com",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' ws: wss: https:",
+        "worker-src 'self' blob:",
         "frame-src 'self' https://*.firebaseapp.com https://accounts.google.com",
         "frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://aistudio.google.com",
         "object-src 'none'",
@@ -604,23 +607,30 @@ async function startServer() {
     if (isShuttingDown) return;
     const tickStartNs = process.hrtime.bigint();
     tickCounter++;
-    const activeSector = store.activeSector;
-    const currentSectorState = store.sectors[activeSector];
-    const { nextState, deltaPacket } = stepAuthoritativeSiegeTick(currentSectorState);
-    store.sectors[activeSector] = nextState;
+    const sectorsToTick = new Set<TerritorySectorCode>([store.activeSector]);
+    for (const peer of peers.values()) {
+      sectorsToTick.add(peer.subscribedSector);
+    }
 
-    if (peers.size > 0) {
-      broadcastToSector(activeSector, deltaPacket);
+    for (const sectorCode of sectorsToTick) {
+      const currentSectorState = store.sectors[sectorCode];
+      if (!currentSectorState) continue;
+      const { nextState, deltaPacket } = stepAuthoritativeSiegeTick(currentSectorState);
+      store.sectors[sectorCode] = nextState;
 
-      if (nextState.serverTick % 100 === 0) {
-        broadcastToSector(activeSector, {
-          opcode: SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT,
-          serverTick: nextState.serverTick,
-          ackClientSeq: nextState.cohorts[0]?.lastAckClientSeq ?? 0,
-          sector: activeSector,
-          stateHash: nextState.stateHash,
-          payload: { sectorState: nextState },
-        });
+      if (peers.size > 0) {
+        broadcastToSector(sectorCode, deltaPacket);
+
+        if (nextState.serverTick % 100 === 0) {
+          broadcastToSector(sectorCode, {
+            opcode: SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT,
+            serverTick: nextState.serverTick,
+            ackClientSeq: nextState.cohorts[0]?.lastAckClientSeq ?? 0,
+            sector: sectorCode,
+            stateHash: nextState.stateHash,
+            payload: { sectorState: nextState },
+          });
+        }
       }
     }
 
@@ -1398,7 +1408,7 @@ async function startServer() {
     const validSector: TerritorySectorCode = ALL_TERRITORY_SECTORS.includes(requestedSector)
       ? requestedSector
       : store.activeSector;
-    store.activeSector = validSector;
+    // Strictly read-only: anonymous GET requests must never mutate global store.activeSector
 
     const sectorState = store.sectors[validSector];
     const replication = buildMultiRegionReplicationStatus(
@@ -1418,6 +1428,7 @@ async function startServer() {
       engine: 'Voxel Realms Authoritative 20Hz Siege & Multi-Region Persistence Server',
       connectedWebSocketPeers: peers.size,
       activeSector: validSector,
+      globalActiveSector: store.activeSector,
       sectorState,
       replication,
       commanders: commandersPublic,
@@ -1429,28 +1440,39 @@ async function startServer() {
     if (!session) return;
 
     const body = (req.body || {}) as Record<string, unknown>;
+    const canMutateGlobalRealmConfig = session.permissions.canAccessGmConsole;
+    const rejectedGlobalFields: string[] = [];
 
     if (
       typeof body.primaryClusterId === 'string' &&
       ALLOWED_CLUSTER_IDS.includes(body.primaryClusterId as MultiRegionClusterId)
     ) {
-      store.primaryClusterId = body.primaryClusterId as MultiRegionClusterId;
+      if (canMutateGlobalRealmConfig) {
+        store.primaryClusterId = body.primaryClusterId as MultiRegionClusterId;
+      } else if (body.primaryClusterId !== store.primaryClusterId) {
+        rejectedGlobalFields.push('primaryClusterId');
+      }
     }
 
-    if (
+    const requestedSector: TerritorySectorCode =
       typeof body.sector === 'string' &&
       ALL_TERRITORY_SECTORS.includes(body.sector as TerritorySectorCode)
-    ) {
-      store.activeSector = body.sector as TerritorySectorCode;
+        ? (body.sector as TerritorySectorCode)
+        : store.activeSector;
+
+    if (canMutateGlobalRealmConfig && typeof body.sector === 'string') {
+      store.activeSector = requestedSector;
     }
 
     const existing = store.commanders[session.commanderId];
-    const { snapshot: updatedProfile, sanitizedFields } = sanitizeAndValidateSyncPayload({
-      existing,
-      incomingBody: body,
-      session,
-      defaultClusterId: store.primaryClusterId,
-    });
+    const { snapshot: updatedProfile, sanitizedFields: profileSanitizedFields } =
+      sanitizeAndValidateSyncPayload({
+        existing,
+        incomingBody: body,
+        session,
+        defaultClusterId: store.primaryClusterId,
+      });
+    const sanitizedFields = [...profileSanitizedFields, ...rejectedGlobalFields];
 
     if (sanitizedFields.length > 0) {
       appendAuditEntry(
@@ -1468,7 +1490,7 @@ async function startServer() {
     store.commanders[session.commanderId] = updatedProfile;
     persistStoreToDisk(store);
 
-    const sectorState = store.sectors[store.activeSector];
+    const sectorState = store.sectors[requestedSector];
     const replication = buildMultiRegionReplicationStatus(
       store.primaryClusterId,
       sectorState,
@@ -1608,7 +1630,6 @@ async function startServer() {
       current = applyRallyActionCommand(current, rallyCheck.command);
     }
 
-    store.activeSector = targetSector;
     store.sectors[targetSector] = current;
     persistStoreToDisk(store);
 
@@ -1646,7 +1667,43 @@ async function startServer() {
       return;
     }
 
-    const peerIp = req.socket.remoteAddress || 'unknown';
+    // Validate Origin header to defend against Cross-Site WebSocket Hijacking (CSWSH)
+    const originCheck = verifyWebSocketOrigin({
+      originHeader: req.headers.origin,
+      hostHeader: req.headers.host,
+      appUrl: process.env.APP_URL,
+    });
+    if (!originCheck.allowed) {
+      opsCounters.wsConnectionsRejected += 1;
+      opsCounters.csrfBlocks += 1;
+      socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url, `http://${req.headers.host || `localhost:${PORT}`}`);
+    } catch {
+      opsCounters.wsConnectionsRejected += 1;
+      socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    // Never accept session tokens in WebSocket query strings (prevents leakage in logs/history)
+    if (parsedUrl.searchParams.has('token')) {
+      opsCounters.wsConnectionsRejected += 1;
+      socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const peerIp = resolveClientIpFromHeaders({
+      forwardedForHeader: req.headers['x-forwarded-for'],
+      remoteAddress: req.socket.remoteAddress,
+      trustProxy: true,
+    });
     let ipPeerCount = 0;
     for (const p of peers.values()) {
       if (p.ip === peerIp) ipPeerCount += 1;
@@ -1681,24 +1738,15 @@ async function startServer() {
       socket.unshift(head);
     }
 
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(url, `http://${req.headers.host || `localhost:${PORT}`}`);
-    } catch {
-      socket.destroy();
-      return;
-    }
     const sectorParam = (parsedUrl.searchParams.get('sector') ||
       store.activeSector) as TerritorySectorCode;
     const validSector: TerritorySectorCode = ALL_TERRITORY_SECTORS.includes(sectorParam)
       ? sectorParam
       : store.activeSector;
-    store.activeSector = validSector;
 
     const wsToken = extractSessionTokenFromHeaders({
       cookieHeader: req.headers.cookie,
       authorizationHeader: req.headers.authorization,
-      queryToken: parsedUrl.searchParams.get('token'),
     });
     const resolvedWsSession = resolveAuthenticatedSession({
       token: wsToken,
@@ -1808,7 +1856,6 @@ async function startServer() {
           const previousSector = peer.subscribedSector;
           if (parsed.sector && ALL_TERRITORY_SECTORS.includes(parsed.sector)) {
             peer.subscribedSector = parsed.sector;
-            store.activeSector = parsed.sector;
             if (parsed.sector !== previousSector) {
               broadcastSectorPresence(previousSector);
               broadcastSectorPresence(parsed.sector);

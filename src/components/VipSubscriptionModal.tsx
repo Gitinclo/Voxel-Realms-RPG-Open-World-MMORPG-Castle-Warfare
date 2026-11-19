@@ -33,7 +33,7 @@ interface VipSubscriptionModalProps {
   onActivateTier: (
     tierId: VipTierId,
     billingCycle: BillingCycle,
-    paymentMethod: 'store_pass' | 'diamonds'
+    paymentMethod: 'diamonds'
   ) => void;
   onClaimDailyStipend: () => void;
   onAdvanceSimulatedVipDay: () => void;
@@ -295,15 +295,15 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
             </div>
           </div>
 
-          {/* Billing Cycle Selector Bar */}
+          {/* Covenant Duration Selector Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800">
             <div>
               <h3 className="text-sm font-bold text-white">
-                01. Choose Billing Duration &amp; Covenant Tier
+                01. Choose Covenant Duration &amp; Diamond Tier
               </h3>
               <p className="text-xs text-slate-400">
-                Activate instantly via Store Pass or exchange in-game Diamonds from your Citadel
-                treasury.
+                Exchange in-game Diamonds from your Citadel treasury to unlock VIP perks. Real-money
+                billing is disabled in this build.
               </p>
             </div>
 
@@ -352,9 +352,11 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
               const diamondCost =
                 selectedCycle === 'annual' ? tier.annualDiamondCost : tier.monthlyDiamondCost;
               const priceLabel =
-                selectedCycle === 'annual'
-                  ? `${tier.annualPriceUsd} / yr`
-                  : `${tier.monthlyPriceUsd} / mo`;
+                tier.id === 'free'
+                  ? 'Free Default'
+                  : selectedCycle === 'annual'
+                    ? `${formatBigInt(diamondCost)} 💎 / yr`
+                    : `${formatBigInt(diamondCost)} 💎 / 30d`;
               const instantBonus =
                 selectedCycle === 'annual'
                   ? tier.instantActivationDiamonds * 3n
@@ -449,23 +451,9 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
+                  {/* Action Buttons (In-Game Diamonds Only) */}
                   {tier.id !== 'free' ? (
                     <div className="space-y-1.5 pt-1">
-                      <button
-                        type="button"
-                        data-testid={`activate-vip-store-${tier.id}`}
-                        onClick={() => {
-                          sound.playUpgradeFanfare();
-                          onActivateTier(tier.id, selectedCycle, 'store_pass');
-                        }}
-                        className="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                      >
-                        {isCurrent
-                          ? `Extend ${selectedCycle === 'annual' ? '1 Year' : '30 Days'} (${priceLabel})`
-                          : `Subscribe ${selectedCycle === 'annual' ? 'Annual' : 'Monthly'} (${priceLabel})`}
-                      </button>
-
                       <button
                         type="button"
                         data-testid={`activate-vip-diamonds-${tier.id}`}
@@ -474,14 +462,16 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
                           sound.playUpgradeFanfare();
                           onActivateTier(tier.id, selectedCycle, 'diamonds');
                         }}
-                        className={`w-full py-1.5 px-3 rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        className={`w-full py-2 px-3 rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                           canAffordDiamonds
-                            ? 'bg-slate-900 hover:bg-slate-800 border-cyan-500/50 text-cyan-300'
+                            ? 'bg-amber-500 hover:bg-amber-400 border-amber-400 text-slate-950'
                             : 'bg-slate-900/50 border-slate-800 text-slate-500 cursor-not-allowed'
                         }`}
                       >
                         <Coins className="w-3.5 h-3.5" />
-                        Unlock with {formatBigInt(diamondCost)} 💎
+                        {isCurrent
+                          ? `Extend ${selectedCycle === 'annual' ? '1 Year' : '30 Days'} (${formatBigInt(diamondCost)} 💎)`
+                          : `Unlock with ${formatBigInt(diamondCost)} 💎`}
                       </button>
                     </div>
                   ) : (
@@ -501,13 +491,12 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
             <div className="space-y-1 max-w-2xl">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Subscription Terms, Auto-Renewal &amp; 14-Day Refund Protection</span>
+                <span>In-Game Currency Only · No Real-Money Billing Active</span>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Per our Terms &amp; Conditions (TERMS.md) and Privacy Policy (PRIVACY.md), recurring
-                VIP passes renew automatically at the end of each billing cycle unless auto-renewal
-                is turned off. You may toggle auto-renewal or cancel your membership at any time
-                below without penalty.
+                VIP Covenants in this build are unlocked exclusively with earned in-game Diamonds—no
+                real-money payment processor is connected and no external charges occur. You may
+                toggle auto-renewal or cancel your in-game Covenant membership at any time below.
               </p>
             </div>
 

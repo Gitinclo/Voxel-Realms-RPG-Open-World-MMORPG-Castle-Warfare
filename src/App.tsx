@@ -2014,21 +2014,18 @@ export default function App() {
     setToastMessage(result.message);
   };
 
-  // VIP Member Subscription Handlers
+  // VIP Member Covenant Handlers (in-game Diamond treasury redemption only — no real-money billing)
   const handleActivateVipTier = (
     tierId: VipTierId,
     billingCycle: BillingCycle,
-    paymentMethod: 'store_pass' | 'diamonds'
+    paymentMethod: 'diamonds'
   ) => {
+    if (paymentMethod !== 'diamonds') return;
     const targetConfig = VIP_TIER_CONFIGS[tierId];
     const diamondCost =
       billingCycle === 'annual' ? targetConfig.annualDiamondCost : targetConfig.monthlyDiamondCost;
 
-    if (
-      !godImmunity.immuneToAllThings &&
-      paymentMethod === 'diamonds' &&
-      resources.diamond < diamondCost
-    ) {
+    if (!godImmunity.immuneToAllThings && resources.diamond < diamondCost) {
       setToastMessage('⚠️ Insufficient Diamonds in treasury for this VIP tier.');
       return;
     }
@@ -2040,13 +2037,13 @@ export default function App() {
       ...prev,
       diamond:
         prev.diamond -
-        (!godImmunity.immuneToAllThings && paymentMethod === 'diamonds' ? diamondCost : 0n) +
+        (!godImmunity.immuneToAllThings ? diamondCost : 0n) +
         activation.instantBonusDiamonds,
     }));
 
     confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
     setToastMessage(
-      `👑 Activated ${targetConfig.name} (${billingCycle === 'annual' ? 'Annual' : 'Monthly'})! Gained +${formatBigInt(activation.instantBonusDiamonds)} 💎 & +${activation.pointsAdded} VIP Loyalty Pts!`
+      `👑 Unlocked ${targetConfig.name} (${billingCycle === 'annual' ? 'Annual' : 'Monthly'}) with ${formatBigInt(diamondCost)} 💎! Gained +${formatBigInt(activation.instantBonusDiamonds)} 💎 rebate & +${activation.pointsAdded} VIP Loyalty Pts!`
     );
   };
 

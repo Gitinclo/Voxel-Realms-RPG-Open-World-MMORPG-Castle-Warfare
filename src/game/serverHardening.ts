@@ -246,6 +246,93 @@ export function verifySameOriginRequest(params: {
 }
 
 /**
+ * Resolves the real client IP for per-IP rate limiting behind a single trusted reverse proxy
+ * (Cloud Run / Nginx / ALB) using X-Forwarded-For, falling back to socket.remoteAddress.
+ * Uses the right-most proxy-appended entry when trustProxy is enabled so clients cannot
+ * spoof arbitrary left-most X-Forwarded-For values to bypass rate limits.
+ */
+export function resolveClientIpFromHeaders(params: {
+  forwardedForHeader?: string | string[];
+  remoteAddress?: string | null;
+  trustProxy?: boolean;
+}): string {
+  const normalizeIp = (raw: string): string => {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('::ffff:')) {
+      return trimmed.slice(7);
+    }
+    return trimmed;
+  };
+
+  if (params.trustProxy) {
+    const rawHeader = Array.isArray(params.forwardedForHeader)
+      ? params.forwardedForHeader.join(',')
+      : params.forwardedForHeader;
+    if (rawHeader && rawHeader.trim().length > 0) {
+      const hops = rawHeader
+        .split(',')
+        .map((part) => normalizeIp(part))
+        .filter((part) => part.length > 0 && part.length <= 64);
+      if (hops.length > 0) {
+        // With trust proxy = 1, the immediate proxy appends the true client IP at the end
+        return hops[hops.length - 1];
+      }
+    }
+  }
+
+  if (params.remoteAddress && params.remoteAddress.trim().length > 0) {
+    return normalizeIp(params.remoteAddress);
+  }
+  return 'unknown';
+}
+
+/**
+ * Defends RFC 6455 WebSocket upgrades against Cross-Site WebSocket Hijacking (CSWSH) by
+ * validating the browser Origin header against Host / APP_URL.
+ */
+export function verifyWebSocketOrigin(params: {
+  originHeader?: string;
+  hostHeader?: string;
+  appUrl?: string;
+}): { allowed: boolean; reason?: string } {
+  if (!params.originHeader) {
+    // Non-browser raw TCP probes/CLI tools omit Origin; browsers always send Origin on WS upgrade
+    return { allowed: true };
+  }
+
+  let originHost: string;
+  try {
+    originHost = new URL(params.originHeader).host.toLowerCase();
+  } catch {
+    return {
+      allowed: false,
+      reason: 'Malformed Origin header on WebSocket upgrade.',
+    };
+  }
+
+  const allowedHosts = new Set<string>();
+  if (params.hostHeader) {
+    allowedHosts.add(params.hostHeader.trim().toLowerCase());
+  }
+  if (params.appUrl) {
+    try {
+      allowedHosts.add(new URL(params.appUrl).host.toLowerCase());
+    } catch {
+      // Ignore malformed APP_URL
+    }
+  }
+
+  if (allowedHosts.size > 0 && allowedHosts.has(originHost)) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    reason: `Cross-origin WebSocket blocked: origin "${originHost}" does not match target host "${params.hostHeader || 'unknown'}".`,
+  };
+}
+
+/**
  * Checks raw object JSON trees for prototype pollution keys (__proto__, constructor, prototype).
  */
 export function containsUnsafePrototypeKey(input: unknown, depth: number = 0): boolean {

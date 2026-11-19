@@ -12,7 +12,9 @@ import {
   containsUnsafePrototypeKey,
   decodeWsFramesHardened,
   pruneCommanderMap,
+  resolveClientIpFromHeaders,
   verifySameOriginRequest,
+  verifyWebSocketOrigin,
 } from './serverHardening';
 
 function buildMaskedWsFrame(text: string): Buffer {
@@ -104,6 +106,55 @@ test('verifySameOriginRequest defends cookie writes against cross-origin CSRF wh
       hostHeader: 'voxel.run.app',
       hasSessionCookie: false,
       hasBearerAuth: true,
+    }).allowed,
+    true
+  );
+});
+
+test('resolveClientIpFromHeaders and verifyWebSocketOrigin protect proxy IP isolation and CSWSH upgrades', () => {
+  assert.equal(
+    resolveClientIpFromHeaders({
+      forwardedForHeader: '1.2.3.4, 203.0.113.42',
+      remoteAddress: '::ffff:10.0.0.1',
+      trustProxy: true,
+    }),
+    '203.0.113.42'
+  );
+  assert.equal(
+    resolveClientIpFromHeaders({
+      forwardedForHeader: '1.2.3.4',
+      remoteAddress: '::ffff:127.0.0.1',
+      trustProxy: false,
+    }),
+    '127.0.0.1'
+  );
+
+  assert.equal(
+    verifyWebSocketOrigin({
+      originHeader: 'https://evil-hijack.example',
+      hostHeader: 'voxel.run.app',
+    }).allowed,
+    false
+  );
+  assert.equal(
+    verifyWebSocketOrigin({
+      originHeader: 'not-a-valid-url',
+      hostHeader: 'voxel.run.app',
+    }).allowed,
+    false
+  );
+  assert.equal(
+    verifyWebSocketOrigin({
+      originHeader: 'https://voxel.run.app',
+      hostHeader: 'voxel.run.app',
+    }).allowed,
+    true
+  );
+  assert.equal(
+    verifyWebSocketOrigin({
+      originHeader: 'https://custom-app.example',
+      hostHeader: 'internal-lb:3000',
+      appUrl: 'https://custom-app.example',
     }).allowed,
     true
   );
