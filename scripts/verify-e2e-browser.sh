@@ -38,6 +38,16 @@ if ! command -v playwright-cli >/dev/null 2>&1; then
   exit 1
 fi
 
+# Ensure chrome-for-testing is installed for standalone / uncached runner executions
+if [ "${E2E_SKIP_BROWSER_INSTALL:-0}" != "1" ]; then
+  BROWSER_CACHE_DIR="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}"
+  if ! ls -d /ms-playwright/chromium* >/dev/null 2>&1 && ! ls -d "${BROWSER_CACHE_DIR}"/chromium* >/dev/null 2>&1; then
+    log "[VerifyE2E] Chromium binary not detected; running npx playwright install chrome-for-testing..."
+    npx playwright install chrome-for-testing 2>&1 | tee -a "${RUN_LOG}"
+    playwright-cli install-browser chrome-for-testing 2>&1 | tee -a "${RUN_LOG}"
+  fi
+fi
+
 capture_failure_artifacts() {
   local exit_code="$1"
   if [ "${exit_code}" -ne 0 ]; then

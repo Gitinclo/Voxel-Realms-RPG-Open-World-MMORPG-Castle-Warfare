@@ -45,6 +45,14 @@ jobs:
         run: npm run lockfile:verify
       - name: Install dependencies & build production bundle
         run: npm ci --no-audit && npm run build
+      - name: Restore key modal visual baselines cache
+        uses: actions/cache@v4
+        with:
+          path: .playwright-cli/baselines
+          key: e2e-modal-baselines-${{ runner.os }}-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            e2e-modal-baselines-${{ runner.os }}-${{ github.ref_name }}-
+            e2e-modal-baselines-${{ runner.os }}-
       - name: Install Playwright chrome-for-testing binaries & CLI
         run: |
           npx playwright install --with-deps chrome-for-testing
