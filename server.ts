@@ -425,6 +425,72 @@ async function startServer() {
     });
   });
 
+  app.get('/metrics', (_req, res) => {
+    const persistHealth = persistence.getHealthMetrics();
+    const tickStats = tickLatencyTracker.getSummary();
+    const mem = process.memoryUsage();
+    const isUp = !isShuttingDown && persistHealth.writable ? 1 : 0;
+
+    const lines = [
+      '# HELP voxel_up Whether the authoritative Voxel Realms server is healthy and writable (1=up, 0=degraded).',
+      '# TYPE voxel_up gauge',
+      `voxel_up ${isUp}`,
+      '# HELP voxel_uptime_seconds Server process uptime in seconds.',
+      '# TYPE voxel_uptime_seconds gauge',
+      `voxel_uptime_seconds ${Math.round(process.uptime())}`,
+      '# HELP voxel_ws_active_peers Number of active WebSocket siege peers.',
+      '# TYPE voxel_ws_active_peers gauge',
+      `voxel_ws_active_peers ${peers.size}`,
+      '# HELP voxel_ws_max_peers Configured maximum concurrent WebSocket peers.',
+      '# TYPE voxel_ws_max_peers gauge',
+      `voxel_ws_max_peers ${OPERATIONAL_LIMITS.MAX_WS_PEERS}`,
+      '# HELP voxel_tick_duration_p95_ms 95th percentile 20Hz authoritative siege tick duration in milliseconds.',
+      '# TYPE voxel_tick_duration_p95_ms gauge',
+      `voxel_tick_duration_p95_ms ${tickStats.p95Ms}`,
+      '# HELP voxel_tick_duration_max_ms Max observed 20Hz authoritative siege tick duration in milliseconds.',
+      '# TYPE voxel_tick_duration_max_ms gauge',
+      `voxel_tick_duration_max_ms ${tickStats.maxMs}`,
+      '# HELP voxel_tick_overruns_total Total number of 20Hz ticks exceeding the 50ms frame budget.',
+      '# TYPE voxel_tick_overruns_total counter',
+      `voxel_tick_overruns_total ${tickStats.overrunCount}`,
+      '# HELP voxel_memory_rss_bytes Resident set size in bytes.',
+      '# TYPE voxel_memory_rss_bytes gauge',
+      `voxel_memory_rss_bytes ${mem.rss}`,
+      '# HELP voxel_memory_heap_used_bytes V8 heap used in bytes.',
+      '# TYPE voxel_memory_heap_used_bytes gauge',
+      `voxel_memory_heap_used_bytes ${mem.heapUsed}`,
+      '# HELP voxel_http_requests_total Total HTTP requests handled.',
+      '# TYPE voxel_http_requests_total counter',
+      `voxel_http_requests_total ${opsCounters.httpRequestsTotal}`,
+      '# HELP voxel_persistence_writes_total Total atomic state persistence flushes completed.',
+      '# TYPE voxel_persistence_writes_total counter',
+      `voxel_persistence_writes_total ${persistHealth.totalWrites}`,
+      '# HELP voxel_persistence_failed_writes_total Total failed persistence flushes.',
+      '# TYPE voxel_persistence_failed_writes_total counter',
+      `voxel_persistence_failed_writes_total ${persistHealth.failedWrites}`,
+      '# HELP voxel_security_rate_limit_blocks_total Total HTTP requests blocked by rate limiting.',
+      '# TYPE voxel_security_rate_limit_blocks_total counter',
+      `voxel_security_rate_limit_blocks_total ${opsCounters.rateLimitBlocks}`,
+      '# HELP voxel_security_bruteforce_lockouts_total Total admin passkey brute-force lockouts triggered.',
+      '# TYPE voxel_security_bruteforce_lockouts_total counter',
+      `voxel_security_bruteforce_lockouts_total ${loginLockoutGuard.getTotalLockoutsTriggered()}`,
+      '# HELP voxel_security_csrf_blocks_total Total cross-origin CSRF attempts blocked.',
+      '# TYPE voxel_security_csrf_blocks_total counter',
+      `voxel_security_csrf_blocks_total ${opsCounters.csrfBlocks}`,
+      '# HELP voxel_security_proto_pollution_blocks_total Total prototype-pollution payloads rejected.',
+      '# TYPE voxel_security_proto_pollution_blocks_total counter',
+      `voxel_security_proto_pollution_blocks_total ${opsCounters.prototypePollutionBlocks}`,
+      '# HELP voxel_anticheat_rejections_total Total authoritative anti-cheat command rejections.',
+      '# TYPE voxel_anticheat_rejections_total counter',
+      `voxel_anticheat_rejections_total ${opsCounters.antiCheatRejections}`,
+      '',
+    ];
+
+    res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(200).send(lines.join('\n'));
+  });
+
   const resolveRequestSession = (req: Request): ServerSessionInfo | null => {
     const token = extractSessionTokenFromHeaders({
       cookieHeader: req.headers.cookie,

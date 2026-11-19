@@ -78,7 +78,13 @@ function countIncomingWsFrames(chunk: Buffer): {
   };
 }
 
-function connectRawWebSocket(params: { port: number; sector?: string; cookie?: string }): Promise<{
+function connectRawWebSocket(params: {
+  port: number;
+  sector?: string;
+  cookie?: string;
+  origin?: string;
+  queryExtra?: string;
+}): Promise<{
   socket: net.Socket;
   receivedTexts: string[];
   isClosed: () => boolean;
@@ -97,14 +103,18 @@ function connectRawWebSocket(params: { port: number; sector?: string; cookie?: s
     }, 5000);
 
     socket.on('connect', () => {
+      const qs = `sector=${params.sector || 'B2'}${params.queryExtra ? `&${params.queryExtra}` : ''}`;
       const headers = [
-        `GET /ws/siege?sector=${params.sector || 'B2'} HTTP/1.1`,
+        `GET /ws/siege?${qs} HTTP/1.1`,
         `Host: 127.0.0.1:${params.port}`,
         'Upgrade: websocket',
         'Connection: Upgrade',
         `Sec-WebSocket-Key: ${key}`,
         'Sec-WebSocket-Version: 13',
       ];
+      if (params.origin) {
+        headers.push(`Origin: ${params.origin}`);
+      }
       if (params.cookie) {
         headers.push(`Cookie: ${params.cookie}`);
       }
@@ -233,9 +243,24 @@ async function runVerification() {
 
     const readyRes = await fetch(`${BASE_URL}/readyz`);
     assert.equal(readyRes.status, 200);
+    assert.ok(
+      readyRes.headers.get('content-security-policy')?.includes("default-src 'self'"),
+      'Expected hardened Content-Security-Policy header'
+    );
+    assert.equal(readyRes.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.equal(readyRes.headers.get('x-content-type-options'), 'nosniff');
     const readyBody = (await readyRes.json()) as { ok: boolean; status: string };
     assert.equal(readyBody.ok, true);
     assert.equal(readyBody.status, 'ready');
+
+    // Verify Prometheus /metrics scrape endpoint
+    const metricsRes = await fetch(`${BASE_URL}/metrics`);
+    assert.equal(metricsRes.status, 200);
+    assert.ok(metricsRes.headers.get('content-type')?.includes('text/plain'));
+    const metricsText = await metricsRes.text();
+    assert.ok(metricsText.includes('voxel_up 1'));
+    assert.ok(metricsText.includes('voxel_tick_overruns_total 0'));
+    assert.ok(metricsText.includes('voxel_ws_active_peers 0'));
 
     // 1a. Unauthenticated /api/admin/state, /api/online/siege/cmd & /api/db/* fail closed (401)
     const anonAdminRes = await fetch(`${BASE_URL}/api/admin/state`);
@@ -434,6 +459,24 @@ async function runVerification() {
     // =========================================================================
     // PHASE 2: WEBSOCKET EXPLOIT & FLOOD RESISTANCE + MULTI-PEER LOAD BENCHMARK
     // =========================================================================
+    // 2a-0. Cross-Origin WebSocket hijack (CSWSH) rejected (403) & query-string ?token= rejected (400)
+    await assert.rejects(
+      connectRawWebSocket({
+        port: TEST_PORT,
+        sector: 'B2',
+        origin: 'https://evil-attacker.example',
+      }),
+      /403/
+    );
+    await assert.rejects(
+      connectRawWebSocket({
+        port: TEST_PORT,
+        sector: 'B2',
+        queryExtra: 'token=leaked-query-secret',
+      }),
+      /400/
+    );
+
     // 2a. Unauthenticated WS mutation rejected with S2C_AUTH_ERROR
     const anonWs = await connectRawWebSocket({ port: TEST_PORT, sector: 'B2' });
     anonWs.socket.write(
@@ -541,14 +584,37 @@ async function runVerification() {
     );
     cheaterWs.socket.destroy();
 
-    // 2d. Load capacity test: 12 concurrent WS peers + 200 concurrent HTTP requests
+    // 2d. Multi-sector multiplayer load test: 12 concurrent WS peers across A1/B2/C3 + 200 concurrent HTTP requests
+    const sectors = ['A1', 'B2', 'C3'] as const;
     const peers = await Promise.all(
       Array.from({ length: 12 }, (_, idx) =>
         connectRawWebSocket({
           port: TEST_PORT,
-          sector: 'B2',
+          sector: sectors[idx % sectors.length],
           cookie: playerCookie,
-        }).then((p) => ({ idx, ...p }))
+        }).then((p) => ({ idx, sector: sectors[idx % sectors.length], ...p }))
+      )
+    );
+
+    // Send a legitimate authoritative movement command from peer 0 (sector A1) and verify multiplayer broadcast
+    peers[0].socket.write(
+      buildMaskedWsFrame(
+        0x01,
+        Buffer.from(
+          JSON.stringify({
+            opcode: 0x01,
+            sector: 'A1',
+            payload: {
+              cohortId: 0,
+              clientSeq: 1,
+              targetXQuantized: 250,
+              targetZQuantized: -150,
+              facingAngleQuantized: 0,
+              formation: 'PHALANX_ADVANCE',
+              primaryBranch: 'shieldbearer',
+            },
+          })
+        )
       )
     );
 
@@ -556,14 +622,20 @@ async function runVerification() {
     const loadStartNs = process.hrtime.bigint();
     let httpErrors = 0;
 
-    // 200 concurrent HTTP reads across /api/online/status, /readyz, /api/ops/readiness
+    // 200 concurrent HTTP reads across /api/online/status, /readyz, /metrics, /api/ops/readiness
     const batches = 4;
     const concurrency = 50;
     for (let b = 0; b < batches; b++) {
       await Promise.all(
         Array.from({ length: concurrency }, async (_, j) => {
           const endpoint =
-            j % 5 === 0 ? '/readyz' : j % 5 === 1 ? '/api/ops/readiness' : '/api/online/status';
+            j % 5 === 0
+              ? '/readyz'
+              : j % 5 === 1
+                ? '/api/ops/readiness'
+                : j % 5 === 2
+                  ? '/metrics'
+                  : '/api/online/status';
           const t0 = process.hrtime.bigint();
           const res = await fetch(`${BASE_URL}${endpoint}`);
           const dt = Number(process.hrtime.bigint() - t0) / 1_000_000;
@@ -574,7 +646,7 @@ async function runVerification() {
       );
     }
     const totalLoadMs = Number(process.hrtime.bigint() - loadStartNs) / 1_000_000;
-    await sleep(250); // Let 20Hz loop broadcast multiple ticks to all 12 peers
+    await sleep(300); // Let 20Hz loop broadcast multiple ticks across A1/B2/C3
 
     const sortedLat = [...latenciesMs].sort((a, b) => a - b);
     const p50 = sortedLat[Math.floor(sortedLat.length * 0.5)];
@@ -583,6 +655,11 @@ async function runVerification() {
     const rps = Math.round((latenciesMs.length / (totalLoadMs / 1000)) * 10) / 10;
 
     assert.equal(httpErrors, 0, 'Expected 0 HTTP errors under 200-request concurrent load');
+    const a1ObserverPeer = peers.find((p) => p.idx !== 0 && p.sector === 'A1');
+    assert.ok(
+      a1ObserverPeer && a1ObserverPeer.receivedTexts.some((t) => t.includes('PHALANX_ADVANCE')),
+      'Expected multiplayer observer in sector A1 to receive authoritative PHALANX_ADVANCE update'
+    );
     for (const peer of peers) {
       assert.ok(peer.receivedTexts.length >= 3, 'Each WS peer should receive live 20Hz ticks');
       peer.socket.destroy();
@@ -615,8 +692,12 @@ async function runVerification() {
     assert.ok(opsData.exploitDefenseCounters.antiCheatRejections >= 3);
     assert.ok(opsData.exploitDefenseCounters.antiCheatStrikeLockouts >= 1);
 
+    const metricsAfterLoad = await (await fetch(`${BASE_URL}/metrics`)).text();
+    assert.ok(metricsAfterLoad.includes('voxel_security_csrf_blocks_total '));
+    assert.ok(metricsAfterLoad.includes('voxel_anticheat_rejections_total '));
+
     console.log(
-      `[VerifyOps] ✅ Load & Concurrency PASSED (${latenciesMs.length} reqs @ ${concurrency}-way concurrency, ${rps} req/s, p50=${p50.toFixed(1)}ms, p95=${p95.toFixed(1)}ms, p99=${p99.toFixed(1)}ms, 12 WS peers @ 20Hz with 0 tick overruns)`
+      `[VerifyOps] ✅ Multi-Sector Load, Multiplayer Sync & Observability PASSED (${latenciesMs.length} reqs @ ${concurrency}-way concurrency, ${rps} req/s, p50=${p50.toFixed(1)}ms, p95=${p95.toFixed(1)}ms, p99=${p99.toFixed(1)}ms, 12 WS peers across A1/B2/C3 @ 20Hz with 0 tick overruns)`
     );
 
     // =========================================================================

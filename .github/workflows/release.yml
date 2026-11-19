@@ -17,16 +17,16 @@ jobs:
 
     steps:
       - name: Checkout tagged source
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --no-audit
+        run: npm ci --no-audit
 
       - name: Verify package.json version matches Git tag
         run: |
@@ -48,6 +48,11 @@ jobs:
           tar -czf "${ARCHIVE}" \
             dist \
             server.ts \
+            Dockerfile \
+            .dockerignore \
+            nginx.conf \
+            DEPLOYMENT.md \
+            badges.md \
             package.json \
             package-lock.json \
             tsconfig.json \

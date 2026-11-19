@@ -1,17 +1,17 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
-[![Build, Test & Package](https://img.shields.io/badge/CI_Workflow-Build_%26_Test_Passing-10b981?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/build.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-187_Passing_(30_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
-[![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-amber?style=flat-square>)](./CHANGELOG.md)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7.0_Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](./tsconfig.json)
-[![Three.js WebGL2](https://img.shields.io/badge/Graphics-Three.js_0.187_%2B_BVH_%2B_Cannon_Physics-f59e0b?style=flat-square&logo=threedotjs&logoColor=white)](./Physics.md)
+[![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./badges.md#remaining-pre-production-launch-gates-honest-status)
+[![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
+[![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
+[![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-192_Passing_(30_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
+[![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
-[![Cloud Persistence](https://img.shields.io/badge/Cloud_Data-Cloud_SQL_%2B_Firestore-6366f1?style=flat-square&logo=firebase&logoColor=white)](#16-️-cloud-sql-postgresql-firebase-auth-hardened-firestore--gmail-dispatch-center)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
-[![EULA: v1.5.0](<https://img.shields.io/badge/EULA-v1.5.0_(17%2F11%2F2026)-14b8a6?style=flat-square>)](./EULA.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Release Status Notice:** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch source milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), validated by CI (`npm run validate` + `npm audit` + `npm run verify:ops` uploading temporary workflow artifacts). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
+> **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`192` unit/security tests), multi-stage Docker builds, and `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, security headers, CSWSH/token rejection, multi-sector WebSocket sync, and `.bak` crash recovery). Before public MMO launch or real-money billing, multi-instance PostgreSQL/Redis realm persistence, server-authoritative economy/billing, distributed soak testing, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
 
