@@ -462,54 +462,92 @@ async function runVerification() {
     const badEnumHttpBody = (await badEnumHttpRes.json()) as { violation?: string };
     assert.equal(badEnumHttpBody.violation, 'INVALID_ENUM_INJECTION');
 
-    // 1i. Authoritative Economy Ledger: idempotency replay protection, overdraft 409, inflation 403, SHA-256 hash chain
-    const ledgerKey = `ops-loot-${Date.now()}`;
-    const tx1Res = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+    // 1i. Authoritative Economy Ledger: block direct client self-credits (403), grant via server-derived claim-action (+cooldown 429), debit & overdraft (409), SHA-256 hash chain
+    const selfMintRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
       body: JSON.stringify({
-        idempotencyKey: ledgerKey,
+        idempotencyKey: `ops-self-mint-${Date.now()}`,
         resource: 'diamonds',
         direction: 'credit',
         amountWire: '50',
         reason: 'MONSTER_LOOT',
       }),
     });
-    assert.equal(tx1Res.status, 200);
-    const tx1Body = (await tx1Res.json()) as {
+    assert.equal(selfMintRes.status, 403);
+    const selfMintBody = (await selfMintRes.json()) as { code?: string };
+    assert.equal(selfMintBody.code, 'CLIENT_SELF_CREDIT_FORBIDDEN');
+
+    const claimKey = `ops-claim-${Date.now()}`;
+    const claimRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: claimKey,
+        actionType: 'SLAY_PATROL_MONSTER',
+      }),
+    });
+    assert.equal(claimRes.status, 200);
+    const claimBody = (await claimRes.json()) as {
       ok: boolean;
       replayed: boolean;
-      entry: { txId: string };
+      entry: { txId: string; amountWire: string };
       balances: { diamonds: string };
       integrity: { valid: boolean };
     };
-    assert.equal(tx1Body.replayed, false);
-    assert.equal(tx1Body.balances.diamonds, '150');
-    assert.equal(tx1Body.integrity.valid, true);
+    assert.equal(claimBody.replayed, false);
+    assert.equal(claimBody.entry.amountWire, '10');
+    assert.equal(claimBody.balances.diamonds, '110');
+    assert.equal(claimBody.integrity.valid, true);
 
-    // Exact replay must NOT double-credit
-    const tx1ReplayRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+    // Exact replay of claimKey must NOT double-credit
+    const claimReplayRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
       body: JSON.stringify({
-        idempotencyKey: ledgerKey,
-        resource: 'diamonds',
-        direction: 'credit',
-        amountWire: '50',
-        reason: 'MONSTER_LOOT',
+        idempotencyKey: claimKey,
+        actionType: 'SLAY_PATROL_MONSTER',
       }),
     });
-    assert.equal(tx1ReplayRes.status, 200);
-    const tx1ReplayBody = (await tx1ReplayRes.json()) as {
+    assert.equal(claimReplayRes.status, 200);
+    const claimReplayBody = (await claimReplayRes.json()) as {
       replayed: boolean;
       entry: { txId: string };
       balances: { diamonds: string };
     };
-    assert.equal(tx1ReplayBody.replayed, true);
-    assert.equal(tx1ReplayBody.entry.txId, tx1Body.entry.txId);
-    assert.equal(tx1ReplayBody.balances.diamonds, '150');
+    assert.equal(claimReplayBody.replayed, true);
+    assert.equal(claimReplayBody.entry.txId, claimBody.entry.txId);
+    assert.equal(claimReplayBody.balances.diamonds, '110');
 
-    // Overdraft rejected with 409
+    // Fresh idempotency key inside server cooldown window MUST be rejected (429 ACTION_COOLDOWN_ACTIVE)
+    const spamClaimRes = await fetch(`${BASE_URL}/api/online/economy/claim-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-claim-spam-${Date.now()}`,
+        actionType: 'SLAY_PATROL_MONSTER',
+      }),
+    });
+    assert.equal(spamClaimRes.status, 429);
+    const spamClaimBody = (await spamClaimRes.json()) as { code?: string };
+    assert.equal(spamClaimBody.code, 'ACTION_COOLDOWN_ACTIVE');
+
+    // Legitimate debit succeeds and overdraft is rejected with 409
+    const spendRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
+      body: JSON.stringify({
+        idempotencyKey: `ops-spend-${Date.now()}`,
+        resource: 'diamonds',
+        direction: 'debit',
+        amountWire: '30',
+        reason: 'TROOP_PROMOTION',
+      }),
+    });
+    assert.equal(spendRes.status, 200);
+    const spendBody = (await spendRes.json()) as { balances: { diamonds: string } };
+    assert.equal(spendBody.balances.diamonds, '80');
+
     const overdraftRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
@@ -523,20 +561,6 @@ async function runVerification() {
     });
     assert.equal(overdraftRes.status, 409);
 
-    // Inflation exploit rejected with 403
-    const inflationRes = await fetch(`${BASE_URL}/api/online/economy/transact`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: playerCookie },
-      body: JSON.stringify({
-        idempotencyKey: `ops-inflate-${Date.now()}`,
-        resource: 'diamonds',
-        direction: 'credit',
-        amountWire: '99999999',
-        reason: 'MONSTER_LOOT',
-      }),
-    });
-    assert.equal(inflationRes.status, 403);
-
     const balanceRes = await fetch(`${BASE_URL}/api/online/economy/balance`, {
       headers: { Cookie: playerCookie },
     });
@@ -545,9 +569,9 @@ async function runVerification() {
       balances: { diamonds: string };
       integrity: { valid: boolean; checkedEntries: number };
     };
-    assert.equal(balanceBody.balances.diamonds, '150');
+    assert.equal(balanceBody.balances.diamonds, '80');
     assert.equal(balanceBody.integrity.valid, true);
-    assert.equal(balanceBody.integrity.checkedEntries, 1);
+    assert.equal(balanceBody.integrity.checkedEntries, 2);
 
     // 1j. Self-service PII export & right-to-erasure deletion on disposable account
     const piiSessRes = await fetch(`${BASE_URL}/api/auth/player-session`, {

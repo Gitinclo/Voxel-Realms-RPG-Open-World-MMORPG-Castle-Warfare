@@ -79,6 +79,40 @@ jobs:
       - name: Build optional Nginx static edge image
         run: docker build --target nginx-runner -t voxel-realms-rpg:nginx-ci .
 
+  e2e-browser:
+    name: Real Browser E2E Verification (Headless Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies & build production bundle
+        run: npm ci --no-audit && npm run build
+
+      - name: Install Playwright CLI & headless Chromium
+        run: |
+          npm install -g @playwright/cli
+          playwright-cli install-browser chromium --only-shell
+
+      - name: Run real headless Chromium E2E suite
+        run: npm run verify:e2e
+
+      - name: Upload E2E screenshots & logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voxel-realms-e2e-artifacts
+          path: .playwright-cli/
+          if-no-files-found: ignore
+          retention-days: 14
+
   cpp20-guardrails:
     name: C++20 Guardrails (Clang-Format, Clang-Tidy, vcpkg & CTest)
     runs-on: ubuntu-latest

@@ -59,11 +59,13 @@ import {
   sanitizeAndValidateSyncPayload,
 } from './src/game/serverAuth';
 import {
+  AuthoritativeGameplayActionType,
   CommanderEconomyAccount,
   LedgerResourceKey,
   LedgerTxDirection,
   LedgerTxReason,
   applyAuthoritativeEconomyTransaction,
+  claimAuthoritativeGameplayAction,
   createInitialEconomyAccount,
   verifyEconomyLedgerIntegrity,
 } from './src/game/economyLedger';
@@ -1790,7 +1792,10 @@ async function startServer() {
     });
 
     if (!txResult.ok) {
-      if (txResult.code === 'CREDIT_LIMIT_EXCEEDED' || txResult.code === 'ADMIN_REASON_FORBIDDEN') {
+      if (
+        txResult.code === 'CLIENT_SELF_CREDIT_FORBIDDEN' ||
+        txResult.code === 'ADMIN_REASON_FORBIDDEN'
+      ) {
         opsCounters.antiCheatRejections += 1;
         appendAuditEntry(
           store,
@@ -1823,6 +1828,51 @@ async function startServer() {
       entry: txResult.entry,
       balances: txResult.account.balances,
       integrity: verifyEconomyLedgerIntegrity(txResult.account),
+    });
+  });
+
+  app.post('/api/online/economy/claim-action', (req, res) => {
+    const session = requireAuthenticatedSession(req, res);
+    if (!session) return;
+
+    const body = (req.body || {}) as {
+      idempotencyKey?: string;
+      actionType?: AuthoritativeGameplayActionType;
+    };
+
+    const currentAccount = getOrCreateEconomyAccount(session.commanderId);
+    const claimResult = claimAuthoritativeGameplayAction(currentAccount, {
+      idempotencyKey: body.idempotencyKey || '',
+      actionType: body.actionType as AuthoritativeGameplayActionType,
+    });
+
+    if (!claimResult.ok) {
+      if (claimResult.retryAfterSec) {
+        res.setHeader('Retry-After', String(claimResult.retryAfterSec));
+      }
+      if (claimResult.code === 'ACTION_COOLDOWN_ACTIVE') {
+        opsCounters.antiCheatRejections += 1;
+      }
+      res.status(claimResult.statusCode).json({
+        ok: false,
+        code: claimResult.code,
+        retryAfterSec: claimResult.retryAfterSec,
+        error: claimResult.error,
+      });
+      return;
+    }
+
+    if (!claimResult.replayed) {
+      store.economyAccounts![session.commanderId] = claimResult.account;
+      persistStoreToDisk(store);
+    }
+
+    res.json({
+      ok: true,
+      replayed: claimResult.replayed,
+      entry: claimResult.entry,
+      balances: claimResult.account.balances,
+      integrity: verifyEconomyLedgerIntegrity(claimResult.account),
     });
   });
 

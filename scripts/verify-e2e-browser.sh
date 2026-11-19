@@ -195,37 +195,50 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
     const anonAdmin = await fetch("/api/admin/state");
     const anonEcon = await fetch("/api/online/economy/balance");
 
-    // Account A login + economy ledger credit + idempotency replay + PII export/erasure
+    // Account A login + verify direct self-credit blocked (403) + server-derived claim-action + replay + 429 cooldown
     const sessA = await fetch("/api/auth/player-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ commanderId: "e2e-browser-a", displayName: "BrowserA" }),
     });
-    const key = "e2e-browser-" + Date.now();
-    const tx1Res = await fetch("/api/online/economy/transact", {
+    const selfCreditRes = await fetch("/api/online/economy/transact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "e2e-self-mint-" + Date.now(),
+        resource: "diamonds",
+        direction: "credit",
+        amountWire: "50",
+        reason: "MONSTER_LOOT",
+      }),
+    });
+    const key = "e2e-claim-" + Date.now();
+    const tx1Res = await fetch("/api/online/economy/claim-action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         idempotencyKey: key,
-        resource: "diamonds",
-        direction: "credit",
-        amountWire: "25",
-        reason: "MONSTER_LOOT",
+        actionType: "SLAY_PATROL_MONSTER",
       }),
     });
     const tx1Text = await tx1Res.text();
-    const txReplayRes = await fetch("/api/online/economy/transact", {
+    const txReplayRes = await fetch("/api/online/economy/claim-action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         idempotencyKey: key,
-        resource: "diamonds",
-        direction: "credit",
-        amountWire: "25",
-        reason: "MONSTER_LOOT",
+        actionType: "SLAY_PATROL_MONSTER",
       }),
     });
     const txReplayText = await txReplayRes.text();
+    const spamRes = await fetch("/api/online/economy/claim-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idempotencyKey: "e2e-claim-spam-" + Date.now(),
+        actionType: "SLAY_PATROL_MONSTER",
+      }),
+    });
 
     const exportRes = await fetch("/api/online/account/export");
     const deleteRes = await fetch("/api/online/account", { method: "DELETE" });
@@ -266,10 +279,12 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
       anonAdminStatus: anonAdmin.status,
       anonEconStatus: anonEcon.status,
       sessAStatus: sessA.status,
+      selfCreditStatus: selfCreditRes.status,
       tx1Status: tx1Res.status,
       tx1Text,
       txReplayStatus: txReplayRes.status,
       txReplayText,
+      spamStatus: spamRes.status,
       exportStatus: exportRes.status,
       deleteStatus: deleteRes.status,
       postDeleteStatus: postDeleteEcon.status,
@@ -282,11 +297,13 @@ STEP5_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   if (result.anonAdminStatus !== 401) throw new Error(`Expected 401 on /api/admin/state, got ${result.anonAdminStatus}`);
   if (result.anonEconStatus !== 401) throw new Error(`Expected 401 on /api/online/economy/balance, got ${result.anonEconStatus}`);
   if (result.sessAStatus !== 200) throw new Error(`Expected 200 on sessA, got ${result.sessAStatus}`);
-  if (result.tx1Status !== 200) throw new Error(`Expected 200 on tx1, got ${result.tx1Status}: ${result.tx1Text}`);
-  if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on txReplay, got ${result.txReplayStatus}: ${result.txReplayText}`);
+  if (result.selfCreditStatus !== 403) throw new Error(`Expected 403 on direct client self-credit, got ${result.selfCreditStatus}`);
+  if (result.tx1Status !== 200) throw new Error(`Expected 200 on claim-action tx1, got ${result.tx1Status}: ${result.tx1Text}`);
+  if (result.txReplayStatus !== 200) throw new Error(`Expected 200 on claim-action replay, got ${result.txReplayStatus}: ${result.txReplayText}`);
+  if (result.spamStatus !== 429) throw new Error(`Expected 429 on fresh-key cooldown spam, got ${result.spamStatus}`);
   const tx1 = JSON.parse(result.tx1Text);
   const txReplay = JSON.parse(result.txReplayText);
-  if (!tx1?.ok || tx1?.replayed) throw new Error("Initial ledger tx failed: " + result.tx1Text);
+  if (!tx1?.ok || tx1?.replayed) throw new Error("Initial claim-action failed: " + result.tx1Text);
   if (!txReplay?.replayed || tx1?.balances?.diamonds !== txReplay?.balances?.diamonds || txReplay?.integrity?.valid !== true) {
     throw new Error("Idempotency replay or ledger integrity check failed: " + result.txReplayText);
   }

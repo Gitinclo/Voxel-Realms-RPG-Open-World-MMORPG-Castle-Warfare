@@ -245,6 +245,7 @@ export default function App() {
     signInWithGoogle,
     logout: signOutGoogle,
     getFreshIdToken,
+    authorizedFetch,
   } = useAuth();
   const [isSyncingAccount, setIsSyncingAccount] = useState<boolean>(false);
 
@@ -2297,11 +2298,10 @@ export default function App() {
         });
       }
 
-      const profileRes = await fetch('/api/db/profile', {
+      const profileRes = await authorizedFetch('/api/db/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           commanderName,
@@ -2320,11 +2320,10 @@ export default function App() {
         throw new Error(errPayload.error || 'Unable to sync commander profile.');
       }
 
-      const saveRes = await fetch('/api/db/save', {
+      const saveRes = await authorizedFetch('/api/db/save', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           version: 1,
@@ -2357,6 +2356,7 @@ export default function App() {
     }
   }, [
     authUser,
+    authorizedFetch,
     castleLevel,
     clan.tag,
     cultivation.currentRealmIndex,
@@ -2401,12 +2401,8 @@ export default function App() {
       if (!token || cancelled) return;
       try {
         const [profileRes, saveRes] = await Promise.all([
-          fetch('/api/db/profile', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch('/api/db/save', {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          authorizedFetch('/api/db/profile'),
+          authorizedFetch('/api/db/save'),
         ]);
 
         if (profileRes.ok && !cancelled) {
@@ -2454,7 +2450,7 @@ export default function App() {
       cancelled = true;
       unsubscribeSave();
     };
-  }, [authLoading, authUser, getFreshIdToken]);
+  }, [authLoading, authUser, authorizedFetch, getFreshIdToken]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans text-slate-100 select-none">

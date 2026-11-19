@@ -20,6 +20,55 @@ export type LedgerTxReason =
   | 'SIEGE_REWARD'
   | 'ADMIN_ADJUSTMENT';
 
+export type AuthoritativeGameplayActionType =
+  'GATHER_WOOD_NODE' | 'GATHER_GRAIN_NODE' | 'SLAY_PATROL_MONSTER' | 'SIEGE_CHECKPOINT_REWARD';
+
+export interface GameplayActionRewardSpec {
+  actionType: AuthoritativeGameplayActionType;
+  resource: LedgerResourceKey;
+  amountWire: string;
+  reason: LedgerTxReason;
+  cooldownMs: number;
+}
+
+/**
+ * Server-owned deterministic gameplay reward table.
+ * Clients submit ONLY the action type; the server derives resource, amount, reason, and cooldown.
+ */
+export const AUTHORITATIVE_GAMEPLAY_ACTIONS: Record<
+  AuthoritativeGameplayActionType,
+  GameplayActionRewardSpec
+> = {
+  GATHER_WOOD_NODE: {
+    actionType: 'GATHER_WOOD_NODE',
+    resource: 'wood',
+    amountWire: '150',
+    reason: 'GATHER_REWARD',
+    cooldownMs: 5_000,
+  },
+  GATHER_GRAIN_NODE: {
+    actionType: 'GATHER_GRAIN_NODE',
+    resource: 'grain',
+    amountWire: '150',
+    reason: 'GATHER_REWARD',
+    cooldownMs: 5_000,
+  },
+  SLAY_PATROL_MONSTER: {
+    actionType: 'SLAY_PATROL_MONSTER',
+    resource: 'diamonds',
+    amountWire: '10',
+    reason: 'MONSTER_LOOT',
+    cooldownMs: 10_000,
+  },
+  SIEGE_CHECKPOINT_REWARD: {
+    actionType: 'SIEGE_CHECKPOINT_REWARD',
+    resource: 'steel',
+    amountWire: '250',
+    reason: 'SIEGE_REWARD',
+    cooldownMs: 15_000,
+  },
+};
+
 export const ALLOWED_LEDGER_RESOURCES: readonly LedgerResourceKey[] = [
   'diamonds',
   'wood',
@@ -41,8 +90,6 @@ export const ALLOWED_LEDGER_REASONS: readonly LedgerTxReason[] = [
   'ADMIN_ADJUSTMENT',
 ] as const;
 
-/** Hard per-transaction credit cap for regular players to prevent economy inflation exploits. */
-export const MAX_PLAYER_SINGLE_TX_CREDIT = 1_000_000n;
 /** Hard upper cap for any single ledger transaction (including privileged admin adjustments). */
 export const MAX_ABSOLUTE_SINGLE_TX = 1_000_000_000_000n;
 export const GENESIS_LEDGER_HASH = '0'.repeat(64);
@@ -71,6 +118,8 @@ export interface CommanderEconomyAccount {
   ledger: EconomyLedgerEntry[];
   /** Maps idempotencyKey -> txId for deterministic replay protection. */
   idempotencyIndex: Record<string, string>;
+  /** Server-tracked last claim timestamp (ms) per gameplay action type to prevent mint spamming. */
+  lastActionClaimMs?: Partial<Record<AuthoritativeGameplayActionType, number>>;
   updatedAtIso: string;
 }
 
@@ -81,6 +130,11 @@ export interface EconomyTransactionRequest {
   amountWire: string;
   reason: LedgerTxReason;
   isPrivilegedStaff?: boolean;
+  /**
+   * Internal server-only authorization flag set exclusively by trusted server gameplay handlers
+   * (such as claimAuthoritativeGameplayAction). NEVER read from HTTP request bodies.
+   */
+  serverAuthorizedCredit?: boolean;
 }
 
 export type EconomyTransactionResult =
@@ -92,16 +146,19 @@ export type EconomyTransactionResult =
     }
   | {
       ok: false;
-      statusCode: 400 | 403 | 409;
+      statusCode: 400 | 403 | 409 | 429;
       code:
         | 'INVALID_IDEMPOTENCY_KEY'
         | 'INVALID_RESOURCE'
         | 'INVALID_DIRECTION'
         | 'INVALID_REASON'
         | 'INVALID_AMOUNT'
-        | 'CREDIT_LIMIT_EXCEEDED'
+        | 'INVALID_ACTION_TYPE'
+        | 'CLIENT_SELF_CREDIT_FORBIDDEN'
         | 'ADMIN_REASON_FORBIDDEN'
-        | 'INSUFFICIENT_FUNDS';
+        | 'INSUFFICIENT_FUNDS'
+        | 'ACTION_COOLDOWN_ACTIVE';
+      retryAfterSec?: number;
       error: string;
     };
 
@@ -122,6 +179,7 @@ export function createInitialEconomyAccount(
     },
     ledger: [],
     idempotencyIndex: {},
+    lastActionClaimMs: {},
     updatedAtIso: nowIso,
   };
 }
@@ -209,6 +267,23 @@ export function applyAuthoritativeEconomyTransaction(
     };
   }
 
+  // CRITICAL AUTHORITY GATE:
+  // Clients may NEVER directly mint currency/resource credits via arbitrary transactions.
+  // Credits are granted ONLY by server-validated gameplay actions (serverAuthorizedCredit=true)
+  // or privileged staff ADMIN_ADJUSTMENT operations.
+  if (req.direction === 'credit' && !req.serverAuthorizedCredit) {
+    const isStaffAdminGrant = Boolean(req.isPrivilegedStaff && req.reason === 'ADMIN_ADJUSTMENT');
+    if (!isStaffAdminGrant) {
+      return {
+        ok: false,
+        statusCode: 403,
+        code: 'CLIENT_SELF_CREDIT_FORBIDDEN',
+        error:
+          'Direct client credit transactions are forbidden. Rewards must be granted via server-validated gameplay actions.',
+      };
+    }
+  }
+
   if (typeof req.amountWire !== 'string' || !/^\d+$/.test(req.amountWire.trim())) {
     return {
       ok: false,
@@ -225,19 +300,6 @@ export function applyAuthoritativeEconomyTransaction(
       statusCode: 400,
       code: 'INVALID_AMOUNT',
       error: `Transaction amount must be between 1 and ${MAX_ABSOLUTE_SINGLE_TX.toString()}.`,
-    };
-  }
-
-  if (
-    req.direction === 'credit' &&
-    !req.isPrivilegedStaff &&
-    amount > MAX_PLAYER_SINGLE_TX_CREDIT
-  ) {
-    return {
-      ok: false,
-      statusCode: 403,
-      code: 'CREDIT_LIMIT_EXCEEDED',
-      error: `Single player credit cannot exceed ${MAX_PLAYER_SINGLE_TX_CREDIT.toString()} units.`,
     };
   }
 
@@ -300,6 +362,7 @@ export function applyAuthoritativeEconomyTransaction(
     },
     ledger: trimmedLedger,
     idempotencyIndex: nextIndex,
+    lastActionClaimMs: { ...(account.lastActionClaimMs || {}) },
     updatedAtIso: nowIso,
   };
 
@@ -308,6 +371,98 @@ export function applyAuthoritativeEconomyTransaction(
     replayed: false,
     entry,
     account: nextAccount,
+  };
+}
+
+/**
+ * Server-authoritative gameplay reward grant:
+ * Client submits ONLY `{ idempotencyKey, actionType }`.
+ * The server enforces per-action cooldowns and derives the exact resource, amount, and reason.
+ */
+export function claimAuthoritativeGameplayAction(
+  account: CommanderEconomyAccount,
+  req: {
+    idempotencyKey: string;
+    actionType: AuthoritativeGameplayActionType;
+  },
+  nowMs: number = Date.now()
+): EconomyTransactionResult {
+  const key = typeof req.idempotencyKey === 'string' ? req.idempotencyKey.trim() : '';
+  if (key.length < 6 || key.length > 128 || !/^[a-zA-Z0-9:._-]+$/.test(key)) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+      error:
+        'idempotencyKey must be 6-128 characters using only alphanumerics, colons, dots, underscores, or hyphens.',
+    };
+  }
+
+  const spec =
+    AUTHORITATIVE_GAMEPLAY_ACTIONS[req.actionType as AuthoritativeGameplayActionType] ?? null;
+  if (!spec) {
+    return {
+      ok: false,
+      statusCode: 400,
+      code: 'INVALID_ACTION_TYPE',
+      error: `Unsupported gameplay action type: ${String(req.actionType)}`,
+    };
+  }
+
+  // Exact idempotency replay succeeds deterministically without re-checking cooldown or double-crediting.
+  const existingTxId = account.idempotencyIndex[key];
+  if (existingTxId) {
+    const existingEntry = account.ledger.find((e) => e.txId === existingTxId);
+    if (existingEntry) {
+      return {
+        ok: true,
+        replayed: true,
+        entry: existingEntry,
+        account,
+      };
+    }
+  }
+
+  // Enforce server-side cooldown so players cannot spam fresh idempotency keys to mint infinite rewards.
+  const lastClaim = account.lastActionClaimMs?.[spec.actionType] ?? 0;
+  const elapsedMs = nowMs - lastClaim;
+  if (lastClaim > 0 && elapsedMs < spec.cooldownMs) {
+    const retryAfterSec = Math.max(1, Math.ceil((spec.cooldownMs - elapsedMs) / 1000));
+    return {
+      ok: false,
+      statusCode: 429,
+      code: 'ACTION_COOLDOWN_ACTIVE',
+      retryAfterSec,
+      error: `Gameplay action ${spec.actionType} is on server cooldown. Retry after ${retryAfterSec}s.`,
+    };
+  }
+
+  const txResult = applyAuthoritativeEconomyTransaction(
+    account,
+    {
+      idempotencyKey: key,
+      resource: spec.resource,
+      direction: 'credit',
+      amountWire: spec.amountWire,
+      reason: spec.reason,
+      serverAuthorizedCredit: true,
+    },
+    new Date(nowMs).toISOString()
+  );
+
+  if (!txResult.ok) {
+    return txResult;
+  }
+
+  return {
+    ...txResult,
+    account: {
+      ...txResult.account,
+      lastActionClaimMs: {
+        ...(txResult.account.lastActionClaimMs || {}),
+        [spec.actionType]: nowMs,
+      },
+    },
   };
 }
 
