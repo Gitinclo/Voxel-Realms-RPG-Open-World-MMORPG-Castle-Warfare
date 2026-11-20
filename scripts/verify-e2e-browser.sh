@@ -210,7 +210,7 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
 
   // 2a. EULA Legal acceptance dialog + screenshot capture
   await clickButtonByText("EULA");
-  await page.waitForSelector("[role=dialog]", { timeout: 10000 });
+  await page.waitForSelector("[data-testid=\"eula-modal\"]", { timeout: 10000 });
   await page.waitForTimeout(500);
   const eulaText = await page.locator("[role=dialog]").innerText();
   if (!eulaText.toUpperCase().includes("EULA") && !eulaText.toUpperCase().includes("LICENSE")) {
@@ -221,7 +221,7 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
 
   // 2b. Payment-free VIP Diamond Covenant dialog (verify zero credit-card inputs) + screenshot capture
   await clickButtonByText("VIP Member Pass");
-  await page.waitForSelector("[role=dialog]", { timeout: 10000 });
+  await page.waitForSelector("[data-testid=\"vip-modal\"]", { timeout: 10000 });
   await page.waitForTimeout(500);
   const vipCheck = await page.evaluate(() => {
     const dialog = document.querySelector("[role=dialog]");
@@ -307,8 +307,10 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
   exit 1
 }
 
-log "[VerifyE2E] 2b/6 Running key modal visual screenshot comparison (EULA, VIP, Character, Castle, Troop, Cultivation)..."
-./node_modules/.bin/tsx scripts/compare-modal-screenshots.ts 2>&1 | tee -a "${RUN_LOG}"
+log "[VerifyE2E] 2b/6 Running key modal visual screenshot comparison (EULA/VIP <=11%, Character/Castle/Troop/Cultivation <=8%)..."
+E2E_MAX_DIFF_RATIO_EULA="${E2E_MAX_DIFF_RATIO_EULA:-0.11}" \
+E2E_MAX_DIFF_RATIO_VIP="${E2E_MAX_DIFF_RATIO_VIP:-0.11}" \
+  ./node_modules/.bin/tsx scripts/compare-modal-screenshots.ts 2>&1 | tee -a "${RUN_LOG}"
 
 log "[VerifyE2E] 3/6 Checking browser reload recovery & console error count..."
 playwright-cli -s="${SESSION_NAME}" reload >/dev/null

@@ -95,13 +95,13 @@ export const EulaModal: React.FC<EulaModalProps> = ({
   }, [searchQuery, selectedLegalGroup]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-3 sm:p-6">
       <div
         data-testid="eula-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="eula-modal-title"
-        className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-amber-500/40 shadow-2xl overflow-hidden text-slate-100"
+        className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-amber-500/40 shadow-2xl overflow-hidden text-slate-100 antialiased"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-950/80">
@@ -131,7 +131,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all cursor-pointer shrink-0"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer shrink-0"
             aria-label="Close EULA Modal"
           >
             <X className="w-4 h-4" />
@@ -141,7 +141,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
         {/* Compliance Status Banner */}
         <div
           data-testid="eula-compliance-banner"
-          className={`px-5 py-3 border-b flex flex-wrap items-center justify-between gap-3 text-xs ${
+          className={`px-5 py-3 border-b flex flex-col items-start gap-3 text-xs ${
             compliance.isCompliant
               ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-200'
               : 'bg-amber-950/60 border-amber-500/40 text-amber-200'
@@ -198,7 +198,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
                 type="button"
                 data-testid="tab-eula-articles"
                 onClick={() => setActiveTab('eula_articles')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
                   activeTab === 'eula_articles'
                     ? 'bg-amber-500 text-slate-950 shadow'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -211,7 +211,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
                 type="button"
                 data-testid="tab-legal-stack"
                 onClick={() => setActiveTab('legal_stack')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
                   activeTab === 'legal_stack'
                     ? 'bg-amber-500 text-slate-950 shadow'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -245,7 +245,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors whitespace-nowrap cursor-pointer ${
                     selectedCategory === cat.id
                       ? 'bg-amber-500 text-slate-950'
                       : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
@@ -262,7 +262,7 @@ export const EulaModal: React.FC<EulaModalProps> = ({
                   key={grp.id}
                   type="button"
                   onClick={() => setSelectedLegalGroup(grp.id)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors whitespace-nowrap cursor-pointer ${
                     selectedLegalGroup === grp.id
                       ? 'bg-amber-500 text-slate-950'
                       : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'

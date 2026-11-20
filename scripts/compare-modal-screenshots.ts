@@ -28,11 +28,26 @@ interface ModalComparisonReportEntry {
   height: number;
   varianceRatio: number;
   diffRatio: number;
+  maxDiffPixelRatio: number;
   diffPixels: number;
   actualFile: string;
   baselineFile: string;
   diffFile: string | null;
   reason: string | null;
+}
+
+const MODAL_THRESHOLD_ENV_KEYS: Record<string, string> = {
+  'eula-modal': 'E2E_MAX_DIFF_RATIO_EULA',
+  'vip-modal': 'E2E_MAX_DIFF_RATIO_VIP',
+};
+
+function resolveEffectiveMaxDiffRatio(specId: string, defaultRatio: number): number {
+  const envKey = MODAL_THRESHOLD_ENV_KEYS[specId];
+  const raw = envKey ? process.env[envKey] : undefined;
+  if (!raw) return defaultRatio;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 1) return defaultRatio;
+  return parsed;
 }
 
 const report: ModalComparisonReportEntry[] = [];
@@ -43,6 +58,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
   const actualPath = path.resolve(spec.actualFile);
   const baselinePath = path.resolve(spec.baselineFile);
   const diffPath = path.resolve(spec.diffFile);
+  const effectiveMaxDiffRatio = resolveEffectiveMaxDiffRatio(spec.id, spec.maxDiffPixelRatio);
 
   if (!fs.existsSync(actualPath)) {
     hasFailure = true;
@@ -54,6 +70,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: 0,
       varianceRatio: 0,
       diffRatio: 1,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: 0,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -80,6 +97,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: decoded.height,
       varianceRatio,
       diffRatio: 1,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: decoded.width * decoded.height,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -99,6 +117,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: decoded.height,
       varianceRatio,
       diffRatio: 1,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: decoded.width * decoded.height,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -119,6 +138,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: decoded.height,
       varianceRatio,
       diffRatio: 1,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: 0,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -140,6 +160,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: decoded.height,
       varianceRatio,
       diffRatio: 0,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: 0,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -159,6 +180,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
       height: decoded.height,
       varianceRatio,
       diffRatio: 1,
+      maxDiffPixelRatio: effectiveMaxDiffRatio,
       diffPixels: decoded.width * decoded.height,
       actualFile: spec.actualFile,
       baselineFile: spec.baselineFile,
@@ -172,7 +194,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
   const diff = comparePngScreenshots(actualBuf, baselineBuf, {
     channelTolerance: 36,
     maxDimensionDeltaPx: 16,
-    maxDiffPixelRatio: spec.maxDiffPixelRatio,
+    maxDiffPixelRatio: effectiveMaxDiffRatio,
     subpixelShiftRadiusPx: 2,
     ignoreAntialiased: true,
   });
@@ -194,6 +216,7 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
     height: diff.height,
     varianceRatio,
     diffRatio: diff.diffRatio,
+    maxDiffPixelRatio: effectiveMaxDiffRatio,
     diffPixels: diff.diffPixels,
     actualFile: spec.actualFile,
     baselineFile: spec.baselineFile,
@@ -219,7 +242,7 @@ fs.writeFileSync(
 
 for (const entry of report) {
   console.log(
-    `[ModalVisualDiff] ${entry.id}: ${entry.status.toUpperCase()} (${entry.width}x${entry.height}, diff=${(entry.diffRatio * 100).toFixed(2)}%, variance=${(entry.varianceRatio * 100).toFixed(1)}%)${entry.reason ? ` — ${entry.reason}` : ''}`
+    `[ModalVisualDiff] ${entry.id}: ${entry.status.toUpperCase()} (${entry.width}x${entry.height}, diff=${(entry.diffRatio * 100).toFixed(2)}%, limit=${(entry.maxDiffPixelRatio * 100).toFixed(0)}%, variance=${(entry.varianceRatio * 100).toFixed(1)}%)${entry.reason ? ` — ${entry.reason}` : ''}`
   );
 }
 

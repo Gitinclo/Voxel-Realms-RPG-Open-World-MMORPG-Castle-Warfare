@@ -81,7 +81,10 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
       aria-modal="true"
       aria-labelledby="vip-modal-title"
     >
-      <div className="relative w-full max-w-6xl max-h-[95vh] flex flex-col rounded-2xl bg-slate-900 border border-amber-500/50 shadow-2xl overflow-hidden text-slate-100">
+      <div
+        data-testid="vip-modal"
+        className="relative w-full max-w-6xl max-h-[95vh] flex flex-col rounded-2xl bg-slate-900 border border-amber-500/50 shadow-2xl overflow-hidden text-slate-100 antialiased"
+      >
         {/* Top Header */}
         <div className="px-4 py-3 sm:px-6 sm:py-3.5 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -156,15 +159,21 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
                   {activeTierConfig.name}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 font-mono tabular-nums">
-                  <span>
+                  <span className="whitespace-nowrap">
                     Cultivation: {evaluation.totalEffectiveCultivationMultiplier.toFixed(2)}x
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span>Harvest: {evaluation.totalEffectiveGatherMultiplier.toFixed(2)}x</span>
+                  <span className="whitespace-nowrap">
+                    Harvest: {evaluation.totalEffectiveGatherMultiplier.toFixed(2)}x
+                  </span>
                   <span aria-hidden="true">·</span>
-                  <span>Might: {evaluation.totalEffectiveCombatMultiplier.toFixed(2)}x</span>
+                  <span className="whitespace-nowrap">
+                    Might: {evaluation.totalEffectiveCombatMultiplier.toFixed(2)}x
+                  </span>
                   <span aria-hidden="true">·</span>
-                  <span>Castle Cost: -{activeTierConfig.perks.castleUpgradeDiscountPct}%</span>
+                  <span className="whitespace-nowrap">
+                    Castle Cost: -{activeTierConfig.perks.castleUpgradeDiscountPct}%
+                  </span>
                 </div>
               </div>
 
@@ -182,7 +191,7 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
                 </div>
                 <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 transition-all duration-200"
+                    className="h-full bg-amber-500"
                     style={{ width: `${evaluation.currentLevelProgressPct}%` }}
                   />
                 </div>
@@ -260,7 +269,7 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
                     sound.playUpgradeFanfare();
                     onClaimDailyStipend();
                   }}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-bold font-cinzel flex items-center gap-2 transition-all whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold font-cinzel flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     evaluation.canClaimDailyStipend
                       ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95'
                       : 'bg-slate-800 text-slate-400 cursor-not-allowed'
@@ -296,7 +305,7 @@ export const VipSubscriptionModal: React.FC<VipSubscriptionModalProps> = ({
           </div>
 
           {/* Covenant Duration Selector Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div className="flex flex-col items-start gap-3 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800">
             <div>
               <h3 className="text-sm font-bold text-white">
                 01. Choose Covenant Duration &amp; Diamond Tier

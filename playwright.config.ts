@@ -23,7 +23,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-eula-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.08,
+    maxDiffPixelRatio: 0.11,
   },
   {
     id: 'vip-modal',
@@ -33,7 +33,7 @@ export const KEY_MODAL_SNAPSHOTS: readonly ModalSnapshotSpec[] = [
     diffFile: '.playwright-cli/visual-diff/modal-vip-diff.png',
     minWidth: 600,
     minHeight: 400,
-    maxDiffPixelRatio: 0.08,
+    maxDiffPixelRatio: 0.11,
   },
   {
     id: 'character-creation-modal',

@@ -59,69 +59,101 @@ import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
 
-const CastleModal = lazy(() =>
-  import('./components/CastleModal').then((m) => ({ default: m.CastleModal }))
-);
-const TroopBarracksModal = lazy(() =>
-  import('./components/TroopBarracksModal').then((m) => ({ default: m.TroopBarracksModal }))
-);
-const CharacterCreationModal = lazy(() =>
-  import('./components/CharacterCreationModal').then((m) => ({ default: m.CharacterCreationModal }))
-);
-const HeroModal = lazy(() =>
-  import('./components/HeroModal').then((m) => ({ default: m.HeroModal }))
-);
-const ClanModal = lazy(() =>
-  import('./components/ClanModal').then((m) => ({ default: m.ClanModal }))
-);
-const WorldBossRallyModal = lazy(() =>
-  import('./components/WorldBossRallyModal').then((m) => ({ default: m.WorldBossRallyModal }))
-);
-const ResourceGatherModal = lazy(() =>
-  import('./components/ResourceGatherModal').then((m) => ({ default: m.ResourceGatherModal }))
-);
-const LeaderboardModal = lazy(() =>
-  import('./components/LeaderboardModal').then((m) => ({ default: m.LeaderboardModal }))
-);
-const CppArchitectureModal = lazy(() =>
-  import('./components/CppArchitectureModal').then((m) => ({ default: m.CppArchitectureModal }))
-);
-const AdminConsoleModal = lazy(() =>
-  import('./components/AdminConsoleModal').then((m) => ({ default: m.AdminConsoleModal }))
-);
-const WeatherModal = lazy(() =>
-  import('./components/WeatherModal').then((m) => ({ default: m.WeatherModal }))
-);
-const CultivationModal = lazy(() =>
-  import('./components/CultivationModal').then((m) => ({ default: m.CultivationModal }))
-);
-const WorldAIDirectorModal = lazy(() =>
-  import('./components/WorldAIDirectorModal').then((m) => ({ default: m.WorldAIDirectorModal }))
-);
-const DailyLoginModal = lazy(() =>
-  import('./components/DailyLoginModal').then((m) => ({ default: m.DailyLoginModal }))
-);
-const DailyMissionModal = lazy(() =>
-  import('./components/DailyMissionModal').then((m) => ({ default: m.DailyMissionModal }))
-);
-const VipSubscriptionModal = lazy(() =>
-  import('./components/VipSubscriptionModal').then((m) => ({ default: m.VipSubscriptionModal }))
-);
-const LoreHistoryModal = lazy(() =>
-  import('./components/LoreHistoryModal').then((m) => ({ default: m.LoreHistoryModal }))
-);
-const CosmologicalAdminModal = lazy(() =>
-  import('./components/CosmologicalAdminModal').then((m) => ({ default: m.CosmologicalAdminModal }))
-);
-const GmailModal = lazy(() =>
-  import('./components/GmailModal').then((m) => ({ default: m.GmailModal }))
-);
-const EulaModal = lazy(() =>
-  import('./components/EulaModal').then((m) => ({ default: m.EulaModal }))
-);
-const MarketplaceModal = lazy(() =>
-  import('./components/MarketplaceModal').then((m) => ({ default: m.MarketplaceModal }))
-);
+const MODAL_LOADERS = {
+  castle: () => import('./components/CastleModal').then((m) => ({ default: m.CastleModal })),
+  troops: () =>
+    import('./components/TroopBarracksModal').then((m) => ({ default: m.TroopBarracksModal })),
+  character: () =>
+    import('./components/CharacterCreationModal').then((m) => ({
+      default: m.CharacterCreationModal,
+    })),
+  hero: () => import('./components/HeroModal').then((m) => ({ default: m.HeroModal })),
+  clan: () => import('./components/ClanModal').then((m) => ({ default: m.ClanModal })),
+  world_boss: () =>
+    import('./components/WorldBossRallyModal').then((m) => ({ default: m.WorldBossRallyModal })),
+  gather: () =>
+    import('./components/ResourceGatherModal').then((m) => ({ default: m.ResourceGatherModal })),
+  leaderboard: () =>
+    import('./components/LeaderboardModal').then((m) => ({ default: m.LeaderboardModal })),
+  cpp_arch: () =>
+    import('./components/CppArchitectureModal').then((m) => ({ default: m.CppArchitectureModal })),
+  admin_console: () =>
+    import('./components/AdminConsoleModal').then((m) => ({ default: m.AdminConsoleModal })),
+  weather: () => import('./components/WeatherModal').then((m) => ({ default: m.WeatherModal })),
+  cultivation: () =>
+    import('./components/CultivationModal').then((m) => ({ default: m.CultivationModal })),
+  world_ai: () =>
+    import('./components/WorldAIDirectorModal').then((m) => ({ default: m.WorldAIDirectorModal })),
+  daily_login: () =>
+    import('./components/DailyLoginModal').then((m) => ({ default: m.DailyLoginModal })),
+  daily_missions: () =>
+    import('./components/DailyMissionModal').then((m) => ({ default: m.DailyMissionModal })),
+  vip_subscription: () =>
+    import('./components/VipSubscriptionModal').then((m) => ({ default: m.VipSubscriptionModal })),
+  lore_history: () =>
+    import('./components/LoreHistoryModal').then((m) => ({ default: m.LoreHistoryModal })),
+  cosmological_admin: () =>
+    import('./components/CosmologicalAdminModal').then((m) => ({
+      default: m.CosmologicalAdminModal,
+    })),
+  gmail: () => import('./components/GmailModal').then((m) => ({ default: m.GmailModal })),
+  eula: () => import('./components/EulaModal').then((m) => ({ default: m.EulaModal })),
+  marketplace: () =>
+    import('./components/MarketplaceModal').then((m) => ({ default: m.MarketplaceModal })),
+} as const;
+
+type PrefetchableModalKey = keyof typeof MODAL_LOADERS;
+
+const prefetchedModalKeys = new Set<PrefetchableModalKey>();
+
+function prefetchModalChunks(keys: readonly PrefetchableModalKey[]): void {
+  for (const key of keys) {
+    if (prefetchedModalKeys.has(key)) continue;
+    prefetchedModalKeys.add(key);
+    void MODAL_LOADERS[key]().catch(() => {
+      // Allow retry if a transient network glitch interrupted background prefetching
+      prefetchedModalKeys.delete(key);
+    });
+  }
+}
+
+const TITLE_PREFETCH_MODALS: readonly PrefetchableModalKey[] = [
+  'eula',
+  'vip_subscription',
+  'character',
+  'daily_missions',
+  'daily_login',
+];
+
+const GAMEPLAY_PREFETCH_MODALS: readonly PrefetchableModalKey[] = [
+  'castle',
+  'troops',
+  'cultivation',
+  'hero',
+  'marketplace',
+];
+
+const CastleModal = lazy(MODAL_LOADERS.castle);
+const TroopBarracksModal = lazy(MODAL_LOADERS.troops);
+const CharacterCreationModal = lazy(MODAL_LOADERS.character);
+const HeroModal = lazy(MODAL_LOADERS.hero);
+const ClanModal = lazy(MODAL_LOADERS.clan);
+const WorldBossRallyModal = lazy(MODAL_LOADERS.world_boss);
+const ResourceGatherModal = lazy(MODAL_LOADERS.gather);
+const LeaderboardModal = lazy(MODAL_LOADERS.leaderboard);
+const CppArchitectureModal = lazy(MODAL_LOADERS.cpp_arch);
+const AdminConsoleModal = lazy(MODAL_LOADERS.admin_console);
+const WeatherModal = lazy(MODAL_LOADERS.weather);
+const CultivationModal = lazy(MODAL_LOADERS.cultivation);
+const WorldAIDirectorModal = lazy(MODAL_LOADERS.world_ai);
+const DailyLoginModal = lazy(MODAL_LOADERS.daily_login);
+const DailyMissionModal = lazy(MODAL_LOADERS.daily_missions);
+const VipSubscriptionModal = lazy(MODAL_LOADERS.vip_subscription);
+const LoreHistoryModal = lazy(MODAL_LOADERS.lore_history);
+const CosmologicalAdminModal = lazy(MODAL_LOADERS.cosmological_admin);
+const GmailModal = lazy(MODAL_LOADERS.gmail);
+const EulaModal = lazy(MODAL_LOADERS.eula);
+const MarketplaceModal = lazy(MODAL_LOADERS.marketplace);
 import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
 import { evaluateChunkBoundaryProximity } from './game/openWorld3DEngine';
 import {
@@ -280,6 +312,33 @@ export default function App() {
     }
     return 'title';
   });
+
+  // Prefetch high-priority lazy modal chunks during browser idle time so dynamic modals
+  // (especially EULA, VIP, Character Creation, Castle, Barracks, and Cultivation) render
+  // immediately without Suspense flicker or E2E capture race conditions.
+  useEffect(() => {
+    const targetBatch = gameState === 'title' ? TITLE_PREFETCH_MODALS : GAMEPLAY_PREFETCH_MODALS;
+    const runPrefetch = () => {
+      prefetchModalChunks(targetBatch);
+    };
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (typeof win.requestIdleCallback === 'function') {
+      const idleId = win.requestIdleCallback(runPrefetch, { timeout: 250 });
+      return () => {
+        win.cancelIdleCallback?.(idleId);
+      };
+    }
+
+    const timerId = window.setTimeout(runPrefetch, 120);
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [gameState]);
 
   const [initialGodBundle] = useState(() =>
     buildMaxedGodCharacterBundle({ baseHeroes: INITIAL_HEROES })
