@@ -6,7 +6,7 @@ Formatting, linking, terminology, and accuracy standards governing every Markdow
 
 ## 1. Mandatory Accuracy Rules
 
-1. **Zero Fabricated Metrics**: Every test count (`171` tests across `29` suites), invariant count (`103` checks across `9` pillars), endpoint path (`/ws/siege`, `/api/db/*`, `/api/ops/readiness`), and package version must match verified values on disk (`package.json`, `README.md`, `CHANGELOG.md`).
+1. **Zero Fabricated Metrics**: Every test count (`217` tests across `37` test files), invariant count (`109` checks across `9` pillars), endpoint path (`/ws/siege`, `/api/db/*`, `/api/ops/readiness`), and package version must match verified values on disk (`package.json`, `README.md`, `CHANGELOG.md`).
 2. **Release Honest-Status Policy**: Never claim formal GitHub Releases or `v*` git tags exist while release history notes zero published GitHub Releases (`CHANGELOG.md`).
 3. **Prettier Compliance**: Every `.md` file must pass `npm run format:check` (`prettier --check .`) cleanly:
    - Use `-` for unordered lists

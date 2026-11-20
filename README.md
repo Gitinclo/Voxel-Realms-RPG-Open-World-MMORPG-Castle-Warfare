@@ -4,18 +4,18 @@
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-207_Passing_(35_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-217_Passing_(37_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`207` unit/security/DB tests across `35` suites + lockfile integrity verification), multi-stage Docker builds, `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, production God-mode isolation, server-authoritative economy `/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` + `403`/`400`/`429` anti-mint guards, `50` simultaneous multi-sector WebSocket peers across `A1/B2/C3/D4` @ `20Hz`, and `.bak` crash recovery), and `npm run verify:e2e` (headless Chromium E2E checks + fail-closed visual screenshot comparison against git-versioned `e2e/baselines/`). Before public MMO launch or real-money billing, live managed PostgreSQL + Redis pub/sub deployment, distributed soak testing, external security review, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
+> **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`217` unit/security/DB tests across `37` test files, `109` cross-system architectural invariants + `package-lock.json` / `bun.lock` integrity verification), multi-stage Docker builds, `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, production God-mode isolation, server-authoritative economy `/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` + `403`/`400`/`429` anti-mint guards, `50` simultaneous multi-sector WebSocket peers across `A1/B2/C3/D4` @ `20Hz`, and `.bak` crash recovery), and `npm run verify:e2e` (headless Chromium E2E checks + fail-closed visual screenshot comparison against git-versioned `e2e/baselines/`). Before public MMO launch or real-money billing, live managed PostgreSQL + Redis pub/sub deployment, distributed soak testing, external security review, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad & gesture navigation) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **3D Open-World Spatial BVH Raycasting (`three-mesh-bvh`), Multi-Octave Simplex Biome Heightmaps (`simplex-noise`), 3D Rigid-Body & Object Collision Physics (`cannon-es`, [`Physics.md`](./Physics.md)) & Camera Interpolation (`@tweenjs/tween.js`) (`src/game/openWorld3DEngine.ts`)**, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server, Server-Authoritative Anti-Cheat (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Dual-Tier Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **10-Article End User License Agreement (`EULA.md`) & Complete 10-Agreement Legal Stack (`LEGAL.md`, `src/game/eula.ts`, `EulaModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **100-Species / Race Character Creation, 3D Procedural Meshes & Admin (`creatergame31@gmail.com`) Permission Governance (`src/game/species.ts`, `CharacterCreationModal.tsx`)**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`17/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad, gesture navigation, collapsible Minimap, and **Platform-Aware HUD Icon & Typography Scaling [`1.15x` Mobile Readability vs `1.0x` PC/Console Precision]** via `src/game/hudPlatformScale.ts`) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Repeatable Cultivation-Scaled Daily Missions (`src/game/dailyMissions.ts`, `DailyMissionModal.tsx`)**, **3D Open-World Spatial BVH Raycasting (`three-mesh-bvh`), Multi-Octave Simplex Biome Heightmaps (`simplex-noise`), 3D Rigid-Body & Object Collision Physics (`cannon-es`, [`Physics.md`](./Physics.md)) & Camera Interpolation (`@tweenjs/tween.js`) (`src/game/openWorld3DEngine.ts`)**, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server, Server-Authoritative Anti-Cheat (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Dual-Tier Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **10-Article End User License Agreement (`EULA.md`) & Complete 10-Agreement Legal Stack (`LEGAL.md`, `src/game/eula.ts`, `EulaModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **100-Species / Race Character Creation, 3D Procedural Meshes & Admin (`creatergame31@gmail.com`) Permission Governance (`src/game/species.ts`, `CharacterCreationModal.tsx`)**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`17/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -431,6 +431,16 @@ interface WhitePageRoot {
 
 - **Deterministic FNV-1a Receipt & In-App EULA + Legal Stack Modal**: `src/game/eula.ts` exports `EULA_ARTICLES`, `LEGAL_DOCUMENT_STACK`, `LEGAL_QUICK_COMPARISON_MATRIX`, and deterministic 32-bit FNV-1a acceptance receipts (`EULA-ACK-...`), while `src/components/EulaModal.tsx` provides two interactive tabs (**`EULA Articles (10)`** and **`Complete 10-Agreement Legal Stack`**) accessible from both the Title Screen (`data-testid="title-eula-btn"`) and the Game HUD (`data-testid="hud-eula-btn"`).
 
+### 18. 🎯 Repeatable Cultivation-Scaled Daily Mission System (`src/game/dailyMissions.ts`, `DailyMissionModal.tsx`)
+
+- **Deterministic Daily Board & Cultivation-Era Scaling**: Generates 5 randomized missions per day (`MISSIONS_PER_BOARD = 5`) across 8 gameplay categories (`cultivation_meditate`, `resource_harvest`, `pill_alchemy`, `manual_study`, `troop_muster`, `boss_skirmish`, `citadel_expansion`, `market_caravan`) grouped into Cultivation, Materials, and Warfare cohorts. Task targets and `BigInt` material payouts (Wood, Steel, Copper, Grain, Oil, Diamonds, Spirit Stones, Scripture Fragments, and Path Cultivation Energy) scale monotonically with the player's current cultivation era (`mortal`, `immortal_sage`, `chaos_dao`, `ultimate_origin`) and realm/layer progression.
+- **Repeatable Cycles, Free Daily Reroll & Milestones**: Includes `3/5` and `5/5` milestone bonus chests (awarding Spirit Stones and a Veteran Scroll on full board completion), unlocks a **free repeatable next cycle** once all 5 missions are claimed, grants **1 free daily reroll** (with `150` Diamond paid rerolls afterward), enforces strict anti-double-claim guards, persists safely with `BigInt`-aware serialization (`voxel_realms_daily_missions_v1`), and integrates live gameplay hooks directly into `App.tsx` resource and cultivation state.
+
+### 19. 📱 Responsive Mobile-First HUD, Collapsible Minimap & Platform-Aware Icon/Text Scaling (`src/game/hudPlatformScale.ts`, `TitleScreen.tsx`, `GameHUD.tsx`, `Minimap.tsx`)
+
+- **Mobile-First Title Screen & Clean Viewport Composition (`TitleScreen.tsx`, `GoogleSignInButton.tsx`)**: Single-row top navigation bar, desktop `Realm Menu` popover, full-featured scrollable mobile **Realm Systems & Archives** sheet covering all 10 realm destinations, scrim-backed above-the-fold hero CTA (`ENTER THE REALM` visible above the fold even on compact `390×700` screens), and zero `backdrop-blur` compositing bottlenecks over WebGL.
+- **Platform-Aware HUD Icon & Typography Scaling (`src/game/hudPlatformScale.ts`, `GameHUD.tsx`, `Minimap.tsx`)**: Automatically detects mobile viewports / coarse pointers (`detectInitialTargetPlatform`) and lets players toggle live between **`Mobile Readability` (`1.15x` text scale, `24px` icons, `>=48px` minimum touch targets, single-row `48px` primary currency strip with zero right-edge clipping)** and **`PC / Console Precision` (`1.0x` text scale, `20px` icons)** across the Lord Identity Card, Currencies Bar, Status Bar, Touch Controls, Bottom Command Dock, More Command Hub drawer (including EULA & Daily Missions), and collapsible Minimap Radar (`data-hud-platform` & `data-hud-text-scale`).
+
 ---
 
 ## 🔍 Engineering Transparency Matrix: Implemented vs. Simulated vs. Planned Scope
@@ -480,24 +490,25 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **207 automated tests across 35 suites** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`):
+Execute all **217 automated tests across 37 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
 npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial tests standalone
 ```
 
-### Unified Validation, Type Checking, Rules Linting, Formatting & Production Build
+### Unified Validation, Live Ops Readiness, Browser E2E & Production Build
 
-```bash
-npm run validate      # Run full 5-stage gate (lint + lint:rules + format:check + test + build)
-npm run verify:ops    # Run live production server load, exploit, crash-recovery & SIGTERM harness
-npm run lint          # Validate strict TypeScript (tsc --noEmit)
-npm run lint:rules    # Validate firestore.rules via @firebase/eslint-plugin-security-rules
-npm run format:check  # Check code formatting with Prettier
-npm run build         # Build code-split production bundle into dist/
-npm run preview       # Preview production build locally
-```
+| Command                                   | Verification Scope                                                                                                                                                                                                       |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `217` tests + `vite build`)                                                                            |
+| `npm run verify:ops`                      | Isolated live production server verification (`/healthz`, `/readyz`, Prometheus `/metrics`, God-mode isolation, authoritative economy mutations + `5%` tax, `50` live `20Hz` WS peers, `.bak` failover, `SIGTERM` drain) |
+| `npm run verify:e2e`                      | Real headless Chromium E2E checks (3D WebGL canvas, reload persistence, mobile `390×844` layout, fail-closed auth `401`, authoritative economy + WS + 6 key modal visual regression baselines in `e2e/baselines/`)       |
+| `npm run lockfile:verify`                 | Verifies `package.json`, `package-lock.json`, and `bun.lock` dependency parity                                                                                                                                           |
+| `npm audit --audit-level=high`            | Scans dependency tree for high/critical vulnerabilities (`0` expected)                                                                                                                                                   |
+| `npm run lint` / `npm run lint:rules`     | Strict TypeScript (`tsc --noEmit`) & Firestore security rules (`@firebase/eslint-plugin-security-rules`)                                                                                                                 |
+| `npm run format:check` / `npm run format` | Checks or applies uniform Prettier formatting across the entire repository                                                                                                                                               |
+| `npm run build` / `npm run preview`       | Compiles code-split production bundle into `dist/` and previews locally                                                                                                                                                  |
 
 ---
 
@@ -546,32 +557,41 @@ npm run preview       # Preview production build locally
 ├── cpp/
 │   ├── VoxelRealmsGuardrails.hpp      # C++20 RAII smart-pointer & concept guardrail header
 │   └── engine_guardrail_test.cpp      # C++20 CTest static_assert & RAII verification unit test
+├── e2e/
+│   └── baselines/                     # 6 git-versioned Playwright modal visual regression PNG baselines
 ├── scripts/
-│   └── verify-readiness.ts            # Live production server load, exploit, crash-recovery & SIGTERM suite
+│   ├── compare-modal-screenshots.ts   # Fail-closed PNG visual diff comparator against e2e/baselines/
+│   ├── regenerate-lockfile.mjs        # Deterministic lockfile sync utility
+│   ├── verify-e2e-browser.sh          # Real headless Chromium E2E & visual baseline test runner
+│   └── verify-readiness.ts            # Live production server load, economy, exploit, crash-recovery & SIGTERM suite
 ├── src/
 │   ├── components/                    # React 19 UI Modals (lazy-loaded) & HUD Overlays
 │   │   ├── AdminConsoleModal.tsx      # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
 │   │   ├── CastleModal.tsx            # Citadel Lv 0-100 upgrade & 10-Era progression UI
 │   │   ├── CharacterCreationModal.tsx # 100-Species selector, Tier filters, 3D turntable & Admin permission gate
 │   │   ├── ClanEmblemView.tsx         # Heraldic SVG clan banner & insignia renderer
-│   │   ├── ClanModal.tsx              # Clan vault, roster, chat, buffs & co-op boss
+│   │   ├── ClanModal.tsx              # Clan vault (with bulk confirmation gate), roster, chat, buffs & co-op boss
 │   │   ├── ClanTerritoryMap.tsx       # Interactive 9-sector (A1-C3) clan war map
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── CppArchitectureModal.tsx   # C++20 engine blueprint, Guardrails & SIMD viewer
 │   │   ├── CultivationModal.tsx       # 4-path cultivation, manuals, pills & tribulations
 │   │   ├── DailyLoginModal.tsx        # 7-day login decrees & Veteran Scroll sanctum
+│   │   ├── DailyMissionModal.tsx      # Repeatable cultivation-scaled Daily Mission board, rerolls & milestone chests
 │   │   ├── EulaModal.tsx              # Interactive End User License Agreement (EULA v1.5.0) & receipt viewer
 │   │   ├── GameCanvas.tsx             # Three.js 3D viewport, voxel renderer & raycaster
-│   │   ├── GameHUD.tsx                # Consolidated top bar, D-pad & 5-tab command dock
+│   │   ├── GameHUD.tsx                # Platform-scaled top bar, touch controls, command dock & More hub drawer
 │   │   ├── GmailModal.tsx             # Gmail Dispatch Center (inbox, labels, compose & confirm gates)
-│   │   ├── GoogleSignInButton.tsx     # Official Google Identity Material Sign-In button
+│   │   ├── GoogleSignInButton.tsx     # Official Google Identity Material Sign-In button (compact & standard)
 │   │   ├── HeroModal.tsx              # Hero ascension, tavern summons, skins & Avatar/Clones/Shadows console
 │   │   ├── LeaderboardModal.tsx       # Global lord & clan power rankings
 │   │   ├── LoreHistoryModal.tsx       # 7 Epochs, 12 Dynastic Annals, Auto-Populating Codex & 10^100 Akashic Stream
+│   │   ├── MarketplaceModal.tsx       # Commodity Exchange, Caravan Barter, D3 sparklines & Bulk Trade Liquidity Matrix
+│   │   ├── Minimap.tsx                # Collapsible platform-scaled tactical minimap radar & waypoint overlay
 │   │   ├── ResourceGatherModal.tsx    # Lv 1-10 resource node extraction & march queues
-│   │   ├── TitleScreen.tsx            # Game startup overlay & quick access triggers
+│   │   ├── TitleScreen.tsx            # Responsive mobile/desktop startup overlay, Realm Systems sheet & quick triggers
 │   │   ├── TroopBarracksModal.tsx     # T1-T20 troop recruitment & live training queue
-│   │   ├── VipSubscriptionModal.tsx   # VIP Tiers 0-3, daily stipends & loyalty perks
+│   │   ├── UnitUpgradeModal.tsx       # Dedicated hero & troop tier ascension inspector
+│   │   ├── VipSubscriptionModal.tsx   # VIP Tiers 0-3 (in-game Diamond covenants), daily stipends & loyalty perks
 │   │   ├── WeatherModal.tsx           # Atmospheric observatory & weather ritual controls
 │   │   ├── WorldAIDirectorModal.tsx   # Lv 1-1000 monster AI, NPC roles & 100-Omniverse Matrix
 │   │   └── WorldBossRallyModal.tsx    # 1T troop world boss rally coordination
@@ -579,10 +599,12 @@ npm run preview       # Preview production build locally
 │   │   └── AuthContext.tsx            # Firebase Auth + in-memory Google Workspace OAuth token state
 │   ├── db/                            # Cloud SQL PostgreSQL + Drizzle ORM Persistence Layer
 │   │   ├── drizzle.config.ts          # Drizzle Kit schema & migration config
+│   │   ├── economyRepository.ts       # PostgreSQL ACID FOR UPDATE economy ledger & idempotency repository
+│   │   ├── economyRepository.test.ts  # Transactional locking, idempotency & optimistic concurrency unit tests
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
 │   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 27 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 31 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
@@ -601,6 +623,10 @@ npm run preview       # Preview production build locally
 │   │   ├── cultivationMath.test.ts    # Cultivation math unit tests
 │   │   ├── dailyLogin.ts              # Daily login streak & Veteran Scroll scaling logic
 │   │   ├── dailyLogin.test.ts         # Daily login system unit tests
+│   │   ├── dailyMissions.ts           # Repeatable cultivation-scaled Daily Mission board, rerolls & BigInt reward engine
+│   │   ├── dailyMissions.test.ts      # Deterministic seeding, era scaling, milestones, rerolls & serialization unit tests
+│   │   ├── economyLedger.ts           # Server-authoritative economy ledger, 5% market tax & idempotency engine
+│   │   ├── economyLedger.test.ts      # Authoritative castle upgrades, troop purchases, market trades & anti-mint tests
 │   │   ├── eula.ts                    # End User License Agreement (EULA v1.5.0), FNV-1a receipts & compliance
 │   │   ├── eula.test.ts               # EULA 10 articles, FNV-1a receipt hashing & compliance unit tests
 │   │   ├── godModeCharacter.ts        # Supreme Creator God Character, 12-Domain Immunity & 100 Omni-Attributes
@@ -609,9 +635,13 @@ npm run preview       # Preview production build locally
 │   │   ├── graphicsEngine.test.ts     # Graphics pipeline unit tests
 │   │   ├── heroSkins.ts               # Hero aesthetic skins & particle aura catalog
 │   │   ├── heroSkins.test.ts          # Hero skins unit tests
+│   │   ├── hudPlatformScale.ts        # Platform-aware HUD icon/text scaling (1.15x Mobile vs 1.0x PC/Console)
+│   │   ├── hudPlatformScale.test.ts   # Viewport/coarse-pointer detection & HUD scale profile unit tests
 │   │   ├── initialData.ts             # Deterministic seed data for heroes, clans, AI & nodes
 │   │   ├── loreHistory.ts             # 7 Epochs, 12 Annals, Auto-Populating Codex & 10^100 Akashic Archive
 │   │   ├── loreHistory.test.ts        # Lore Codex, Dynastic Annals & 10^100 Akashic unit tests
+│   │   ├── marketplaceSparklineD3.ts  # D3 market sparklines & Bulk Trade Liquidity Score (0-100) engine
+│   │   ├── marketplaceSparklineD3.test.ts # Sparkline path & liquidity tier scoring unit tests
 │   │   ├── math.ts                    # Castle eras, 1000T cap & T1-T20 troop combat math
 │   │   ├── math.test.ts               # Castle & combat math unit tests
 │   │   ├── omniverse.ts               # 6-Layer Cosmology, White Page, 100 Species NPCs & Infinite Omniverse
@@ -630,7 +660,7 @@ npm run preview       # Preview production build locally
 │   │   ├── siegeNetProtocol.test.ts   # 20Hz Siege Protocol, BigInt wire, 128-frame CSP & Quorum unit tests
 │   │   ├── species.ts                 # 100-Species catalog (10 Core + 90 Omniverse), 3D mesh specs & Admin permission gate
 │   │   ├── species.test.ts            # 100-Species catalog, 3D stature bounds & Admin permission unit tests
-│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (103 invariants)
+│   │   ├── systemValidation.ts        # 9-Pillar Cross-System Validation & Integrity Audit Engine (109 invariants)
 │   │   ├── systemValidation.test.ts   # Cross-System Validation & Integrity unit tests
 │   │   ├── troopTraining.ts           # Real-time troop training timer & speedup math
 │   │   ├── troopTraining.test.ts      # Troop training queue unit tests
@@ -640,12 +670,17 @@ npm run preview       # Preview production build locally
 │   │   ├── weather.test.ts            # Weather system unit tests
 │   │   ├── worldAI.ts                 # A* pathfinding, Lv 1-1000 monsters & NPC state machines
 │   │   └── worldAI.test.ts            # World AI & pathfinding unit tests
-│   ├── lib/                           # Firebase, Firestore, Admin SDK & Gmail Workspace Clients
+│   ├── lib/                           # Firebase, Firestore, Auth, Lockfile, Visual Diff & Gmail Clients
+│   │   ├── authUtils.ts               # Auth URL & identity sanitization helpers
+│   │   ├── authUtils.test.ts          # Auth utility unit tests
 │   │   ├── firebase-admin.ts          # Firebase Admin ID token verifier for Express /api/db/*
 │   │   ├── firebase.ts                # Firebase App, Auth (Google + Gmail scopes) & Firestore init
 │   │   ├── firestore.ts               # Sanitized account/save sync & onSnapshot real-time listeners
 │   │   ├── gmail.ts                   # Gmail REST v1 client + MIME/UTF-8 base64url helpers
-│   │   └── gmail.test.ts              # Gmail MIME encoding, header injection & HTML parsing unit tests
+│   │   ├── gmail.test.ts              # Gmail MIME encoding, header injection & HTML parsing unit tests
+│   │   ├── lockfileIntegrity.test.ts  # package.json, package-lock.json & bun.lock parity verifier
+│   │   ├── visualDiff.ts              # Deterministic PNG pixel-diff engine for Playwright E2E baselines
+│   │   └── visualDiff.test.ts         # Visual diff threshold & image dimension mismatch unit tests
 │   ├── middleware/
 │   │   └── auth.ts                    # Express requireAuth Bearer Firebase ID token middleware
 │   ├── types/                         # TypeScript definitions & domain models
@@ -668,6 +703,8 @@ npm run preview       # Preview production build locally
 ├── Justfile                           # Command runner shortcuts (just dev, just validate, just ops, just cpp-test)
 ├── ARCHITECTURE.md                    # System architecture & Functional Core / Imperative Shell guide
 ├── backups.md                         # Backup, Atomic .bak failover, Cloud SQL PITR & Firestore DR runbook
+├── badges.md                          # Live GitHub Actions badge catalog & pre-production launch gates
+├── bun.lock                           # Synchronized Bun lockfile (verified by lockfileIntegrity.test.ts)
 ├── CHANGELOG.md                       # Chronological release history & v1.5.0 network spec
 ├── CMakeLists.txt                     # C++20 strict compiler flags & CTest configuration
 ├── CODE_OF_CONDUCT.md                 # Contributor Covenant Code of Conduct
@@ -695,6 +732,7 @@ npm run preview       # Preview production build locally
 ├── monitoring.md                      # Live /healthz, /readyz, /api/ops/readiness & 20Hz latency SLO runbook
 ├── nginx.conf                         # Hardened non-root Nginx SPA configuration (port 8080, CSP, HSTS, /healthz)
 ├── NOTICE                             # Apache 2.0 Section 4(d) mandatory attribution notice
+├── package-lock.json                  # Synchronized npm lockfile (verified by lockfileIntegrity.test.ts)
 ├── package.json                       # Project dependencies (pinned versions), metadata & npm scripts
 ├── Physics.md                         # 3D Physics, Object Collision (Elastic/Inelastic/Perfectly Inelastic), Momentum & Newton's 3rd Law spec
 ├── PRIVACY.md                         # User Privacy Policy (GDPR/CCPA/India DPDP Act 2023, localStorage, payments)
@@ -724,7 +762,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **207 unit, security, DB transaction, and regression tests across 35 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **217 unit, security, DB transaction, lockfile, visual diff, and regression tests across 37 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -747,7 +785,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`207/207 Passing` across 35 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`217/217 Passing` across 37 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
@@ -758,10 +796,13 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`cosmologicalTreeD3.test.ts`**: Verifies D3 hierarchy construction (`buildCosmologicalD3TreeData`) and Horizontal/Radial layout coordinate projection (`computeCosmologicalD3Layout`) from `THE_WHITE_PAGE` (`Tier 6`) and `OBLIVION_NOTHINGNESS` down through `Overvoid` (`Tier 5`) to leaf `Universe` (`Tier 1`) nodes.
 - **`cultivationMath.test.ts`**: Verifies 4-path progression, `100.0x` Realm Suppression (Golden Core vs Qi Refinement), Karma degradation to Red Name, stationary Tribulation Lightning, disciple taxation, and aura visual states.
 - **`dailyLogin.test.ts`**: Tests calendar day deltas, 7-day streak rollover, castle/realm reward scaling, and Veteran Lineage Scroll comprehension.
+- **`dailyMissions.test.ts`**: Verifies deterministic 5-mission daily board generation, monotonic cultivation-era scaling (`mortal` -> `ultimate_origin`), anti-double-claim guards, gameplay event progress tracking, `3/5` & `5/5` milestone chests, free repeatable next-cycle unlocks, `1` free daily reroll + `150` Diamond paid rerolls, and `BigInt`-safe persistence round-trips.
+- **`economyLedger.test.ts`**: Verifies server-authoritative `BigInt` resource mutations, idempotent event replay deduplication, `5%` Imperial marketplace tax calculations, castle-level troop tier gates, and negative-balance / anti-mint rejection guards.
 - **`eula.test.ts`**: Verifies the 10-article End User License Agreement (`EULA v1.5.0 · 17/11/2026`), the 10-Agreement Legal Compliance Stack (`LEGAL_DOCUMENT_STACK` & `LEGAL_QUICK_COMPARISON_MATRIX`), Dual-Layer `Apache-2.0` + Hosted Game Service scope, deterministic FNV-1a acceptance receipt hashing (`EULA-ACK-...`), compliance checks, and keyword/category filtering.
 - **`godModeCharacter.test.ts`**: Verifies `creatergame31@gmail.com` fail-closed 12-Domain All-Things Immunity, all **100 Supreme Omni-Attributes across 5 Divine Pillars**, **Sovereign Divine Flight (`2.5x` speed, `45m` altitude, Citadel wall bypass)**, and **Sovereign Divine Teleportation (`8` Realm Waypoints, `+12m` Forward Astral Blink `[T]`, custom `(X, Y, Z)` coordinates)** (`GOD_OMNI_ATTRIBUTES`, `GOD_FLIGHT_SPEC`, `GOD_TELEPORT_SPEC`, `evaluateGodCharacterImmunity`, `evaluateGodFlightPermission`, `evaluateGodTeleportPermission`, `executeGodTeleportJump`), plus Max-Out God Character preset generation (`Castle Lv. 100`, `1,000T` T20 troops, Realm 22 L9 across all 4 Paths, VIP 3 Celestial Sovereign, `Lv. 999` Divine Heroes).
 - **`graphicsEngine.test.ts`**: Validates PC/Console (`BC7 4K · LOD 0`) vs. Mobile (`ASTC · LOD Bias +1`) pipeline specs, shadow culling, addressable HD pack mounting, and the **Engineering Transparency Matrix (`6 Implemented / 2 Simulated / 0 Planned`)**.
 - **`heroSkins.test.ts`**: Tests hero skin catalog lookups, stat bonuses, and particle aura application.
+- **`hudPlatformScale.test.ts`**: Verifies platform-aware HUD scaling profiles (`mobile` `1.15x` readability / `24px` icons / `48px` minimum touch targets vs `pc_console` `1.0x` precision / `20px` icons) and automatic `detectInitialTargetPlatform` viewport & coarse-pointer detection.
 - **`loreHistory.test.ts`**: Verifies the 7 Grand Historical Epochs (`6+` sections each), 12 Imperial Dynastic Annals (`LORE_DYNASTIC_ANNALS`), Auto-Populating Open-World Lore Codex (8 spatial biomes + canonical/dynamic Lv. 1–1000 monster discovery & bounty claims), the `10^100`-Word Minimum Akashic Lore Stream (`generateGoogolScaleLoreScrollSlice` synthesizing `>= 1,000` real words/volume across `10^97` `BigInt` coordinates), 6 Sacred Compendium Codices, `comprehendLoreEpoch`, and full-text `searchLoreHistory`.
 - **`marketplaceSparklineD3.test.ts`**: Verifies D3 market sparkline paths (`computeMarketplaceSparkline`) and **Bulk Trade Liquidity Score** calculations (`computeItemLiquidityScore`, `computeMarketplaceLiquidityRows`) across Depleted, Thin, Moderate, High, and Instant liquidity tiers from live NPC stock and average daily volume.
 - **`math.test.ts`**: Validates 10-era transitions, multiplicative power rankings into the trillions, `1,000T` troop capacities, `1T` rallies, and T1–T20 troop balance.
@@ -772,12 +813,15 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 - **`serverPersistence.test.ts`**: Verifies SHA-256 signed save envelopes, atomic `fsync` + POSIX rename writes, automatic `.bak` failover recovery from truncated or checksum-tampered primary files, legacy v1 migration, and corrupt file quarantine.
 - **`siegeNetProtocol.test.ts`**: Verifies `int16` spatial quantization (`0.01m` precision), `BigInt` wire serialization up to `1,000T`, 20Hz (`50ms`) `CohortDirtyBit` delta-compression and FNV-1a 32-bit state hash parity, `1T` War Rally assembly caps, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (Exact Match, Hermite Smoothing `<= 0.15m`, Hard Rollback `> 0.15m`), and 3-node Multi-Region Replication Quorum (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`).
 - **`species.test.ts`**: Verifies all 100 playable species (`10 Core Solara Lineages + 90 Sovereign Omniverse Races #1–#100`) across Fantasy, Xianxia, and Cosmic lineages and Tiers 1–5, body scale bounds, `getSpeciesSpec` fallbacks, and `evaluateSpeciesSwitchPermission` Admin authorization (`creatergame31@gmail.com`).
-- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **103 invariants** across Root RBAC, 12-Domain Creator God Immunity, 100 Supreme Omni-Attributes across 5 Divine Pillars, Sovereign Divine Flight & Sovereign Divine Teleportation, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 100 Playable Species / Races, `17/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Lv. 1–1000 World AI, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex/Object Collision Engine (`Physics.md`) & Live WebGL2 Pipeline Mutations.
+- **`systemValidation.test.ts`**: Executes the 9-Pillar Cross-System Validation & Integrity Audit (`runFullSystemValidationReport`) verifying **109 invariants** across Root RBAC, 12-Domain Creator God Immunity, 100 Supreme Omni-Attributes across 5 Divine Pillars, Sovereign Divine Flight & Sovereign Divine Teleportation, EULA v1.5.0 & 10-Agreement Legal Stack (`creatergame31@gmail.com` + trust boundary tagging), 6-Tier Nested Cosmological Tree & 100 Omniverses, Imperial Lore (7 Epochs, 12 Annals, Auto-Populating Codex, `10^100` Akashic Corpus), 100 Playable Species / Races, `17/11/2026` Architect Matrix, `1,000T` Castle Math, `100.0x` Realm Suppression, Repeatable Daily Cultivation Missions, Lv. 1–1000 World AI, Platform-Aware HUD Scaling, and the Engineering Transparency Matrix, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow 200-Entity Raid Sync, 3D BVH/Simplex/Object Collision Engine (`Physics.md`) & Live WebGL2 Pipeline Mutations.
 - **`troopTraining.test.ts`**: Validates batch training duration scaling, castle/VIP speed bonuses, partial troop mobilization, and instant completion math.
 - **`vipSubscription.test.ts`**: Verifies VIP Tiers 0–3, Monthly/Annual activation, daily VIP stipends, loyalty level progression (`Lv. 1–15`), castle upgrade discounts, and feature access locks.
 - **`weather.test.ts`**: Confirms cyclical weather transitions and dynamic resource/combat/cultivation multipliers.
 - **`worldAI.test.ts`**: Validates Lv. 1–1000 monster complexity brackets, A\* obstacle pathfinding around keep structures, and distinct state machines for Guards, Traders, Blacksmiths, Mystics, and Quest-Givers.
+- **`src/lib/authUtils.test.ts`**: Verifies auth redirect, origin, and commander identity utility sanitization.
 - **`src/lib/gmail.test.ts`**: Verifies UTF-8 base64url MIME encoding/decoding round-trips, CRLF header-injection sanitization, HTML script/style tag stripping, multipart email plain-text extraction, and Dual-Tier OAuth scope isolation (`BASIC_IDENTITY_SCOPES` vs 14 `GMAIL_SCOPES` for `creatergame31@gmail.com`).
+- **`src/lib/lockfileIntegrity.test.ts`**: Verifies exact dependency version parity across `package.json`, `package-lock.json`, and `bun.lock` to prevent lockfile drift.
+- **`src/lib/visualDiff.test.ts`**: Verifies deterministic PNG image decoding, pixel-delta thresholding, and dimension mismatch rejection used by the Playwright E2E modal visual regression gate.
 - **`firestore.rules.test.ts` (`npm run test:rules`)**: Verifies zero-trust default-deny `firestore.rules` coverage matching `firebase-blueprint.json` and rejects all **Dirty Dozen #1–#12** adversarial payloads (`PERMISSION_DENIED`).
 - **`src/db/economyRepository.test.ts`**: Verifies PostgreSQL ACID transactional locking (`BEGIN ... SELECT ... FOR UPDATE ... COMMIT`), database-enforced `(commander_id, idempotency_key)` deduplication, rollback on rejected mutations, and optimistic concurrency version retries (`OptimisticConcurrencyError`).
 - **`scripts/verify-readiness.ts` (`npm run verify:ops`)**: Launches an isolated live production `server.ts` process and verifies 50-way concurrent HTTP load (`200` requests + `50` simultaneous live 20Hz WS peers across `A1/B2/C3/D4` with `0` tick overruns), server-authoritative economy mutations (`/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` including 5% Imperial market tax and `403` castle-level tier lock), HTTP/WebSocket exploit resistance (`401`/`403` across `/api/admin/*`, `/api/online/siege/cmd`, and Firebase-protected `/api/db/*` endpoints, CSRF, `__proto__`, brute-force `429`, oversized/flood WS drops), truncated primary save failover recovery from `.bak`, and clean `SIGTERM` graceful shutdown.
@@ -793,7 +837,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 207 TypeScript unit, economy, DB transaction, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (35 test files)
+npm test                      # 4. Run all 217 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (37 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
 ```
@@ -813,7 +857,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)          | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                    | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)                  | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 207 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 217 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -831,12 +875,12 @@ When completing the **Steamworks Content Survey -> AI Disclosure Section** durin
 
 Before tagging or publishing a release, confirm all release gates pass:
 
-- [x] `npm install` completes cleanly with consistent `package-lock.json`
+- [x] `npm install` completes cleanly with consistent `package-lock.json` and `bun.lock` (`npm run lockfile:verify`)
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 207 unit, economy, DB transaction, liquidity, security, EULA/Legal, and Firestore rule tests across 35 TypeScript test files
-- [x] `npm run validate` and `npm run verify:ops` pass cleanly against an isolated production server
+- [x] `npm test` passes all 217 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 37 TypeScript test files (`109` cross-system invariants)
+- [x] `npm run validate`, `npm run verify:ops`, and `npm run verify:e2e` pass cleanly against isolated production servers and headless Chromium (`6` modal baselines)
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] Multi-stage non-root `Dockerfile`, `.dockerignore`, `nginx.conf`, and `DEPLOYMENT.md` are up to date
 - [x] App runs in browser (`npm run dev`) with all core flows verified on desktop and mobile (`real-world QA.md`)
@@ -921,22 +965,22 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **Legal, Compliance & Trust (`17` Docs)**: [`ACCEPTABLE_USE_POLICY.md`](./ACCEPTABLE_USE_POLICY.md), [`COOKIE_POLICY.md`](./COOKIE_POLICY.md), [`DATA_PROCESSING_AGREEMENT.md`](./DATA_PROCESSING_AGREEMENT.md), [`GDPR_COMPLIANCE.md`](./GDPR_COMPLIANCE.md), [`CCPA_COMPLIANCE.md`](./CCPA_COMPLIANCE.md), [`EXPORT_COMPLIANCE.md`](./EXPORT_COMPLIANCE.md), [`PATENTS.md`](./PATENTS.md), [`TRADEMARKS.md`](./TRADEMARKS.md), [`COPYRIGHT.md`](./COPYRIGHT.md), [`DMCA_POLICY.md`](./DMCA_POLICY.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md), [`SUBPROCESSORS.md`](./SUBPROCESSORS.md), [`WAIVER.md`](./WAIVER.md), [`ETHICS.md`](./ETHICS.md), [`AI_USAGE_POLICY.md`](./AI_USAGE_POLICY.md), [`CONTENT_MODERATION_POLICY.md`](./CONTENT_MODERATION_POLICY.md).
 - **Platform Engineering, Console, Mobile & Spatial VR Targets (`9` Docs)**: [`Windows.md`](./Windows.md), [`PC.md`](./PC.md), [`playstation.md`](./playstation.md), [`xbox.md`](./xbox.md), [`mac.md`](./mac.md), [`linux.md`](./linux.md), [`iOS.md`](./iOS.md), [`android.md`](./android.md), [`Virtual Reality.md`](./Virtual%20Reality.md).
 
-#### Complete Repository Markdown Inventory (`226` Verified `.md` Files)
+#### Complete Repository Markdown Inventory (`227` Verified `.md` Files)
 
 | Documentation Domain                                          | File Count | Verification Gate                                                                                                       |
 | :------------------------------------------------------------ | :--------: | :---------------------------------------------------------------------------------------------------------------------- |
-| **Primary Hub, Legal, History & Support Guides**              |    `16`    | `README.md`, `LEGAL.md`, `EULA.md`, `LORE.md`, `Four-Path Cultivation.md`, `CHANGELOG.md`, etc.                         |
+| **Primary Hub, Badges, Legal, History & Support Guides**      |    `17`    | `README.md`, `badges.md`, `LEGAL.md`, `EULA.md`, `LORE.md`, `Four-Path Cultivation.md`, `CHANGELOG.md`, etc.            |
 | **Operational Runbooks, Container Deploy, Discipline & QA**   |    `8`     | `DEPLOYMENT.md`, `discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `real-world QA.md`         |
 | **GitHub Issue, PR & Code of Conduct Templates (`.github/`)** |    `17`    | `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE/*`, `CODE_OF_CONDUCT_ENFORCEMENT.md`                         |
 | **Core Repository, Onboarding & Governance**                  |    `25`    | `VISION.md` – `MEETING_NOTES.md`, `.LOCAL_DEVELOPMENT.md`, `CLI_REFERENCE.md`, `DOC_CONVENTIONS.md`                     |
 | **Architecture, Simulation, Physics, Tooling, ADRs & RFCs**   |    `34`    | `3D-open-world-mmorgp-game-international-standard.md`, `Physics.md`, `dependency.md`, `SYSTEM_DESIGN.md` – `docs/adr/*` |
 | **SRE, DevOps & Operational Discipline**                      |    `26`    | `runbooks.md` – `cost_optimization.md`                                                                                  |
-| **Quality Assurance & Verification**                          |    `15`    | `test_strategy.md` – `determinism_validation.md`, `invariants.md` (`103` invariants)                                    |
+| **Quality Assurance & Verification**                          |    `15`    | `test_strategy.md` – `determinism_validation.md`, `invariants.md` (`109` invariants)                                    |
 | **Security, Threat Modeling & Cryptography**                  |    `19`    | `THREAT_MODEL.md` – `INCIDENT_FORENSICS.md`, `security_spec.md`                                                         |
 | **Cultivation, Worldbuilding, Economy & Game Systems**        |    `40`    | `COSMOLOGY.md` – `BALANCE_PHILOSOPHY.md`, `in-game- economy -marketplace.md`                                            |
 | **Legal, Compliance & Trust**                                 |    `17`    | `ACCEPTABLE_USE_POLICY.md` – `CONTENT_MODERATION_POLICY.md`                                                             |
 | **Platform Engineering, Console, Mobile & Spatial VR**        |    `9`     | `Windows.md`, `PC.md`, `playstation.md`, `xbox.md`, `mac.md`, `linux.md`, `iOS.md`, `android.md`, `Virtual Reality.md`  |
-| **Total Tracked Markdown Files in Repository**                | **`226`**  | **100% Indexed in `README.md` · Verified by `.github/workflows/docs_deploy.yml` & Prettier**                            |
+| **Total Tracked Markdown Files in Repository**                | **`227`**  | **100% Indexed in `README.md` · Verified by `.github/workflows/docs_deploy.yml` & Prettier**                            |
 
 ---
 

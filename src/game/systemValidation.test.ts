@@ -18,7 +18,7 @@ test('runFullSystemValidationReport passes all 9 engine validation pillars with 
   assert.equal(report.passedPillars, 9);
   assert.equal(report.allPassed, true);
   assert.equal(report.validationScore, 100);
-  assert.equal(report.totalAssertionsPassed, 103);
+  assert.equal(report.totalAssertionsPassed, 109);
 
   for (const pillar of report.pillars) {
     assert.equal(pillar.passed, true, `Expected validation pillar ${pillar.id} to pass`);
@@ -93,5 +93,31 @@ test('runFullSystemValidationReport verifies Layer 6 White Page, 100 Omniverses,
   );
   assert.ok(
     transparencyPillar.verifiedInvariants.some((inv) => inv.includes('3D Open-World Engine'))
+  );
+});
+
+test('runFullSystemValidationReport verifies Repeatable Daily Cultivation Missions and Platform-Aware HUD Scaling invariants', () => {
+  const report = runFullSystemValidationReport();
+  const cultivationPillar = report.pillars.find(
+    (p) => p.id === 'four_path_cultivation_and_suppression'
+  );
+  const transparencyPillar = report.pillars.find(
+    (p) => p.id === 'engineering_transparency_and_live_webgl_pipeline'
+  );
+
+  assert.ok(cultivationPillar);
+  assert.equal(cultivationPillar.passed, true);
+  assert.ok(
+    cultivationPillar.verifiedInvariants.some((inv) =>
+      inv.includes('Repeatable Daily Cultivation Mission Engine (src/game/dailyMissions.ts)')
+    )
+  );
+
+  assert.ok(transparencyPillar);
+  assert.equal(transparencyPillar.passed, true);
+  assert.ok(
+    transparencyPillar.verifiedInvariants.some((inv) =>
+      inv.includes('Platform-Aware HUD Icon & Typography Scaling (src/game/hudPlatformScale.ts)')
+    )
   );
 });

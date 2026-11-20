@@ -19,7 +19,7 @@ Every release candidate must pass four sequential validation stages before traff
 
 ## 2. Stage 1 — Static Analysis, Unit Tests & Bundle Gate (`npm run validate`)
 
-Execute the unified 5-step validation command:
+Execute the unified 6-step validation command:
 
 ```bash
 npm run validate
@@ -27,14 +27,15 @@ npm run validate
 
 ### Acceptance Criteria
 
-1. **TypeScript Compiler (`npm run lint` → `tsc --noEmit`)**: `0` errors across all client, server (`server.ts`), database (`src/db/*`), and test files.
-2. **Firestore Security Rules Linter (`npm run lint:rules` → `eslint firestore.rules`)**: `0` warnings or errors from `@firebase/eslint-plugin-security-rules`.
-3. **Code Formatting (`npm run format:check` → `prettier --check .`)**: `100%` of tracked files conform to `.prettierrc`.
-4. **Automated Test Suite (`npm test`)**: All **171 tests across 29 suites** pass (`0` failures), including the **9-Pillar Cross-System Integrity Audit (`103/103` invariants)** and the **Dirty Dozen (#1–#12) Firestore adversarial rule tests**.
-5. **Production Bundle (`npm run build` → `vite build`)**:
-   - Compiles cleanly to `dist/` with Rolldown vendor chunk splitting (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-react`, `vendor-icons`) and 19 lazy-loaded modal chunks.
+1. **Lockfile Parity (`npm run lockfile:verify`)**: `package.json`, `package-lock.json`, and `bun.lock` are 100% synchronized.
+2. **TypeScript Compiler (`npm run lint` → `tsc --noEmit`)**: `0` errors across all client, server (`server.ts`), database (`src/db/*`), and test files.
+3. **Firestore Security Rules Linter (`npm run lint:rules` → `eslint firestore.rules`)**: `0` warnings or errors from `@firebase/eslint-plugin-security-rules`.
+4. **Code Formatting (`npm run format:check` → `prettier --check .`)**: `100%` of tracked files conform to `.prettierrc`.
+5. **Automated Test Suite (`npm test`)**: All **217 tests across 37 test files** pass (`0` failures), including the **9-Pillar Cross-System Integrity Audit (`109/109` invariants)** and the **Dirty Dozen (#1–#12) Firestore adversarial rule tests**.
+6. **Production Bundle (`npm run build` → `vite build`)**:
+   - Compiles cleanly to `dist/` with Rolldown vendor chunk splitting (`vendor-three`, `vendor-firebase`, `vendor-d3`, `vendor-react`, `vendor-icons`) and lazy-loaded modal chunks.
    - Zero chunk-size warnings (`chunkSizeWarningLimit: 750`).
-6. **Dependency Audit (`npm audit --audit-level=high`)**: `0` high or critical vulnerabilities.
+7. **Dependency Audit (`npm audit --audit-level=high`)**: `0` high or critical vulnerabilities.
 
 ---
 

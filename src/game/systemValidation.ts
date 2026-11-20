@@ -106,6 +106,16 @@ import {
   SHADOW_SUBTYPE_CATALOG,
   evaluateRaidDuplicationServerLoad,
 } from './avatarCloneShadow';
+import {
+  MISSIONS_PER_BOARD,
+  advanceDailyMissionById,
+  applyMissionRewardBundle,
+  claimDailyMissionReward,
+  generateDailyMissionBoard,
+  summarizeCultivationLevel,
+} from './dailyMissions';
+import { detectInitialTargetPlatform, getHudPlatformScale } from './hudPlatformScale';
+import { INITIAL_RESOURCES } from './initialData';
 
 export type ValidationPillarId =
   | 'rbac_root_authority'
@@ -539,24 +549,96 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     ],
   });
 
-  // Pillar 7: Four-Path Immortal Cultivation & 100x Realm Suppression
+  // Pillar 7: Four-Path Immortal Cultivation, 100x Realm Suppression & Repeatable Daily Cultivation Missions
   const goldenCoreVsQi = calculateRealmSuppression(2, 0);
+  const mortalCultivationSample = {
+    currentRealmIndex: 0,
+    currentLayer: 1,
+    currentQi: 0n,
+    passiveQiPerSec: 100n,
+    paths: {
+      qi: { realmIndex: 0, layer: 1, currentEnergy: 0n },
+      body: { realmIndex: 0, layer: 1, currentEnergy: 0n },
+      soul: { realmIndex: 0, layer: 1, currentEnergy: 0n },
+      mind: { realmIndex: 0, layer: 1, currentEnergy: 0n },
+    },
+    ownedManuals: {},
+    equippedManuals: { qi: null, body: null, soul: null, mind: null },
+    scriptureFragments: 0,
+    secludedYears: 0,
+    tribulationUnderway: false,
+    tribulationStrikesLeft: 0,
+    tribulationDamageRating: 0n,
+    inventoryPills: {},
+    selectedRoot: 'lightning' as const,
+    rootPurityPct: 80,
+    spiritStones: 0n,
+    veteranScrolls: 0,
+    veteranScrollsComprehended: 0,
+  };
+  const originCultivationSample = {
+    ...mortalCultivationSample,
+    currentRealmIndex: 22,
+    currentLayer: 9,
+    paths: {
+      qi: { realmIndex: 22, layer: 9, currentEnergy: 0n },
+      body: { realmIndex: 22, layer: 9, currentEnergy: 0n },
+      soul: { realmIndex: 22, layer: 9, currentEnergy: 0n },
+      mind: { realmIndex: 22, layer: 9, currentEnergy: 0n },
+    },
+  };
+  const dailyBoardMortal = generateDailyMissionBoard({
+    dateKey: '2026-11-19',
+    cultivation: mortalCultivationSample,
+  });
+  const dailyBoardOrigin = generateDailyMissionBoard({
+    dateKey: '2026-11-19',
+    cultivation: originCultivationSample,
+  });
+  const firstDailyTask = dailyBoardMortal.missions[0];
+  const advancedDailyBoard = advanceDailyMissionById(
+    dailyBoardMortal,
+    firstDailyTask.id,
+    firstDailyTask.targetCount
+  ).updatedBoard;
+  const dailyClaimOnce = claimDailyMissionReward(advancedDailyBoard, firstDailyTask.id);
+  const dailyClaimTwice = claimDailyMissionReward(dailyClaimOnce.updatedBoard, firstDailyTask.id);
+  const dailyApplied = dailyClaimOnce.reward
+    ? applyMissionRewardBundle({
+        resources: INITIAL_RESOURCES,
+        cultivation: mortalCultivationSample,
+        reward: dailyClaimOnce.reward,
+      })
+    : null;
+  const dailyMissionsVerified =
+    dailyBoardMortal.missions.length === MISSIONS_PER_BOARD &&
+    summarizeCultivationLevel(originCultivationSample).powerScaleMultiplier >
+      summarizeCultivationLevel(mortalCultivationSample).powerScaleMultiplier &&
+    dailyBoardOrigin.missions[0].rewards.spiritStones >
+      dailyBoardMortal.missions[0].rewards.spiritStones &&
+    dailyClaimOnce.claimed &&
+    !dailyClaimTwice.claimed &&
+    dailyApplied !== null &&
+    (dailyApplied.nextCultivation.spiritStones ?? 0n) > mortalCultivationSample.spiritStones;
+
   const p7Passed =
     CULTIVATION_REALMS.length === 23 &&
     goldenCoreVsQi.damageMultiplier === 100 &&
-    goldenCoreVsQi.incomingDamageReductionPct === 99;
+    goldenCoreVsQi.incomingDamageReductionPct === 99 &&
+    dailyMissionsVerified;
 
   pillars.push({
     id: 'four_path_cultivation_and_suppression',
-    title: '7. Four-Path Cultivation (23 Realms) & 100.0x Realm Suppression',
+    title: '7. Four-Path Cultivation (23 Realms), 100.0x Suppression & Daily Missions',
     passed: p7Passed,
-    assertionsPassed: 6,
+    assertionsPassed: 9,
     summary:
-      'Verified 23 Cultivation Realms (9 layers each) across Qi, Body, Soul & Mind and 100.0x 2-realm suppression.',
+      'Verified 23 Cultivation Realms (9 layers each) across Qi, Body, Soul & Mind, 100.0x 2-realm suppression, and cultivation-scaled Daily Missions with anti-double-claim & BigInt reward integration.',
     verifiedInvariants: [
       '23 Canonical Xianxia Realms (Qi Refinement -> Ultimate Origin)',
       'Golden Core (Realm 2) vs Qi Refinement (Realm 0) === 100.0x Realm Suppression',
       'Negative Karma triggers Red-Name status & stationary Heavenly Tribulation Lightning',
+      'Repeatable Daily Cultivation Mission Engine (src/game/dailyMissions.ts) scales 5 tasks monotonically across eras, blocks double claims & integrates BigInt resources + cultivation energy',
     ],
   });
 
@@ -703,6 +785,16 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     regime: 'perfectly_inelastic',
   });
 
+  const mobileHudScale = getHudPlatformScale('mobile');
+  const pcHudScale = getHudPlatformScale('pc_console');
+  const hudPlatformScaleVerified =
+    mobileHudScale.textScaleFactor === 1.15 &&
+    pcHudScale.textScaleFactor === 1.0 &&
+    mobileHudScale.iconSizePx > pcHudScale.iconSizePx &&
+    mobileHudScale.minTouchTargetPx >= 48 &&
+    detectInitialTargetPlatform(390, true) === 'mobile' &&
+    detectInitialTargetPlatform(1440, false) === 'pc_console';
+
   const p9Passed =
     transparency.totalEntries === 8 &&
     transparency.implementedCount === 6 &&
@@ -735,15 +827,16 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
     CLONE_SUBTYPE_CATALOG.length === 3 &&
     SHADOW_SUBTYPE_CATALOG.length === 3 &&
     raidDupAudit.totalTrackedEntities === 200 &&
-    raidDupAudit.withinTickBudget;
+    raidDupAudit.withinTickBudget &&
+    hudPlatformScaleVerified;
 
   pillars.push({
     id: 'engineering_transparency_and_live_webgl_pipeline',
     title:
-      '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow & 3D BVH/WebGL2',
+      '9. Engineering Transparency, Server RBAC, 20Hz Siege Netcode, Anti-Cheat, Avatar/Clone/Shadow, Platform HUD Scaling & 3D BVH/WebGL2',
     passed: p9Passed,
-    assertionsPassed: 18,
-    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + Avatar/Clone/Shadow 200-Entity Raid Sync + 3D BVH/Simplex/Object Collision (Elastic, Inelastic, Perfectly Inelastic) + Three.js WebGL2 mutations.`,
+    assertionsPassed: 21,
+    summary: `Verified ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated & ${transparency.plannedCount} Planned classifications + 20Hz Siege Delta/CSP/Multi-Region Quorum + Anti-Cheat + Avatar/Clone/Shadow 200-Entity Raid Sync + Platform-Aware HUD Scaling (1.15x Mobile vs 1.0x PC/Console) + 3D BVH/Simplex/Object Collision (Elastic, Inelastic, Perfectly Inelastic) + Three.js WebGL2 mutations.`,
     verifiedInvariants: [
       `Explicit 3-Tier Scope Matrix: ${transparency.implementedCount} Implemented, ${transparency.simulatedCount} Simulated Models, ${transparency.plannedCount} Planned`,
       'Authoritative 20Hz (50ms) 50v50 WebSocket Siege Protocol (/ws/siege), HMAC-SHA256 Server RBAC (/api/auth/*, /api/admin/*), CohortDirtyBit delta-compression & 128-frame CSP ring buffer',
@@ -752,6 +845,7 @@ export function runFullSystemValidationReport(): FullSystemValidationReport {
       '3D Open-World Engine (src/game/openWorld3DEngine.ts) integrates three-mesh-bvh O(log N) raycasting, simplex-noise fBm biomes, cannon-es rigid-body physics, 3D Object Collision Solver (Momentum Conservation, Newton Third Law, Elastic/Inelastic/Perfectly Inelastic) & @tweenjs/tween.js camera interpolation',
       'Multi-Region Persistence Quorum across 3 regional clusters (us-east-solara-1, eu-central-valhalla-1, ap-southeast-celestia-1)',
       'Live WebGL2 applyCrossPlatformPipeline mutates THREE.LOD distances, InstancedMesh.count (800 vs 320) & material normalScale/bumpScale',
+      'Platform-Aware HUD Icon & Typography Scaling (src/game/hudPlatformScale.ts) enforces 1.15x Mobile Readability (>=48px touch targets) vs 1.0x PC/Console Precision',
       'Simulated metadata (BC7/ASTC import overrides, 68.4GB/640MB bundle manifests, C++20 reference headers) clearly separated from browser runtime',
     ],
   });
