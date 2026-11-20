@@ -162,6 +162,7 @@ interface GameCanvasProps {
   onForwardBlink?: (facingAngleRad: number) => void;
   onShiftClickTeleport?: (x: number, y: number, z: number) => void;
   fetchedBoundaryKeys?: readonly string[];
+  onCameraYawChange?: (yawRad: number) => void;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -194,6 +195,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onForwardBlink,
   onShiftClickTeleport,
   fetchedBoundaryKeys = [],
+  onCameraYawChange,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -228,6 +230,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onForwardBlink,
     onShiftClickTeleport,
     fetchedBoundaryKeys,
+    onCameraYawChange,
   });
 
   useEffect(() => {
@@ -261,6 +264,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       onForwardBlink,
       onShiftClickTeleport,
       fetchedBoundaryKeys,
+      onCameraYawChange,
     };
   }, [
     castleLevel,
@@ -292,6 +296,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onForwardBlink,
     onShiftClickTeleport,
     fetchedBoundaryKeys,
+    onCameraYawChange,
   ]);
 
   useEffect(() => {
@@ -683,6 +688,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const dx = e.clientX - prevMouseX;
       prevMouseX = e.clientX;
       cameraOrbitAngle -= dx * 0.006;
+      propsRef.current.onCameraYawChange?.(cameraOrbitAngle);
     };
     const onMouseUp = () => {
       isDragging = false;

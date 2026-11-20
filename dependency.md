@@ -142,5 +142,5 @@ All 10 automated workflows under `.github/workflows/` are tracked by [`.github/d
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
 npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 & @types/node@22.20.5 intentionally pinned for Node 22 LTS)
-npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 218 tests (37 suites) & Vite build
+npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 221 tests (38 suites) & Vite build
 ```

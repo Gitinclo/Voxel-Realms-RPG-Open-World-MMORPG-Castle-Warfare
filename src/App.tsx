@@ -55,6 +55,7 @@ import { applyTroopPromotion } from './game/troopTraining';
 import { applySkinToHero, HERO_SKIN_CATALOG, HeroSkinId } from './game/heroSkins';
 import { sound } from './game/audio';
 import { detectInitialTargetPlatform } from './game/hudPlatformScale';
+import { useSpatialAudioCues } from './hooks/useSpatialAudioCues';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
@@ -377,6 +378,7 @@ export default function App() {
   const [leaderboard] = useState<LeaderboardEntry[]>(INITIAL_LEADERBOARD);
   const [selectedNpcId, setSelectedNpcId] = useState<string>(INITIAL_NPCS[0].id);
   const playerWorldPosRef = useRef<{ x: number; z: number }>({ x: 0, z: 18 });
+  const cameraYawRef = useRef<number>(0);
   const [hudPlayerCoords, setHudPlayerCoords] = useState<{ x: number; z: number }>({
     x: 0,
     z: 18,
@@ -634,6 +636,25 @@ export default function App() {
   const godImmunity = evaluateGodCharacterImmunity(activeAccountEmail, godmode);
   const godFlightPermission = evaluateGodFlightPermission(activeAccountEmail, godmode);
   const godTeleportPermission = evaluateGodTeleportPermission(activeAccountEmail, godmode);
+
+  useSpatialAudioCues({
+    monsters,
+    resourceNodes,
+    getListenerPosition: () => ({
+      x: playerWorldPosRef.current.x,
+      y: isFlying && godFlightPermission.allowed ? flightAltitude : 0,
+      z: playerWorldPosRef.current.z,
+    }),
+    getListenerYawRad: () => cameraYawRef.current,
+    enabled: gameState === 'playing' && !isMuted,
+    onCueTriggered: (event) => {
+      if (event.kind === 'resource_node_full') {
+        setToastMessage(
+          `🔔 Nearby ${event.resourceType.toUpperCase()} Node Lv.${event.level} reached full capacity (${Math.round(event.spatial.distance)}m)!`
+        );
+      }
+    },
+  });
 
   const handleToggleFlight = useCallback(() => {
     const perm = evaluateGodFlightPermission(activeAccountEmail, godmode);
@@ -1013,14 +1034,14 @@ export default function App() {
     return () => clearInterval(qiInterval);
   }, [weather, clan.activeBuffs, vipCultivationBonusPct]);
 
-  // Continuous Gathering Loop with Weather & VIP Multiplier
+  // Continuous Gathering & Idle Replenishment Loop with Weather & VIP Multiplier
   useEffect(() => {
     const gatherInterval = setInterval(() => {
       setResourceNodes((prev) => {
-        let hasMined = false;
+        let hasUpdated = false;
         const updated = prev.map((node) => {
           if (node.assignedTroops > 0n && node.remainingCapacity > 0n) {
-            hasMined = true;
+            hasUpdated = true;
             const weatherRate = calculateWeatherGatherRate(
               node.gatherRatePerSec,
               node.type,
@@ -1038,9 +1059,19 @@ export default function App() {
               remainingCapacity: node.remainingCapacity - actualMined,
             };
           }
+          if (node.assignedTroops === 0n && node.remainingCapacity < node.totalCapacity) {
+            hasUpdated = true;
+            const regenStep = node.gatherRatePerSec > 0n ? node.gatherRatePerSec : 1n;
+            const nextRemaining = node.remainingCapacity + regenStep;
+            return {
+              ...node,
+              remainingCapacity:
+                nextRemaining > node.totalCapacity ? node.totalCapacity : nextRemaining,
+            };
+          }
           return node;
         });
-        return hasMined ? updated : prev;
+        return hasUpdated ? updated : prev;
       });
     }, 2000);
     return () => clearInterval(gatherInterval);
@@ -2860,6 +2891,9 @@ export default function App() {
         onForwardBlink={(facingRad) => handleForwardBlink(facingRad)}
         onShiftClickTeleport={(x, y, z) => handleTeleportToCoordinates(x, y, z)}
         fetchedBoundaryKeys={fetchedBoundaryKeys}
+        onCameraYawChange={(yawRad) => {
+          cameraYawRef.current = yawRad;
+        }}
       />
 
       {/* Floating Notification Toast */}
