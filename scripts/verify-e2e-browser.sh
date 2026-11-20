@@ -158,11 +158,18 @@ STEP2_OUT="$(playwright-cli -s="${SESSION_NAME}" run-code 'async (page) => {
 
   const captureModal = async (filePath) => {
     await page.evaluate(async () => {
+      if (!document.getElementById("e2e-deterministic-snapshot-style")) {
+        const style = document.createElement("style");
+        style.id = "e2e-deterministic-snapshot-style";
+        style.textContent = "*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; caret-color: transparent !important; }";
+        document.head.appendChild(style);
+      }
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
       const toast = document.querySelector("[data-testid=\"app-toast-notification\"]");
       if (toast) toast.style.visibility = "hidden";
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     });
     const clip = await page.evaluate(() => {
       const vw = window.innerWidth;

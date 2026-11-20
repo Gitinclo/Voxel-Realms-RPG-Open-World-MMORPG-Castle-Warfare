@@ -2,7 +2,7 @@
 
 - **Application**: Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)
 - **Sovereign Root Owner & Lead Architect**: [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com)
-- **Enforcement Gate**: `npm run validate` (`lockfile:verify` + `lint` + `lint:rules` + `format:check` + `test` [`217` tests across `37` test files] + `build`)
+- **Enforcement Gate**: `npm run validate` (`lockfile:verify` + `lint` + `lint:rules` + `format:check` + `test` [`218` tests across `37` test files] + `build`)
 
 ---
 

@@ -91,3 +91,60 @@ test('comparePngScreenshots rejects dimension mismatches and computeVisualVarian
   assert.equal(tolerated.passed, true);
   assert.equal(tolerated.diffPixels, 100);
 });
+
+test('comparePngScreenshots absorbs 1-2px subpixel font/stroke shifts while still rejecting real visual regressions', () => {
+  // Create a 40x20 dark frame with thin vertical white glyph strokes
+  const buildGlyphFrame = (dx: number, blockColor?: [number, number, number, number]) => {
+    const w = 40;
+    const h = 20;
+    const rgba = new Uint8Array(w * h * 4);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        const isStroke = y >= 4 && y < 16 && (x === 8 + dx || x === 16 + dx || x === 24 + dx);
+        const inColorBlock = blockColor && x >= 10 && x < 26 && y >= 4 && y < 16;
+        const px: [number, number, number, number] = inColorBlock
+          ? blockColor
+          : isStroke
+            ? [240, 240, 240, 255]
+            : [15, 23, 42, 255];
+        rgba[idx] = px[0];
+        rgba[idx + 1] = px[1];
+        rgba[idx + 2] = px[2];
+        rgba[idx + 3] = px[3];
+      }
+    }
+    return encodeRgbaPng(w, h, rgba);
+  };
+
+  const baseline = buildGlyphFrame(0);
+  const shifted1px = buildGlyphFrame(1);
+
+  // Strict exact-pixel comparison flags the 1px stroke shift (~9% diff)
+  const strictRes = comparePngScreenshots(shifted1px, baseline, {
+    channelTolerance: 36,
+    maxDiffPixelRatio: 0.05,
+  });
+  assert.equal(strictRes.passed, false);
+
+  // Bidirectional subpixel shift tolerance + AA edge filter absorbs the 1px glyph shift
+  const perceptualRes = comparePngScreenshots(shifted1px, baseline, {
+    channelTolerance: 36,
+    maxDiffPixelRatio: 0.05,
+    subpixelShiftRadiusPx: 2,
+    ignoreAntialiased: true,
+  });
+  assert.equal(perceptualRes.passed, true);
+  assert.equal(perceptualRes.diffPixels, 0);
+
+  // Real regression (a red block replacing part of the modal) MUST STILL FAIL
+  const realRegression = buildGlyphFrame(0, [220, 40, 40, 255]);
+  const regressionRes = comparePngScreenshots(realRegression, baseline, {
+    channelTolerance: 36,
+    maxDiffPixelRatio: 0.05,
+    subpixelShiftRadiusPx: 2,
+    ignoreAntialiased: true,
+  });
+  assert.equal(regressionRes.passed, false);
+  assert.ok(regressionRes.diffRatio > 0.2);
+});

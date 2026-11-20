@@ -4,14 +4,14 @@
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-217_Passing_(37_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-218_Passing_(37_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`217` unit/security/DB tests across `37` test files, `109` cross-system architectural invariants + `package-lock.json` / `bun.lock` integrity verification), multi-stage Docker builds, `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, production God-mode isolation, server-authoritative economy `/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` + `403`/`400`/`429` anti-mint guards, `50` simultaneous multi-sector WebSocket peers across `A1/B2/C3/D4` @ `20Hz`, and `.bak` crash recovery), and `npm run verify:e2e` (headless Chromium E2E checks + fail-closed visual screenshot comparison against git-versioned `e2e/baselines/`). Before public MMO launch or real-money billing, live managed PostgreSQL + Redis pub/sub deployment, distributed soak testing, external security review, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
+> **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`218` unit/security/DB tests across `37` test files, `109` cross-system architectural invariants + `package-lock.json` / `bun.lock` integrity verification), multi-stage Docker builds, `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, production God-mode isolation, server-authoritative economy `/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` + `403`/`400`/`429` anti-mint guards, `50` simultaneous multi-sector WebSocket peers across `A1/B2/C3/D4` @ `20Hz`, and `.bak` crash recovery), and `npm run verify:e2e` (headless Chromium E2E checks + fail-closed visual screenshot comparison against git-versioned `e2e/baselines/`). Before public MMO launch or real-money billing, live managed PostgreSQL + Redis pub/sub deployment, distributed soak testing, external security review, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
 A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
 
@@ -490,7 +490,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **217 automated tests across 37 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`):
+Execute all **218 automated tests across 37 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -501,7 +501,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 
 | Command                                   | Verification Scope                                                                                                                                                                                                       |
 | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `217` tests + `vite build`)                                                                            |
+| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `218` tests + `vite build`)                                                                            |
 | `npm run verify:ops`                      | Isolated live production server verification (`/healthz`, `/readyz`, Prometheus `/metrics`, God-mode isolation, authoritative economy mutations + `5%` tax, `50` live `20Hz` WS peers, `.bak` failover, `SIGTERM` drain) |
 | `npm run verify:e2e`                      | Real headless Chromium E2E checks (3D WebGL canvas, reload persistence, mobile `390×844` layout, fail-closed auth `401`, authoritative economy + WS + 6 key modal visual regression baselines in `e2e/baselines/`)       |
 | `npm run lockfile:verify`                 | Verifies `package.json`, `package-lock.json`, and `bun.lock` dependency parity                                                                                                                                           |
@@ -762,7 +762,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **217 unit, security, DB transaction, lockfile, visual diff, and regression tests across 37 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **218 unit, security, DB transaction, lockfile, visual diff, and regression tests across 37 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -785,7 +785,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`217/217 Passing` across 37 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`218/218 Passing` across 37 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
@@ -837,7 +837,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 217 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (37 test files)
+npm test                      # 4. Run all 218 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (37 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
 ```
@@ -857,7 +857,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)          | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                    | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)                  | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 217 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 218 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -879,7 +879,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 217 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 37 TypeScript test files (`109` cross-system invariants)
+- [x] `npm test` passes all 218 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 37 TypeScript test files (`109` cross-system invariants)
 - [x] `npm run validate`, `npm run verify:ops`, and `npm run verify:e2e` pass cleanly against isolated production servers and headless Chromium (`6` modal baselines)
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] Multi-stage non-root `Dockerfile`, `.dockerignore`, `nginx.conf`, and `DEPLOYMENT.md` are up to date

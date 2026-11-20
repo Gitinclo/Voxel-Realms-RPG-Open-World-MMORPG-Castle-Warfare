@@ -26,6 +26,21 @@ export interface VisualDiffOptions {
    * and non-overlapping edge pixels are counted as diffs. Default: 0 (exact dimensions required).
    */
   maxDimensionDeltaPx?: number;
+  /**
+   * Optional bidirectional pixel-shift radius (in CSS pixels, e.g. 1 or 2) to absorb subpixel
+   * FreeType/Skia font hinting and kerning shifts across OS/Chromium versions.
+   * A differing pixel (x, y) is treated as subpixel drift ONLY when BOTH:
+   *  - actual(x, y) matches a baseline pixel within [-r, +r], AND
+   *  - baseline(x, y) matches an actual pixel within [-r, +r].
+   * Real color changes, missing cards, blank frames, or large layout shifts still fail. Default: 0.
+   */
+  subpixelShiftRadiusPx?: number;
+  /**
+   * When true, skips single-pixel anti-aliased glyph/border edge halos (following Vysniauskas /
+   * pixelmatch edge criteria) so cross-OS subpixel font smoothing does not cause false failures.
+   * Default: false.
+   */
+  ignoreAntialiased?: boolean;
 }
 
 export interface VisualDiffResult {
@@ -216,6 +231,132 @@ export function computeVisualVarianceRatio(decoded: DecodedPng): number {
   return nonMatching / totalPixels;
 }
 
+function pixelsMatchWithinTolerance(
+  rgbaA: Uint8Array,
+  idxA: number,
+  rgbaB: Uint8Array,
+  idxB: number,
+  tol: number
+): boolean {
+  return (
+    Math.abs(rgbaA[idxA] - rgbaB[idxB]) <= tol &&
+    Math.abs(rgbaA[idxA + 1] - rgbaB[idxB + 1]) <= tol &&
+    Math.abs(rgbaA[idxA + 2] - rgbaB[idxB + 2]) <= tol &&
+    Math.abs(rgbaA[idxA + 3] - rgbaB[idxB + 3]) <= tol
+  );
+}
+
+function hasMatchingPixelInNeighborhood(
+  srcRgba: Uint8Array,
+  srcIdx: number,
+  target: DecodedPng,
+  x: number,
+  y: number,
+  radius: number,
+  tol: number
+): boolean {
+  const minY = Math.max(0, y - radius);
+  const maxY = Math.min(target.height - 1, y + radius);
+  const minX = Math.max(0, x - radius);
+  const maxX = Math.min(target.width - 1, x + radius);
+  for (let ny = minY; ny <= maxY; ny++) {
+    const rowOffset = ny * target.width;
+    for (let nx = minX; nx <= maxX; nx++) {
+      if (nx === x && ny === y) continue;
+      if (pixelsMatchWithinTolerance(srcRgba, srcIdx, target.rgba, (rowOffset + nx) * 4, tol)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function lumaAt(rgba: Uint8Array, idx: number): number {
+  return rgba[idx] * 0.299 + rgba[idx + 1] * 0.587 + rgba[idx + 2] * 0.114;
+}
+
+function hasManySiblings(img: DecodedPng, x: number, y: number): boolean {
+  const minX = Math.max(0, x - 1);
+  const maxX = Math.min(img.width - 1, x + 1);
+  const minY = Math.max(0, y - 1);
+  const maxY = Math.min(img.height - 1, y + 1);
+  const centerIdx = (y * img.width + x) * 4;
+  let zeroes = x === minX || x === maxX || y === minY || y === maxY ? 1 : 0;
+
+  for (let ny = minY; ny <= maxY; ny++) {
+    for (let nx = minX; nx <= maxX; nx++) {
+      if (nx === x && ny === y) continue;
+      const idx = (ny * img.width + nx) * 4;
+      if (
+        img.rgba[idx] === img.rgba[centerIdx] &&
+        img.rgba[idx + 1] === img.rgba[centerIdx + 1] &&
+        img.rgba[idx + 2] === img.rgba[centerIdx + 2] &&
+        img.rgba[idx + 3] === img.rgba[centerIdx + 3]
+      ) {
+        zeroes++;
+        if (zeroes > 2) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Detects anti-aliased edge pixels (Vysniauskas 2009 / pixelmatch heuristic):
+ * returns true if (x, y) sits on a 1px high-contrast glyph/stroke edge in imgA
+ * whose darkest or brightest 3x3 neighbor is part of a solid region in both images.
+ */
+function isAntialiasedEdgePixel(imgA: DecodedPng, x: number, y: number, imgB: DecodedPng): boolean {
+  const minX = Math.max(0, x - 1);
+  const maxX = Math.min(imgA.width - 1, x + 1);
+  const minY = Math.max(0, y - 1);
+  const maxY = Math.min(imgA.height - 1, y + 1);
+  const centerIdx = (y * imgA.width + x) * 4;
+  const centerLuma = lumaAt(imgA.rgba, centerIdx);
+
+  let zeroes = x === minX || x === maxX || y === minY || y === maxY ? 1 : 0;
+  let minDelta = 0;
+  let maxDelta = 0;
+  let minXPos = x;
+  let minYPos = y;
+  let maxXPos = x;
+  let maxYPos = y;
+
+  for (let ny = minY; ny <= maxY; ny++) {
+    for (let nx = minX; nx <= maxX; nx++) {
+      if (nx === x && ny === y) continue;
+      const idx = (ny * imgA.width + nx) * 4;
+      const delta = lumaAt(imgA.rgba, idx) - centerLuma;
+      if (Math.abs(delta) < 1) {
+        zeroes++;
+        if (zeroes > 2) return false;
+      } else if (delta < minDelta) {
+        minDelta = delta;
+        minXPos = nx;
+        minYPos = ny;
+      } else if (delta > maxDelta) {
+        maxDelta = delta;
+        maxXPos = nx;
+        maxYPos = ny;
+      }
+    }
+  }
+
+  if (minDelta === 0 || maxDelta === 0) return false;
+
+  const minInBoundsB = minXPos < imgB.width && minYPos < imgB.height;
+  const maxInBoundsB = maxXPos < imgB.width && maxYPos < imgB.height;
+
+  return (
+    (minInBoundsB &&
+      hasManySiblings(imgA, minXPos, minYPos) &&
+      hasManySiblings(imgB, minXPos, minYPos)) ||
+    (maxInBoundsB &&
+      hasManySiblings(imgA, maxXPos, maxYPos) &&
+      hasManySiblings(imgB, maxXPos, maxYPos))
+  );
+}
+
 /**
  * Compares two PNG screenshot buffers pixel-by-pixel and returns a diff PNG highlighting
  * changed pixels in high-contrast magenta whenever differences exist.
@@ -228,6 +369,8 @@ export function comparePngScreenshots(
   const channelTolerance = options.channelTolerance ?? 18;
   const maxDiffPixelRatio = options.maxDiffPixelRatio ?? 0.03;
   const maxDimensionDeltaPx = Math.max(0, options.maxDimensionDeltaPx ?? 0);
+  const subpixelShiftRadiusPx = Math.max(0, Math.floor(options.subpixelShiftRadiusPx ?? 0));
+  const ignoreAntialiased = options.ignoreAntialiased === true;
 
   const actual = decodePngBuffer(actualBuffer);
   const baseline = decodePngBuffer(baselineBuffer);
@@ -274,17 +417,49 @@ export function comparePngScreenshots(
 
       const aIdx = (y * actual.width + x) * 4;
       const bIdx = (y * baseline.width + x) * 4;
-      const dr = Math.abs(actual.rgba[aIdx] - baseline.rgba[bIdx]);
-      const dg = Math.abs(actual.rgba[aIdx + 1] - baseline.rgba[bIdx + 1]);
-      const db = Math.abs(actual.rgba[aIdx + 2] - baseline.rgba[bIdx + 2]);
-      const da = Math.abs(actual.rgba[aIdx + 3] - baseline.rgba[bIdx + 3]);
+      let isDifferent = !pixelsMatchWithinTolerance(
+        actual.rgba,
+        aIdx,
+        baseline.rgba,
+        bIdx,
+        channelTolerance
+      );
 
-      if (
-        dr > channelTolerance ||
-        dg > channelTolerance ||
-        db > channelTolerance ||
-        da > channelTolerance
-      ) {
+      if (isDifferent && subpixelShiftRadiusPx > 0) {
+        const shiftedMatch =
+          hasMatchingPixelInNeighborhood(
+            actual.rgba,
+            aIdx,
+            baseline,
+            x,
+            y,
+            subpixelShiftRadiusPx,
+            channelTolerance
+          ) &&
+          hasMatchingPixelInNeighborhood(
+            baseline.rgba,
+            bIdx,
+            actual,
+            x,
+            y,
+            subpixelShiftRadiusPx,
+            channelTolerance
+          );
+        if (shiftedMatch) {
+          isDifferent = false;
+        }
+      }
+
+      if (isDifferent && ignoreAntialiased) {
+        if (
+          isAntialiasedEdgePixel(actual, x, y, baseline) ||
+          isAntialiasedEdgePixel(baseline, x, y, actual)
+        ) {
+          isDifferent = false;
+        }
+      }
+
+      if (isDifferent) {
         diffPixels++;
         diffRgba[dstIdx] = 255;
         diffRgba[dstIdx + 1] = 0;

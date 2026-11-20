@@ -173,6 +173,8 @@ for (const spec of playwrightConfig.keyModalSnapshots) {
     channelTolerance: 36,
     maxDimensionDeltaPx: 16,
     maxDiffPixelRatio: spec.maxDiffPixelRatio,
+    subpixelShiftRadiusPx: 2,
+    ignoreAntialiased: true,
   });
 
   fs.copyFileSync(baselinePath, path.join(DIFF_DIR, `${spec.id}-expected.png`));
