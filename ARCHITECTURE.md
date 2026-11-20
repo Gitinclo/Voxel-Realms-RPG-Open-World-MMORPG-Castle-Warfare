@@ -210,7 +210,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **222 automated tests across 38 TypeScript test files** (`32` `src/game/*.test.ts` suites + `4` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **224 automated tests across 39 TypeScript test files** (`33` `src/game/*.test.ts` suites + `4` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

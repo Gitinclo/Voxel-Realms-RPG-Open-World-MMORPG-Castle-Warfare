@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { sound } from '../game/audio';
 import { PRIMARY_ADMIN_EMAIL } from '../game/adminModeration';
+import { GAME_LAUNCH_DATE_DISPLAY } from '../game/launchSchedule';
 import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface TitleScreenProps {
@@ -129,11 +130,13 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         {/* Left: Version Emblem */}
         <div
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950/90 border border-amber-500/35 text-amber-300 text-[11px] font-mono font-bold shrink-0"
-          title="v1.5.0 (17/11/2026) · SOFTWARE & HARDWARE ARCHITECT OPTIMIZED · 245K PBR + HDR"
+          title={`v1.5.0 · Launch Date: ${GAME_LAUNCH_DATE_DISPLAY} · 245K PBR + HDR`}
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span>v1.5.0</span>
-          <span className="hidden xl:inline text-amber-200/80">· 245K PBR + HDR</span>
+          <span className="hidden sm:inline text-amber-200/80">
+            · Launch {GAME_LAUNCH_DATE_DISPLAY}
+          </span>
         </div>
 
         {/* Desktop Single-Row Quick Actions + Secondary Systems Popover */}
@@ -474,9 +477,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             </div>
             <div
               className="text-[10px] text-amber-300/80 truncate"
-              title={`The White Page / House of Ideas (${PRIMARY_ADMIN_EMAIL})`}
+              title={`Target Launch: ${GAME_LAUNCH_DATE_DISPLAY} · The White Page / House of Ideas (${PRIMARY_ADMIN_EMAIL})`}
             >
-              The White Page / House of Ideas · {PRIMARY_ADMIN_EMAIL}
+              Launch Date: {GAME_LAUNCH_DATE_DISPLAY} · {PRIMARY_ADMIN_EMAIL}
             </div>
           </div>
         </div>
@@ -508,7 +511,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                   Realm Systems &amp; Archives
                 </h2>
                 <p className="text-[10px] font-mono text-slate-400">
-                  v1.5.0 (17/11/2026) · 245K PBR + HDR
+                  v1.5.0 · Launch {GAME_LAUNCH_DATE_DISPLAY} · 245K PBR + HDR
                 </p>
               </div>
               <button

@@ -3,7 +3,8 @@
 This document outlines the high-level vision, engineering milestones, and upcoming feature releases for **Voxel Realms RPG: Open World MMORPG & Castle Warfare**.
 
 - **Project Lead / Supreme Administrator:** [creatergame31@gmail.com](mailto:creatergame31@gmail.com)
-- **Active Source Version (`package.json`):** `1.5.0` (`17/11/2026` · **Pre-Release / Untagged Source** — **0 published GitHub Releases exist yet**; validated via CI workflow artifacts and awaiting formal `v*.*.*` Git tag publication via [`.github/workflows/release.yml`](./.github/workflows/release.yml))
+- **Target Public Game Launch Date:** **`30/03/2030`** (`2030-03-30`, defined in `src/game/launchSchedule.ts`)
+- **Active Source Version (`package.json`):** `1.5.0` (`20/11/2026` · **Pre-Release / Untagged Source** — **0 published GitHub Releases exist yet**; validated via CI workflow artifacts and awaiting formal `v*.*.*` Git tag publication via [`.github/workflows/release.yml`](./.github/workflows/release.yml))
 - **Architecture Principle:** All roadmap milestones strictly follow the **Architect-First** and **Decoupled Pure-Logic (`src/game/*.ts`) + Unit-Tested (`src/game/*.test.ts`)** guardrails defined in [`ARCHITECTURE.md`](./ARCHITECTURE.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
@@ -54,11 +55,13 @@ This document outlines the high-level vision, engineering milestones, and upcomi
 - **Dynamic Seasonal & Celestial Events**:
   - Blood Moon Eclipse, Nine-Heavens Astral Tide, and Primordial Chaos Rifts that dynamically alter monster AI brackets and cultivation comprehension rates.
 
-#### Phase 4: `v2.0.0` — Native C++20 / Vulkan Desktop & Mobile Addressable Release (Q4 2027)
+#### Phase 4: `v2.0.0` — Public Game Launch & Native C++20 / Vulkan Distribution (`30/03/2030`)
 
-- **Native C++20 SIMD Shared Simulation Core (`cpp/`)**:
+- **Official Public Game Launch (`30/03/2030`):**
+  - Full public launch after completing private staging verification, external playtesting, distributed soak/recovery drills, independent security review, and cross-store PII deletion validation.
+- **Native C++20 SIMD Shared Simulation Core (`cpp/`):**
   - Full WebAssembly (Wasm SIMD128) and native C++20 compilation of the ECS combat, A\* pathfinding, and cultivation suppression engines (`CMakeLists.txt` + `vcpkg.json`).
-- **Steamworks, Google Play & iOS Production Distribution**:
+- **Steamworks, Google Play & iOS Production Distribution:**
   - Cloud save synchronization, cross-device account linking, and regional siege matchmaking clusters.
 
 ---

@@ -1,24 +1,26 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
 **Last Updated & Validated:** `20/11/2026`  
+**Target Game Launch Date:** `30/03/2030` (`2030-03-30`)  
 **Status:** `Active / Verified` (Pre-Production Prototype · `v1.5.0`)
 
 [![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./badges.md#remaining-pre-production-launch-gates-honest-status)
+[![Launch Date: 30/03/2030](https://img.shields.io/badge/Launch_Date-30%2F03%2F2030-0ea5e9?style=flat-square)](./ROADMAP.md)
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-222_Passing_(38_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-224_Passing_(39_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one Node.js process with simulated regional cluster profiles inside `server.ts`, plus optional Cloud SQL PostgreSQL and Cloud Firestore persistence). It is verified locally and in GitHub Actions via `npm run validate` (`222` unit/security/DB tests across `38` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch or paid billing, external staging deployment, playtest validation of the core 5-step loop, cross-store PII deletion drills, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
+> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one Node.js process with simulated regional cluster profiles inside `server.ts`, plus optional Cloud SQL PostgreSQL and Cloud Firestore persistence). It is verified locally and in GitHub Actions via `npm run validate` (`224` unit/security/DB tests across `39` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch (`30/03/2030`) or paid billing, external staging deployment, playtest validation of the core 5-step loop, cross-store PII deletion drills, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
-Current near-term target: **Single-Instance Playable Prototype → Small Live Beta** (freezing broad scope expansion until real players validate the core loop against these explicit targets):
+Current near-term target: **Single-Instance Playable Prototype → Small Live Beta** leading toward the **`30/03/2030`** public launch (freezing broad scope expansion until real players validate the core loop against these explicit targets):
 
 | Dimension                         | Target / Threshold                                                                                             | Current Verification Method                                                          |
 | :-------------------------------- | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
@@ -57,7 +59,7 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
 - **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `12.19.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
-- **Testing & Quality Tooling:** `tsx --test` (`221` tests across `38` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **Testing & Quality Tooling:** `tsx --test` (`224` tests across `39` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
 
 ## 📂 Repository Map
 
@@ -100,7 +102,7 @@ cp .env.example .env
 # 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
 npm run dev
 
-# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 221 Tests + Vite Build)
+# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 224 Tests + Vite Build)
 npm run validate
 
 # 5. Run live production operational readiness & headless Chromium E2E suites
@@ -723,7 +725,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
 │   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 32 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 33 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
@@ -757,6 +759,8 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── hudPlatformScale.ts        # Platform-aware HUD icon/text scaling (1.15x Mobile vs 1.0x PC/Console)
 │   │   ├── hudPlatformScale.test.ts   # Viewport/coarse-pointer detection & HUD scale profile unit tests
 │   │   ├── initialData.ts             # Deterministic seed data for heroes, clans, AI & nodes
+│   │   ├── launchSchedule.ts          # Official target game launch schedule (30/03/2030) & countdown helper
+│   │   ├── launchSchedule.test.ts     # Launch date (30/03/2030) & countdown snapshot unit tests
 │   │   ├── loreHistory.ts             # 7 Epochs, 12 Annals, Auto-Populating Codex & 10^100 Akashic Archive
 │   │   ├── loreHistory.test.ts        # Lore Codex, Dynastic Annals & 10^100 Akashic unit tests
 │   │   ├── marketplaceSparklineD3.ts  # D3 market sparklines & Bulk Trade Liquidity Score (0-100) engine
@@ -887,7 +891,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **222 unit, security, DB transaction, lockfile, visual diff, and regression tests across 38 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **224 unit, security, DB transaction, lockfile, visual diff, and regression tests across 39 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -910,7 +914,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`222/222 Passing` across 38 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`224/224 Passing` across 39 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
@@ -962,7 +966,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 222 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (38 test files)
+npm test                      # 4. Run all 224 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, launch schedule, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (39 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
 ```
