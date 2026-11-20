@@ -6,7 +6,7 @@
   "author": "Voxel Realms RPG Team <creatergame31@gmail.com>",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "type": "module",
   "scripts": {
@@ -29,7 +29,7 @@
     "validate": "npm run lockfile:verify && npm run lint && npm run lint:rules && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
-    "@google/genai": "2.32.0",
+    "@google/genai": "3.6.1",
     "@tailwindcss/vite": "4.3.5",
     "@tweenjs/tween.js": "25.0.0",
     "@types/canvas-confetti": "1.9.0",
@@ -40,14 +40,14 @@
     "cannon-es": "0.20.0",
     "canvas-confetti": "1.9.4",
     "d3": "7.9.2",
-    "dotenv": "17.4.2",
+    "dotenv": "18.0.10",
     "drizzle-kit": "0.31.11",
     "drizzle-orm": "0.45.4",
-    "express": "4.22.3",
+    "express": "5.3.0",
     "firebase": "12.19.0",
     "firebase-admin": "14.5.1",
-    "lucide-react": "0.546.0",
-    "motion": "12.43.0",
+    "lucide-react": "1.77.0",
+    "motion": "14.14.0",
     "pg": "8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -59,11 +59,11 @@
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "0.0.2",
-    "@types/express": "4.17.25",
+    "@types/express": "5.0.6",
     "@types/node": "22.20.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "autoprefixer": "10.6.2",
+    "autoprefixer": "10.7.0",
     "esbuild": "0.28.2",
     "eslint": "10.15.0",
     "playwright": "1.65.1",

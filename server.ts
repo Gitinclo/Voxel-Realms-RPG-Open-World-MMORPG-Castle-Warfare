@@ -2649,7 +2649,7 @@ async function startServer() {
     });
   } else {
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('/{*splat}', (req, res) => {
       if (req.path.startsWith('/api/')) {
         res.status(404).json({ ok: false, error: `Unknown API route: ${req.method} ${req.path}` });
         return;

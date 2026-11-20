@@ -1,5 +1,8 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
+**Last Updated & Validated:** `20/11/2026`  
+**Status:** `Active / Verified` (Pre-Production Prototype · `v1.5.0`)
+
 [![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./badges.md#remaining-pre-production-launch-gates-honest-status)
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
@@ -13,9 +16,112 @@
 
 > **Maturity & Release Status Notice (Pre-Production / Prototype):** There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch prototype milestone tracked in [`CHANGELOG.md`](./CHANGELOG.md), verified locally and in GitHub Actions via `npm run validate` (`218` unit/security/DB tests across `37` test files, `109` cross-system architectural invariants + `package-lock.json` / `bun.lock` integrity verification), multi-stage Docker builds, `npm run verify:ops` (live `/healthz`, `/readyz`, Prometheus `/metrics`, production God-mode isolation, server-authoritative economy `/api/online/economy/{events,castle-upgrade,purchase-troops,market-trade}` + `403`/`400`/`429` anti-mint guards, `50` simultaneous multi-sector WebSocket peers across `A1/B2/C3/D4` @ `20Hz`, and `.bak` crash recovery), and `npm run verify:e2e` (headless Chromium E2E checks + fail-closed visual screenshot comparison against git-versioned `e2e/baselines/`). Before public MMO launch or real-money billing, live managed PostgreSQL + Redis pub/sub deployment, distributed soak testing, external security review, and legal review remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)). Formal GitHub Releases are created via [`.github/workflows/release.yml`](./.github/workflows/release.yml) when a `v*.*.*` tag is pushed.
 
-A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
+---
 
-Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad, gesture navigation, collapsible Minimap, and **Platform-Aware HUD Icon & Typography Scaling [`1.15x` Mobile Readability vs `1.0x` PC/Console Precision]** via `src/game/hudPlatformScale.ts`) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Repeatable Cultivation-Scaled Daily Missions (`src/game/dailyMissions.ts`, `DailyMissionModal.tsx`)**, **3D Open-World Spatial BVH Raycasting (`three-mesh-bvh`), Multi-Octave Simplex Biome Heightmaps (`simplex-noise`), 3D Rigid-Body & Object Collision Physics (`cannon-es`, [`Physics.md`](./Physics.md)) & Camera Interpolation (`@tweenjs/tween.js`) (`src/game/openWorld3DEngine.ts`)**, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server, Server-Authoritative Anti-Cheat (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Dual-Tier Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **10-Article End User License Agreement (`EULA.md`) & Complete 10-Agreement Legal Stack (`LEGAL.md`, `src/game/eula.ts`, `EulaModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **100-Species / Race Character Creation, 3D Procedural Meshes & Admin (`creatergame31@gmail.com`) Permission Governance (`src/game/species.ts`, `CharacterCreationModal.tsx`)**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`17/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
+## 🤖 AI Agent Context & Guardrails
+
+_If you are an AI coding agent or contributor working on this repository, adhere strictly to these rules:_
+
+- **Architecture Pattern:** **Functional Core / Imperative Shell** ([`docs/adr/0001-record-architecture-decisions.md`](./docs/adr/0001-record-architecture-decisions.md)). Pure, deterministic domain logic and `BigInt` simulation kernels live in [`src/game/`](./src/game); React modals/overlays live in [`src/components/`](./src/components); the HTTP/WebSocket server lives in [`server.ts`](./server.ts). Never import Three.js DOM side effects inside pure math/validation modules or duplicate domain rules in UI components.
+- **Strict Constraints:**
+  - Never commit `.env` files, private keys, API keys, or Android signing keystores (`*.jks`, `*.keystore`).
+  - Always use `npm` (`package-lock.json`), and run `npm run lockfile:regenerate` + `bun install --lockfile-only` whenever [`package.json`](./package.json) changes so `npm run lockfile:verify` stays green.
+  - Keep `firebase@12.19.0` (with Node `22` `@firebase/*` overrides) and `@types/node@22.20.5` pinned to the Node `22` LTS baseline until runtime and CI migrate to Node `24.12+`.
+  - Keep `tsc --noEmit` strict checks (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`), `@firebase/eslint-plugin-security-rules`, and Prettier passing across all edits (`npm run validate`).
+  - Under Express `5.3.0` (`path-to-regexp` v8), always use named wildcard parameters (`/{*splat}`) rather than bare `*` in [`server.ts`](./server.ts).
+- **Source of Truth:**
+  - **PostgreSQL / Drizzle ORM Schemas:** [`src/db/schema.ts`](./src/db/schema.ts), [`src/db/drizzle.config.ts`](./src/db/drizzle.config.ts), [`src/db/index.ts`](./src/db/index.ts), [`src/db/economyRepository.ts`](./src/db/economyRepository.ts)
+  - **Firebase & Firestore Rules:** [`firebase-blueprint.json`](./firebase-blueprint.json), [`firestore.rules`](./firestore.rules), [`firebase-applet-config.json`](./firebase-applet-config.json), [`src/lib/firebase.ts`](./src/lib/firebase.ts)
+  - **HTTP API, RBAC & 20Hz `/ws/siege` WebSocket Server:** [`server.ts`](./server.ts), [`src/middleware/auth.ts`](./src/middleware/auth.ts), [`src/game/serverAuth.ts`](./src/game/serverAuth.ts), [`src/game/serverHardening.ts`](./src/game/serverHardening.ts)
+  - **EULA & Legal Compliance Matrices:** [`src/game/eula.ts`](./src/game/eula.ts), [`EULA.md`](./EULA.md), [`LEGAL.md`](./LEGAL.md)
+
+## 🛠 Verified Tech Stack
+
+Exact locked versions verified against [`package.json`](./package.json), [`package-lock.json`](./package-lock.json), and [`bun.lock`](./bun.lock) as of **`20/11/2026`**:
+
+- **Runtime:** Node.js `v22.23.2` (`engines.node >=22.0.0`; Docker `node:24-alpine`; native reference guardrails in C++20 via [`CMakeLists.txt`](./CMakeLists.txt) & [`vcpkg.json`](./vcpkg.json))
+- **Frontend Framework & Language:** React `19.3.1` (`react-dom@19.3.1`, `React.lazy` + `Suspense`), TypeScript `7.0.2` (strict), Vite `8.3.8` (`@vitejs/plugin-react@6.3.0`)
+- **3D WebGL2 & Data Visualization:** Three.js `0.187.0` (`@types/three@0.187.0`), `three-mesh-bvh@0.9.18`, `cannon-es@0.20.0`, `simplex-noise@4.0.3`, `@tweenjs/tween.js@25.0.0`, D3.js `7.9.2` (`@types/d3@7.4.3`)
+- **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
+- **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
+- **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `12.19.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
+- **Testing & Quality Tooling:** `tsx --test` (`218` tests across `37` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+
+## 📂 Repository Map
+
+```text
+├── src/
+│   ├── components/   # React 19 lazy-loaded UI modals, HUD overlays & Three.js GameCanvas
+│   ├── contexts/     # AuthContext.tsx (Firebase Auth & in-memory Google Workspace OAuth)
+│   ├── db/           # PostgreSQL + Drizzle ORM schemas, pg.Pool & ACID economy repository
+│   ├── game/         # Pure Functional Core simulation kernels, BigInt math & unit tests
+│   ├── lib/          # Firebase/Admin clients, Firestore sync, Gmail REST client & visual diff
+│   ├── middleware/   # Express 5 Firebase ID token authentication middleware (requireAuth)
+│   ├── types/        # Shared TypeScript interfaces & cosmic/siege/entity contracts
+│   ├── App.tsx       # Root state container, idle modal prefetcher & Suspense router
+│   ├── index.css     # Tailwind CSS v4 global stylesheet (@import "tailwindcss")
+│   └── main.tsx      # React SPA entry point wrapped in AuthProvider
+├── cpp/              # C++20 SIMD/SoA reference headers & CTest guardrail unit tests
+├── docs/             # Architecture Decision Records (adr/) & RFC templates (rfcs/)
+├── e2e/baselines/    # 6 git-versioned Playwright PNG visual regression modal baselines
+├── scripts/          # verify-readiness.ts, verify-e2e-browser.sh, compare-modal-screenshots.ts, regenerate-lockfile.mjs
+├── .github/          # 10 GitHub Actions workflows (Node 22), Dependabot, CODEOWNERS & templates
+├── server.ts         # Express 5.3.0 HTTP API, /metrics, RBAC & RFC 6455 20Hz /ws/siege server
+├── firestore.rules   # Default-deny Cloud Firestore security rules + Dirty Dozen test target
+├── package.json      # Authoritative dependency versions, engines (>=22.0.0) & npm scripts
+├── .env.example      # Required & optional environment variable template (fail-closed secrets)
+└── README.md         # System & AI agent documentation hub (Last Updated: 20/11/2026)
+```
+
+## ⚡ Quickstart & Commands
+
+All commands below have been validated on **`20/11/2026`**:
+
+```bash
+# 1. Install dependencies (Node.js >= 22.0.0)
+npm install
+
+# 2. Configure mandatory environment secrets (set non-placeholder VOXEL_SESSION_SECRET & VOXEL_ADMIN_PASSKEY)
+cp .env.example .env
+
+# 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
+npm run dev
+
+# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 218 Tests + Vite Build)
+npm run validate
+
+# 5. Run live production operational readiness & headless Chromium E2E suites
+npm run verify:ops && npm run verify:e2e
+```
+
+## 🔐 Environment Variables
+
+| Variable                         | Required | Description                                                                                      | Example                                                  |
+| :------------------------------- | :------: | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`)                                    | `3000`                                                   |
+| `NODE_ENV`                       |    No    | Runtime mode (`development`, `production`, or `test`)                                            | `development`                                            |
+| `GEMINI_API_KEY`                 |    No    | Optional Gemini API key injected in hosted environments or `.env`                                | `your-gemini-api-key-here`                               |
+| `APP_URL`                        |    No    | Canonical base URL used for redirects, origin checks & self-links                                | `http://localhost:3000`                                  |
+| `VOXEL_SESSION_SECRET`           | **Yes**  | CSPRNG secret (`>=32` chars prod, `>=16` chars dev) for HMAC-SHA256 cookies; server fails closed | `replace-with-at-least-32-char-csprng-secret`            |
+| `VOXEL_ADMIN_PASSKEY`            | **Yes**  | Operator passkey (`>=12` chars) for `POST /api/auth/admin-login`; server fails closed            | `replace-with-strong-operator-passkey`                   |
+| `VOXEL_ALLOW_PRODUCTION_GODMODE` |    No    | Must remain `"false"` in production unless staging support elevation is explicitly intended      | `"false"`                                                |
+| `VOXEL_DATA_DIR`                 |    No    | Directory for atomic `online_realm_state.json` + `.bak` crash-recovery saves (default `./data`)  | `./data`                                                 |
+| `VOXEL_API_WRITE_LIMIT_PER_MIN`  |    No    | Per-IP sliding-window write rate limit for mutating API routes (default `120`)                   | `120`                                                    |
+| `DISABLE_HMR`                    |    No    | Set `"true"` to disable Vite HMR file watchers and WebSocket upgrade interference                | `"true"`                                                 |
+| `ALLOW_PREVIEW_IFRAME`           |    No    | Set `"true"` when serving production builds inside embedded preview iframes                      | `"false"`                                                |
+| `DATABASE_URL`                   |    No    | Optional PostgreSQL connection URI (`src/db/index.ts`); overrides `SQL_*` fields when provided   | `postgresql://postgres:password@127.0.0.1:5432/voxel_db` |
+| `SQL_HOST`                       |    No    | Cloud SQL / PostgreSQL host (`src/db/index.ts`, `src/db/drizzle.config.ts`)                      | `127.0.0.1`                                              |
+| `SQL_USER`                       |    No    | PostgreSQL runtime username                                                                      | `postgres`                                               |
+| `SQL_PASSWORD`                   |    No    | PostgreSQL runtime password                                                                      | `replace-with-sql-password`                              |
+| `SQL_DB_NAME`                    |    No    | PostgreSQL database name                                                                         | `voxel_realms_db`                                        |
+| `SQL_ADMIN_USER`                 |    No    | PostgreSQL admin user used for Drizzle Kit schema migrations (`src/db/drizzle.config.ts`)        | `postgres`                                               |
+| `SQL_ADMIN_PASSWORD`             |    No    | PostgreSQL admin password used for Drizzle Kit schema migrations                                 | `replace-with-admin-sql-password`                        |
+
+---
+
+A high-performance, full-featured 3D Open-World MMORPG, Castle Warfare Strategy, and Four-Path Immortal Cultivation game built with **React 19** (`React.lazy` code-split modals), **Three.js**, **D3.js**, **TypeScript 7**, **Tailwind CSS v4**, and **Vite 8**, backed by a full-stack **Express 5 + RFC 6455 WebSocket** server, **Cloud SQL (PostgreSQL + Drizzle ORM)**, **Firebase Authentication & Cloud Firestore**, and **Google Workspace Gmail Dispatch**.
+
+Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch D-pad, gesture navigation, collapsible Minimap, and **Platform-Aware HUD Icon & Typography Scaling [`1.15x` Mobile Readability vs `1.0x` PC/Console Precision]** via `src/game/hudPlatformScale.ts`) with live WebGL2 procedural `MeshPhysicalMaterial` PBR textures (`256px` / `512px` / `1024px`), `UnrealBloomPass` + custom GLSL color-graded post-processing, 4-tier `THREE.LOD` chains & `InstancedMesh` foliage scaling, **Repeatable Cultivation-Scaled Daily Missions (`src/game/dailyMissions.ts`, `DailyMissionModal.tsx`)**, **3D Open-World Spatial BVH Raycasting (`three-mesh-bvh`), Multi-Octave Simplex Biome Heightmaps (`simplex-noise`), 3D Rigid-Body & Object Collision Physics (`cannon-es`, [`Physics.md`](./Physics.md)) & Camera Interpolation (`@tweenjs/tween.js`) (`src/game/openWorld3DEngine.ts`)**, **Authoritative 20Hz 50v50 WebSocket Castle Siege Server, Server-Authoritative Anti-Cheat (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) & Multi-Region Persistence (`server.ts`, `/ws/siege`, `/api/online/*`, `src/game/siegeNetProtocol.ts`)**, **Cloud SQL PostgreSQL + Drizzle ORM Persistence (`/api/db/*`, `src/db/`)**, **Firebase Auth Dual-Tier Google Sign-In & Real-Time Firestore Cloud Sync (`firestore.rules`, `firebase-blueprint.json`)**, **Gmail Dispatch Center (`src/lib/gmail.ts`, `GmailModal.tsx`)**, **10-Article End User License Agreement (`EULA.md`) & Complete 10-Agreement Legal Stack (`LEGAL.md`, `src/game/eula.ts`, `EulaModal.tsx`)**, **Server-Side HMAC-SHA256 Session Auth & Fail-Closed RBAC (`src/game/serverAuth.ts`, `/api/auth/*`, `/api/admin/*`)**, **100-Species / Race Character Creation, 3D Procedural Meshes & Admin (`creatergame31@gmail.com`) Permission Governance (`src/game/species.ts`, `CharacterCreationModal.tsx`)**, **6-Layer Cosmic Hierarchy & Cardinality Architecture (`COSMIC_LIMITS` & `InfiniteCollection<T>`: 1. Universe [`∞`] → 2. Multiverse [`∞`] → 3. Megaverse/Hyperverse [`∞`] → 4. Omniverse [`∞`] → 5. The Overvoid/Exonverse [`100` Fixed Cap] → 6. The White Page / The House of Ideas [`1` Singleton]), Interactive D3 Cosmological Tree Admin Visualizer (`CosmologicalAdminModal`) & Top 100 Fictional Species Background NPCs (`creatergame31@gmail.com`)**, **Auto-Populating Open-World Lore Codex (`Biomes` & `Lv. 1–1000 Monsters`), 12 Imperial Dynastic Annals, and `10^100`-Word (One Googol Words) Akashic Lore Stream**, **Software & Hardware Architect Compatibility & Optimization (`v1.5.0` · Validated `20/11/2026`)**, an explicit **Engineering Transparency Matrix (`6 Implemented`, `2 Simulated`, `0 Planned`)**, and full **Administration / GM / Moderator RBAC Control (`creatergame31@gmail.com`)**.
 
 ---
 
@@ -464,8 +570,8 @@ To ensure complete engineering clarity and prevent over-claiming what runs insid
 
 ### Prerequisites
 
-- **Node.js**: Version 20+ (Node.js 22 LTS recommended)
-- **Package Manager**: `npm`
+- **Node.js**: Version 22+ (`engines.node >=22.0.0`, validated on Node.js `v22.23.2` LTS)
+- **Package Manager**: `npm` (with synchronized [`package-lock.json`](./package-lock.json) and [`bun.lock`](./bun.lock))
 
 ### Installation
 
@@ -892,18 +998,18 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React 19 (with `React.lazy` & `Suspense` on-demand modal code-splitting)
-- **3D Graphics & Spatial Engine**: Three.js `0.187` (WebGL2 PBR + HDR Bloom + adaptive software fallback), `three-mesh-bvh` (`0.9.18` `MeshBVH` O(log N) raycasting), `simplex-noise` (`4.0.3` 2D/3D/4D procedural terrain/cavern synthesis), `cannon-es` (`0.20.0` 3D rigid-body physics, siege ballistics & 3-regime object collision solver [`Physics.md`](./Physics.md)), `@tweenjs/tween.js` (`25.0.0` camera & combat interpolation)
-- **Hierarchy & Data Visualization**: D3.js (`d3-hierarchy`, `d3-zoom`, `d3-selection`)
-- **Backend, Authoritative Anti-Cheat & Real-Time Networking**: Express 4 + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + Authoritative Anti-Cheat Engine (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
-- **Cloud Database & Auth**: Cloud SQL (PostgreSQL + Drizzle ORM), Firebase Authentication (`12.19.0`, Google Sign-In), Firebase Admin SDK (`14.5.1`), Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
-- **Workspace Integration**: Google Workspace Gmail REST v1 API (`src/lib/gmail.ts` + confirmation-gated `GmailModal.tsx`)
-- **Styling**: Tailwind CSS v4 (`4.3.5`)
-- **Language**: TypeScript 7 (Strict) & C++20 (`vcpkg.json`: `entt`, `fmt`, `glm`, `sdl2`, `bullet3`, `fastnoise2`, `recastnavigation`, `enet`, `lz4`, `gtest`)
-- **Bundler**: Vite 8 (`8.3.8` Rolldown vendor chunk splitting)
-- **Icons**: Lucide React
+- **Framework**: React `19.3.1` (with `React.lazy` & `Suspense` on-demand modal code-splitting + `motion@14.14.0`)
+- **3D Graphics & Spatial Engine**: Three.js `0.187.0` (WebGL2 PBR + HDR Bloom + adaptive software fallback), `three-mesh-bvh` (`0.9.18` `MeshBVH` O(log N) raycasting), `simplex-noise` (`4.0.3` 2D/3D/4D procedural terrain/cavern synthesis), `cannon-es` (`0.20.0` 3D rigid-body physics, siege ballistics & 3-regime object collision solver [`Physics.md`](./Physics.md)), `@tweenjs/tween.js` (`25.0.0` camera & combat interpolation)
+- **Hierarchy & Data Visualization**: D3.js (`7.9.2`: `d3-hierarchy`, `d3-zoom`, `d3-selection`)
+- **Backend, Authoritative Anti-Cheat & Real-Time Networking**: Express `5.3.0` (`/{*splat}` SPA fallback, `@types/express@5.0.6`) + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + `dotenv@18.0.10` + Authoritative Anti-Cheat Engine (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
+- **Cloud Database & Auth**: Cloud SQL (PostgreSQL `pg@8.23.1` + Drizzle ORM `0.45.4`), Firebase Authentication (`12.19.0`, pinned for Node `>=22.0.0`), Firebase Admin SDK (`14.5.1`), Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
+- **Workspace & AI SDK**: Google Workspace Gmail REST v1 API (`src/lib/gmail.ts` + confirmation-gated `GmailModal.tsx`) & `@google/genai@3.6.1`
+- **Styling**: Tailwind CSS v4 (`4.3.5`, `@tailwindcss/vite@4.3.5`, `autoprefixer@10.7.0`)
+- **Language**: TypeScript `7.0.2` (Strict) & C++20 (`vcpkg.json`: `entt`, `fmt`, `glm`, `sdl2`, `bullet3`, `fastnoise2`, `recastnavigation`, `enet`, `lz4`, `gtest`)
+- **Bundler**: Vite `8.3.8` (`@vitejs/plugin-react@6.3.0` Rolldown vendor chunk splitting)
+- **Icons**: Lucide React (`1.77.0`)
 - **Audio**: Web Audio API Procedural Synthesizer
-- **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`), ESLint (`@firebase/eslint-plugin-security-rules`), Prettier, `clang-tidy`, `clang-format`
+- **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`, Node `22`), ESLint `10.15.0` (`@firebase/eslint-plugin-security-rules@0.0.2`), Prettier `3.10.1`, Playwright `1.65.1`, `clang-tidy`, `clang-format`
 
 ---
 
@@ -927,7 +1033,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **[Four-Path Immortal Cultivation & Local Dev Guide (`Four-Path Cultivation.md`)](./Four-Path%20Cultivation.md)** — Complete 23-Realm × 9-Layer matrix across Qi, Body, Soul, and Mind, `100.0x` Realm Suppression math, Karma & Red-Name justice, Master-Disciple lineage, Getting Started workflow, and `.env.example` environment variable guide.
 - **[In-Game Economy & Marketplace Specification (`in-game- economy -marketplace.md`)](./in-game-%20economy%20-marketplace.md)** — Complete specification of the 8 core Kingdom & Cultivation currencies + Clan Honor Coins, lossless `BigInt` (`1,000T` troop / `1T` rally) ledger math, Marketplace & Auction House (`5%` escrow sink, soft-close anti-sniping, Jade Skill Scrolls), VIP discounts/stipends, and Root Creator Zero-Loss Economic Immunity (`creatergame31@gmail.com`).
 - **[Imperial Lore & Cosmological History Codex (`LORE.md`)](./LORE.md)** — Complete 6-Layer Cosmic Ontology (`COSMIC_LIMITS`: `1` White Page Singleton → `100` Overvoids → `∞` Realities), 7 Grand Historical Epochs (`Epoch Ω-0`–`VI`), 12 Imperial Dynastic Annals, Auto-Populating Open-World Lore Codex (`Biomes` & `Monsters`), and `10^100`-Word Akashic Archive.
-- **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, and architecture schemas (`v1.0.0` – `v1.5.0` · `17/11/2026`).
+- **[Changelog (`CHANGELOG.md`)](./CHANGELOG.md)** — Curated, chronologically ordered log of notable features, fixes, dependency upgrades, and architecture schemas (`v1.0.0` – `v1.5.0` · Validated `20/11/2026`).
 - **[Project Roadmap (`ROADMAP.md`)](./ROADMAP.md)** — High-level vision and upcoming milestones (`v1.5.0` Software & Hardware Architect, `v1.5.1` 50v50 WebSocket Sieges, `v1.6.0` Secret Realms, `v1.7.0` WebGPU Flocking, `v2.0.0` Native C++20/Vulkan).
 
 ### Support & Technical Guidance

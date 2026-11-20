@@ -36,10 +36,15 @@ export async function verifyFirebaseBearerToken(
   }
 }
 
-export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireAuth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const verified = await verifyFirebaseBearerToken(req.headers.authorization);
   if (!verified.ok) {
-    return res.status(401).json({ error: verified.error });
+    res.status(401).json({ error: verified.error });
+    return;
   }
   req.user = verified.decoded;
   next();

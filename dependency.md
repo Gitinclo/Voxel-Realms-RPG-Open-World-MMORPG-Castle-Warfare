@@ -1,7 +1,7 @@
 # 📦 Dependency Inventory & Supply-Chain Ledger (`dependency.md`)
 
-> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `17/11/2026`)  
-> **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service)
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `20/11/2026`)  
+> **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service) · **Engine:** Node.js `>=22.0.0`
 
 This document tracks every runtime dependency, development tool, transitive security override, and native C++20 package declared in [`package.json`](./package.json) and [`vcpkg.json`](./vcpkg.json).
 
@@ -9,53 +9,54 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 1. Node.js & Runtime Dependencies (`package.json`)
 
-| Package                  | Locked Version | Scope   | Architectural Purpose |
-| :----------------------- | :------------- | :------ | :-------------------- |
-| `@google/genai`          | `2.32.0`       | Runtime | Production dependency |
-| `@tailwindcss/vite`      | `4.3.5`        | Runtime | Production dependency |
-| `@tweenjs/tween.js`      | `25.0.0`       | Runtime | Production dependency |
-| `@types/canvas-confetti` | `1.9.0`        | Runtime | Production dependency |
-| `@types/d3`              | `7.4.3`        | Runtime | Production dependency |
-| `@types/pg`              | `8.23.1`       | Runtime | Production dependency |
-| `@types/three`           | `0.187.0`      | Runtime | Production dependency |
-| `@vitejs/plugin-react`   | `6.3.0`        | Runtime | Production dependency |
-| `cannon-es`              | `0.20.0`       | Runtime | Production dependency |
-| `canvas-confetti`        | `1.9.4`        | Runtime | Production dependency |
-| `d3`                     | `7.9.2`        | Runtime | Production dependency |
-| `dotenv`                 | `17.4.2`       | Runtime | Production dependency |
-| `drizzle-kit`            | `0.31.11`      | Runtime | Production dependency |
-| `drizzle-orm`            | `0.45.4`       | Runtime | Production dependency |
-| `express`                | `4.22.3`       | Runtime | Production dependency |
-| `firebase`               | `12.19.0`      | Runtime | Production dependency |
-| `firebase-admin`         | `14.5.1`       | Runtime | Production dependency |
-| `lucide-react`           | `0.546.0`      | Runtime | Production dependency |
-| `motion`                 | `12.43.0`      | Runtime | Production dependency |
-| `pg`                     | `8.23.1`       | Runtime | Production dependency |
-| `react`                  | `19.3.1`       | Runtime | Production dependency |
-| `react-dom`              | `19.3.1`       | Runtime | Production dependency |
-| `simplex-noise`          | `4.0.3`        | Runtime | Production dependency |
-| `three`                  | `0.187.0`      | Runtime | Production dependency |
-| `three-mesh-bvh`         | `0.9.18`       | Runtime | Production dependency |
-| `tsx`                    | `4.23.15`      | Runtime | Production dependency |
-| `vite`                   | `8.3.8`        | Runtime | Production dependency |
+| Package                  | Locked Version | Scope   | Architectural Purpose                                                                              |
+| :----------------------- | :------------- | :------ | :------------------------------------------------------------------------------------------------- |
+| `@google/genai`          | `3.6.1`        | Runtime | Production dependency                                                                              |
+| `@tailwindcss/vite`      | `4.3.5`        | Runtime | Production dependency                                                                              |
+| `@tweenjs/tween.js`      | `25.0.0`       | Runtime | Production dependency                                                                              |
+| `@types/canvas-confetti` | `1.9.0`        | Runtime | Production dependency                                                                              |
+| `@types/d3`              | `7.4.3`        | Runtime | Production dependency                                                                              |
+| `@types/pg`              | `8.23.1`       | Runtime | Production dependency                                                                              |
+| `@types/three`           | `0.187.0`      | Runtime | Production dependency                                                                              |
+| `@vitejs/plugin-react`   | `6.3.0`        | Runtime | Production dependency                                                                              |
+| `cannon-es`              | `0.20.0`       | Runtime | Production dependency                                                                              |
+| `canvas-confetti`        | `1.9.4`        | Runtime | Production dependency                                                                              |
+| `d3`                     | `7.9.2`        | Runtime | Production dependency                                                                              |
+| `dotenv`                 | `18.0.10`      | Runtime | Production dependency                                                                              |
+| `drizzle-kit`            | `0.31.11`      | Runtime | Production dependency                                                                              |
+| `drizzle-orm`            | `0.45.4`       | Runtime | Production dependency                                                                              |
+| `express`                | `5.3.0`        | Runtime | Production dependency                                                                              |
+| `firebase`               | `12.19.0`      | Runtime | Production dependency (intentionally pinned for Node `>=22.0.0`; `13.x` requires Node `>=24.12.0`) |
+| `firebase-admin`         | `14.5.1`       | Runtime | Production dependency                                                                              |
+| `lucide-react`           | `1.77.0`       | Runtime | Production dependency                                                                              |
+| `motion`                 | `14.14.0`      | Runtime | Production dependency                                                                              |
+| `pg`                     | `8.23.1`       | Runtime | Production dependency                                                                              |
+| `react`                  | `19.3.1`       | Runtime | Production dependency                                                                              |
+| `react-dom`              | `19.3.1`       | Runtime | Production dependency                                                                              |
+| `simplex-noise`          | `4.0.3`        | Runtime | Production dependency                                                                              |
+| `three`                  | `0.187.0`      | Runtime | Production dependency                                                                              |
+| `three-mesh-bvh`         | `0.9.18`       | Runtime | Production dependency                                                                              |
+| `tsx`                    | `4.23.15`      | Runtime | Production dependency                                                                              |
+| `vite`                   | `8.3.8`        | Runtime | Production dependency                                                                              |
 
 ---
 
 ## 2. Development & Build Dependencies
 
-| Package                                  | Locked Version | Scope       | Architectural Purpose                     |
-| :--------------------------------------- | :------------- | :---------- | :---------------------------------------- |
-| `@firebase/eslint-plugin-security-rules` | `0.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/express`                         | `4.17.25`      | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/node`                            | `22.20.5`      | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/react`                           | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting |
-| `@types/react-dom`                       | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting |
-| `autoprefixer`                           | `10.6.2`       | Dev / Build | Toolchain / Type checking / Rules linting |
-| `esbuild`                                | `0.28.2`       | Dev / Build | Toolchain / Type checking / Rules linting |
-| `eslint`                                 | `10.15.0`      | Dev / Build | Toolchain / Type checking / Rules linting |
-| `prettier`                               | `3.10.1`       | Dev / Build | Toolchain / Type checking / Rules linting |
-| `tailwindcss`                            | `4.3.5`        | Dev / Build | Toolchain / Type checking / Rules linting |
-| `typescript`                             | `7.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting |
+| Package                                  | Locked Version | Scope       | Architectural Purpose                                                    |
+| :--------------------------------------- | :------------- | :---------- | :----------------------------------------------------------------------- |
+| `@firebase/eslint-plugin-security-rules` | `0.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `@types/express`                         | `5.0.6`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `@types/node`                            | `22.20.5`      | Dev / Build | Toolchain / Type checking (intentionally pinned to Node 22 LTS baseline) |
+| `@types/react`                           | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `@types/react-dom`                       | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `autoprefixer`                           | `10.7.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `esbuild`                                | `0.28.2`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `eslint`                                 | `10.15.0`      | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `playwright`                             | `1.65.1`       | Dev / Build | Headless Chromium E2E & modal visual diff                                |
+| `prettier`                               | `3.10.1`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `tailwindcss`                            | `4.3.5`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| `typescript`                             | `7.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
 
 ---
 
@@ -140,6 +141,6 @@ All 10 automated workflows under `.github/workflows/` are tracked by [`.github/d
 
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
-npm outdated                   # Inspect minor/major drift safely
-npm run validate               # Verify tsc --noEmit, firestore.rules lint, Prettier, 171 tests & Vite build
+npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 & @types/node@22.20.5 intentionally pinned for Node 22 LTS)
+npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 218 tests (37 suites) & Vite build
 ```
