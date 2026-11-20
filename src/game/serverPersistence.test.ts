@@ -130,10 +130,14 @@ test('AtomicRealmPersistence upgrades legacy v1 raw JSON snapshots and quarantin
   }
 });
 
-test('resolveSafeDataDir rejects bare email addresses and falls back to <root>/data', () => {
+test('resolveSafeDataDir rejects bare email addresses and unsafe relative secret strings, falling back to <root>/data', () => {
   const root = '/tmp/voxel-realms-root';
   assert.deepEqual(resolveSafeDataDir(undefined, root), {
     dataDir: path.join(root, 'data'),
+    fallbackReason: null,
+  });
+  assert.deepEqual(resolveSafeDataDir('./data', root), {
+    dataDir: path.resolve('./data'),
     fallbackReason: null,
   });
   assert.deepEqual(resolveSafeDataDir('/var/lib/voxel-data', root), {
@@ -144,4 +148,8 @@ test('resolveSafeDataDir rejects bare email addresses and falls back to <root>/d
   const emailFallback = resolveSafeDataDir('player@example.com', root);
   assert.equal(emailFallback.dataDir, path.join(root, 'data'));
   assert.ok(emailFallback.fallbackReason?.includes('bare email address'));
+
+  const secretFallback = resolveSafeDataDir('abc+def&ghi jkl', root);
+  assert.equal(secretFallback.dataDir, path.join(root, 'data'));
+  assert.ok(secretFallback.fallbackReason?.includes('unsafe non-path characters'));
 });
