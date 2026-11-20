@@ -9,19 +9,22 @@ export const GoogleSignInButton: React.FC<{
   onClick: () => void;
   disabled?: boolean;
   label?: string;
-}> = ({ onClick, disabled = false, label = 'Sign in with Google' }) => (
+  compact?: boolean;
+}> = ({ onClick, disabled = false, label = 'Sign in with Google', compact = false }) => (
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="gsi-material-button inline-flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm border border-slate-300 shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+    className={`gsi-material-button inline-flex items-center justify-center whitespace-nowrap shrink-0 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-medium border border-slate-300 shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer ${
+      compact ? 'gap-1.5 px-2.5 py-1.5 text-xs' : 'gap-3 px-4 py-2.5 text-sm'
+    }`}
   >
-    <span className="gsi-material-button-icon w-5 h-5 shrink-0 block">
+    <span className={`gsi-material-button-icon shrink-0 block ${compact ? 'w-4 h-4' : 'w-5 h-5'}`}>
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 48 48"
-        className="w-5 h-5 block"
+        className={`block ${compact ? 'w-4 h-4' : 'w-5 h-5'}`}
       >
         <path
           fill="#EA4335"

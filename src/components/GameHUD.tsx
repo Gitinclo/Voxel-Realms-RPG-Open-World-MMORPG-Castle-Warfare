@@ -43,6 +43,7 @@ import { formatBigInt } from '../game/math';
 import { getSpeciesSpec } from '../game/species';
 import { GOD_TELEPORT_SPEC, GodTeleportWaypointId } from '../game/godModeCharacter';
 import { ChunkBoundaryProximityEvaluation } from '../game/openWorld3DEngine';
+import { getHudPlatformScale } from '../game/hudPlatformScale';
 import { Minimap } from './Minimap';
 import { sound } from '../game/audio';
 
@@ -257,10 +258,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
   const hasMoreAlert = canClaimVipStipend || canClaimDailyLogin || claimableDailyMissionsCount > 0;
   const isNearChunkEdge = Boolean(boundaryStatus?.isNearChunkEdge);
+  const hudScale = getHudPlatformScale(targetPlatform);
+  const { classes: hc } = hudScale;
 
   return (
     <div
       data-testid="game-hud-root"
+      data-hud-platform={hudScale.platform}
+      data-hud-text-scale={String(hudScale.textScaleFactor)}
       data-screen-shake={isNearChunkEdge ? 'active' : 'idle'}
       style={
         isNearChunkEdge && boundaryStatus
@@ -269,14 +274,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             }
           : undefined
       }
-      className="absolute inset-0 z-30 pointer-events-none select-none flex flex-col justify-between p-2.5 sm:p-4 transition-transform duration-75"
+      className="absolute inset-0 z-30 pointer-events-none select-none overflow-hidden flex flex-col justify-between p-2 sm:p-4 transition-transform duration-75"
     >
       {/* Consolidated Top Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-2">
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-1.5 sm:gap-2">
         {/* Top Row: Lord Identity Card + Primary Currencies & Expandable Inventory Drawer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 w-full lg:w-auto">
           {/* Lord Identity Card */}
-          <div className="pointer-events-auto px-2.5 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-xl flex items-center gap-2.5">
+          <div className="pointer-events-auto px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-2xl bg-slate-950/92 border border-slate-800 shadow-xl flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
@@ -286,20 +291,26 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               className="relative group p-0.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors cursor-pointer"
               title="Open Character Creation Centre"
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold text-base sm:text-lg">
+              <div
+                className={`${hc.avatarBox} rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-bold`}
+              >
                 {playerAppearance.name.charAt(0)}
               </div>
-              <span className="absolute -bottom-1 -right-1 text-[9px] px-1 rounded bg-cyan-500 text-slate-950 font-bold font-mono">
+              <span
+                className={`absolute -bottom-1 -right-1 ${hc.armorTierBadge} rounded bg-cyan-500 text-slate-950 font-bold font-mono`}
+              >
                 T{playerAppearance.armorTier}
               </span>
             </button>
 
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-mono font-bold text-amber-400">
+                <span className={`${hc.clanTagText} font-mono font-bold text-amber-400`}>
                   [{playerAppearance.clanTag}]
                 </span>
-                <span className="text-xs sm:text-sm font-bold text-white font-cinzel truncate max-w-[130px] sm:max-w-none">
+                <span
+                  className={`${hc.playerNameText} font-bold text-white font-cinzel truncate max-w-[130px] sm:max-w-none`}
+                >
                   {playerAppearance.name}
                 </span>
                 <button
@@ -309,7 +320,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     sound.playSwing();
                     onOpenCharacterCreation();
                   }}
-                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-cyan-200 border border-cyan-500/40 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                  className={`hidden md:flex ${hc.badgeText} rounded-md bg-slate-900 hover:bg-slate-800 text-cyan-200 border border-cyan-500/40 font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap`}
                   title={`Species / Race: ${activeSpeciesSpec.name} (${activeSpeciesSpec.primaryBuffSummary})`}
                 >
                   <span>{activeSpeciesSpec.icon}</span>
@@ -321,11 +332,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     sound.playSwing();
                     onOpenCultivation();
                   }}
-                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/40 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                  className={`${hc.badgeText} rounded-md bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/40 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer max-w-[165px] sm:max-w-none`}
                   title="Open Cultivation Cave Abode & Dantian"
                 >
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-                  <span>
+                  <Sparkles className={`${hc.badgeIcon} text-amber-400 shrink-0`} />
+                  <span className="truncate">
                     {cultivationRealmName} L{cultivationLayer}
                   </span>
                 </button>
@@ -337,10 +348,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       sound.playSwing();
                       onOpenVipSubscription();
                     }}
-                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                    className={`hidden md:flex ${hc.badgeText} rounded-md bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-400/60 font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap`}
                     title="Open Imperial VIP Member Subscription & Daily Stipend Chest"
                   >
-                    <Crown className="w-2.5 h-2.5 text-amber-400" />
+                    <Crown className={`${hc.badgeIcon} text-amber-400`} />
                     <span>{vipBadgeLabel}</span>
                   </button>
                 )}
@@ -351,10 +362,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     sound.playSwing();
                     onOpenAdminConsole();
                   }}
-                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-500/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                  className={`hidden md:flex ${hc.badgeText} rounded-md bg-red-950/90 hover:bg-red-900 text-red-200 border border-red-500/60 font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap`}
                   title="Open Administration, GM, Moderator Control & Contact (creatergame31@gmail.com)"
                 >
-                  <Gavel className="w-2.5 h-2.5 text-red-400" />
+                  <Gavel className={`${hc.badgeIcon} text-red-400`} />
                   <span>GM · MOD</span>
                 </button>
                 {onOpenCosmologicalAdmin && (
@@ -365,10 +376,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       sound.playSwing();
                       onOpenCosmologicalAdmin();
                     }}
-                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/60 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                    className={`hidden lg:flex ${hc.badgeText} rounded-md bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-500/60 font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap`}
                     title="Open 6-Tier Cosmological Hierarchy D3 Interactive Tree Visualizer"
                   >
-                    <GitBranch className="w-2.5 h-2.5 text-cyan-400" />
+                    <GitBranch className={`${hc.badgeIcon} text-cyan-400`} />
                     <span>6-Tier D3</span>
                   </button>
                 )}
@@ -380,10 +391,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       sound.playSwing();
                       onOpenEula();
                     }}
-                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 text-amber-200 border border-amber-400/50 font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                    className={`hidden lg:flex ${hc.badgeText} rounded-md bg-slate-900 hover:bg-slate-800 text-amber-200 border border-amber-400/50 font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap`}
                     title="Open End User License Agreement (EULA v1.5.0 · 17/11/2026)"
                   >
-                    <Scale className="w-2.5 h-2.5 text-amber-400" />
+                    <Scale className={`${hc.badgeIcon} text-amber-400`} />
                     <span>EULA</span>
                   </button>
                 )}
@@ -395,7 +406,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       sound.playSwing();
                       onToggleFlight();
                     }}
-                    className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
+                    className={`hidden sm:flex ${hc.badgeText} rounded-md font-mono font-bold items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
                       isFlying
                         ? 'bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 border-emerald-400 shadow-sm shadow-emerald-500/30'
                         : 'bg-slate-900 hover:bg-slate-800 text-cyan-200 border-cyan-500/40'
@@ -419,7 +430,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                         sound.playSwing();
                         setIsTeleportMenuOpen((prev) => !prev);
                       }}
-                      className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
+                      className={`${hc.badgeText} rounded-md font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap border ${
                         isTeleportMenuOpen
                           ? 'bg-cyan-950/95 text-cyan-200 border-cyan-400 shadow-sm shadow-cyan-500/30'
                           : 'bg-slate-900 hover:bg-slate-800 text-cyan-200 border-cyan-500/50'
@@ -427,13 +438,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       title="Open Sovereign Divine Teleportation Waypoints (creatergame31@gmail.com · [T] Forward Blink · Shift+Click 3D Scene)"
                     >
                       <span>⚡</span>
-                      <span>TELEPORT [T]</span>
+                      <span className="hidden sm:inline">TELEPORT [T]</span>
+                      <span className="sm:hidden">TP</span>
                     </button>
 
                     {isTeleportMenuOpen && (
                       <div
                         data-testid="hud-teleport-menu"
-                        className="absolute left-0 top-full mt-2 w-72 p-2.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-cyan-500/50 shadow-2xl z-50 space-y-1.5"
+                        className="absolute left-0 top-full mt-2 w-72 p-2.5 rounded-2xl bg-slate-950/95 border border-cyan-500/50 shadow-2xl z-50 space-y-1.5"
                       >
                         <div className="flex items-center justify-between text-[10px] font-mono font-bold text-cyan-300 border-b border-slate-800 pb-1">
                           <span>⚡ SOVEREIGN TELEPORTATION</span>
@@ -483,7 +495,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-mono">
+              <div
+                className={`flex items-center gap-1.5 mt-0.5 ${hc.statsText} text-slate-400 font-mono`}
+              >
                 <span
                   className="text-emerald-400 font-bold tabular-nums"
                   data-testid="hud-player-might"
@@ -498,17 +512,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
           {/* Primary Currencies Bar (3 Primary Currencies + Expandable Inventory Drawer) */}
           <div
-            className="pointer-events-auto relative flex items-center gap-1 sm:gap-2 px-2.5 py-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-xl"
+            className={`pointer-events-auto relative flex items-center justify-between sm:justify-start ${hc.currencyBar} rounded-2xl bg-slate-950/92 border border-slate-800 shadow-xl w-full sm:w-auto min-w-0`}
             data-testid="hud-primary-resources"
           >
             <button
               type="button"
               onClick={onOpenResources}
-              className="flex items-center gap-1 px-1.5 py-1 rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer"
+              className={`flex items-center ${hc.currencyItemBtn} rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer min-w-0`}
               title="Copper Coins (Primary Currency)"
             >
-              <span className="text-xs sm:text-sm">🪙</span>
-              <span className="text-xs font-mono font-bold text-amber-200 tabular-nums">
+              <span className={`${hc.currencyEmoji} shrink-0`}>🪙</span>
+              <span
+                className={`${hc.currencyValue} font-mono font-bold text-amber-200 tabular-nums`}
+              >
                 {formatBigInt(resources.copper)}
               </span>
             </button>
@@ -516,11 +532,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             <button
               type="button"
               onClick={onOpenResources}
-              className="flex items-center gap-1 px-1.5 py-1 rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer"
+              className={`flex items-center ${hc.currencyItemBtn} rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer min-w-0`}
               title="Grain Provisions (Primary Currency)"
             >
-              <span className="text-xs sm:text-sm">🌾</span>
-              <span className="text-xs font-mono font-bold text-emerald-200 tabular-nums">
+              <span className={`${hc.currencyEmoji} shrink-0`}>🌾</span>
+              <span
+                className={`${hc.currencyValue} font-mono font-bold text-emerald-200 tabular-nums`}
+              >
                 {formatBigInt(resources.grain)}
               </span>
             </button>
@@ -528,12 +546,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             <button
               type="button"
               onClick={onOpenResources}
-              className="flex items-center gap-1 px-1.5 py-1 rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer"
+              className={`flex items-center ${hc.currencyItemBtn} rounded-lg hover:bg-slate-800/70 transition-colors cursor-pointer min-w-0`}
               title="Diamond Gems (Primary Currency)"
             >
-              <span className="text-xs sm:text-sm">💎</span>
+              <span className={`${hc.currencyEmoji} shrink-0`}>💎</span>
               <span
-                className="text-xs font-mono font-bold text-cyan-300 tabular-nums"
+                className={`${hc.currencyValue} font-mono font-bold text-cyan-300 tabular-nums`}
                 data-testid="hud-diamond-count"
               >
                 {formatBigInt(resources.diamond)}
@@ -549,7 +567,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   sound.playSwing();
                   handleToggleMarketplace();
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center ${hc.topActionButton} rounded-xl border font-mono font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isMarketplaceOpen
                     ? 'bg-amber-400 text-slate-950 border-amber-200 shadow-md shadow-amber-500/40'
                     : 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-400/60 text-amber-200'
@@ -557,9 +575,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 title="Toggle Merchant Guild & Imperial Marketplace [M]"
               >
                 <ShoppingBag
-                  className={`w-3.5 h-3.5 ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-400'}`}
+                  className={`${hc.topActionIcon} ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-400'}`}
                 />
-                <span>Merchant Guild</span>
+                <span className="hidden sm:inline">Merchant Guild</span>
+                <span className="sm:hidden">Guild</span>
               </button>
             )}
 
@@ -573,14 +592,14 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsInventoryDrawerOpen((prev) => !prev);
                 setIsEngineSettingsOpen(false);
               }}
-              className={`relative flex items-center gap-1 px-2 py-1 rounded-xl border text-xs font-mono font-bold transition-colors cursor-pointer ${
+              className={`relative flex items-center ${hc.topActionButton} rounded-xl border font-mono font-bold transition-colors cursor-pointer shrink-0 ${
                 isInventoryDrawerOpen
                   ? 'bg-amber-500/25 border-amber-400 text-amber-200'
                   : 'bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800'
               }`}
               title="Toggle Secondary Resources & Scrolls Inventory Drawer"
             >
-              <Package className="w-3.5 h-3.5 text-amber-400" />
+              <Package className={`${hc.topActionIcon} text-amber-400`} />
               <span>Bag</span>
               {canClaimDailyLogin && (
                 <span className="px-1 rounded bg-amber-400 text-slate-950 text-[9px] font-mono font-black">
@@ -588,9 +607,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 </span>
               )}
               {isInventoryDrawerOpen ? (
-                <ChevronUp className="w-3 h-3 text-slate-400" />
+                <ChevronUp className="hidden sm:block w-3 h-3 text-slate-400" />
               ) : (
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <ChevronDown className="hidden sm:block w-3 h-3 text-slate-400" />
               )}
             </button>
 
@@ -598,7 +617,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             {isInventoryDrawerOpen && (
               <div
                 data-testid="hud-inventory-drawer"
-                className="absolute right-0 top-full mt-2 w-64 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl z-50 space-y-2"
+                className="absolute right-0 top-full mt-2 w-64 p-3 rounded-2xl bg-slate-950/95 border border-slate-700 shadow-2xl z-50 space-y-2"
               >
                 <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 border-b border-slate-800 pb-1.5">
                   <span>SECONDARY MATERIALS & SCROLLS</span>
@@ -726,15 +745,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
         {/* Merged World Status Widget (Zone + Weather + Clock + Audio + Collapsible Engine Settings) */}
         <div
-          className="pointer-events-auto relative flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800 shadow-xl w-full sm:w-auto max-w-full self-start lg:self-auto"
+          className="pointer-events-auto relative flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-2xl bg-slate-950/92 border border-slate-800 shadow-xl w-full sm:w-auto max-w-full self-start lg:self-auto"
           data-testid="hud-merged-status-bar"
         >
           {/* Compact Zone Label */}
-          <div className="flex items-center gap-1 pr-1.5 border-r border-slate-800 text-[10px] sm:text-[11px] font-cinzel text-emerald-300 whitespace-nowrap min-w-0">
+          <div
+            className={`flex items-center gap-1 pr-1.5 border-r border-slate-800 ${hc.statusZoneText} font-cinzel text-emerald-300 whitespace-nowrap min-w-0`}
+          >
             <span className="hidden sm:inline">Solara</span>
             <span>Citadel</span>
             <span className="text-slate-500">·</span>
-            <span className="text-amber-400 font-mono text-[9px] sm:text-[10px]">Safe</span>
+            <span className="text-amber-400 font-mono text-[10px]">Safe</span>
           </div>
 
           {/* Weather Indicator */}
@@ -744,14 +765,16 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               sound.playWeatherChange();
               if (onOpenWeather) onOpenWeather();
             }}
-            className="flex items-center gap-1 px-1.5 py-1 sm:px-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/30 text-xs font-mono text-cyan-200 transition-colors cursor-pointer whitespace-nowrap min-w-0"
+            className={`flex items-center gap-1 px-1.5 py-1 sm:px-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/30 ${hc.statusChipText} font-mono text-cyan-200 transition-colors cursor-pointer whitespace-nowrap min-w-0`}
             title="Open Weather Observatory"
           >
             <span className="text-xs">{weatherConfig.icon}</span>
-            <span className="font-bold text-white text-[10px] sm:text-[11px] truncate max-w-[78px] sm:max-w-none">
+            <span
+              className={`font-bold text-white ${hc.statusChipText} truncate max-w-[78px] sm:max-w-none`}
+            >
               {weatherConfig.name}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-cyan-400 font-bold tabular-nums">
+            <span className="text-[10px] text-cyan-400 font-bold tabular-nums">
               {Math.ceil(weatherRemainingSec)}s
             </span>
           </button>
@@ -760,31 +783,29 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <button
             type="button"
             onClick={onCycleTimeSpeed}
-            className="flex items-center gap-1 px-1.5 py-1 sm:px-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-[10px] sm:text-[11px] font-mono text-slate-200 transition-colors cursor-pointer whitespace-nowrap tabular-nums"
+            className={`flex items-center gap-1 px-1.5 py-1 sm:px-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 ${hc.statusChipText} font-mono text-slate-200 transition-colors cursor-pointer whitespace-nowrap tabular-nums`}
             title="Click to accelerate day/night cycle"
           >
             {isNight ? (
-              <Moon className="w-3 h-3 text-indigo-400" />
+              <Moon className={`${hc.statusClockIcon} text-indigo-400`} />
             ) : (
-              <Sun className="w-3 h-3 text-amber-400" />
+              <Sun className={`${hc.statusClockIcon} text-amber-400`} />
             )}
             <span>{timeString}</span>
-            <span className="text-[9px] sm:text-[10px] text-amber-400 font-bold">
-              {timeSpeedMultiplier}x
-            </span>
+            <span className="text-[10px] text-amber-400 font-bold">{timeSpeedMultiplier}x</span>
           </button>
 
           {/* Sound Toggle */}
           <button
             type="button"
             onClick={onToggleMute}
-            className="p-1 sm:p-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 hover:bg-slate-800 text-slate-300 cursor-pointer shrink-0"
+            className={`${hc.statusIconButton} rounded-lg bg-slate-900/90 border border-slate-700/80 hover:bg-slate-800 text-slate-300 cursor-pointer shrink-0`}
             aria-label={isMuted ? 'Unmute game audio' : 'Mute game audio'}
           >
             {isMuted ? (
-              <VolumeX className="w-3.5 h-3.5 text-red-400" />
+              <VolumeX className={`${hc.statusIcon} text-red-400`} />
             ) : (
-              <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+              <Volume2 className={`${hc.statusIcon} text-emerald-400`} />
             )}
           </button>
 
@@ -799,21 +820,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               setIsEngineSettingsOpen((prev) => !prev);
               setIsInventoryDrawerOpen(false);
             }}
-            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+            className={`${hc.statusIconButton} rounded-lg border transition-colors cursor-pointer shrink-0 ${
               isEngineSettingsOpen || godmode
                 ? 'bg-purple-500/25 border-purple-400 text-purple-200'
                 : 'bg-slate-900/90 border-slate-700/80 text-slate-300 hover:bg-slate-800'
             }`}
             title="Toggle Technical Engine Stats, Graphics Quality, Platform Overrides & GM Console"
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className={hc.statusIcon} />
           </button>
 
           {/* Collapsible Engine & Debug Settings Menu Popover */}
           {isEngineSettingsOpen && (
             <div
               data-testid="hud-engine-settings-drawer"
-              className="absolute right-0 top-full mt-2 w-72 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl z-50 space-y-2.5"
+              className="absolute right-0 top-full mt-2 w-72 p-3 rounded-2xl bg-slate-950/95 border border-slate-700 shadow-2xl z-50 space-y-2.5"
             >
               <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 border-b border-slate-800 pb-1.5">
                 <span>ARCHITECT PIPELINE (17/11/2026)</span>
@@ -857,11 +878,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                       : 'bg-amber-950/70 border-amber-400/50 hover:border-amber-300 text-amber-200'
                   }`}
                 >
-                  <span>Platform Override:</span>
+                  <span>Platform &amp; HUD Scale:</span>
                   <span>
-                    {targetPlatform === 'pc_console'
-                      ? 'PC/PS5 [BC7 · LOD 0]'
-                      : 'MOBILE [ASTC · LOD BIAS +1]'}
+                    {targetPlatform === 'pc_console' ? 'PC/PS5 [1.0x HUD]' : 'MOBILE [1.15x HUD]'}
                   </span>
                 </button>
               )}
@@ -940,15 +959,16 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       )}
 
       {/* Middle Interactive Touch Overlay (Minimap + Virtual Joystick on Left, Quick Actions on Right) */}
-      <div className="flex-1 flex items-end justify-between pointer-events-none pb-5 sm:pb-6 mb-1">
+      <div className="flex-1 flex items-end justify-between pointer-events-none pb-2 sm:pb-5 mb-1">
         {/* Left Column: Real-Time Minimap + Virtual Touch Joystick */}
-        <div className="flex flex-col items-start gap-2.5">
+        <div className="flex flex-col items-start gap-2">
           <Minimap
             playerX={playerX}
             playerZ={playerZ}
             resourceNodes={resourceNodes}
             boundaryStatus={boundaryStatus}
             streamedChunkCount={streamedChunkCount}
+            targetPlatform={targetPlatform}
             onSelectResourceNode={onSelectResourceNode}
             onSelectCastle={onOpenCastle}
             onFetchNewAreaData={onFetchNewAreaData}
@@ -961,14 +981,16 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             onTouchStart={handleJoystickTouchStart}
             onTouchMove={handleJoystickMove}
             onTouchEnd={handleJoystickTouchEnd}
-            className="pointer-events-auto relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-slate-950/80 border-2 border-slate-700/80 flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100 shadow-xl"
+            className={`pointer-events-auto relative ${hc.joystickBase} rounded-full bg-slate-950/80 border-2 border-slate-700/80 flex items-center justify-center touch-none select-none sm:opacity-90 hover:opacity-100 shadow-xl`}
             title="Virtual D-Pad (Touch / Drag to move hero)"
           >
-            <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 font-mono font-bold">
+            <div
+              className={`absolute inset-0 flex items-center justify-center ${hc.joystickLabel} text-slate-400 font-mono font-bold`}
+            >
               MOVE
             </div>
             <div
-              className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30 transition-transform duration-75"
+              className={`${hc.joystickKnob} rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30 transition-transform duration-75`}
               style={{
                 transform: `translate(${joystickPos.x}px, ${joystickPos.y}px)`,
               }}
@@ -977,11 +999,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         </div>
 
         {/* Enlarged Quick Action Touch Buttons + Sovereign Divine Flight Pod (Bottom Right) */}
-        <div className="pointer-events-auto flex flex-col items-center gap-3 mr-1 sm:mr-2 mb-2">
+        <div className="pointer-events-auto flex flex-col items-center gap-2 sm:gap-3 mr-0.5 sm:mr-2 mb-1 sm:mb-2">
           {canFly && onToggleFlight && (
             <div
               data-testid="hud-flight-control-pod"
-              className="flex flex-col items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-emerald-500/50 shadow-xl"
+              className="flex flex-col items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950/92 border border-emerald-500/50 shadow-xl"
             >
               <button
                 type="button"
@@ -990,7 +1012,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   sound.playSwing();
                   onAdjustFlightAltitude?.(4.5);
                 }}
-                className="w-11 h-7 rounded-lg bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                className={`${hc.flightStepBtn} rounded-lg bg-slate-900 hover:bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-mono font-bold flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer`}
                 title="Ascend Altitude (+4.5m · E / Space)"
               >
                 <ChevronUp className="w-3.5 h-3.5" />
@@ -1004,7 +1026,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   sound.playSwing();
                   onToggleFlight();
                 }}
-                className={`w-12 h-12 rounded-full border-2 flex flex-col items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                className={`${hc.flightToggleBtn} rounded-full border-2 flex flex-col items-center justify-center transition-all active:scale-90 cursor-pointer ${
                   isFlying
                     ? 'bg-emerald-600/95 hover:bg-emerald-500 border-amber-300 text-white shadow-lg shadow-emerald-500/40'
                     : 'bg-slate-900 hover:bg-slate-800 border-cyan-400/70 text-cyan-200'
@@ -1012,7 +1034,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 title="Toggle Sovereign Divine Flight (creatergame31@gmail.com · Hotkey [F])"
               >
                 <span className="text-sm leading-none">🕊️</span>
-                <span className="text-[9px] font-mono font-black leading-tight mt-0.5">
+                <span className="text-[10px] font-mono font-black leading-tight mt-0.5">
                   {isFlying ? `${Math.round(flightAltitude)}m` : 'FLY'}
                 </span>
               </button>
@@ -1024,7 +1046,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   sound.playSwing();
                   onAdjustFlightAltitude?.(-4.5);
                 }}
-                className="w-11 h-7 rounded-lg bg-slate-900 hover:bg-amber-950 border border-amber-500/40 text-amber-300 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                className={`${hc.flightStepBtn} rounded-lg bg-slate-900 hover:bg-amber-950 border border-amber-500/40 text-amber-300 font-mono font-bold flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer`}
                 title="Descend Altitude (-4.5m · Q / Shift)"
               >
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -1039,7 +1061,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                     sound.playSwing();
                     onForwardBlink();
                   }}
-                  className="w-11 h-7 rounded-lg bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/60 text-cyan-200 font-mono font-bold text-[10px] flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer"
+                  className={`${hc.flightStepBtn} rounded-lg bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/60 text-cyan-200 font-mono font-bold flex items-center justify-center gap-0.5 active:scale-95 cursor-pointer`}
                   title="Sovereign Forward Astral Blink (+12m · Hotkey [T])"
                 >
                   <span>⚡</span>
@@ -1059,7 +1081,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 sound.playSwing();
                 handleToggleMarketplace();
               }}
-              className={`relative w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-xl ${
+              className={`relative ${hc.merchantActionBtn} rounded-2xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-xl ${
                 isMarketplaceOpen
                   ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 border-white text-slate-950 shadow-amber-400/50 ring-2 ring-amber-300'
                   : 'bg-gradient-to-br from-amber-600/95 via-amber-700/95 to-slate-950 hover:from-amber-500 hover:to-amber-700 border-amber-300/90 text-amber-100 shadow-amber-950/90'
@@ -1076,17 +1098,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 {isMarketplaceOpen ? 'OPEN' : 'GUILD'}
               </span>
               <ShoppingBag
-                className={`w-6 h-6 ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-300'}`}
+                className={`${hc.merchantActionIcon} ${isMarketplaceOpen ? 'text-slate-950' : 'text-amber-300'}`}
               />
               <span
-                className={`text-[9px] font-cinzel font-black leading-none tracking-tight text-center ${
+                className={`${hc.merchantActionLabel} font-cinzel font-black leading-none tracking-tight text-center ${
                   isMarketplaceOpen ? 'text-slate-950' : 'text-amber-100'
                 }`}
               >
                 Merchant
               </span>
               <span
-                className={`text-[8px] font-mono font-bold leading-none ${
+                className={`${hc.merchantActionSubLabel} font-mono font-bold leading-none ${
                   isMarketplaceOpen ? 'text-slate-900' : 'text-amber-300'
                 }`}
               >
@@ -1099,19 +1121,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             type="button"
             data-testid="hud-action-attack-btn"
             onClick={() => onActionClick?.('attack')}
-            className="w-16 h-16 rounded-full bg-rose-600/95 hover:bg-rose-500 border-2 border-rose-300/90 shadow-xl shadow-rose-950/80 flex items-center justify-center text-white active:scale-90 transition-transform cursor-pointer"
+            className={`${hc.attackActionBtn} rounded-full bg-rose-600/95 hover:bg-rose-500 border-2 border-rose-300/90 shadow-xl shadow-rose-950/80 flex items-center justify-center text-white active:scale-90 transition-transform cursor-pointer`}
             aria-label="Attack Target"
           >
-            <Swords className="w-7 h-7" />
+            <Swords className={hc.attackActionIcon} />
           </button>
           <button
             type="button"
             data-testid="hud-action-gather-btn"
             onClick={() => onActionClick?.('gather')}
-            className="w-14 h-14 rounded-full bg-emerald-600/95 hover:bg-emerald-500 border-2 border-emerald-300/90 shadow-xl shadow-emerald-950/80 flex items-center justify-center text-white active:scale-90 transition-transform cursor-pointer"
+            className={`${hc.gatherActionBtn} rounded-full bg-emerald-600/95 hover:bg-emerald-500 border-2 border-emerald-300/90 shadow-xl shadow-emerald-950/80 flex items-center justify-center text-white active:scale-90 transition-transform cursor-pointer`}
             aria-label="Gather Node"
           >
-            <Pickaxe className="w-6 h-6" />
+            <Pickaxe className={hc.gatherActionIcon} />
           </button>
         </div>
       </div>
@@ -1122,7 +1144,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         {isMoreHubOpen && !isDockCollapsed && (
           <div
             data-testid="dock-more-hub-drawer"
-            className="w-full mb-2 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-700 shadow-2xl grid grid-cols-4 sm:grid-cols-5 gap-2"
+            className={`w-full mb-2 p-2.5 sm:p-3 max-h-[55vh] overflow-y-auto rounded-2xl bg-slate-950/95 border border-slate-700 shadow-2xl grid ${hc.moreDrawerGrid}`}
           >
             {onOpenVipSubscription && (
               <button
@@ -1133,17 +1155,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   onOpenVipSubscription();
                 }}
                 data-testid="dock-vip-pass-btn"
-                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                className={`${hc.moreTileBtn} rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
                   canClaimVipStipend
                     ? 'bg-amber-500/25 border-amber-300 text-amber-100'
                     : 'bg-slate-900 hover:bg-slate-800 border-amber-500/40 text-amber-300'
                 }`}
               >
-                <Crown className="w-5 h-5 text-amber-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <Crown className={`${hc.moreTileIcon} text-amber-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   VIP Pass
                 </span>
-                <span className="text-[9px] font-mono text-amber-300 tabular-nums">
+                <span className={`${hc.moreTileSub} font-mono text-amber-300 tabular-nums`}>
                   {canClaimVipStipend ? 'STIPEND!' : `Lv.${vipLoyaltyLevel}`}
                 </span>
               </button>
@@ -1158,17 +1180,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   onOpenDailyLogin();
                 }}
                 data-testid="dock-daily-login-btn"
-                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                className={`${hc.moreTileBtn} rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
                   canClaimDailyLogin
                     ? 'bg-amber-500/25 border-amber-300 text-amber-100'
                     : 'bg-slate-900 hover:bg-slate-800 border-amber-500/40 text-amber-200'
                 }`}
               >
-                <Gift className="w-5 h-5 text-amber-300" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <Gift className={`${hc.moreTileIcon} text-amber-300`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   Daily Login
                 </span>
-                <span className="text-[9px] font-mono text-amber-300 tabular-nums">
+                <span className={`${hc.moreTileSub} font-mono text-amber-300 tabular-nums`}>
                   {canClaimDailyLogin ? 'READY!' : `${dailyStreakDays}d`}
                 </span>
               </button>
@@ -1183,17 +1205,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   onOpenDailyMissions();
                 }}
                 data-testid="dock-daily-missions-btn"
-                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                className={`${hc.moreTileBtn} rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
                   claimableDailyMissionsCount > 0
                     ? 'bg-cyan-500/25 border-cyan-300 text-cyan-100'
                     : 'bg-slate-900 hover:bg-slate-800 border-cyan-500/40 text-cyan-200'
                 }`}
               >
-                <ClipboardList className="w-5 h-5 text-cyan-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <ClipboardList className={`${hc.moreTileIcon} text-cyan-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   Missions
                 </span>
-                <span className="text-[9px] font-mono text-cyan-300 tabular-nums">
+                <span className={`${hc.moreTileSub} font-mono text-cyan-300 tabular-nums`}>
                   {claimableDailyMissionsCount > 0
                     ? `CLAIM (${claimableDailyMissionsCount})`
                     : `${dailyMissionsClaimedCount}/${dailyMissionsTotalCount}`}
@@ -1208,11 +1230,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenWorldAI?.();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Brain className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">World AI</span>
-              <span className="text-[9px] font-mono text-cyan-300">Lv1000</span>
+              <Brain className={`${hc.moreTileIcon} text-cyan-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                World AI
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-cyan-300`}>Lv1000</span>
             </button>
 
             <button
@@ -1222,11 +1246,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenWorldBoss();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-purple-500/40 text-purple-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-purple-500/40 text-purple-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Flame className="w-5 h-5 text-purple-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Rally</span>
-              <span className="text-[9px] font-mono text-purple-200">1T Cap</span>
+              <Flame className={`${hc.moreTileIcon} text-purple-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                Rally
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-purple-200`}>1T Cap</span>
             </button>
 
             <button
@@ -1236,11 +1262,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenClan();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-blue-500/40 text-blue-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-blue-500/40 text-blue-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Shield className="w-5 h-5 text-blue-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Clan</span>
-              <span className="text-[9px] font-mono text-blue-200">Territory</span>
+              <Shield className={`${hc.moreTileIcon} text-blue-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                Clan
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-blue-200`}>Territory</span>
             </button>
 
             <button
@@ -1250,11 +1278,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenResources();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Pickaxe className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Harvest</span>
-              <span className="text-[9px] font-mono text-emerald-200">Lv 1-10</span>
+              <Pickaxe className={`${hc.moreTileIcon} text-emerald-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                Harvest
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-emerald-200`}>Lv 1-10</span>
             </button>
 
             {hasMarketplaceHandler && (
@@ -1267,17 +1297,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   setIsMoreHubOpen(false);
                   handleToggleMarketplace();
                 }}
-                className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                className={`${hc.moreTileBtn} rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
                   isMarketplaceOpen
                     ? 'bg-amber-400/30 border-amber-300 text-amber-100'
                     : 'bg-amber-950/75 hover:bg-amber-900/75 border-amber-400/60 text-amber-200'
                 }`}
               >
-                <ShoppingBag className="w-5 h-5 text-amber-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <ShoppingBag className={`${hc.moreTileIcon} text-amber-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   Merchant Guild
                 </span>
-                <span className="text-[9px] font-mono text-amber-300">Marketplace</span>
+                <span className={`${hc.moreTileSub} font-mono text-amber-300`}>Marketplace</span>
               </button>
             )}
 
@@ -1288,11 +1318,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenWeather?.();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <CloudRain className="w-5 h-5 text-cyan-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Weather</span>
-              <span className="text-[9px] font-mono text-cyan-200">
+              <CloudRain className={`${hc.moreTileIcon} text-cyan-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                Weather
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-cyan-200`}>
                 {weatherConfig.name.split(' ')[0]}
               </span>
             </button>
@@ -1304,11 +1336,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenLeaderboard();
               }}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Trophy className="w-5 h-5 text-amber-400" />
-              <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Rankings</span>
-              <span className="text-[9px] font-mono text-slate-400">Top 10</span>
+              <Trophy className={`${hc.moreTileIcon} text-amber-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                Rankings
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-slate-400`}>Top 10</span>
             </button>
 
             <button
@@ -1318,11 +1352,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenCppCore();
               }}
-              className="p-2 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Cpu className="w-5 h-5 text-emerald-400" />
-              <span className="text-[10px] font-bold font-mono whitespace-nowrap">C++ 20+</span>
-              <span className="text-[9px] font-mono text-emerald-400">Engine</span>
+              <Cpu className={`${hc.moreTileIcon} text-emerald-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-mono whitespace-nowrap`}>
+                C++ 20+
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-emerald-400`}>Engine</span>
             </button>
 
             <button
@@ -1333,11 +1369,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 setIsMoreHubOpen(false);
                 onOpenAdminConsole();
               }}
-              className="p-2 rounded-xl bg-red-950/70 hover:bg-red-900/70 border border-red-500/50 text-red-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+              className={`${hc.moreTileBtn} rounded-xl bg-red-950/70 hover:bg-red-900/70 border border-red-500/50 text-red-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
             >
-              <Gavel className="w-5 h-5 text-red-400" />
-              <span className="text-[10px] font-bold font-mono whitespace-nowrap">GM / Mod</span>
-              <span className="text-[9px] font-mono text-amber-300">Admin</span>
+              <Gavel className={`${hc.moreTileIcon} text-red-400`} />
+              <span className={`${hc.moreTileTitle} font-bold font-mono whitespace-nowrap`}>
+                GM / Mod
+              </span>
+              <span className={`${hc.moreTileSub} font-mono text-amber-300`}>Admin</span>
             </button>
 
             {onOpenLoreHistory && (
@@ -1349,13 +1387,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   setIsMoreHubOpen(false);
                   onOpenLoreHistory();
                 }}
-                className="p-2 rounded-xl bg-fuchsia-950/70 hover:bg-fuchsia-900/70 border border-fuchsia-500/50 text-fuchsia-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                className={`${hc.moreTileBtn} rounded-xl bg-fuchsia-950/70 hover:bg-fuchsia-900/70 border border-fuchsia-500/50 text-fuchsia-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
               >
-                <BookOpen className="w-5 h-5 text-fuchsia-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <BookOpen className={`${hc.moreTileIcon} text-fuchsia-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   Lore &amp; History
                 </span>
-                <span className="text-[9px] font-mono text-amber-300">7 Epochs</span>
+                <span className={`${hc.moreTileSub} font-mono text-amber-300`}>7 Epochs</span>
               </button>
             )}
 
@@ -1368,13 +1406,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   setIsMoreHubOpen(false);
                   onOpenCosmologicalAdmin();
                 }}
-                className="p-2 rounded-xl bg-cyan-950/70 hover:bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                className={`${hc.moreTileBtn} rounded-xl bg-cyan-950/70 hover:bg-cyan-900/70 border border-cyan-500/50 text-cyan-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
               >
-                <GitBranch className="w-5 h-5 text-cyan-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">
+                <GitBranch className={`${hc.moreTileIcon} text-cyan-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
                   Cosmology D3
                 </span>
-                <span className="text-[9px] font-mono text-amber-300">6-Tier Tree</span>
+                <span className={`${hc.moreTileSub} font-mono text-amber-300`}>6-Tier Tree</span>
               </button>
             )}
 
@@ -1387,11 +1425,32 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   setIsMoreHubOpen(false);
                   onOpenGmail();
                 }}
-                className="p-2 rounded-xl bg-amber-950/70 hover:bg-amber-900/70 border border-amber-500/50 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+                className={`${hc.moreTileBtn} rounded-xl bg-amber-950/70 hover:bg-amber-900/70 border border-amber-500/50 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
               >
-                <Mail className="w-5 h-5 text-amber-400" />
-                <span className="text-[10px] font-bold font-cinzel whitespace-nowrap">Gmail</span>
-                <span className="text-[9px] font-mono text-amber-300">Dispatch</span>
+                <Mail className={`${hc.moreTileIcon} text-amber-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                  Gmail
+                </span>
+                <span className={`${hc.moreTileSub} font-mono text-amber-300`}>Dispatch</span>
+              </button>
+            )}
+
+            {onOpenEula && (
+              <button
+                type="button"
+                data-testid="dock-eula-btn"
+                onClick={() => {
+                  sound.playSwing();
+                  setIsMoreHubOpen(false);
+                  onOpenEula();
+                }}
+                className={`${hc.moreTileBtn} rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/45 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
+              >
+                <Scale className={`${hc.moreTileIcon} text-amber-400`} />
+                <span className={`${hc.moreTileTitle} font-bold font-cinzel whitespace-nowrap`}>
+                  EULA
+                </span>
+                <span className={`${hc.moreTileSub} font-mono text-slate-400`}>Legal</span>
               </button>
             )}
           </div>
@@ -1405,15 +1464,15 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             setIsDockCollapsed(!isDockCollapsed);
             setIsMoreHubOpen(false);
           }}
-          className="px-3 py-1 rounded-t-xl bg-slate-950/90 border-t border-x border-slate-700 text-[10px] font-mono font-bold text-slate-300 flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+          className={`${hc.dockCollapseBtn} rounded-t-xl bg-slate-950/92 border-t border-x border-slate-700 font-mono font-bold text-slate-300 flex items-center gap-1 hover:text-white transition-colors cursor-pointer`}
         >
           {isDockCollapsed ? (
             <>
-              <ChevronUp className="w-3 h-3" /> Show Command Dock
+              <ChevronUp className="w-3.5 h-3.5" /> Show Command Dock
             </>
           ) : (
             <>
-              <ChevronDown className="w-3 h-3" /> Zen Mode
+              <ChevronDown className="w-3.5 h-3.5" /> Zen Mode
             </>
           )}
         </button>
@@ -1421,7 +1480,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         {/* 5 Square Icon Tabs (No Horizontal Overflow on Mobile Portrait) */}
         <div
           data-testid="hud-bottom-tab-bar"
-          className={`w-full px-2 py-1.5 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-slate-800 shadow-2xl grid grid-cols-5 gap-1.5 sm:gap-2 transition-all duration-200 ${
+          className={`w-full px-2 py-1.5 rounded-2xl bg-slate-950/95 border border-slate-800 shadow-2xl grid grid-cols-5 gap-1.5 sm:gap-2 transition-all duration-200 ${
             isDockCollapsed
               ? 'translate-y-24 opacity-0 pointer-events-none'
               : 'translate-y-0 opacity-100'
@@ -1435,10 +1494,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               setIsMoreHubOpen(false);
               onOpenCastle();
             }}
-            className="min-h-[54px] py-1.5 px-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+            className={`${hc.dockTabBtn} rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
           >
-            <Castle className="w-5 h-5 text-amber-400" />
-            <span className="text-[10px] sm:text-[11px] font-bold font-cinzel leading-none whitespace-nowrap">
+            <Castle className={`${hc.dockTabIcon} text-amber-400`} />
+            <span
+              className={`${hc.dockTabLabel} font-bold font-cinzel leading-none whitespace-nowrap`}
+            >
               Castle
             </span>
           </button>
@@ -1451,10 +1512,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               setIsMoreHubOpen(false);
               onOpenTroops();
             }}
-            className="min-h-[54px] py-1.5 px-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+            className={`${hc.dockTabBtn} rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
           >
-            <Swords className="w-5 h-5 text-rose-400" />
-            <span className="text-[10px] sm:text-[11px] font-bold font-cinzel leading-none whitespace-nowrap">
+            <Swords className={`${hc.dockTabIcon} text-rose-400`} />
+            <span
+              className={`${hc.dockTabLabel} font-bold font-cinzel leading-none whitespace-nowrap`}
+            >
               Barracks
             </span>
           </button>
@@ -1467,10 +1530,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               setIsMoreHubOpen(false);
               onOpenCultivation();
             }}
-            className="min-h-[54px] py-1.5 px-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-amber-100 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+            className={`${hc.dockTabBtn} rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-amber-100 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
           >
-            <Sparkles className="w-5 h-5 text-amber-300" />
-            <span className="text-[10px] sm:text-[11px] font-bold font-cinzel leading-none whitespace-nowrap">
+            <Sparkles className={`${hc.dockTabIcon} text-amber-300`} />
+            <span
+              className={`${hc.dockTabLabel} font-bold font-cinzel leading-none whitespace-nowrap`}
+            >
               Cultivate
             </span>
           </button>
@@ -1483,10 +1548,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               setIsMoreHubOpen(false);
               onOpenHeroes();
             }}
-            className="min-h-[54px] py-1.5 px-1 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 text-indigo-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer"
+            className={`${hc.dockTabBtn} rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 text-indigo-200 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer`}
           >
-            <Award className="w-5 h-5 text-indigo-400" />
-            <span className="text-[10px] sm:text-[11px] font-bold font-cinzel leading-none whitespace-nowrap">
+            <Award className={`${hc.dockTabIcon} text-indigo-400`} />
+            <span
+              className={`${hc.dockTabLabel} font-bold font-cinzel leading-none whitespace-nowrap`}
+            >
               Heroes
             </span>
           </button>
@@ -1499,14 +1566,16 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               sound.playSwing();
               setIsMoreHubOpen((prev) => !prev);
             }}
-            className={`relative min-h-[54px] py-1.5 px-1 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
+            className={`relative ${hc.dockTabBtn} rounded-xl border flex flex-col items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer ${
               isMoreHubOpen
                 ? 'bg-cyan-500/25 border-cyan-400 text-cyan-100'
                 : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-200'
             }`}
           >
-            <LayoutGrid className="w-5 h-5 text-cyan-400" />
-            <span className="text-[10px] sm:text-[11px] font-bold font-cinzel leading-none whitespace-nowrap">
+            <LayoutGrid className={`${hc.dockTabIcon} text-cyan-400`} />
+            <span
+              className={`${hc.dockTabLabel} font-bold font-cinzel leading-none whitespace-nowrap`}
+            >
               More
             </span>
             {hasMoreAlert && (

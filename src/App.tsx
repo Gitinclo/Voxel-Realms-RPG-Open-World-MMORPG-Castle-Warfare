@@ -54,6 +54,7 @@ import { calculateOutpostAssault } from './game/clanMath';
 import { applyTroopPromotion } from './game/troopTraining';
 import { applySkinToHero, HERO_SKIN_CATALOG, HeroSkinId } from './game/heroSkins';
 import { sound } from './game/audio';
+import { detectInitialTargetPlatform } from './game/hudPlatformScale';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
@@ -423,7 +424,14 @@ export default function App() {
   const [timeOfDayHours, setTimeOfDayHours] = useState<number>(14.0); // Starts at 2 PM golden daylight
   const [timeSpeedMultiplier, setTimeSpeedMultiplier] = useState<number>(1);
   const [graphicsQuality, setGraphicsQuality] = useState<'ultra' | 'high' | 'balanced'>('ultra');
-  const [targetPlatform, setTargetPlatform] = useState<'pc_console' | 'mobile'>('pc_console');
+  const [targetPlatform, setTargetPlatform] = useState<'pc_console' | 'mobile'>(() => {
+    if (typeof window === 'undefined') return 'pc_console';
+    const hasCoarsePointer =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(pointer: coarse)').matches
+        : false;
+    return detectInitialTargetPlatform(window.innerWidth, hasCoarsePointer);
+  });
   const [hdPackMounted, setHdPackMounted] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(sound.isMuted());
   const [godmode, setGodmode] = useState<boolean>(true);
