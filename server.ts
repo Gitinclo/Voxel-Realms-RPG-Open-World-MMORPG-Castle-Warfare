@@ -84,7 +84,7 @@ import {
   verifySameOriginRequest,
   verifyWebSocketOrigin,
 } from './src/game/serverHardening';
-import { AtomicRealmPersistence } from './src/game/serverPersistence';
+import { AtomicRealmPersistence, resolveSafeDataDir } from './src/game/serverPersistence';
 import {
   AntiCheatGuard,
   sanitizeCloudProfilePatch,
@@ -137,7 +137,11 @@ const PORT =
         : 3000;
 const HOST = parseCliFlag('host') || '0.0.0.0';
 const ROOT_DIR = import.meta.dirname ?? process.cwd();
-const DATA_DIR = path.resolve(process.env.VOXEL_DATA_DIR || path.join(ROOT_DIR, 'data'));
+const resolvedDataDir = resolveSafeDataDir(process.env.VOXEL_DATA_DIR, ROOT_DIR);
+if (resolvedDataDir.fallbackReason) {
+  console.warn(`[SECURITY WARN] ${resolvedDataDir.fallbackReason}`);
+}
+const DATA_DIR = resolvedDataDir.dataDir;
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const MAX_AUDIT_LOG_ENTRIES = OPERATIONAL_LIMITS.MAX_AUDIT_LOG_ENTRIES;
 

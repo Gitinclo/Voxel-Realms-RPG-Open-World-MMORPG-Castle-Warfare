@@ -26,8 +26,10 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-.env*.local
+.env.*
 !.env.example
+!.env.staging.example
+!.env.production.example
 
 # Android & Signing Keystores (Never commit signing keys)
 *.jks
@@ -61,6 +63,10 @@ Thumbs.db
 .eslintcache
 .playwright-cli/
 data/
+**/online_realm_state.json*
+*.bak
+*.corrupt-*
+*@*/
 drizzle/
 public/assets/aistudio/
 release-assets/

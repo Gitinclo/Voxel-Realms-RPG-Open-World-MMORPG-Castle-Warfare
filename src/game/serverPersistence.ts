@@ -7,6 +7,30 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Resolves VOXEL_DATA_DIR safely so accidental email strings misconfigured as
+ * VOXEL_DATA_DIR never create email-named runtime save folders inside the repo root.
+ */
+export function resolveSafeDataDir(
+  rawDataDir: string | undefined,
+  rootDir: string
+): { dataDir: string; fallbackReason: string | null } {
+  const defaultDir = path.join(rootDir, 'data');
+  const trimmed = (rawDataDir || '').trim();
+  if (!trimmed) {
+    return { dataDir: defaultDir, fallbackReason: null };
+  }
+  const bareEmailPattern = /^[^/\\]+@[^/\\]+$/;
+  if (bareEmailPattern.test(trimmed)) {
+    return {
+      dataDir: defaultDir,
+      fallbackReason:
+        'VOXEL_DATA_DIR resembles a bare email address rather than a directory path; falling back to default ./data directory.',
+    };
+  }
+  return { dataDir: path.resolve(trimmed), fallbackReason: null };
+}
+
 export interface SignedSaveEnvelope<T> {
   schemaVersion: 2;
   savedAtIso: string;

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { AtomicRealmPersistence } from './serverPersistence';
+import { AtomicRealmPersistence, resolveSafeDataDir } from './serverPersistence';
 
 interface MockRealmState {
   version: number;
@@ -128,4 +128,20 @@ test('AtomicRealmPersistence upgrades legacy v1 raw JSON snapshots and quarantin
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+test('resolveSafeDataDir rejects bare email addresses and falls back to <root>/data', () => {
+  const root = '/tmp/voxel-realms-root';
+  assert.deepEqual(resolveSafeDataDir(undefined, root), {
+    dataDir: path.join(root, 'data'),
+    fallbackReason: null,
+  });
+  assert.deepEqual(resolveSafeDataDir('/var/lib/voxel-data', root), {
+    dataDir: path.resolve('/var/lib/voxel-data'),
+    fallbackReason: null,
+  });
+
+  const emailFallback = resolveSafeDataDir('player@example.com', root);
+  assert.equal(emailFallback.dataDir, path.join(root, 'data'));
+  assert.ok(emailFallback.fallbackReason?.includes('bare email address'));
 });

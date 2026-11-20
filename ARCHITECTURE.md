@@ -188,10 +188,10 @@ Players cultivate four complementary paths simultaneously:
 - **Auto-Populating Open-World Lore Codex (`evaluateOpenWorldLoreDiscovery`)**: Automatically populates `localStorage`-persisted Codex entries (`OPEN_WORLD_BIOME_CODEX_CATALOG`, `OPEN_WORLD_MONSTER_CODEX_CATALOG`, and `buildDynamicMonsterCodexEntry`) whenever the player explores any of Solara's 8 spatial biomes or encounters/selects/spawns monsters, granting one-time Kingdom Diamond and Scripture Fragment bounties (`claimLoreCodexReward`).
 - **`10^100` Words Minimum (One Googol Words) Procedural Akashic Stream (`GOOGOL_LORE_ARCHIVE_SPEC`)**: Deterministically synthesizes `>= 1,000` real English words per volume across `10^97` `BigInt`-addressable volume coordinates (`generateGoogolScaleLoreScrollSlice`) without blocking RAM.
 
-### J. Authoritative 20Hz 50v50 WebSocket Siege Protocol & Multi-Region Persistence (`src/game/siegeNetProtocol.ts`, `server.ts`, `src/components/ClanTerritoryMap.tsx`)
+### J. Single-Instance 20Hz 50v50 WebSocket Siege Protocol & Simulated Cluster Status (`src/game/siegeNetProtocol.ts`, `server.ts`, `src/components/ClanTerritoryMap.tsx`)
 
 - **20Hz (`50ms`) Authoritative Server & Bitmasked Delta Compression**: `server.ts` hosts the RFC 6455 WebSocket upgrade endpoint (`/ws/siege`) and `/api/online/*` REST endpoints on port `3000`, advancing `stepAuthoritativeSiegeTick` every `50ms`, computing `CohortDirtyBit` delta records (`applySiegeDeltaUpdate`), and verifying client-server parity with 32-bit FNV-1a state hashes (`computeSectorStateHash`).
-- **128-Frame Client-Side Prediction (CSP) & Multi-Region Quorum**: `ClientPredictionRingBuffer` (`reconcileClientPrediction`) reconciles local cohort movements via Cubic Hermite smoothing (`<= 0.15m`) or deterministic rollback (`> 0.15m`), while `buildMultiRegionReplicationStatus` replicates state across 3 regional clusters (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) backed by durable server-side disk storage (`data/online_realm_state.json`).
+- **128-Frame Client-Side Prediction (CSP) & Simulated Regional Cluster Profiles**: `ClientPredictionRingBuffer` (`reconcileClientPrediction`) reconciles local cohort movements via Cubic Hermite smoothing (`<= 0.15m`) or deterministic rollback (`> 0.15m`), while `buildMultiRegionReplicationStatus` models 3 regional cluster profiles (`us-east-solara-1`, `eu-central-valhalla-1`, `ap-southeast-celestia-1`) inside the single Node.js instance backed by atomic local disk storage (`data/online_realm_state.json`) plus optional Cloud SQL PostgreSQL & Firestore.
 
 ### K. 9-Pillar Cross-System Validation & Integrity Engine (`src/game/systemValidation.ts`)
 
@@ -210,7 +210,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **218 automated tests across 37 TypeScript test files** (`31` `src/game/*.test.ts` suites + `4` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **222 automated tests across 38 TypeScript test files** (`32` `src/game/*.test.ts` suites + `4` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.

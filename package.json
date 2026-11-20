@@ -2,7 +2,7 @@
   "name": "voxel-realms-rpg",
   "private": true,
   "version": "1.5.0",
-  "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, Authoritative 20Hz 50v50 WebSocket Siege Server & Anti-Cheat Authority, Multi-Region Persistence, Four-Path Immortal Cultivation, 6-Tier Cosmic Hierarchy (COSMIC_LIMITS: 1 White Page -> 100 Overvoids -> Infinity Realities), D3 Cosmological Tree, Auto-Populating Open-World Lore Codex, 12 Dynastic Annals & 10^100-Word Akashic Stream built with React 19, Three.js 0.187, three-mesh-bvh, cannon-es, simplex-noise, D3.js, TypeScript, and C++20 SIMD guardrails (20/11/2026).",
+  "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, Single-Instance 20Hz WebSocket Siege Server & Anti-Cheat Authority (Simulated Regional Topology + Cloud SQL/Firestore), Four-Path Immortal Cultivation, 6-Tier Cosmic Hierarchy (COSMIC_LIMITS: 1 White Page -> 100 Overvoids -> Infinity Realities), D3 Cosmological Tree, Auto-Populating Open-World Lore Codex, 12 Dynastic Annals & 10^100-Word Akashic Stream built with React 19, Three.js 0.187, three-mesh-bvh, cannon-es, simplex-noise, D3.js, TypeScript, and C++20 SIMD guardrails (20/11/2026).",
   "author": "Voxel Realms RPG Team <creatergame31@gmail.com>",
   "license": "Apache-2.0",
   "engines": {
