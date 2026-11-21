@@ -5,7 +5,7 @@
 # Installs all dependencies (including devDependencies) and compiles the Vite
 # production frontend bundle into /app/dist.
 # ==============================================================================
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -53,7 +53,7 @@ CMD ["nginx", "-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]
 # Run with: docker run --rm voxel-e2e:ci
 # Skipped automatically by BuildKit during default production builds.
 # ==============================================================================
-FROM node:24-bookworm-slim AS e2e-runner
+FROM node:26-bookworm-slim AS e2e-runner
 
 WORKDIR /app
 
@@ -81,7 +81,7 @@ CMD ["npm", "run", "verify:e2e"]
 # Serves the compiled Vite bundle (/app/dist), Express API (/api/*), and 20Hz
 # WebSocket Siege server (/ws/siege) as non-root user `node` on port 3000.
 # ==============================================================================
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 
 WORKDIR /app
 
