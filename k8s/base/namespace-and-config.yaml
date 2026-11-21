@@ -1,0 +1,35 @@
+# Voxel Realms RPG — Restricted Namespace & Base Non-Secret ConfigMap
+# Sensitive credentials are NEVER committed as raw Kubernetes Secrets with stringData.
+# All secrets are synced at runtime via External Secrets Operator (k8s/base/external-secret.yaml)
+# from GCP Secret Manager into the operator-managed Secret `voxel-realms-secrets`.
+# Environment-specific APP_URL and CLOUD_SQL_INSTANCE_CONNECTION_NAME are set in
+# k8s/overlays/staging and k8s/overlays/production.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voxel-realms-config
+  namespace: voxel-realms
+data:
+  NODE_ENV: 'production'
+  PORT: '3000'
+  VOXEL_ECONOMY_BACKEND: 'postgres'
+  VOXEL_ALLOW_PRODUCTION_GODMODE: 'false'
+  VOXEL_TRUST_PROXY: '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+  VOXEL_API_WRITE_LIMIT_PER_MIN: '120'
+  ALLOW_PREVIEW_IFRAME: 'false'
+  DISABLE_HMR: 'true'
+  SQL_HOST: '127.0.0.1'
+  SQL_DB_NAME: 'voxel_realms_db'
+  # Overridden per environment in k8s/overlays/{staging,production}/patches/config-patch.yaml
+  CLOUD_SQL_INSTANCE_CONNECTION_NAME: 'SET_IN_ENVIRONMENT_OVERLAY'
+  APP_URL: 'SET_IN_ENVIRONMENT_OVERLAY'

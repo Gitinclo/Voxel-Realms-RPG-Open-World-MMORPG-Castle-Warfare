@@ -4,7 +4,7 @@
 **Target Public Game Launch Date:** `30/03/2030` (`2030-03-30`)  
 **Current Maturity:** `Pre-Production Prototype` (`v1.5.0`)
 
-This document tracks every infrastructure, performance, security, legal, and release gate required before accepting public MMO traffic or publishing the first signed `v*` GitHub release.
+This document tracks every infrastructure, performance, security, legal, and release gate required before accepting public MMO traffic or publishing the first signed `v*` GitHub release. Record completed evidence for each release candidate in [`./release-evidence-template.md`](./release-evidence-template.md).
 
 ---
 
@@ -20,43 +20,46 @@ This document tracks every infrastructure, performance, security, legal, and rel
 
 ---
 
-## 2. Redis Coordination, TLS 1.3 & Kubernetes Deployment (`k8s/`)
+## 2. Kustomize Overlays, External Secrets, Redis Coordination, TLS 1.3 & Observability (`k8s/`)
 
-Repository manifests are committed and unit-validated in [`../src/server/infraReadiness.test.ts`](../src/server/infraReadiness.test.ts):
+Repository manifests are organized as Kustomize base + environment overlays and unit-validated in [`../src/server/infraReadiness.test.ts`](../src/server/infraReadiness.test.ts):
 
-- [`../k8s/namespace-and-config.yaml`](../k8s/namespace-and-config.yaml) — Restricted PodSecurity namespace, production `ConfigMap` (`VOXEL_ECONOMY_BACKEND=postgres`, `VOXEL_TRUST_PROXY`), and Secret Manager template.
-- [`../k8s/redis.yaml`](../k8s/redis.yaml) — Non-root Redis StatefulSet (swap for GCP Memorystore / managed Redis REST in production) backing `REDIS_REST_URL` / `REDIS_REST_TOKEN`.
-- [`../k8s/deployment.yaml`](../k8s/deployment.yaml) — Non-root `voxel-realms-server` Deployment with read-only root filesystem, Cloud SQL Auth Proxy sidecar, `/healthz` + `/readyz` probes, Prometheus `/metrics` scrape annotations, `PodDisruptionBudget`, and `HorizontalPodAutoscaler`.
-- [`../k8s/ingress-tls.yaml`](../k8s/ingress-tls.yaml) — `cert-manager` Let's Encrypt TLS 1.3 `ClusterIssuer` + NGINX `Ingress` configured for 3600s `/ws/siege` WebSocket sessions and cookie affinity.
+- [`../k8s/base/`](../k8s/base/) — Restricted PodSecurity namespace, non-secret `ConfigMap` (zero raw `Secret` `stringData`), Workload Identity `ServiceAccount` (`voxel-realms-sa`), `Deployment` with parameterized Cloud SQL Auth Proxy, staging Redis (TLS + `--requirepass`) + HTTP REST coordination sidecar, `ClusterIssuer` + TLS 1.3 WebSocket `Ingress`, PDB, and HPA.
+- [`../k8s/external-secret.yaml`](../k8s/external-secret.yaml) — External Secrets Operator `SecretStore` + `ExternalSecret` binding GCP Secret Manager into `voxel-realms-secrets`.
+- [`../k8s/networkpolicy.yaml`](../k8s/networkpolicy.yaml) — Default-deny ingress/egress + least-privilege namespace NetworkPolicies.
+- [`../k8s/service-monitor.yaml`](../k8s/service-monitor.yaml) & [`../k8s/pod-monitor.yaml`](../k8s/pod-monitor.yaml) — Prometheus Operator scraping + Alertmanager SLO rules (`Voxel20HzTickOverrunDetected`, `VoxelHighIngress5xxRate`, `VoxelHighIngressLatencyP95`, `VoxelHighPodMemoryUtilization`, `VoxelPodRestarting`, `VoxelCertExpiringSoon`).
+- [`../k8s/overlays/staging/`](../k8s/overlays/staging/) & [`../k8s/overlays/production/`](../k8s/overlays/production/) — Environment-specific hosts, Cloud SQL connection names, Workload Identity SAs, HA replica bounds (`3–20`, `PDB minAvailable: 2`), and automatic removal of the single-replica in-cluster Redis StatefulSet in production to enforce HA managed Redis.
 
-**External Operator Action Required:**
+**External Operator Action Required (see [`../runbooks/cluster-rollout.md`](../runbooks/cluster-rollout.md) & [`../runbooks/certificate-troubleshooting.md`](../runbooks/certificate-troubleshooting.md)):**
 
-1. Bind GCP Workload Identity (`voxel-realms-sa`) to Cloud SQL Client & Secret Manager Secret Accessor roles.
-2. Replace placeholder values in `voxel-realms-secrets` via External Secrets Operator or GCP Secret Manager.
-3. Apply `kubectl apply -f k8s/` to the staging cluster and confirm `https://<staging-host>/api/ops/readiness` returns `"economyBackend":"postgres"` and `"coordinationBackend":"redis_rest"`.
+1. Bind GCP Workload Identity (`voxel-realms-sa`) to `roles/cloudsql.client` and `roles/secretmanager.secretAccessor`.
+2. Populate required keys in GCP Secret Manager and verify `ExternalSecret` reports `Synced=True`.
+3. Trigger [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml) to apply `k8s/overlays/staging`, verify `/healthz`, `/readyz`, `/api/ops/readiness` (`economyBackend=postgres`, `coordinationBackend=redis_rest`), live TLS handshake (`openssl s_client`), and archive rollout evidence.
 
 ---
 
 ## 3. Multi-Hour External Load & Soak Testing (`loadtest/`)
 
-Automated soak suites are committed under [`../loadtest/`](../loadtest/):
+Hardened 4-hour soak suites are committed under [`../loadtest/`](../loadtest/) and automated via [`.github/workflows/staging-soak.yml`](../.github/workflows/staging-soak.yml) (see [`../runbooks/staging-soak.md`](../runbooks/staging-soak.md)):
 
-- **k6 (HTTP + 20Hz WebSocket):**
+- **k6 (HTTP + Long-Lived 20Hz `/ws/siege` + RSS Drift Observer + JSON/JUnit Export):**
   ```bash
-  k6 run -e BASE_URL=https://staging.voxelrealms.example.com -e DURATION=4h -e VUS=150 loadtest/k6-soak.js
+  k6 run --summary-export soak/k6-summary.json --out json=soak/k6-results.json \
+    -e BASE_URL=https://staging.voxelrealms.gg -e DURATION=4h -e VUS=150 loadtest/k6-soak.js
   ```
-- **Artillery (Multi-Phase HTTP Economy Ramp):**
+- **Artillery (4-Hour / 14,400s Continuous Multi-Phase HTTP Ramp):**
   ```bash
-  npx artillery run --target https://staging.voxelrealms.example.com loadtest/artillery-siege.yml
+  npx artillery run --target https://staging.voxelrealms.gg \
+    --output soak/artillery-report.json loadtest/artillery-siege.yml
   ```
 
 **Exit Criteria (must pass on live staging for `>= 4 hours` continuously):**
 
-- `http_req_failed < 0.1%` (`0` HTTP `500`/`503` responses)
+- `http_req_failed < 0.1%` (`0` HTTP `500`/`503` responses, `voxel_http_429_rate < 2%`, `voxel_ws_error_rate < 0.1%`)
 - `http_req_duration p95 < 100ms`, `p99 < 250ms`
-- `20Hz` tick loop `overrunCount == 0` under sustained `/ws/siege` load
-- Stable container RSS memory (`< 5%` drift between hour 1 and hour 4 — no heap leak)
-- PostgreSQL connection pool saturation `< 70%` (`pg_stat_activity`) with zero deadlocks
+- `20Hz` tick loop `overrunCount == 0` under sustained long-lived 20Hz `/ws/siege` load
+- Stable container RSS memory (`< 5%` drift between hour 1 and hour 4 — no heap leak) and `0` pod restarts
+- PostgreSQL connection pool saturation `< 70%` (`pg_stat_activity`) with `0` deadlocks
 
 ---
 
@@ -66,8 +69,8 @@ Before public launch (`30/03/2030`), engage an external security reviewer agains
 
 1. **Authentication & Session Revocation:** HMAC-SHA256 `vr_session` cookie signing, Firebase ID token verification (`/api/auth/firebase-exchange`), server-side revocation across pods after `/api/auth/logout` and `DELETE /api/online/account`, and `/ws/siege` Origin/CSWSH checks.
 2. **Authoritative Economy & Anti-Cheat:** Concurrent `castle-upgrade`, `purchase-troops`, `market-trade`, and `claim-action` race-condition fuzzing against live PostgreSQL `SELECT ... FOR UPDATE` + `UNIQUE (commander_id, idempotency_key)`.
-3. **RBAC & Data Isolation:** `/api/admin/*`, `/api/db/*` role boundaries, Cloud Firestore `firestore.rules` default-deny enforcement, and DSR export/delete completeness across PostgreSQL + Firestore + Redis.
-4. **Edge & Container Hardening:** Production CSP (no `'unsafe-eval'`), HSTS, `VOXEL_TRUST_PROXY` IP spoofing tests, non-root container escape checks, and zero High/Critical CVEs (`npm audit --audit-level=high` + container image Trivy scan).
+3. **RBAC & Data Isolation:** `/api/admin/*`, `/api/db/*` role boundaries, Cloud Firestore `firestore.rules` default-deny enforcement, Kubernetes `NetworkPolicy` isolation, and DSR export/delete completeness across PostgreSQL + Firestore + Redis.
+4. **Edge & Container Hardening:** Production CSP (no `'unsafe-eval'`), HSTS, `VOXEL_TRUST_PROXY` IP spoofing tests, non-root container escape checks, and zero High/Critical CVEs (`npm audit --audit-level=high` + Trivy container scan in `release-gates.yml` / `release.yml`).
 
 ---
 
@@ -84,18 +87,16 @@ Have qualified legal counsel review and sign off on all player-facing legal docu
 
 ## 6. Publishing a Signed `v*` GitHub Release
 
-No `v*` tag should be pushed until Gates 1–5 are signed off for the target release milestone. When ready:
+No `v*` tag should be pushed until all 24 gates in [`./release-evidence-template.md`](./release-evidence-template.md) and [`.github/workflows/release-gates.yml`](../.github/workflows/release-gates.yml) are signed off (full procedure in [`../runbooks/release-cut.md`](../runbooks/release-cut.md)):
 
 ```bash
-# 1. Verify clean local validation, ops probe, and E2E suite on main
-npm run validate && npm run verify:ops && npm run verify:e2e
+git checkout main && git pull --ff-only origin main
+npm ci && npm run validate && npm run verify:ops && npm run verify:e2e
 
-# 2. Create a GPG- or SSH-signed annotated release tag
-git tag -s v1.5.0 -m "Voxel Realms RPG v1.5.0 — Staging/Beta Release Candidate"
-
-# 3. Verify tag signature locally before pushing
-git tag -v v1.5.0
-
-# 4. Push signed tag to trigger .github/workflows/release.yml (builds checksummed release bundle)
+git tag -s v1.5.0 -m "Voxel Realms RPG v1.5.0"
+git rev-parse v1.5.0^{}
+git verify-tag v1.5.0
 git push origin v1.5.0
 ```
+
+Pushing a GPG/SSH-signed tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml) under the protected `production-release` environment, verifying the tag signature, running Trivy + E2E, generating `SBOM.cdx.json`, `SBOM.spdx.json`, `provenance.json`, `release-attestation.json`, `SHA256SUMS.txt`, and GitHub Build Provenance Attestations.

@@ -5,6 +5,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import express from 'express';
 import {
   buildContentSecurityPolicy,
   isTrustProxyEnabled,
@@ -39,4 +40,16 @@ test('resolveTrustProxySetting defaults to loopback and parses explicit CIDR/hop
   assert.equal(resolveTrustProxySetting('1'), 1);
   assert.equal(resolveTrustProxySetting('99'), 8);
   assert.deepEqual(resolveTrustProxySetting('127.0.0.1, 10.0.0.0/8'), ['127.0.0.1', '10.0.0.0/8']);
+  assert.deepEqual(resolveTrustProxySetting('::1, fc00::/7'), ['::1', 'fc00::/7']);
+
+  // Malformed or garbage VOXEL_TRUST_PROXY values must safely fall back without crashing Express
+  const garbageSetting = resolveTrustProxySetting('Jdjdksjyeowkwyrsv-+tu 7&j&d"7+try u');
+  assert.equal(garbageSetting, 'loopback');
+  assert.equal(resolveTrustProxySetting('10.0.0.0/99'), 'loopback');
+  assert.equal(resolveTrustProxySetting('not-an-ip, 127.0.0.1'), '127.0.0.1');
+
+  const app = express();
+  assert.doesNotThrow(() => {
+    app.set('trust proxy', garbageSetting);
+  });
 });

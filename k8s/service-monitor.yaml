@@ -1,0 +1,98 @@
+# Voxel Realms RPG — Prometheus Operator ServiceMonitor & Alertmanager PrometheusRule
+# Scrapes GET /metrics on voxel-realms-service every 15s and defines production SLO alerts.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: voxel-realms-service-monitor
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-realms-rpg
+  namespaceSelector:
+    matchNames:
+      - voxel-realms
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      honorLabels: true
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: voxel-realms-slo-alerts
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: voxel-realms.slo.rules
+      interval: 30s
+      rules:
+        - alert: Voxel20HzTickOverrunDetected
+          expr: increase(voxel_tick_overruns_total{namespace="voxel-realms"}[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            service: voxel-realms-server
+          annotations:
+            summary: '20Hz authoritative siege tick overrun detected'
+            description: 'Pod {{ $labels.pod }} exceeded the 50ms 20Hz tick budget in the last 5m.'
+        - alert: VoxelHighPodMemoryUtilization
+          expr: >
+            (container_memory_working_set_bytes{namespace="voxel-realms",container="app"}
+              / kube_pod_container_resource_limits{namespace="voxel-realms",container="app",resource="memory"}) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            service: voxel-realms-server
+          annotations:
+            summary: 'Voxel Realms server memory > 85% of container limit'
+            description: 'Inspect RSS memory drift for potential heap leak on pod {{ $labels.pod }}.'
+        - alert: VoxelPodRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="voxel-realms"}[15m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            service: voxel-realms-server
+          annotations:
+            summary: 'Container restart detected in voxel-realms namespace'
+            description: 'Container {{ $labels.container }} in pod {{ $labels.pod }} restarted.'
+        - alert: VoxelHighIngress5xxRate
+          expr: >
+            sum(rate(nginx_ingress_controller_requests{namespace="voxel-realms",status=~"5.."}[5m]))
+            / clamp_min(sum(rate(nginx_ingress_controller_requests{namespace="voxel-realms"}[5m])), 1) > 0.001
+          for: 2m
+          labels:
+            severity: critical
+            service: voxel-realms-ingress
+          annotations:
+            summary: 'Ingress HTTP 5xx error rate exceeded 0.1% SLO'
+            description: 'Voxel Realms ingress returned 5xx errors above the 0.1% pre-launch SLO.'
+        - alert: VoxelHighIngressLatencyP95
+          expr: >
+            histogram_quantile(0.95,
+              sum(rate(nginx_ingress_controller_request_duration_seconds_bucket{namespace="voxel-realms"}[5m])) by (le)
+            ) > 0.100
+          for: 5m
+          labels:
+            severity: warning
+            service: voxel-realms-ingress
+          annotations:
+            summary: 'Ingress HTTP p95 latency exceeded 100ms SLO'
+            description: 'p95 HTTP latency is above 100ms across voxel-realms ingress.'
+        - alert: VoxelCertExpiringSoon
+          expr: (certmanager_certificate_expiration_timestamp_seconds{namespace="voxel-realms"} - time()) < 1209600
+          for: 1h
+          labels:
+            severity: warning
+            service: cert-manager
+          annotations:
+            summary: 'TLS certificate expires in less than 14 days'
+            description: 'Check cert-manager Certificate status in namespace voxel-realms.'

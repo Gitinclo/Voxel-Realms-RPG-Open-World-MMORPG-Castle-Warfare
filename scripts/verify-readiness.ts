@@ -184,6 +184,7 @@ async function startLiveServer(
       NODE_ENV: 'production',
       PORT: String(TEST_PORT),
       VOXEL_DATA_DIR: dataDir,
+      VOXEL_ECONOMY_BACKEND: 'disk',
       VOXEL_SESSION_SECRET: TEST_SESSION_SECRET,
       VOXEL_ADMIN_PASSKEY: TEST_ADMIN_PASSKEY,
       VOXEL_API_WRITE_LIMIT_PER_MIN: '50',

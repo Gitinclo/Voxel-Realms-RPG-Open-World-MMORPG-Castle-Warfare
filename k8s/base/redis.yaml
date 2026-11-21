@@ -1,0 +1,195 @@
+# Voxel Realms RPG — Staging In-Cluster Redis (TLS + Password Auth) + HTTP REST Coordination Sidecar
+# IMPORTANT PRODUCTION NOTE:
+#   - This StatefulSet runs with replicas: 1 and is intended ONLY for staging/dev clusters.
+#   - For PRODUCTION, k8s/overlays/production REMOVES this StatefulSet and requires a highly available
+#     managed Redis service (GCP Memorystore for Redis HA + Serverless/Cloud Run REST gateway or
+#     Upstash Redis REST over HTTPS TLS 1.3) supplied via ExternalSecret (`REDIS_REST_URL` + `REDIS_REST_TOKEN`).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: voxel-redis
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-redis
+    app.kubernetes.io/component: coordination-store
+spec:
+  serviceName: voxel-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: voxel-redis
+        app.kubernetes.io/component: coordination-store
+    spec:
+      serviceAccountName: voxel-realms-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          command:
+            - /bin/sh
+            - -c
+            - |
+              exec redis-server \
+                --appendonly yes \
+                --maxmemory 256mb \
+                --maxmemory-policy volatile-ttl \
+                --requirepass "$REDIS_PASSWORD" \
+                --tls-port 6379 \
+                --port 0 \
+                --tls-cert-file /tls/tls.crt \
+                --tls-key-file /tls/tls.key \
+                --tls-ca-cert-file /tls/ca.crt \
+                --tls-auth-clients no
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: voxel-realms-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - name: redis-tls
+              containerPort: 6379
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '384Mi'
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --tls --cacert /tls/ca.crt -p 6379 ping | grep -q PONG'
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli --tls --cacert /tls/ca.crt -p 6379 ping | grep -q PONG'
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-tls
+              mountPath: /tls
+              readOnly: true
+            - name: redis-tmp
+              mountPath: /tmp
+        - name: redis-rest-gateway
+          # Stateless HTTP-to-Redis REST sidecar compatible with src/server/coordinationStore.ts
+          # (supports POST /pipeline and GET /get/<key> with Authorization: Bearer <REDIS_REST_TOKEN>).
+          image: ghcr.io/hiett/serverless-redis-http:0.0.10
+          env:
+            - name: SRH_MODE
+              value: 'env'
+            - name: SRH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: voxel-realms-secrets
+                  key: REDIS_REST_TOKEN
+            - name: SRH_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: voxel-realms-secrets
+                  key: REDIS_INTERNAL_TLS_URI
+          ports:
+            - name: http-rest
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            requests:
+              cpu: '50m'
+              memory: '64Mi'
+            limits:
+              cpu: '250m'
+              memory: '192Mi'
+          livenessProbe:
+            tcpSocket:
+              port: http-rest
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            tcpSocket:
+              port: http-rest
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: redis-tls
+          secret:
+            # Issued automatically by cert-manager internal CA Certificate or Secret Manager
+            secretName: voxel-redis-tls-cert
+        - name: redis-tmp
+          emptyDir:
+            sizeLimit: 32Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voxel-redis
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-redis
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: voxel-redis
+  ports:
+    - name: redis-tls
+      port: 6379
+      targetPort: redis-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voxel-redis-rest
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-redis
+    app.kubernetes.io/component: coordination-rest-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: voxel-redis
+  ports:
+    - name: http-rest
+      port: 8080
+      targetPort: http-rest
+      protocol: TCP

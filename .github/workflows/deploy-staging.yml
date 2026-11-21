@@ -1,0 +1,133 @@
+name: Deploy Staging — Kustomize Rollout & TLS Evidence Gate
+# Action Pinning Policy: Pin third-party GitHub Actions to full 40-char commit SHAs via Dependabot
+# before public production launch (see runbooks/release-cut.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Immutable container tag or digest to deploy (e.g. v1.5.0-rc.1)'
+        required: true
+        type: string
+      staging_url:
+        description: 'Approved staging HTTPS URL (never example.com or production)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  rollout:
+    name: Apply Staging Overlay, Verify Probes & Archive Evidence
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate staging target URL & image tag
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$STAGING_URL" != https://* ]]; then
+            echo "ERROR: staging_url must use https://"
+            exit 1
+          fi
+          if echo "$STAGING_URL" | grep -qiE 'example\.com|set_in_environment_overlay|play\.voxelrealms|prod\.'; then
+            echo "ERROR: Refusing placeholder or production target URL: $STAGING_URL"
+            exit 1
+          fi
+          if [[ -z "$IMAGE_TAG" || "$IMAGE_TAG" == "latest" ]]; then
+            echo "ERROR: image_tag must be an immutable version tag or digest (not latest)."
+            exit 1
+          fi
+
+      - name: Authenticate to GCP via Workload Identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Configure GKE kubectl credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ vars.GKE_CLUSTER }}
+          location: ${{ vars.GKE_LOCATION }}
+          project_id: ${{ vars.GCP_PROJECT }}
+
+      - name: Verify prerequisite cluster operators (ingress-nginx, cert-manager, ESO)
+        run: |
+          set -euo pipefail
+          mkdir -p rollout-evidence
+          kubectl get crd certificates.cert-manager.io externalsecrets.external-secrets.io servicemonitors.monitoring.coreos.com podmonitors.monitoring.coreos.com > rollout-evidence/crds.txt
+          kubectl get pods -n ingress-nginx > rollout-evidence/ingress-nginx-pods.txt
+          kubectl get pods -n cert-manager > rollout-evidence/cert-manager-pods.txt
+
+      - name: Apply staging Kustomize overlay & deploy image
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          kubectl kustomize k8s/overlays/staging > rollout-evidence/rendered-staging-manifests.yaml
+          if grep -qiE 'REPLACE_VIA_SECRET_MANAGER|SET_IN_ENVIRONMENT_OVERLAY|example\.com' rollout-evidence/rendered-staging-manifests.yaml; then
+            echo "ERROR: Unresolved placeholder found in rendered staging manifests."
+            exit 1
+          fi
+          kubectl apply -k k8s/overlays/staging
+          kubectl set image deployment/voxel-realms-server \
+            app="ghcr.io/gitinclo/voxel-realms-rpg:${IMAGE_TAG}" \
+            -n voxel-realms
+          kubectl rollout status deployment/voxel-realms-server \
+            -n voxel-realms --timeout=15m | tee rollout-evidence/rollout-status.txt
+
+      - name: Capture ExternalSecret, Certificate, PDB, HPA & Pod status
+        run: |
+          set -euo pipefail
+          kubectl get externalsecret,certificate,pdb,hpa,networkpolicy,pods -n voxel-realms -o wide > rollout-evidence/cluster-state.txt
+          kubectl describe certificate -n voxel-realms > rollout-evidence/certificate-describe.txt || true
+          kubectl get pods -n voxel-realms -o json > rollout-evidence/pods.json
+
+      - name: Verify live /healthz, /readyz & /api/ops/readiness
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --retry 20 --retry-delay 5 "${STAGING_URL}/healthz" | tee rollout-evidence/healthz.json
+          curl --fail --show-error --retry 10 --retry-delay 5 "${STAGING_URL}/readyz" | tee rollout-evidence/readyz.json
+          curl --fail --show-error "${STAGING_URL}/api/ops/readiness" | tee rollout-evidence/ops-readiness.json
+          node -e '
+            const fs = require("fs");
+            const ops = JSON.parse(fs.readFileSync("rollout-evidence/ops-readiness.json", "utf8"));
+            if (!ops.ok || ops.persistence?.economyBackend !== "postgres") {
+              console.error("Expected economyBackend=postgres on staging", ops);
+              process.exit(1);
+            }
+          '
+
+      - name: Verify live TLS handshake, chain & expiry
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+        run: |
+          set -euo pipefail
+          HOST="$(node -e "console.log(new URL(process.env.STAGING_URL).hostname)")"
+          echo "Checking TLS certificate on ${HOST}:443"
+          openssl s_client \
+            -connect "${HOST}:443" \
+            -servername "${HOST}" \
+            -verify_return_error </dev/null 2>&1 \
+            | openssl x509 -noout -subject -issuer -dates -fingerprint -sha256 \
+            | tee rollout-evidence/tls-certificate.txt
+
+      - name: Archive staging rollout & TLS evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-rollout-evidence-${{ github.run_id }}
+          path: rollout-evidence/
+          retention-days: 90

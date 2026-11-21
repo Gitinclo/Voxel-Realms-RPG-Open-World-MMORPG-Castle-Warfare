@@ -1,0 +1,142 @@
+name: Staging 4-Hour Soak — k6 (HTTP + 20Hz WS) & Artillery
+# Executes continuous >= 4h staging soak suites and archives JSON/JUnit/memory-drift evidence.
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_url:
+        description: 'Approved staging HTTPS URL (never example.com or production)'
+        required: true
+        type: string
+      duration:
+        description: 'k6 soak duration (must be >= 4h for release gate evidence)'
+        default: '4h'
+        required: true
+        type: string
+      vus:
+        description: 'Peak k6 virtual users'
+        default: '150'
+        required: true
+        type: string
+      run_artillery:
+        description: 'Also run 4-hour Artillery staging soak sequentially'
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  soak:
+    name: Run External Staging Soak & Verify SLOs
+    runs-on: ubuntu-latest
+    environment:
+      name: staging-soak
+    timeout-minutes: 540
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate staging target & capture pre-soak baseline
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p soak
+          if [[ "$STAGING_URL" != https://* ]]; then
+            echo "ERROR: staging_url must use https://"
+            exit 1
+          fi
+          if echo "$STAGING_URL" | grep -qiE 'example\.com|set_in_environment_overlay|play\.voxelrealms|prod\.'; then
+            echo "ERROR: Refusing placeholder or production target URL: $STAGING_URL"
+            exit 1
+          fi
+          curl --fail --show-error "${STAGING_URL}/healthz" | tee soak/pre-healthz.json
+          curl --fail --show-error "${STAGING_URL}/api/ops/readiness" | tee soak/pre-ops-readiness.json
+
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | \
+            sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run k6 HTTP + 20Hz WebSocket soak
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+          DURATION: ${{ inputs.duration }}
+          VUS: ${{ inputs.vus }}
+        run: |
+          set -euo pipefail
+          k6 run \
+            --summary-export soak/k6-summary.json \
+            --out json=soak/k6-results.json \
+            -e BASE_URL="${STAGING_URL}" \
+            -e DURATION="${DURATION}" \
+            -e VUS="${VUS}" \
+            -e SOAK_REPORT_DIR="soak" \
+            loadtest/k6-soak.js
+
+      - name: Install and run Artillery 4-hour staging soak
+        if: ${{ inputs.run_artillery }}
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+        run: |
+          set -euo pipefail
+          npm install --global artillery@2
+          artillery run \
+            --target "${STAGING_URL}" \
+            --output soak/artillery-report.json \
+            loadtest/artillery-siege.yml
+
+      - name: Capture post-soak readiness & verify RSS drift (< 5%) and 0 tick overruns
+        env:
+          STAGING_URL: ${{ inputs.staging_url }}
+        run: |
+          set -euo pipefail
+          curl --fail --show-error "${STAGING_URL}/api/ops/readiness" | tee soak/post-ops-readiness.json
+          node -e '
+            const fs = require("fs");
+            const pre = JSON.parse(fs.readFileSync("soak/pre-ops-readiness.json", "utf8"));
+            const post = JSON.parse(fs.readFileSync("soak/post-ops-readiness.json", "utf8"));
+            const preRss = Number(pre?.memoryMb?.rss || 0);
+            const postRss = Number(post?.memoryMb?.rss || 0);
+            const driftPct = preRss > 0 ? ((postRss - preRss) / preRss) * 100 : 0;
+            const overruns = Number(post?.tickLoop20Hz?.overrunCount || 0) - Number(pre?.tickLoop20Hz?.overrunCount || 0);
+            const failedWrites = Number(post?.persistence?.failedWrites || 0) - Number(pre?.persistence?.failedWrites || 0);
+            const summary = { preRss, postRss, driftPct: Number(driftPct.toFixed(2)), newTickOverruns: overruns, newFailedWrites: failedWrites };
+            fs.writeFileSync("soak/soak-drift-verdict.json", JSON.stringify(summary, null, 2));
+            console.log("Soak drift verdict:", summary);
+            if (overruns > 0) {
+              console.error("FAIL: 20Hz tick overruns occurred during soak.");
+              process.exit(1);
+            }
+            if (failedWrites > 0) {
+              console.error("FAIL: Persistence write failures occurred during soak.");
+              process.exit(1);
+            }
+            if (driftPct >= 5) {
+              console.error("FAIL: Memory RSS drift exceeded 5% threshold.");
+              process.exit(1);
+            }
+          '
+
+      - name: Archive soak reports & drift verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-soak-${{ github.run_id }}
+          path: soak/
+          retention-days: 90

@@ -1,0 +1,23 @@
+# Voxel Realms RPG — Production Kustomize Overlay
+# Apply ONLY after all 24 pre-launch release gates pass and independent approvals are recorded:
+#   kubectl apply -k k8s/overlays/production
+# Notice: This overlay intentionally DELETES the single-replica in-cluster `voxel-redis` StatefulSet
+# so production MUST use a managed High-Availability Redis service (GCP Memorystore HA or Upstash
+# Redis REST over TLS 1.3) configured via External Secrets Operator (`REDIS_REST_URL`/`REDIS_REST_TOKEN`).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: voxel-realms
+
+resources:
+  - ../../base
+
+commonLabels:
+  app.kubernetes.io/environment: production
+
+patches:
+  - path: patches/config-patch.yaml
+  - path: patches/service-account-patch.yaml
+  - path: patches/external-secret-patch.yaml
+  - path: patches/ingress-patch.yaml
+  - path: patches/deployment-patch.yaml
+  - path: patches/redis-delete-patch.yaml

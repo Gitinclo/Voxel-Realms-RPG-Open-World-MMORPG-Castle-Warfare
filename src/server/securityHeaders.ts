@@ -4,6 +4,37 @@
  */
 
 import type { Request } from 'express';
+import { isIP } from 'node:net';
+
+const EXPRESS_TRUST_PROXY_SUBNETS = new Set(['loopback', 'linklocal', 'uniquelocal']);
+
+function isValidTrustProxyToken(token: string): boolean {
+  const lower = token.toLowerCase();
+  if (EXPRESS_TRUST_PROXY_SUBNETS.has(lower)) {
+    return true;
+  }
+  const slashIdx = token.indexOf('/');
+  if (slashIdx === -1) {
+    return isIP(token) !== 0;
+  }
+  if (token.indexOf('/', slashIdx + 1) !== -1) {
+    return false;
+  }
+  const addr = token.slice(0, slashIdx);
+  const maskStr = token.slice(slashIdx + 1);
+  if (!/^\d+$/.test(maskStr)) {
+    return false;
+  }
+  const ipVersion = isIP(addr);
+  const mask = Number.parseInt(maskStr, 10);
+  if (ipVersion === 4) {
+    return mask >= 0 && mask <= 32;
+  }
+  if (ipVersion === 6) {
+    return mask >= 0 && mask <= 128;
+  }
+  return false;
+}
 
 export interface ContentSecurityPolicyOptions {
   isProduction: boolean;
@@ -57,9 +88,9 @@ export function buildContentSecurityPolicy(options: ContentSecurityPolicyOptions
  * - `'false'` / `'0'` -> `false` (no proxy headers trusted)
  * - `'loopback'` / `'linklocal'` / `'uniquelocal'` -> Express built-in subnet name
  * - Positive integer string (e.g. `'1'`, `'2'`) -> hop count
- * - Comma-separated CIDRs/IPs (e.g. `'127.0.0.1,10.0.0.0/8'`) -> string[]
- * Defaults to `'loopback'` when unset so untrusted public proxies cannot spoof X-Forwarded-For,
- * while local reverse proxies (Nginx/Cloud Run sidecars on loopback) continue to work.
+ * - Comma-separated valid CIDRs/IPs/subnets (e.g. `'127.0.0.1,10.0.0.0/8'`) -> string[]
+ * Defaults safely to `'loopback'` when unset or malformed so invalid env values never crash Express
+ * (`proxy-addr` throws TypeError on invalid IPs) and untrusted public proxies cannot spoof X-Forwarded-For.
  */
 export function resolveTrustProxySetting(
   rawValue: string | undefined
@@ -72,18 +103,26 @@ export function resolveTrustProxySetting(
   if (lower === 'false' || lower === '0' || lower === 'none') {
     return false;
   }
-  if (lower === 'loopback' || lower === 'linklocal' || lower === 'uniquelocal') {
+  if (EXPRESS_TRUST_PROXY_SUBNETS.has(lower)) {
     return lower;
   }
   if (/^\d+$/.test(trimmed)) {
     const hops = Number.parseInt(trimmed, 10);
     return hops > 0 ? Math.min(hops, 8) : false;
   }
-  const parts = trimmed
+  const validParts = trimmed
     .split(',')
     .map((p) => p.trim())
-    .filter(Boolean);
-  return parts.length === 1 ? parts[0] : parts;
+    .filter((p) => p.length > 0 && isValidTrustProxyToken(p))
+    .map((p) => (EXPRESS_TRUST_PROXY_SUBNETS.has(p.toLowerCase()) ? p.toLowerCase() : p));
+
+  if (validParts.length === 0) {
+    console.warn(
+      '[Voxel Realms Security] Invalid VOXEL_TRUST_PROXY value detected; falling back safely to "loopback".'
+    );
+    return 'loopback';
+  }
+  return validParts.length === 1 ? validParts[0] : validParts;
 }
 
 export function isTrustProxyEnabled(setting: boolean | number | string | string[]): boolean {

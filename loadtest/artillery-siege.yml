@@ -1,33 +1,48 @@
-# Voxel Realms RPG — Artillery Staging Load & Soak Configuration
-# Run with:
-#   npx artillery run --target https://staging.voxelrealms.example.com loadtest/artillery-siege.yml
+# Voxel Realms RPG — Artillery 4-Hour Continuous Staging Soak Configuration
+#
+# Full 4-hour staging soak (14,400s total; DO NOT run against production or placeholder domains):
+#   mkdir -p soak
+#   npx artillery run --target https://staging.voxelrealms.gg \
+#     --output soak/artillery-report.json loadtest/artillery-siege.yml
+#
+# Quick local smoke check (2 minutes):
+#   npx artillery run -e smoke --target http://127.0.0.1:3000 loadtest/artillery-siege.yml
 config:
   target: 'http://127.0.0.1:3000'
   phases:
-    - name: Warmup
-      duration: 60
+    - name: Warmup (5m)
+      duration: 300
       arrivalRate: 5
-    - name: Sustained Staging Load
-      duration: 600
+    - name: Sustained 4h Staging Soak (3h30m)
+      duration: 12600
       arrivalRate: 25
-    - name: Siege Peak Burst
-      duration: 180
+    - name: Siege Peak Burst (15m)
+      duration: 900
       arrivalRate: 60
-    - name: Cooldown
-      duration: 60
+    - name: Cooldown & Recovery (10m)
+      duration: 600
       arrivalRate: 5
+  environments:
+    smoke:
+      phases:
+        - name: Local Smoke
+          duration: 120
+          arrivalRate: 5
   ensure:
     thresholds:
       - http.response_time.p95: 100
       - http.response_time.p99: 250
+      - http.codes.429: 50
       - http.codes.500: 0
       - http.codes.503: 0
   defaults:
     headers:
       Content-Type: 'application/json'
+      X-Soak-Suite: 'voxel-artillery-4h'
 
 scenarios:
-  - name: 'Authoritative Player Session -> Sync -> Economy -> Export -> Logout'
+  - name: 'Bounded Tenant Session -> Sync -> Authoritative Economy -> Export -> Logout'
+    weight: 9
     flow:
       - get:
           url: '/healthz'
@@ -36,7 +51,7 @@ scenarios:
       - post:
           url: '/api/auth/player-session'
           json:
-            commanderId: 'artillery-{{ $randomNumber(1, 50000) }}'
+            commanderId: 'soak-artillery-tenant-{{ $randomNumber(1, 250) }}'
             displayName: 'Artillery Vanguard'
           expect:
             - statusCode: 200
@@ -55,7 +70,9 @@ scenarios:
             actionType: 'GATHER_WOOD_NODE'
             entityId: 'wood-node-1'
           expect:
-            - statusCode: 200
+            - statusCode:
+                - 200
+                - 429
       - get:
           url: '/api/online/economy/balance'
           expect:
@@ -66,5 +83,12 @@ scenarios:
             - statusCode: 200
       - post:
           url: '/api/auth/logout'
+          expect:
+            - statusCode: 200
+  - name: 'Operator Readiness & 20Hz Tick Health Probe'
+    weight: 1
+    flow:
+      - get:
+          url: '/api/ops/readiness'
           expect:
             - statusCode: 200

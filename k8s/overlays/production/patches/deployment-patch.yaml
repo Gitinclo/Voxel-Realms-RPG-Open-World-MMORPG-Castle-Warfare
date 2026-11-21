@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voxel-realms-server
+  namespace: voxel-realms
+spec:
+  replicas: 3
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: voxel-realms-pdb
+  namespace: voxel-realms
+spec:
+  minAvailable: 2
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: voxel-realms-hpa
+  namespace: voxel-realms
+spec:
+  minReplicas: 3
+  maxReplicas: 20

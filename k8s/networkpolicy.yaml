@@ -1,0 +1,100 @@
+# Voxel Realms RPG — Zero-Trust Kubernetes NetworkPolicies
+# Enforces default-deny ingress & egress inside namespace `voxel-realms`, then explicitly allows:
+#   1. DNS resolution (UDP/TCP 53) to kube-system CoreDNS
+#   2. ingress-nginx -> voxel-realms-server:3000
+#   3. Prometheus monitoring namespace -> voxel-realms-server:3000 (/metrics)
+#   4. voxel-realms-server -> voxel-redis-rest:8080 (coordination store)
+#   5. voxel-realms-server -> Cloud SQL Auth Proxy / GCP APIs / Managed Redis HTTPS (TCP 443, 3307)
+#   6. voxel-redis ingress restricted strictly to voxel-realms-server pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: voxel-realms
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: voxel-realms
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-voxel-server-traffic
+  namespace: voxel-realms
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-realms-rpg
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: voxel-redis
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Cloud SQL Auth Proxy (TCP 3307) & GCP Secret Manager / Firebase / Managed Redis HTTPS (TCP 443)
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 3307
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-voxel-redis-ingress
+  namespace: voxel-realms
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: voxel-realms-rpg
+      ports:
+        - protocol: TCP
+          port: 8080

@@ -1,0 +1,23 @@
+# Voxel Realms RPG — Kustomize Base
+# Do NOT apply k8s/base directly to a live cluster.
+# Apply an environment-specific overlay instead:
+#   kubectl apply -k k8s/overlays/staging
+#   kubectl apply -k k8s/overlays/production
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: voxel-realms
+
+resources:
+  - namespace-and-config.yaml
+  - service-account.yaml
+  - external-secret.yaml
+  - deployment.yaml
+  - redis.yaml
+  - ingress-tls.yaml
+  - networkpolicy.yaml
+  - service-monitor.yaml
+  - pod-monitor.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: voxel-realms-rpg
+  app.kubernetes.io/managed-by: kustomize

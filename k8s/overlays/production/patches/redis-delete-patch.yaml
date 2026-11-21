@@ -1,0 +1,22 @@
+# Production enforces external High-Availability managed Redis (GCP Memorystore HA + REST gateway
+# or Upstash Redis REST over HTTPS TLS 1.3). Remove the single-replica staging StatefulSet/Services.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: voxel-redis
+  namespace: voxel-realms
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voxel-redis
+  namespace: voxel-realms
+$patch: delete
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voxel-redis-rest
+  namespace: voxel-realms
+$patch: delete

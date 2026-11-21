@@ -1,0 +1,29 @@
+# Voxel Realms RPG — Prometheus Operator PodMonitor
+# Scrapes individual voxel-realms-server pods directly on /metrics so per-pod 20Hz tick latency,
+# WebSocket peer counts, persistence write failures, and RSS drift can be graphed during 4h soaks.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: voxel-realms-pod-monitor
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-realms-rpg
+      app.kubernetes.io/component: authoritative-server
+  namespaceSelector:
+    matchNames:
+      - voxel-realms
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node

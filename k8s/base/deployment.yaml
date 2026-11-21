@@ -1,4 +1,6 @@
-# Voxel Realms RPG — Hardened Non-Root Deployment, Cloud SQL Auth Proxy Sidecar, PDB & HPA
+# Voxel Realms RPG — Hardened Non-Root Deployment, Cloud SQL Auth Proxy Sidecar, Service, PDB & HPA
+# Environment-specific Cloud SQL connection name, replica counts, and image tags are managed via
+# Kustomize overlays (k8s/overlays/staging and k8s/overlays/production).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,6 +8,7 @@ metadata:
   namespace: voxel-realms
   labels:
     app.kubernetes.io/name: voxel-realms-rpg
+    app.kubernetes.io/component: authoritative-server
     app.kubernetes.io/version: '1.5.0'
 spec:
   replicas: 2
@@ -22,6 +25,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: voxel-realms-rpg
+        app.kubernetes.io/component: authoritative-server
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/path: '/metrics'
@@ -29,6 +33,13 @@ spec:
     spec:
       serviceAccountName: voxel-realms-sa
       terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: voxel-realms-rpg
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -48,6 +59,7 @@ spec:
             - configMapRef:
                 name: voxel-realms-config
             - secretRef:
+                # Synced at runtime by External Secrets Operator (external-secret.yaml)
                 name: voxel-realms-secrets
           securityContext:
             allowPrivilegeEscalation: false
@@ -88,10 +100,14 @@ spec:
             - '--structured-logs'
             - '--port=5432'
             - '--private-ip'
+            - '--auto-iam-authn'
             - '$(CLOUD_SQL_INSTANCE_CONNECTION_NAME)'
           env:
             - name: CLOUD_SQL_INSTANCE_CONNECTION_NAME
-              value: 'dev-ivy-6v0ns:asia-southeast1:ai-studio-416287a7'
+              valueFrom:
+                configMapKeyRef:
+                  name: voxel-realms-config
+                  key: CLOUD_SQL_INSTANCE_CONNECTION_NAME
           securityContext:
             runAsNonRoot: true
             runAsUser: 65532
@@ -119,6 +135,9 @@ kind: Service
 metadata:
   name: voxel-realms-service
   namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    app.kubernetes.io/component: authoritative-server
 spec:
   type: ClusterIP
   selector:

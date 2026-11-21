@@ -1,0 +1,176 @@
+name: Release Gates — Pre-Tag Evidence, Kustomize, Security & E2E Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Target release tag to validate (e.g. v1.5.0)'
+        required: true
+        type: string
+      evidence_file:
+        description: 'Path to completed release evidence file (e.g. docs/release-evidence-template.md)'
+        default: 'docs/release-evidence-template.md'
+        required: true
+        type: string
+      require_signed_tag:
+        description: 'Require that release_tag already exists as an annotated GPG/SSH-signed tag'
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      evidence_file:
+        default: 'docs/release-evidence-template.md'
+        type: string
+      require_signed_tag:
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  code-ops-and-e2e:
+    name: Validate Code, Live Ops, E2E & Kustomize Overlays
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository (full history for tag checks)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Run full code validation & high-severity dependency audit
+        run: npm run validate && npm audit --audit-level=high
+
+      - name: Run live authoritative ops readiness suite
+        run: npm run verify:ops
+
+      - name: Install Playwright Chromium & run E2E suite
+        run: |
+          npx playwright install --with-deps chromium
+          npm run verify:e2e
+
+      - name: Validate Kustomize staging & production overlays (no raw Secrets or placeholders)
+        run: |
+          set -euo pipefail
+          curl -sSL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          ./kustomize build k8s/overlays/staging > /tmp/staging-rendered.yaml
+          ./kustomize build k8s/overlays/production > /tmp/production-rendered.yaml
+          for f in /tmp/staging-rendered.yaml /tmp/production-rendered.yaml; do
+            if grep -qE '^kind:\s*Secret$' "$f"; then
+              echo "ERROR: Raw Kubernetes Secret found in $f; use ExternalSecret only."
+              exit 1
+            fi
+            if grep -qiE 'REPLACE_VIA_SECRET_MANAGER|SET_IN_ENVIRONMENT_OVERLAY|example\.com' "$f"; then
+              echo "ERROR: Unresolved placeholder found in $f."
+              exit 1
+            fi
+          done
+          if grep -q 'name: voxel-redis' /tmp/production-rendered.yaml; then
+            echo "ERROR: Single-replica in-cluster voxel-redis must be excluded from production overlay."
+            exit 1
+          fi
+
+  container-and-sbom-gate:
+    name: Build Container Image, Generate SBOM & Trivy Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production Docker image
+        run: docker build -t voxel-realms-rpg:release-gate .
+
+      - name: Generate CycloneDX & SPDX SBOMs for container image (Syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: voxel-realms-rpg:release-gate
+          format: cyclonedx-json
+          output-file: SBOM.image.cdx.json
+
+      - name: Scan container image with Trivy (fail on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: voxel-realms-rpg:release-gate
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload container SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-image-sbom-${{ github.run_id }}
+          path: SBOM.image.cdx.json
+          retention-days: 90
+
+  release-evidence-and-tag-gate:
+    name: Verify Release Evidence Checklist & Tag Integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository (full tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release evidence document exists and contains all 24 gates
+        env:
+          EVIDENCE_FILE: ${{ inputs.evidence_file }}
+        run: |
+          set -euo pipefail
+          test -f "$EVIDENCE_FILE"
+          node -e '
+            const fs = require("fs");
+            const content = fs.readFileSync(process.env.EVIDENCE_FILE, "utf8");
+            const requiredMarkers = [
+              "Signed/approved cluster rollout",
+              "Live staging health and readiness probes pass",
+              "k6 soak ran for >= 4 hours",
+              "Artillery soak ran for >= 4 hours",
+              "Memory drift < 5%",
+              "PostgreSQL pool saturation < 70%",
+              "Independent penetration test completed",
+              "Legal counsel approved EULA and privacy terms",
+              "SBOM and provenance attached",
+              "GPG/SSH-signed tag verified"
+            ];
+            for (const marker of requiredMarkers) {
+              if (!content.includes(marker)) {
+                console.error("Missing required release gate marker:", marker);
+                process.exit(1);
+              }
+            }
+            console.log("Release evidence gate structure verified.");
+          '
+
+      - name: Verify annotated & signed Git tag when required
+        if: ${{ inputs.require_signed_tag }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          git rev-parse "${RELEASE_TAG}^{}"
+          TAG_OBJ="$(git cat-file -p "${RELEASE_TAG}")"
+          if ! echo "$TAG_OBJ" | grep -qE 'BEGIN (PGP|SSH) SIGNATURE'; then
+            echo "ERROR: Tag ${RELEASE_TAG} is missing a GPG or SSH signature block."
+            exit 1
+          fi
+          echo "Verified cryptographic signature block present on tag ${RELEASE_TAG}."

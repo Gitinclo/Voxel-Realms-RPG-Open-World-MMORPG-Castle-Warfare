@@ -1,4 +1,8 @@
-name: Release — Tagged GitHub Release & Checksums
+name: Release — Signed Tag Verification, SBOM, Provenance & GitHub Release
+# Policy:
+#   - Protected GitHub Environment `production-release` should require >= 2 independent reviewers.
+#   - Maintainers MUST create GPG/SSH-signed tags locally (`git tag -s vX.Y.Z`) only after completing
+#     all 24 gates in docs/release-evidence-template.md and runbooks/release-cut.md.
 
 on:
   push:
@@ -8,19 +12,39 @@ on:
 
 permissions:
   contents: write
+  attestations: write
+  id-token: write
 
 jobs:
   publish-release:
-    name: Validate, Package & Publish GitHub Release
+    name: Verify Signed Tag, Build SBOM/Provenance & Publish Release
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    environment: production-release
+    timeout-minutes: 35
 
     steps:
-      - name: Checkout tagged source
-        uses: actions/checkout@v7
+      - name: Checkout tagged source (full tag metadata)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Git tag is annotated and carries a GPG or SSH signature
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          TAG_TYPE="$(git cat-file -t "${TAG}")"
+          if [ "${TAG_TYPE}" != "tag" ]; then
+            echo "ERROR: ${TAG} is a lightweight tag. Only signed annotated tags (git tag -s) may trigger a release."
+            exit 1
+          fi
+          if ! git cat-file -p "${TAG}" | grep -qE 'BEGIN (PGP|SSH) SIGNATURE'; then
+            echo "ERROR: Annotated tag ${TAG} is unsigned. Sign with GPG or SSH before pushing."
+            exit 1
+          fi
+          echo "Annotated cryptographic signature block detected on ${TAG}."
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -38,10 +62,27 @@ jobs:
             exit 1
           fi
 
-      - name: Run full validation, audit & live server ops suite
-        run: npm run validate && npm audit --audit-level=high && npm run verify:ops
+      - name: Run full validation, audit, live ops & E2E verification
+        run: |
+          npm run validate
+          npm audit --audit-level=high
+          npm run verify:ops
+          npx playwright install --with-deps chromium
+          npm run verify:e2e
 
-      - name: Package versioned release archive + SHA-256 manifest
+      - name: Build production Docker image & scan with Trivy
+        run: docker build -t "voxel-realms-rpg:${GITHUB_REF_NAME}" .
+
+      - name: Trivy container vulnerability scan (fail on CRITICAL/HIGH)
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: voxel-realms-rpg:${{ github.ref_name }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Package versioned release archive
         run: |
           mkdir -p release-assets
           ARCHIVE="release-assets/voxel-realms-rpg-${GITHUB_REF_NAME}-dist.tar.gz"
@@ -51,6 +92,10 @@ jobs:
             Dockerfile \
             .dockerignore \
             nginx.conf \
+            k8s \
+            loadtest \
+            runbooks \
+            docs \
             DEPLOYMENT.md \
             badges.md \
             package.json \
@@ -62,6 +107,7 @@ jobs:
             firestore.rules \
             src/game \
             src/db \
+            src/server \
             src/middleware \
             src/types \
             src/lib/firebase-admin.ts \
@@ -71,40 +117,89 @@ jobs:
             CODE_OF_CONDUCT.md \
             CONTRIBUTING.md \
             EULA.md \
-            "Four-Path Cultivation.md" \
             GOVERNANCE.md \
             LEGAL.md \
             LICENSE \
             LICENSE.md \
-            LORE.md \
             NOTICE \
             PRIVACY.md \
             ROADMAP.md \
             SECURITY.md \
-            security_spec.md \
             SUPPORT.md \
-            TERMS.md \
-            backups.md \
-            dependency.md \
-            "deployment validation.md" \
-            discipline.md \
-            "environment hardening.md" \
-            "in-game- economy -marketplace.md" \
-            "incident response.md" \
-            monitoring.md \
-            "real-world QA.md" \
-            Windows.md \
-            PC.md \
-            playstation.md \
-            xbox.md \
-            mac.md \
-            linux.md \
-            iOS.md \
-            android.md \
-            "Virtual Reality.md" \
-            Physics.md \
-            3D-open-world-mmorgp-game-international-standard.md
-          (cd release-assets && sha256sum *.tar.gz > SHA256SUMS.txt)
+            TERMS.md
+
+      - name: Generate CycloneDX SBOM (SBOM.cdx.json) via Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: voxel-realms-rpg:${{ github.ref_name }}
+          format: cyclonedx-json
+          output-file: release-assets/SBOM.cdx.json
+
+      - name: Generate SPDX SBOM (SBOM.spdx.json) via Syft
+        uses: anchore/sbom-action@v0
+        with:
+          image: voxel-realms-rpg:${{ github.ref_name }}
+          format: spdx-json
+          output-file: release-assets/SBOM.spdx.json
+
+      - name: Generate build provenance & release attestation metadata
+        run: |
+          node -e '
+            const fs = require("fs");
+            const crypto = require("crypto");
+            const archivePath = `release-assets/voxel-realms-rpg-${process.env.GITHUB_REF_NAME}-dist.tar.gz`;
+            const digest = crypto.createHash("sha256").update(fs.readFileSync(archivePath)).digest("hex");
+            const provenance = {
+              _type: "https://in-toto.io/Statement/v1",
+              predicateType: "https://slsa.dev/provenance/v1",
+              subject: [{ name: archivePath.split("/").pop(), digest: { sha256: digest } }],
+              predicate: {
+                buildDefinition: {
+                  buildType: "https://github.com/actions/runner",
+                  externalParameters: {
+                    repository: process.env.GITHUB_REPOSITORY,
+                    ref: process.env.GITHUB_REF,
+                    workflow: process.env.GITHUB_WORKFLOW
+                  }
+                },
+                runDetails: {
+                  builder: { id: "https://github.com/actions/runner" },
+                  metadata: {
+                    invocationId: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+                    startedOn: new Date().toISOString()
+                  }
+                }
+              }
+            };
+            fs.writeFileSync("release-assets/provenance.json", JSON.stringify(provenance, null, 2));
+            fs.writeFileSync(
+              "release-assets/release-attestation.json",
+              JSON.stringify({
+                tag: process.env.GITHUB_REF_NAME,
+                commitSha: process.env.GITHUB_SHA,
+                archiveSha256: digest,
+                sbomFormats: ["SBOM.cdx.json", "SBOM.spdx.json"],
+                trivyGate: "CRITICAL,HIGH=0",
+                e2eVerified: true,
+                opsVerified: true,
+                signedTagChecked: true,
+                generatedAtIso: new Date().toISOString()
+              }, null, 2)
+            );
+          '
+
+      - name: Generate SHA256SUMS.txt over all release assets
+        run: |
+          (cd release-assets && sha256sum voxel-realms-rpg-*.tar.gz SBOM.cdx.json SBOM.spdx.json provenance.json release-attestation.json > SHA256SUMS.txt)
+
+      - name: Attest build provenance via GitHub Artifact Attestations
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            release-assets/voxel-realms-rpg-*.tar.gz
+            release-assets/SBOM.cdx.json
+            release-assets/SBOM.spdx.json
+            release-assets/SHA256SUMS.txt
 
       - name: Publish GitHub Release
         env:

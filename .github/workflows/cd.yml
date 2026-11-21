@@ -1,14 +1,33 @@
-name: CD — Staging Validation Gate
+name: CD — Staging Candidate & Kustomize Validation Gate
+# For live GKE staging rollout use `.github/workflows/deploy-staging.yml`.
+# For 4-hour external staging soak use `.github/workflows/staging-soak.yml`.
+
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   verify-release-candidate:
+    name: Validate Build, Ops, & Kustomize Overlays
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
       - run: npm ci --no-audit
       - run: npm run validate && npm run verify:ops
+      - name: Render & lint Kustomize staging and production overlays
+        run: |
+          set -euo pipefail
+          curl -sSL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          ./kustomize build k8s/overlays/staging > /tmp/staging.yaml
+          ./kustomize build k8s/overlays/production > /tmp/production.yaml
+          for f in /tmp/staging.yaml /tmp/production.yaml; do
+            ! grep -qE '^kind:\s*Secret$' "$f"
+            ! grep -qiE 'REPLACE_VIA_SECRET_MANAGER|SET_IN_ENVIRONMENT_OVERLAY|example\.com' "$f"
+          done

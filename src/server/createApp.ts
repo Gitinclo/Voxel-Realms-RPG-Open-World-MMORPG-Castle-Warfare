@@ -314,7 +314,14 @@ export function createVoxelServerRuntime(options: CreateVoxelServerOptions): Vox
   };
 
   const app = express();
-  app.set('trust proxy', trustProxy);
+  try {
+    app.set('trust proxy', trustProxy);
+  } catch {
+    console.warn(
+      '[Voxel Realms Security] Express rejected trust proxy configuration; falling back to "loopback".'
+    );
+    app.set('trust proxy', 'loopback');
+  }
   app.disable('x-powered-by');
   app.use(express.json({ limit: '512kb' }));
 

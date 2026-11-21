@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voxel-realms-ingress
+  namespace: voxel-realms
+  annotations:
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+spec:
+  tls:
+    - hosts:
+        - play.voxelrealms.gg
+      secretName: voxel-realms-prod-tls-cert
+  rules:
+    - host: play.voxelrealms.gg
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: voxel-realms-service
+                port:
+                  name: http
