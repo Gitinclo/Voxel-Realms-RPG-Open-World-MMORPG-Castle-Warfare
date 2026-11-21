@@ -93,6 +93,7 @@ else
   NODE_ENV=production \
   PORT="${E2E_PORT}" \
   VOXEL_DATA_DIR="${TMP_DATA_DIR}" \
+  VOXEL_ECONOMY_BACKEND="disk" \
   VOXEL_SESSION_SECRET="e2e-prod-session-secret-0123456789abcdef0123456789abcdef" \
   VOXEL_ADMIN_PASSKEY="e2e-prod-operator-passkey-2026" \
   ./node_modules/.bin/tsx server.ts > "${TMP_DATA_DIR}/server.log" 2>&1 &

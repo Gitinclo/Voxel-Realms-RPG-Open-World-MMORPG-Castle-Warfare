@@ -59,9 +59,15 @@ jobs:
       - name: Run live authoritative ops readiness suite
         run: npm run verify:ops
 
-      - name: Install Playwright Chromium & run E2E suite
+      - name: Install matching fonts, Playwright chrome-for-testing & CLI, then run E2E suite
         run: |
-          npx playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-noto-color-emoji
+          sudo apt-get install -y --no-install-recommends fonts-jetbrains-mono || true
+          fc-cache -f
+          npx playwright install --with-deps chrome-for-testing
+          npm install -g @playwright/cli
+          playwright-cli install-browser chrome-for-testing --with-deps
           npm run verify:e2e
 
       - name: Validate Kustomize staging & production overlays (no raw Secrets or placeholders)

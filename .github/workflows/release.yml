@@ -67,7 +67,13 @@ jobs:
           npm run validate
           npm audit --audit-level=high
           npm run verify:ops
-          npx playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-noto-core fonts-noto-color-emoji
+          sudo apt-get install -y --no-install-recommends fonts-jetbrains-mono || true
+          fc-cache -f
+          npx playwright install --with-deps chrome-for-testing
+          npm install -g @playwright/cli
+          playwright-cli install-browser chrome-for-testing --with-deps
           npm run verify:e2e
 
       - name: Build production Docker image & scan with Trivy

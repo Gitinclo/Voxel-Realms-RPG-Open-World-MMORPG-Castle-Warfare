@@ -195,6 +195,13 @@ test('CI/CD rollout, 4h soak, release-gate, and signed-release workflows enforce
         `${file} references nonexistent Dockerfile target stage "${targetStage}" (valid: ${Array.from(validStages).join(', ')})`
       );
     }
+    if (/npm run verify:e2e/.test(content)) {
+      assert.match(
+        content,
+        /@playwright\/cli/,
+        `${file} invokes npm run verify:e2e but does not install @playwright/cli`
+      );
+    }
   }
 });
 
