@@ -168,12 +168,22 @@ test('CI/CD rollout, 4h soak, release-gate, and signed-release workflows enforce
   assert.match(releaseYml, /id-token:\s*write/);
   assert.match(releaseYml, /environment:\s*production-release/);
   assert.match(releaseYml, /BEGIN \(PGP\|SSH\) SIGNATURE/);
+  assert.match(releaseYml, /npm run release:package/);
+  assert.match(releaseYml, /VoxelRealmsRPG-\$\{\{ github\.ref_name \}\}-WebGL\.zip/);
+  assert.match(releaseYml, /softprops\/action-gh-release@v2/);
+  assert.match(releaseYml, /RELEASE_NOTES_PLAYER\.md/);
   assert.match(releaseYml, /SBOM\.cdx\.json/);
   assert.match(releaseYml, /SBOM\.spdx\.json/);
   assert.match(releaseYml, /provenance\.json/);
   assert.match(releaseYml, /release-attestation\.json/);
   assert.match(releaseYml, /SHA256SUMS\.txt/);
   assert.match(releaseYml, /attest-build-provenance/);
+
+  const pagesWebgl = readText('.github/workflows/pages-webgl.yml');
+  assert.match(pagesWebgl, /actions\/configure-pages@v5/);
+  assert.match(pagesWebgl, /actions\/upload-pages-artifact@v3/);
+  assert.match(pagesWebgl, /actions\/deploy-pages@v4/);
+  assert.match(pagesWebgl, /VITE_BASE_PATH:/);
 
   assert.match(cdYml, /kustomize build k8s\/overlays\/staging/);
 

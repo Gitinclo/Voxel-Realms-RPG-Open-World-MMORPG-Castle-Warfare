@@ -1,0 +1,70 @@
+name: GitHub Pages — Playable WebGL Release Build
+# Publishes the production WebGL Release bundle to GitHub Pages so players can run
+# Voxel Realms RPG directly in the browser.
+# Prerequisite: Enable GitHub Pages -> Source: "GitHub Actions" in Repository Settings.
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-webgl
+  cancel-in-progress: true
+
+jobs:
+  build-webgl:
+    name: Build Release WebGL Bundle for GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build production WebGL bundle with Pages base path
+        env:
+          NODE_ENV: production
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+        run: |
+          npm run build
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-webgl:
+    name: Deploy Playable WebGL Build to GitHub Pages
+    needs: build-webgl
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

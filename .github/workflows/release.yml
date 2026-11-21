@@ -1,4 +1,4 @@
-name: Release — Signed Tag Verification, SBOM, Provenance & GitHub Release
+name: Release — Package WebGL/Server Builds, SBOM, Provenance & GitHub Release
 # Policy:
 #   - Protected GitHub Environment `production-release` should require >= 2 independent reviewers.
 #   - Maintainers MUST create GPG/SSH-signed tags locally (`git tag -s vX.Y.Z`) only after completing
@@ -7,8 +7,7 @@ name: Release — Signed Tag Verification, SBOM, Provenance & GitHub Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+      - 'v*'
 
 permissions:
   contents: write
@@ -17,7 +16,7 @@ permissions:
 
 jobs:
   publish-release:
-    name: Verify Signed Tag, Build SBOM/Provenance & Publish Release
+    name: Verify Signed Tag, Package Release Builds (<2GB), SBOM & Publish
     runs-on: ubuntu-latest
     environment: production-release
     timeout-minutes: 35
@@ -28,10 +27,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify Git tag is annotated and carries a GPG or SSH signature
+      - name: Verify SemVer tag format, annotation & GPG/SSH signature
+        id: tag_meta
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
+          if ! [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "ERROR: Tag ${TAG} must follow Semantic Versioning (e.g. v0.1.0, v1.5.0, v1.5.0-beta.1)."
+            exit 1
+          fi
           TAG_TYPE="$(git cat-file -t "${TAG}")"
           if [ "${TAG_TYPE}" != "tag" ]; then
             echo "ERROR: ${TAG} is a lightweight tag. Only signed annotated tags (git tag -s) may trigger a release."
@@ -41,7 +45,12 @@ jobs:
             echo "ERROR: Annotated tag ${TAG} is unsigned. Sign with GPG or SSH before pushing."
             exit 1
           fi
-          echo "Annotated cryptographic signature block detected on ${TAG}."
+          IS_PRERELEASE="false"
+          if [[ "${TAG}" == *-* ]]; then
+            IS_PRERELEASE="true"
+          fi
+          echo "is_prerelease=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
+          echo "Verified signed SemVer tag ${TAG} (prerelease=${IS_PRERELEASE})."
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -88,10 +97,16 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      - name: Package versioned release archive
+      - name: Package Offline WebGL Release Zip & Player-Facing Release Notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: npm run release:package
+
+      - name: Package Full-Stack Linux Server Release Bundle
         run: |
+          set -euo pipefail
           mkdir -p release-assets
-          ARCHIVE="release-assets/voxel-realms-rpg-${GITHUB_REF_NAME}-dist.tar.gz"
+          ARCHIVE="release-assets/VoxelRealmsRPG-${GITHUB_REF_NAME}-Linux.tar.gz"
           tar -czf "${ARCHIVE}" \
             dist \
             server.ts \
@@ -153,12 +168,19 @@ jobs:
           node -e '
             const fs = require("fs");
             const crypto = require("crypto");
-            const archivePath = `release-assets/voxel-realms-rpg-${process.env.GITHUB_REF_NAME}-dist.tar.gz`;
-            const digest = crypto.createHash("sha256").update(fs.readFileSync(archivePath)).digest("hex");
+            const tag = process.env.GITHUB_REF_NAME;
+            const webglZip = `release-assets/VoxelRealmsRPG-${tag}-WebGL.zip`;
+            const linuxArchive = `release-assets/VoxelRealmsRPG-${tag}-Linux.tar.gz`;
+            const sha = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
+            const webglDigest = sha(webglZip);
+            const linuxDigest = sha(linuxArchive);
             const provenance = {
               _type: "https://in-toto.io/Statement/v1",
               predicateType: "https://slsa.dev/provenance/v1",
-              subject: [{ name: archivePath.split("/").pop(), digest: { sha256: digest } }],
+              subject: [
+                { name: webglZip.split("/").pop(), digest: { sha256: webglDigest } },
+                { name: linuxArchive.split("/").pop(), digest: { sha256: linuxDigest } }
+              ],
               predicate: {
                 buildDefinition: {
                   buildType: "https://github.com/actions/runner",
@@ -181,9 +203,10 @@ jobs:
             fs.writeFileSync(
               "release-assets/release-attestation.json",
               JSON.stringify({
-                tag: process.env.GITHUB_REF_NAME,
+                tag,
                 commitSha: process.env.GITHUB_SHA,
-                archiveSha256: digest,
+                webglZipSha256: webglDigest,
+                linuxServerSha256: linuxDigest,
                 sbomFormats: ["SBOM.cdx.json", "SBOM.spdx.json"],
                 trivyGate: "CRITICAL,HIGH=0",
                 e2eVerified: true,
@@ -194,23 +217,48 @@ jobs:
             );
           '
 
-      - name: Generate SHA256SUMS.txt over all release assets
+      - name: Enforce strict < 2 GB GitHub Release asset limit & compute SHA256SUMS.txt
         run: |
-          (cd release-assets && sha256sum voxel-realms-rpg-*.tar.gz SBOM.cdx.json SBOM.spdx.json provenance.json release-attestation.json > SHA256SUMS.txt)
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const LIMIT = 2 * 1024 * 1024 * 1024;
+            for (const f of fs.readdirSync("release-assets")) {
+              const p = path.join("release-assets", f);
+              const st = fs.statSync(p);
+              if (!st.isFile()) continue;
+              if (st.size <= 0 || st.size >= LIMIT) {
+                console.error(`FAIL: ${f} (${st.size} bytes) violates < 2 GB GitHub Release asset limit.`);
+                process.exit(1);
+              }
+            }
+            console.log("All release assets verified strictly under 2 GB.");
+          '
+          (cd release-assets && sha256sum VoxelRealmsRPG-*.zip VoxelRealmsRPG-*.tar.gz SBOM.cdx.json SBOM.spdx.json provenance.json release-attestation.json > SHA256SUMS.txt)
 
       - name: Attest build provenance via GitHub Artifact Attestations
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
-            release-assets/voxel-realms-rpg-*.tar.gz
+            release-assets/VoxelRealmsRPG-*.zip
+            release-assets/VoxelRealmsRPG-*.tar.gz
             release-assets/SBOM.cdx.json
             release-assets/SBOM.spdx.json
             release-assets/SHA256SUMS.txt
 
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${GITHUB_REF_NAME}" release-assets/* \
-            --title "Voxel Realms RPG ${GITHUB_REF_NAME}" \
-            --generate-notes
+      - name: Publish GitHub Release via softprops/action-gh-release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release-assets/RELEASE_NOTES_PLAYER.md
+          prerelease: ${{ steps.tag_meta.outputs.is_prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/VoxelRealmsRPG-${{ github.ref_name }}-WebGL.zip
+            release-assets/VoxelRealmsRPG-${{ github.ref_name }}-Linux.tar.gz
+            release-assets/SHA256SUMS.txt
+            release-assets/SBOM.cdx.json
+            release-assets/SBOM.spdx.json
+            release-assets/provenance.json
+            release-assets/release-attestation.json

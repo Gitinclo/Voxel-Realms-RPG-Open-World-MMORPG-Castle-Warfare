@@ -40,7 +40,23 @@ Confirm `package.json` `"version"` matches the target tag (e.g., `1.5.0` for `v1
 
 ---
 
-## 3. Create & Verify a Cryptographically Signed Tag
+## 3. Package Release Artifacts Locally (`< 2 GB` Limit & Naming Convention)
+
+All game release artifacts MUST be compiled in **Release** mode and follow `<GameName>-v<SemVer>-<Platform>.<ext>` (`VoxelRealmsRPG-v1.5.0-WebGL.zip`, `VoxelRealmsRPG-v1.5.0-Linux.tar.gz`, etc.), with every individual asset strictly under `2 GB`:
+
+```bash
+npm run release:package
+```
+
+This creates:
+
+- `release-assets/VoxelRealmsRPG-v1.5.0-WebGL.zip` (`index.html` + all compiled WebGL assets at archive root for offline local play)
+- `release-assets/RELEASE_NOTES_PLAYER.md` (player-facing changelog omitting raw git hashes and internal refactors)
+- `release-assets/SHA256SUMS.txt`
+
+---
+
+## 4. Create & Verify a Cryptographically Signed Tag
 
 GitHub Artifact Attestations supplement build provenance, but they **cannot replace** a maintainer-held GPG or SSH signing key.
 
@@ -59,13 +75,25 @@ Only after `git verify-tag` succeeds and the 24-gate release evidence checklist 
 git push origin v1.5.0
 ```
 
+Alternatively, for manual GitHub CLI publication of a prerelease playtest build (include `--prerelease` ONLY for alpha/beta/rc playtests):
+
+```bash
+gh release create v1.5.0-beta.1 \
+  ./release-assets/VoxelRealmsRPG-v1.5.0-beta.1-WebGL.zip \
+  ./release-assets/SHA256SUMS.txt \
+  --title "v1.5.0-beta.1" \
+  --notes-file ./release-assets/RELEASE_NOTES_PLAYER.md \
+  --prerelease
+```
+
 ---
 
-## 4. Release Workflow Outputs (`.github/workflows/release.yml`)
+## 5. Automated Release & Browser Play Outputs (`.github/workflows/release.yml` & `pages-webgl.yml`)
 
-Pushing the signed tag triggers `release.yml` (gated by the `production-release` environment), which verifies the tag signature, runs validation + ops + E2E + Trivy container scan, and attaches:
+Pushing a signed `v*` tag triggers `release.yml` (gated by the `production-release` environment), which verifies the tag signature, runs validation + ops + E2E + Trivy container scan, enforces `< 2 GB` per artifact, and publishes via `softprops/action-gh-release@v2`:
 
-- `voxel-realms-rpg-v1.5.0-dist.tar.gz`
+- `VoxelRealmsRPG-v1.5.0-WebGL.zip` (Offline WebGL Release package with `index.html` at root)
+- `VoxelRealmsRPG-v1.5.0-Linux.tar.gz` (Self-hosted full-stack Linux/Node 22+ server bundle)
 - `SHA256SUMS.txt`
 - `SBOM.cdx.json` (CycloneDX JSON via Syft)
 - `SBOM.spdx.json` (SPDX JSON via Syft)
@@ -73,9 +101,11 @@ Pushing the signed tag triggers `release.yml` (gated by the `production-release`
 - `release-attestation.json`
 - GitHub Artifact Attestation (`actions/attest-build-provenance`)
 
+Publishing the release (or pushing to `main`) also triggers `.github/workflows/pages-webgl.yml` to deploy the browser-playable WebGL build directly to GitHub Pages.
+
 Verify published checksums and attestations after publication:
 
 ```bash
 sha256sum -c SHA256SUMS.txt
-gh attestation verify voxel-realms-rpg-v1.5.0-dist.tar.gz --repo Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare
+gh attestation verify VoxelRealmsRPG-v1.5.0-WebGL.zip --repo Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare
 ```
