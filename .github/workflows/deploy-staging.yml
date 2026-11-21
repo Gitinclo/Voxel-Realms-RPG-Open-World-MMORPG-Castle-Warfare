@@ -126,7 +126,7 @@ jobs:
 
       - name: Archive staging rollout & TLS evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: staging-rollout-evidence-${{ github.run_id }}
           path: rollout-evidence/
