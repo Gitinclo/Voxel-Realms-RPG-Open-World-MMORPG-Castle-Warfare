@@ -25,8 +25,16 @@ jobs:
         run: npm run validate
       - name: High/Critical vulnerability audit gate
         run: npm audit --audit-level=high
-      - name: Run unit & security coverage report
-        run: npm run test:coverage
+      - name: Run unit, integration & security coverage report
+        run: npm run test:coverage | tee coverage-summary.txt
+      - name: Upload coverage report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-coverage-report
+          path: coverage-summary.txt
+          if-no-files-found: error
+          retention-days: 14
       - name: Live production-mode ops, ledger & multi-sector WS probe
         run: npm run verify:ops
 

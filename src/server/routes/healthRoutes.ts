@@ -142,6 +142,9 @@ export function registerHealthRoutes(app: Express, ctx: ServerContext): void {
         heapUsed: Math.round((mem.heapUsed / 1_048_576) * 10) / 10,
       },
       persistence: {
+        economyBackend: ctx.economyService.backendKind,
+        coordinationBackend: ctx.coordinationStore.backendKind,
+        revokedSessionsCount: ctx.coordinationStore.getRevokedCount(),
         writable: persistHealth.writable,
         totalWrites: persistHealth.totalWrites,
         failedWrites: persistHealth.failedWrites,

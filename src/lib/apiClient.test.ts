@@ -33,9 +33,12 @@ test('authoritativeEconomyClient forwards typed JSON commands and parses failure
     );
   }) as typeof fetch;
 
-  const okRes = await authoritativeEconomyClient.upgradeCastle({ eventId: 'castle-1' }, mockFetch);
+  const okRes = await authoritativeEconomyClient.upgradeCastle(
+    { idempotencyKey: 'castle-upgrade-1' },
+    mockFetch
+  );
   assert.equal(capturedUrl, '/api/online/economy/castle-upgrade');
-  assert.equal(capturedBody, JSON.stringify({ eventId: 'castle-1' }));
+  assert.equal(capturedBody, JSON.stringify({ idempotencyKey: 'castle-upgrade-1' }));
   assert.equal(okRes.ok, true);
   if (okRes.ok) {
     assert.equal(okRes.data.newLevel, 2);
@@ -52,7 +55,7 @@ test('authoritativeEconomyClient forwards typed JSON commands and parses failure
     )) as typeof fetch;
 
   const errRes = await authoritativeEconomyClient.purchaseTroops(
-    { eventId: 'troop-1', branch: 'shooters', tier: 10, quantity: 5 },
+    { idempotencyKey: 'troop-buy-1', branch: 'shooters', tier: 10, quantity: 5 },
     errFetch
   );
   assert.equal(errRes.ok, false);

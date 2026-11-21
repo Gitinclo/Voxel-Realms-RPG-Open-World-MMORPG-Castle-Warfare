@@ -124,7 +124,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex flex-col justify-between px-3 py-3 sm:px-6 sm:py-5 lg:px-10 lg:py-6 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-slate-950/70 via-slate-950/20 to-slate-950/75 pointer-events-auto select-none">
+    <div className="absolute inset-0 z-40 flex flex-col justify-between px-3 py-3 sm:px-5 sm:py-5 lg:px-5 xl:px-8 lg:py-6 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-slate-950/70 via-slate-950/20 to-slate-950/75 pointer-events-auto select-none">
       {/* Compact Single-Row Top Bar */}
       <div className="shrink-0 w-full max-w-7xl mx-auto flex items-center justify-between gap-2 relative z-20">
         {/* Left: Version Emblem */}
@@ -134,13 +134,13 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span>v1.5.0</span>
-          <span className="hidden sm:inline text-amber-200/80">
+          <span className="hidden 2xl:inline text-amber-200/80">
             · Launch {GAME_LAUNCH_DATE_DISPLAY}
           </span>
         </div>
 
         {/* Desktop Single-Row Quick Actions + Secondary Systems Popover */}
-        <div className="hidden lg:flex items-center gap-1.5 min-w-0">
+        <div className="hidden lg:flex flex-wrap items-center justify-end gap-1.5 min-w-0">
           {onOpenVipSubscription && (
             <button
               type="button"

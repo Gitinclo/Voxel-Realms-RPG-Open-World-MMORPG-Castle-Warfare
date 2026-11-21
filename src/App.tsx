@@ -57,6 +57,9 @@ import { sound } from './game/audio';
 import { detectInitialTargetPlatform } from './game/hudPlatformScale';
 import { useSpatialAudioCues } from './hooks/useSpatialAudioCues';
 import { useSovereignFlightAndTeleport } from './hooks/useSovereignFlightAndTeleport';
+import { useDailySystems } from './hooks/useDailySystems';
+import { useLoreAndEula } from './hooks/useLoreAndEula';
+import { authoritativeEconomyClient, createDeterministicEventId } from './lib/apiClient';
 import { GameCanvas } from './components/GameCanvas';
 import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
@@ -158,46 +161,8 @@ const EulaModal = lazy(MODAL_LOADERS.eula);
 const MarketplaceModal = lazy(MODAL_LOADERS.marketplace);
 import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
 import { evaluateChunkBoundaryProximity } from './game/openWorld3DEngine';
-import {
-  DAILY_LOGIN_STORAGE_KEY,
-  INITIAL_DAILY_LOGIN_STATE,
-  PersistedDailyLoginState,
-  getCalendarDateKey,
-  evaluateDailyLoginState,
-  getSevenDayRewardSchedule,
-  claimDailyLoginReward,
-  calculateVeteranScrollBonuses,
-  applyVeteranScrollToCultivation,
-} from './game/dailyLogin';
-import {
-  DAILY_MISSIONS_STORAGE_KEY,
-  DailyMissionBoardState,
-  DailyMissionCategory,
-  DailyMissionDestinationModal,
-  advanceDailyMissionById,
-  applyMissionRewardBundle,
-  claimDailyMissionMilestone,
-  claimDailyMissionReward,
-  countClaimableDailyMissions,
-  deserializeDailyMissionBoard,
-  recordDailyMissionEvent,
-  refreshDailyMissionBoard,
-  serializeDailyMissionBoard,
-  syncBoardForDate,
-} from './game/dailyMissions';
-import {
-  VIP_SUBSCRIPTION_STORAGE_KEY,
-  INITIAL_VIP_SUBSCRIPTION_STATE,
-  PersistedVipSubscriptionState,
-  VipTierId,
-  BillingCycle,
-  VIP_TIER_CONFIGS,
-  evaluateVipSubscription,
-  activateVipSubscription,
-  claimVipDailyStipend,
-  applyVipDiscountToCosts,
-  checkVipFeatureAccess,
-} from './game/vipSubscription';
+import { calculateVeteranScrollBonuses } from './game/dailyLogin';
+import { applyVipDiscountToCosts, checkVipFeatureAccess } from './game/vipSubscription';
 import { tickWorldAI, generateRadiantQuestForNPC } from './game/worldAI';
 import { PlayerCultivationState, CultivationPill, CultivationPath } from './types/cultivation';
 import {
@@ -243,24 +208,10 @@ import {
   projectOmniverseNpcToWorldNPC,
 } from './game/omniverse';
 import {
-  comprehendLoreEpoch,
-  LORE_CODEX_STORAGE_KEY,
-  INITIAL_LORE_CODEX_STATE,
-  PersistedLoreCodexState,
-  LoreCodexEntry,
   evaluateOpenWorldLoreDiscovery,
   unlockLoreCodexEntry,
-  claimLoreCodexReward,
   buildDynamicMonsterCodexEntry,
 } from './game/loreHistory';
-
-import {
-  EULA_STORAGE_KEY,
-  EulaAcceptanceState,
-  acceptEulaVersion,
-  createInitialEulaAcceptanceState,
-  revokeEulaAcceptance,
-} from './game/eula';
 
 type ActiveModal =
   | 'none'
@@ -420,59 +371,6 @@ export default function App() {
     initialGodBundle.cultivation
   );
 
-  // Daily Login Reward State (persisted in localStorage, triggers on first load of the day)
-  const [dailyLoginState, setDailyLoginState] = useState<PersistedDailyLoginState>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem(DAILY_LOGIN_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          return { ...INITIAL_DAILY_LOGIN_STATE, ...parsed };
-        }
-      } catch {
-        // Fallback to initial state if localStorage is unavailable or malformed
-      }
-    }
-    return INITIAL_DAILY_LOGIN_STATE;
-  });
-
-  // Daily Cultivation Missions State (persisted in localStorage, cultivation-level scaled & repeatable)
-  const [dailyMissionBoard, setDailyMissionBoard] = useState<DailyMissionBoardState>(() => {
-    const initDateKey = getCalendarDateKey(new Date(), 0);
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem(DAILY_MISSIONS_STORAGE_KEY);
-        if (raw) {
-          const hydrated = deserializeDailyMissionBoard(raw);
-          if (hydrated) {
-            return syncBoardForDate(hydrated, initDateKey, initialGodBundle.cultivation);
-          }
-        }
-      } catch {
-        // Fallback to freshly generated board
-      }
-    }
-    return syncBoardForDate(null, initDateKey, initialGodBundle.cultivation);
-  });
-
-  // VIP Member Subscription State (persisted in localStorage; Root Creator defaults to VIP 3 Celestial)
-  const [vipState, setVipState] = useState<PersistedVipSubscriptionState>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const raw = window.localStorage.getItem(VIP_SUBSCRIPTION_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw) as Partial<PersistedVipSubscriptionState>;
-          if (parsed.activeTier && parsed.activeTier !== 'free') {
-            return { ...INITIAL_VIP_SUBSCRIPTION_STATE, ...parsed };
-          }
-        }
-      } catch {
-        // Fallback to initial state
-      }
-    }
-    return initialGodBundle.vipState;
-  });
-
   // Selected entities for modals
   const [selectedMonster, setSelectedMonster] = useState<MonsterTarget>(INITIAL_MONSTERS[0]);
   const [activeModal, setActiveModal] = useState<ActiveModal>('none');
@@ -495,27 +393,6 @@ export default function App() {
   const [godmode, setGodmode] = useState<boolean>(true);
   const [isTimeFrozen, setIsTimeFrozen] = useState<boolean>(false);
   const [activeAccountEmail, setActiveAccountEmail] = useState<string>(PRIMARY_ADMIN_EMAIL);
-  const [eulaState, setEulaState] = useState<EulaAcceptanceState>(() => {
-    try {
-      const raw =
-        typeof window !== 'undefined' ? window.localStorage.getItem(EULA_STORAGE_KEY) : null;
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<EulaAcceptanceState>;
-        if (typeof parsed.accepted === 'boolean' && typeof parsed.acceptedByEmail === 'string') {
-          return {
-            accepted: parsed.accepted,
-            acceptedVersion: parsed.acceptedVersion ?? null,
-            acceptedAtIso: parsed.acceptedAtIso ?? null,
-            acceptedByEmail: parsed.acceptedByEmail,
-            receiptHash: parsed.receiptHash ?? null,
-          };
-        }
-      }
-    } catch {
-      // ignore localStorage read errors
-    }
-    return createInitialEulaAcceptanceState(PRIMARY_ADMIN_EMAIL);
-  });
   const [moderatedPlayers, setModeratedPlayers] =
     useState<ModeratedPlayerRecord[]>(INITIAL_MODERATED_PLAYERS);
   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>(INITIAL_SUPPORT_TICKETS);
@@ -613,12 +490,70 @@ export default function App() {
   // Touch joystick vector (-1 to 1)
   const [touchVector, setTouchVector] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Evaluate VIP Member Subscription status & multipliers
-  const vipEffectiveDateKey = getCalendarDateKey(new Date(), vipState.simulatedVipDayOffset);
-  const vipEvaluation = evaluateVipSubscription(vipState, vipEffectiveDateKey);
-
   // Evaluate Supreme Creator 12-Domain All-Things Immunity, Sovereign Divine Flight & Sovereign Divine Teleportation (fail-closed for all non-root accounts)
   const godImmunity = evaluateGodCharacterImmunity(activeAccountEmail, godmode);
+
+  // Extracted Daily Login, Daily Missions & VIP Subscription state/persistence/handlers
+  const {
+    vipState,
+    setVipState,
+    vipEffectiveDateKey,
+    vipEvaluation,
+    dailyLoginEvaluation,
+    dailyRewardSchedule,
+    activeDailyMissionBoard,
+    claimableDailyMissionsCount,
+    dailyMissionsClaimedCount,
+    handleClaimDailyLoginReward,
+    handleAdvanceSimulatedDay,
+    handleComprehendVeteranScroll,
+    recordDailyMissionProgress,
+    handleAdvanceDailyMission,
+    handleClaimDailyMission,
+    handleClaimDailyMissionMilestone,
+    handleClaimAllDailyMissions,
+    handleRefreshDailyMissionBoard,
+    handleNavigateFromDailyMission,
+    handleActivateVipTier,
+    handleClaimVipStipend,
+    handleAdvanceSimulatedVipDay,
+    handleToggleVipAutoRenew,
+    handleCancelVipSubscription,
+  } = useDailySystems({
+    initialCultivation: initialGodBundle.cultivation,
+    initialVipState: initialGodBundle.vipState,
+    castleLevel,
+    cultivation,
+    resources,
+    monsters,
+    immuneToAllThings: godImmunity.immuneToAllThings,
+    setResources,
+    setCultivation,
+    setSelectedMonster,
+    onOpenDestinationModal: (destination) => setActiveModal(destination),
+    setToastMessage,
+  });
+
+  // Extracted Lore Codex & EULA persistence/handlers
+  const {
+    eulaState,
+    comprehendedEpochIds,
+    loreCodexState,
+    setLoreCodexState,
+    lastCodexEvalPosRef,
+    handleComprehendLoreEpoch,
+    handleScoutDiscoverCodexEntry,
+    handleClaimCodexBounty,
+    handleAcceptEula,
+    handleRevokeEula,
+  } = useLoreAndEula({
+    activeAccountEmail,
+    monsters,
+    setResources,
+    setCultivation,
+    setToastMessage,
+  });
+
   const {
     isFlying,
     setIsFlying,
@@ -678,84 +613,12 @@ export default function App() {
   });
   const playerPower = BigInt(Math.floor(Number(baseKingdomPower) * cultivationMultiplier));
 
-  // Evaluate Daily Login Reward status & 7-Day Scaled Schedule
-  const effectiveDateKey = getCalendarDateKey(new Date(), dailyLoginState.simulatedDayOffset);
-  const dailyLoginEvaluation = evaluateDailyLoginState(dailyLoginState, effectiveDateKey);
-  const dailyRewardSchedule = getSevenDayRewardSchedule({
-    castleLevel,
-    cultivationRealmIndex: cultivation.paths.qi.realmIndex,
-    totalDaysClaimed: dailyLoginState.totalDaysClaimed,
-  });
-
-  const activeDailyMissionBoard = syncBoardForDate(
-    dailyMissionBoard,
-    effectiveDateKey,
-    cultivation
-  );
-  const claimableDailyMissionsCount = countClaimableDailyMissions(activeDailyMissionBoard);
-  const dailyMissionsClaimedCount = activeDailyMissionBoard.missions.filter(
-    (m) => m.claimed
-  ).length;
-
-  // Keep dailyMissionBoard synced when calendar date / simulated day advances
-  useEffect(() => {
-    if (dailyMissionBoard.dateKey !== effectiveDateKey) {
-      setDailyMissionBoard((prev) => syncBoardForDate(prev, effectiveDateKey, cultivation));
-    }
-  }, [dailyMissionBoard.dateKey, effectiveDateKey, cultivation]);
-
-  // Persist dailyMissionBoard to localStorage (BigInt-safe)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(
-          DAILY_MISSIONS_STORAGE_KEY,
-          serializeDailyMissionBoard(dailyMissionBoard)
-        );
-      } catch {
-        // Ignore storage quota errors
-      }
-    }
-  }, [dailyMissionBoard]);
-
   // Sync gameState to document.body.dataset.state
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.body.dataset.state = gameState;
     }
   }, [gameState]);
-
-  // Persist dailyLoginState to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(DAILY_LOGIN_STORAGE_KEY, JSON.stringify(dailyLoginState));
-      } catch {
-        // Ignore storage quota errors
-      }
-    }
-  }, [dailyLoginState]);
-
-  // Persist vipState to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem(VIP_SUBSCRIPTION_STORAGE_KEY, JSON.stringify(vipState));
-      } catch {
-        // Ignore storage quota errors
-      }
-    }
-  }, [vipState]);
-
-  // Sync daily login auto-trigger date key without blocking the 3D viewport with a modal overlay
-  useEffect(() => {
-    if (dailyLoginEvaluation.shouldAutoTriggerOnLoad) {
-      setDailyLoginState((prev) => ({
-        ...prev,
-        lastAutoTriggeredDateKey: effectiveDateKey,
-      }));
-    }
-  }, [dailyLoginEvaluation.shouldAutoTriggerOnLoad, effectiveDateKey]);
 
   // Day & Night Simulation Clock (with Time Freeze from admin_console.cpp)
   useEffect(() => {
@@ -952,7 +815,7 @@ export default function App() {
     );
   };
 
-  // Castle Upgrade (with active VIP Castle Upgrade Discount or Creator God Immunity)
+  // Castle Upgrade (with active VIP Castle Upgrade Discount or Creator God Immunity + server-authoritative RPC sync)
   const handleUpgradeCastle = () => {
     if (castleLevel >= MAX_CASTLE_LEVEL) return;
     if (!godImmunity.immuneToAllThings) {
@@ -970,6 +833,15 @@ export default function App() {
         oil: prev.oil - cost.oil,
         diamond: prev.diamond - cost.diamond,
       }));
+
+      if (serverSession) {
+        const idempotencyKey = createDeterministicEventId(`castle-lvl${castleLevel + 1}`);
+        void authoritativeEconomyClient.upgradeCastle({ idempotencyKey }).then((res) => {
+          if (!res.ok && res.status === 403) {
+            setToastMessage(`🛡️ Server Economy Guard: ${res.error}`);
+          }
+        });
+      }
     }
 
     setCastleLevel((prev) => {
@@ -981,7 +853,7 @@ export default function App() {
     recordDailyMissionProgress('citadel_expansion', 1);
   };
 
-  // Troop Training
+  // Troop Training (with server-authoritative RPC sync when authenticated)
   const handleTrainTroops = (
     type: TroopType,
     tier: number,
@@ -997,6 +869,30 @@ export default function App() {
         oil: prev.oil - (cost.oil || 0n),
         diamond: prev.diamond - (cost.diamond || 0n),
       }));
+
+      if (serverSession) {
+        const branchMap: Record<TroopType, 'shieldbearers' | 'shooters' | 'bombers'> = {
+          shieldbearer: 'shieldbearers',
+          shooter: 'shooters',
+          bomber: 'bombers',
+        };
+        const safeQty = Number(amount > 10_000n ? 10_000n : amount);
+        if (safeQty > 0) {
+          const idempotencyKey = createDeterministicEventId(`troops-${type}-t${tier}`);
+          void authoritativeEconomyClient
+            .purchaseTroops({
+              idempotencyKey,
+              branch: branchMap[type],
+              tier,
+              quantity: safeQty,
+            })
+            .then((res) => {
+              if (!res.ok && res.status === 403) {
+                setToastMessage(`🛡️ Server Economy Guard: ${res.error}`);
+              }
+            });
+        }
+      }
     }
 
     const key = `${type}_t${tier}`;
@@ -2018,429 +1914,7 @@ export default function App() {
     }
   };
 
-  // Daily Login Reward Claim & Veteran Scroll Handlers
-  const handleClaimDailyLoginReward = () => {
-    const result = claimDailyLoginReward({
-      currentState: dailyLoginState,
-      effectiveDateKey,
-      castleLevel,
-      cultivationRealmIndex: cultivation.paths.qi.realmIndex,
-    });
-
-    if (!result.claimed || !result.reward) return;
-    const reward = result.reward;
-
-    setDailyLoginState(result.updatedState);
-    setResources((prev) => ({
-      wood: prev.wood + reward.resources.wood,
-      steel: prev.steel + reward.resources.steel,
-      copper: prev.copper + reward.resources.copper,
-      grain: prev.grain + reward.resources.grain,
-      oil: prev.oil + reward.resources.oil,
-      diamond: prev.diamond + reward.resources.diamond,
-    }));
-
-    setCultivation((prev) => ({
-      ...prev,
-      veteranScrolls: (prev.veteranScrolls ?? 0) + reward.veteranScrolls,
-      scriptureFragments: prev.scriptureFragments + reward.scriptureFragments,
-      spiritStones: (prev.spiritStones ?? 0n) + reward.spiritStones,
-    }));
-
-    sound.playUpgradeFanfare();
-    confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
-    setToastMessage(
-      `🎁 Claimed Day ${reward.day} Login Decree: +${formatBigInt(reward.resources.diamond)} 💎, +${reward.veteranScrolls}x Veteran Scroll & Scaled Resources!`
-    );
-  };
-
-  const handleAdvanceSimulatedDay = () => {
-    setDailyLoginState((prev) => ({
-      ...prev,
-      simulatedDayOffset: (prev.simulatedDayOffset || 0) + 1,
-    }));
-    setToastMessage('🌅 Advanced calendar by +1 Day! Next Daily Login Decree is now ready.');
-  };
-
-  const handleComprehendVeteranScroll = (
-    targetPath: CultivationPath | 'all',
-    count: number = 1
-  ) => {
-    const result = applyVeteranScrollToCultivation(cultivation, targetPath, count);
-    if (!result.success) {
-      setToastMessage(result.message);
-      return;
-    }
-    setCultivation(result.updatedCultivation);
-    confetti({ particleCount: 60, spread: 70 });
-    setToastMessage(result.message);
-  };
-
-  // Daily Cultivation Mission System Handlers (Cultivation-scaled, randomized & repeatable)
-  function recordDailyMissionProgress(
-    category: DailyMissionCategory,
-    delta: number = 1,
-    filter?: { path?: CultivationPath; resource?: ResourceType }
-  ) {
-    setDailyMissionBoard((prev) => {
-      const synced = syncBoardForDate(prev, effectiveDateKey, cultivation);
-      const res = recordDailyMissionEvent(synced, category, delta, filter);
-      return res.updatedBoard;
-    });
-  }
-
-  const handleAdvanceDailyMission = (missionId: string) => {
-    const result = advanceDailyMissionById(activeDailyMissionBoard, missionId, 1);
-    if (!result.advancedMission) return;
-    setDailyMissionBoard(result.updatedBoard);
-
-    const m = result.advancedMission;
-    if (m.completed) {
-      sound.playUpgradeFanfare();
-      setToastMessage(`Commission complete: "${m.title}" is ready to claim!`);
-    } else {
-      setToastMessage(`Commission progress: "${m.title}" (${m.currentCount}/${m.targetCount}).`);
-    }
-  };
-
-  const handleClaimDailyMission = (missionId: string) => {
-    const result = claimDailyMissionReward(activeDailyMissionBoard, missionId);
-    if (!result.claimed || !result.reward || !result.mission) return;
-
-    setDailyMissionBoard(result.updatedBoard);
-    const applied = applyMissionRewardBundle({
-      resources,
-      cultivation,
-      reward: result.reward,
-    });
-    setResources(applied.nextResources);
-    setCultivation(applied.nextCultivation);
-
-    sound.playUpgradeFanfare();
-    confetti({ particleCount: 55, spread: 70, origin: { y: 0.65 } });
-    setToastMessage(
-      `Claimed "${result.mission.title}": +${formatBigInt(result.reward.resources.diamond)} Diamonds, +${formatBigInt(result.reward.spiritStones)} Spirit Stones & scaled materials.`
-    );
-  };
-
-  const handleClaimDailyMissionMilestone = (milestoneId: 'milestone_3' | 'milestone_5') => {
-    const result = claimDailyMissionMilestone(activeDailyMissionBoard, milestoneId);
-    if (!result.claimed || !result.reward || !result.milestone) return;
-
-    setDailyMissionBoard(result.updatedBoard);
-    const applied = applyMissionRewardBundle({
-      resources,
-      cultivation,
-      reward: result.reward,
-    });
-    setResources(applied.nextResources);
-    setCultivation(applied.nextCultivation);
-
-    sound.playUpgradeFanfare();
-    confetti({ particleCount: 75, spread: 85, origin: { y: 0.6 } });
-    setToastMessage(
-      `Opened ${result.milestone.title}: +${formatBigInt(result.reward.resources.diamond)} Diamonds, +${formatBigInt(result.reward.spiritStones)} Spirit Stones${
-        result.reward.veteranScrolls > 0 ? `, +${result.reward.veteranScrolls} Veteran Scroll` : ''
-      }!`
-    );
-  };
-
-  const handleClaimAllDailyMissions = () => {
-    let workingBoard = activeDailyMissionBoard;
-    let workingResources = resources;
-    let workingCultivation = cultivation;
-    let totalClaimedCount = 0;
-    let totalDiamonds = 0n;
-    let totalSpiritStones = 0n;
-
-    for (const mission of workingBoard.missions) {
-      if (mission.completed && !mission.claimed) {
-        const res = claimDailyMissionReward(workingBoard, mission.id);
-        if (res.claimed && res.reward) {
-          workingBoard = res.updatedBoard;
-          const applied = applyMissionRewardBundle({
-            resources: workingResources,
-            cultivation: workingCultivation,
-            reward: res.reward,
-          });
-          workingResources = applied.nextResources;
-          workingCultivation = applied.nextCultivation;
-          totalClaimedCount += 1;
-          totalDiamonds += res.reward.resources.diamond;
-          totalSpiritStones += res.reward.spiritStones;
-        }
-      }
-    }
-
-    for (const ms of workingBoard.milestones) {
-      const msRes = claimDailyMissionMilestone(workingBoard, ms.id);
-      if (msRes.claimed && msRes.reward) {
-        workingBoard = msRes.updatedBoard;
-        const applied = applyMissionRewardBundle({
-          resources: workingResources,
-          cultivation: workingCultivation,
-          reward: msRes.reward,
-        });
-        workingResources = applied.nextResources;
-        workingCultivation = applied.nextCultivation;
-        totalClaimedCount += 1;
-        totalDiamonds += msRes.reward.resources.diamond;
-        totalSpiritStones += msRes.reward.spiritStones;
-      }
-    }
-
-    if (totalClaimedCount === 0) return;
-
-    setDailyMissionBoard(workingBoard);
-    setResources(workingResources);
-    setCultivation(workingCultivation);
-    sound.playUpgradeFanfare();
-    confetti({ particleCount: 85, spread: 90, origin: { y: 0.6 } });
-    setToastMessage(
-      `Claimed ${totalClaimedCount} daily mission rewards: +${formatBigInt(totalDiamonds)} Diamonds & +${formatBigInt(totalSpiritStones)} Spirit Stones!`
-    );
-  };
-
-  const handleRefreshDailyMissionBoard = () => {
-    const res = refreshDailyMissionBoard({
-      board: activeDailyMissionBoard,
-      cultivation,
-      playerDiamonds: resources.diamond,
-      bypassCost: godImmunity.immuneToAllThings,
-    });
-
-    if (!res.ok) {
-      setToastMessage(res.reason || 'Unable to refresh daily mission board.');
-      return;
-    }
-
-    if (res.diamondCostPaid > 0n) {
-      setResources((prev) => ({
-        ...prev,
-        diamond: prev.diamond - res.diamondCostPaid,
-      }));
-    }
-
-    setDailyMissionBoard(res.updatedBoard);
-    setToastMessage(
-      `Generated 5 randomized commissions for Cycle ${res.updatedBoard.cycleIndex} scaled to your cultivation realm.`
-    );
-  };
-
-  const handleNavigateFromDailyMission = (destination: DailyMissionDestinationModal) => {
-    if (destination === 'world_boss') {
-      setSelectedMonster(monsters[monsters.length - 1]);
-    }
-    setActiveModal(destination);
-  };
-
-  // VIP Member Covenant Handlers (in-game Diamond treasury redemption only — no real-money billing)
-  const handleActivateVipTier = (
-    tierId: VipTierId,
-    billingCycle: BillingCycle,
-    paymentMethod: 'diamonds'
-  ) => {
-    if (paymentMethod !== 'diamonds') return;
-    const targetConfig = VIP_TIER_CONFIGS[tierId];
-    const diamondCost =
-      billingCycle === 'annual' ? targetConfig.annualDiamondCost : targetConfig.monthlyDiamondCost;
-
-    if (!godImmunity.immuneToAllThings && resources.diamond < diamondCost) {
-      setToastMessage('⚠️ Insufficient Diamonds in treasury for this VIP tier.');
-      return;
-    }
-
-    const activation = activateVipSubscription(vipState, tierId, billingCycle, vipEffectiveDateKey);
-    setVipState(activation.nextState);
-
-    setResources((prev) => ({
-      ...prev,
-      diamond:
-        prev.diamond -
-        (!godImmunity.immuneToAllThings ? diamondCost : 0n) +
-        activation.instantBonusDiamonds,
-    }));
-
-    confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
-    setToastMessage(
-      `👑 Unlocked ${targetConfig.name} (${billingCycle === 'annual' ? 'Annual' : 'Monthly'}) with ${formatBigInt(diamondCost)} 💎! Gained +${formatBigInt(activation.instantBonusDiamonds)} 💎 rebate & +${activation.pointsAdded} VIP Loyalty Pts!`
-    );
-  };
-
-  const handleClaimVipStipend = () => {
-    const result = claimVipDailyStipend(vipState, vipEffectiveDateKey);
-    if (!result.claimed) return;
-
-    setVipState(result.nextState);
-    const stipend = result.stipend;
-
-    setResources((prev) => ({
-      wood: prev.wood + stipend.resources.wood,
-      steel: prev.steel + stipend.resources.steel,
-      copper: prev.copper + stipend.resources.copper,
-      grain: prev.grain + stipend.resources.grain,
-      oil: prev.oil + stipend.resources.oil,
-      diamond: prev.diamond + stipend.diamonds,
-    }));
-
-    setCultivation((prev) => ({
-      ...prev,
-      spiritStones: (prev.spiritStones ?? 0n) + stipend.spiritStones,
-      veteranScrolls: (prev.veteranScrolls ?? 0) + stipend.veteranScrolls,
-      secludedYears: prev.secludedYears + stipend.secludedYears,
-      scriptureFragments: prev.scriptureFragments + stipend.scriptureFragments,
-    }));
-
-    confetti({ particleCount: 70, spread: 75, origin: { y: 0.6 } });
-    setToastMessage(
-      `👑 Claimed ${vipEvaluation.tierConfig.name} Daily Stipend: +${formatBigInt(stipend.diamonds)} 💎, +${formatBigInt(stipend.spiritStones)} Spirit Stones & +${stipend.veteranScrolls} Veteran Scrolls!`
-    );
-  };
-
-  const handleAdvanceSimulatedVipDay = () => {
-    setVipState((prev) => {
-      const nextDaysRemaining =
-        prev.expiresAtDaysRemaining > 1
-          ? prev.expiresAtDaysRemaining - 1
-          : prev.autoRenewEnabled && prev.activeTier !== 'free'
-            ? prev.billingCycle === 'annual'
-              ? 365
-              : 30
-            : 0;
-      const nextActiveTier = nextDaysRemaining > 0 ? prev.activeTier : 'free';
-      if (nextActiveTier === 'free') {
-        setCultivation((c) => ({ ...c, auraOverrideRealmIndex: null }));
-      }
-      return {
-        ...prev,
-        activeTier: nextActiveTier,
-        simulatedVipDayOffset: (prev.simulatedVipDayOffset || 0) + 1,
-        expiresAtDaysRemaining: nextDaysRemaining,
-      };
-    });
-    setToastMessage('🌅 Advanced VIP Covenant calendar by +1 Day! Daily VIP Stipend is now ready.');
-  };
-
-  const handleToggleVipAutoRenew = () => {
-    setVipState((prev) => {
-      const next = !prev.autoRenewEnabled;
-      setToastMessage(
-        `🔄 VIP Auto-Renewal turned ${next ? 'ON' : 'OFF'}. You can change this at any time.`
-      );
-      return { ...prev, autoRenewEnabled: next };
-    });
-  };
-
-  const handleCancelVipSubscription = () => {
-    setVipState((prev) => ({
-      ...prev,
-      activeTier: 'free',
-      expiresAtDaysRemaining: 0,
-      autoRenewEnabled: false,
-    }));
-    setCultivation((prev) => ({
-      ...prev,
-      auraOverrideRealmIndex: null,
-    }));
-    setToastMessage(
-      '🛡️ VIP Membership cancelled and reverted to Free Sovereign. All VIP-locked features have been re-locked.'
-    );
-  };
-
-  // Lore & Cosmological History Comprehension State + Open-World Auto-Populating Lore Codex
-  const [comprehendedEpochIds, setComprehendedEpochIds] = useState<string[]>([]);
-  const [loreCodexState, setLoreCodexState] = useState<PersistedLoreCodexState>(() => {
-    try {
-      const saved = localStorage.getItem(LORE_CODEX_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.discoveredRecords === 'object' && parsed.discoveredRecords) {
-          return {
-            discoveredRecords: parsed.discoveredRecords,
-            lastVisitedBiomeId:
-              parsed.lastVisitedBiomeId ?? INITIAL_LORE_CODEX_STATE.lastVisitedBiomeId,
-            totalDiscoveryEvents:
-              typeof parsed.totalDiscoveryEvents === 'number'
-                ? parsed.totalDiscoveryEvents
-                : Object.keys(parsed.discoveredRecords).length,
-          };
-        }
-      }
-    } catch {
-      // Fallback to initial state
-    }
-    return INITIAL_LORE_CODEX_STATE;
-  });
-  const lastCodexEvalPosRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(LORE_CODEX_STORAGE_KEY, JSON.stringify(loreCodexState));
-    } catch {
-      // Ignore storage quota errors
-    }
-  }, [loreCodexState]);
-
-  const handleComprehendLoreEpoch = (epochId: string) => {
-    const res = comprehendLoreEpoch({ epochId, comprehendedEpochIds });
-    if (!res.newlyComprehended) {
-      setToastMessage(`📜 ${res.message}`);
-      return;
-    }
-    sound.playLevelUp();
-    setComprehendedEpochIds(res.updatedComprehendedIds);
-    setResources((prev) => ({
-      ...prev,
-      diamond: prev.diamond + res.rewardDiamonds,
-    }));
-    setCultivation((prev) => ({
-      ...prev,
-      scriptureFragments: prev.scriptureFragments + res.rewardFragments,
-    }));
-    confetti({ particleCount: 55, spread: 70, origin: { y: 0.6 } });
-    setToastMessage(`📜 ${res.message}`);
-  };
-
-  const handleScoutDiscoverCodexEntry = (entry: LoreCodexEntry) => {
-    const result = unlockLoreCodexEntry({
-      currentState: loreCodexState,
-      entry,
-      discoveredVia: 'expedition_scout',
-    });
-    setLoreCodexState(result.updatedState);
-    if (result.newlyDiscovered) {
-      sound.playLevelUp();
-      setToastMessage(
-        `🧭 Lore Codex Auto-Populated: ${entry.icon} ${entry.title} (${entry.kind === 'biome' ? 'Biome Surveyed' : 'Monster Bestiary Recorded'})!`
-      );
-    } else {
-      setToastMessage(`🧭 ${entry.title} is already inscribed in your Lore Codex.`);
-    }
-  };
-
-  const handleClaimCodexBounty = (entryId: string) => {
-    const res = claimLoreCodexReward({
-      currentState: loreCodexState,
-      entryId,
-      monsters,
-    });
-    if (!res.claimed) {
-      setToastMessage(`📜 ${res.message}`);
-      return;
-    }
-    sound.playLevelUp();
-    setLoreCodexState(res.updatedState);
-    setResources((prev) => ({
-      ...prev,
-      diamond: prev.diamond + res.rewardDiamonds,
-    }));
-    setCultivation((prev) => ({
-      ...prev,
-      scriptureFragments: prev.scriptureFragments + res.rewardFragments,
-    }));
-    confetti({ particleCount: 50, spread: 65, origin: { y: 0.6 } });
-    setToastMessage(res.message);
-  };
+  // Daily Login, Daily Missions, VIP Subscription & Lore/EULA handlers are managed by useDailySystems & useLoreAndEula hooks.
 
   const handleSyncCloudAccount = useCallback(async () => {
     const token = await getFreshIdToken();
@@ -3316,27 +2790,8 @@ export default function App() {
           <EulaModal
             eulaState={eulaState}
             activeAccountEmail={activeAccountEmail}
-            onAcceptEula={() => {
-              const next = acceptEulaVersion(activeAccountEmail);
-              setEulaState(next);
-              try {
-                window.localStorage.setItem(EULA_STORAGE_KEY, JSON.stringify(next));
-              } catch {
-                // ignore storage write errors
-              }
-              sound.playUpgradeFanfare();
-              setToastMessage(`📜 EULA Accepted (${next.receiptHash}) for ${next.acceptedByEmail}`);
-            }}
-            onRevokeEula={() => {
-              const next = revokeEulaAcceptance(activeAccountEmail);
-              setEulaState(next);
-              try {
-                window.localStorage.setItem(EULA_STORAGE_KEY, JSON.stringify(next));
-              } catch {
-                // ignore storage write errors
-              }
-              setToastMessage('⚠️ EULA Acceptance Reset — Review & Accept EULA');
-            }}
+            onAcceptEula={handleAcceptEula}
+            onRevokeEula={handleRevokeEula}
             onClose={() => setActiveModal('none')}
           />
         )}

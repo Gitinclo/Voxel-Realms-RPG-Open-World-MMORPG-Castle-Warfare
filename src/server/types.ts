@@ -28,6 +28,8 @@ import type {
 import type { AtomicRealmPersistence } from '../game/serverPersistence';
 import type { AntiCheatGuard } from '../game/antiCheat';
 import type { ServerRuntimeSecurityConfig } from '../game/serverAuth';
+import type { ServerCoordinationStore } from './coordinationStore';
+import type { AuthoritativeEconomyService } from './economyService';
 
 export interface ServerDecreeRecord {
   id: string;
@@ -91,6 +93,8 @@ export interface ServerContext {
   loginLockoutGuard: BruteForceLockoutGuard;
   tickLatencyTracker: TickLatencyTracker;
   antiCheatGuard: AntiCheatGuard;
+  coordinationStore: ServerCoordinationStore;
+  economyService: AuthoritativeEconomyService;
   opsCounters: OpsCounters;
   isShuttingDown: () => boolean;
   persistStoreToDisk: (targetStore: PersistedMultiRegionStore) => void;

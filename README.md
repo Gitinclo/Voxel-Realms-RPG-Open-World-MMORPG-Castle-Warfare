@@ -10,14 +10,14 @@
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-229_Passing_(41_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-238_Passing_(44_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one modular Node.js process via `server.ts` + `src/server/*`, with simulated regional cluster profiles plus optional Cloud SQL PostgreSQL and Cloud Firestore persistence). See [`docs/README.md`](./docs/README.md) for the strict **Implemented vs. Simulated vs. Planned vs. Experimental** matrix and [`docs/openapi.yaml`](./docs/openapi.yaml) for the OpenAPI 3.1 server contract. It is verified locally and in GitHub Actions via `npm run validate` (`229` unit/security/DB/server tests across `41` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch (`30/03/2030`) or paid billing, external staging deployment, Redis/Postgres authoritative state consolidation, playtest validation, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
+> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one modular Node.js process via `server.ts` + `src/server/*`, with simulated regional cluster profiles plus optional PostgreSQL ACID economy/profile persistence and Cloud Firestore sync). See [`docs/README.md`](./docs/README.md) for the strict **Implemented vs. Simulated vs. Planned vs. Experimental** matrix and [`docs/openapi.yaml`](./docs/openapi.yaml) for the OpenAPI 3.1 server contract. It is verified locally and in GitHub Actions via `npm run validate` (`238` unit, HTTP integration, PostgreSQL migration, OpenAPI parity & security tests across `44` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch (`30/03/2030`) or paid billing, external staging deployment, managed Postgres/Redis infrastructure provisioning, multi-hour soak/playtest validation, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -60,7 +60,7 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
 - **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `12.19.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
-- **Testing & Quality Tooling:** `tsx --test` (`229` tests across `41` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **Testing & Quality Tooling:** `tsx --test` (`238` tests across `44` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
 
 ## 📂 Repository Map
 
@@ -68,12 +68,12 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 ├── src/
 │   ├── components/   # React 19 lazy-loaded UI modals, HUD overlays & Three.js GameCanvas
 │   ├── contexts/     # AuthContext.tsx (Firebase Auth & in-memory Google Workspace OAuth)
-│   ├── db/           # PostgreSQL + Drizzle ORM schemas, pg.Pool & ACID economy repository
+│   ├── db/           # PostgreSQL + Drizzle ORM schemas, pg.Pool, ACID economy repository & migration tests
 │   ├── game/         # Pure Functional Core simulation kernels, BigInt math & unit tests
-│   ├── hooks/        # Feature hooks (useSpatialAudioCues, useSovereignFlightAndTeleport)
+│   ├── hooks/        # Feature hooks (useSpatialAudioCues, useSovereignFlightAndTeleport, useDailySystems, useLoreAndEula)
 │   ├── lib/          # Typed RPC apiClient, Firebase/Admin clients, Firestore sync, Gmail & visual diff
 │   ├── middleware/   # Express 5 Firebase ID token authentication middleware (requireAuth)
-│   ├── server/       # Modular Express 5 routes (routes/*), 20Hz WS gateway, CSP & trust-proxy policy
+│   ├── server/       # Modular Express 5 runtime factory (createApp.ts), routes/*, 20Hz WS gateway, coordinationStore & economyService
 │   ├── types/        # Shared TypeScript interfaces & cosmic/siege/entity contracts
 │   ├── App.tsx       # Root state container, idle modal prefetcher & Suspense router
 │   ├── index.css     # Tailwind CSS v4 global stylesheet (@import "tailwindcss")
@@ -82,8 +82,8 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 ├── docs/             # Canonical docs index (README.md), OpenAPI 3.1 contract (openapi.yaml), ADRs & RFCs
 ├── e2e/baselines/    # 6 git-versioned Playwright PNG visual regression modal baselines
 ├── scripts/          # verify-readiness.ts, verify-e2e-browser.sh, compare-modal-screenshots.ts, regenerate-lockfile.mjs
-├── .github/          # 10 GitHub Actions workflows (Node 22 + Docker build gate), Dependabot & templates
-├── server.ts         # Thin Express 5.3.0 composition root wiring src/server/routes/* & wsGateway.ts
+├── .github/          # 10 GitHub Actions workflows (Node 22 + coverage artifact + Docker build gate), Dependabot & templates
+├── server.ts         # Thin ~180-line Express 5.3.0 entrypoint calling createVoxelServerRuntime (src/server/createApp.ts)
 ├── firestore.rules   # Default-deny Cloud Firestore security rules + Dirty Dozen test target
 ├── package.json      # Authoritative dependency versions, engines (>=22.0.0) & npm scripts
 ├── .env.example      # Required & optional environment variable template (fail-closed secrets)
@@ -104,7 +104,7 @@ cp .env.example .env
 # 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
 npm run dev
 
-# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 229 Tests + Vite Build)
+# 4. Run full static & unit/integration validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 238 Tests + Vite Build)
 npm run validate
 
 # 5. Run live production operational readiness & headless Chromium E2E suites
@@ -113,27 +113,30 @@ npm run verify:ops && npm run verify:e2e
 
 ## 🔐 Environment Variables
 
-| Variable                         | Required | Description                                                                                                                               | Example                                                  |
-| :------------------------------- | :------: | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`)                                                                             | `3000`                                                   |
-| `NODE_ENV`                       |    No    | Runtime mode (`development`, `production`, or `test`)                                                                                     | `development`                                            |
-| `GEMINI_API_KEY`                 |    No    | Optional Gemini API key injected in hosted environments or `.env`                                                                         | `your-gemini-api-key-here`                               |
-| `APP_URL`                        |    No    | Canonical base URL used for redirects, origin checks & self-links                                                                         | `http://localhost:3000`                                  |
-| `VOXEL_SESSION_SECRET`           | **Yes**  | CSPRNG secret (`>=32` chars prod, `>=16` chars dev) for HMAC-SHA256 cookies; server fails closed                                          | `replace-with-at-least-32-char-csprng-secret`            |
-| `VOXEL_ADMIN_PASSKEY`            | **Yes**  | Operator passkey (`>=12` chars) for `POST /api/auth/admin-login`; server fails closed                                                     | `replace-with-strong-operator-passkey`                   |
-| `VOXEL_ALLOW_PRODUCTION_GODMODE` |    No    | Must remain `"false"` in production unless staging support elevation is explicitly intended                                               | `"false"`                                                |
-| `VOXEL_DATA_DIR`                 |    No    | Private save directory outside version control (`online_realm_state.json` + `.bak`; defaults to gitignored `./data`, rejects bare emails) | `./data`                                                 |
-| `VOXEL_API_WRITE_LIMIT_PER_MIN`  |    No    | Per-IP sliding-window write rate limit for mutating API routes (default `120`)                                                            | `120`                                                    |
-| `VOXEL_TRUST_PROXY`              |    No    | Express reverse-proxy trust setting (`loopback` default, `false`, hop count, or comma-separated trusted CIDRs)                            | `loopback`                                               |
-| `DISABLE_HMR`                    |    No    | Set `"true"` to disable Vite HMR file watchers and WebSocket upgrade interference                                                         | `"true"`                                                 |
-| `ALLOW_PREVIEW_IFRAME`           |    No    | Set `"true"` when serving production builds inside embedded preview iframes                                                               | `"false"`                                                |
-| `DATABASE_URL`                   |    No    | Optional PostgreSQL connection URI (`src/db/index.ts`); overrides `SQL_*` fields when provided                                            | `postgresql://postgres:password@127.0.0.1:5432/voxel_db` |
-| `SQL_HOST`                       |    No    | Cloud SQL / PostgreSQL host (`src/db/index.ts`, `src/db/drizzle.config.ts`)                                                               | `127.0.0.1`                                              |
-| `SQL_USER`                       |    No    | PostgreSQL runtime username                                                                                                               | `postgres`                                               |
-| `SQL_PASSWORD`                   |    No    | PostgreSQL runtime password                                                                                                               | `replace-with-sql-password`                              |
-| `SQL_DB_NAME`                    |    No    | PostgreSQL database name                                                                                                                  | `voxel_realms_db`                                        |
-| `SQL_ADMIN_USER`                 |    No    | PostgreSQL admin user used for Drizzle Kit schema migrations (`src/db/drizzle.config.ts`)                                                 | `postgres`                                               |
-| `SQL_ADMIN_PASSWORD`             |    No    | PostgreSQL admin password used for Drizzle Kit schema migrations                                                                          | `replace-with-admin-sql-password`                        |
+| Variable                         | Required | Description                                                                                                                                    | Example                                                  |
+| :------------------------------- | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`)                                                                                  | `3000`                                                   |
+| `NODE_ENV`                       |    No    | Runtime mode (`development`, `production`, or `test`)                                                                                          | `development`                                            |
+| `GEMINI_API_KEY`                 |    No    | Optional Gemini API key injected in hosted environments or `.env`                                                                              | `your-gemini-api-key-here`                               |
+| `APP_URL`                        |    No    | Canonical base URL used for redirects, origin checks & self-links                                                                              | `http://localhost:3000`                                  |
+| `VOXEL_SESSION_SECRET`           | **Yes**  | CSPRNG secret (`>=32` chars prod, `>=16` chars dev) for HMAC-SHA256 cookies; server fails closed                                               | `replace-with-at-least-32-char-csprng-secret`            |
+| `VOXEL_ADMIN_PASSKEY`            | **Yes**  | Operator passkey (`>=12` chars) for `POST /api/auth/admin-login`; server fails closed                                                          | `replace-with-strong-operator-passkey`                   |
+| `VOXEL_ALLOW_PRODUCTION_GODMODE` |    No    | Must remain `"false"` in production unless staging support elevation is explicitly intended                                                    | `"false"`                                                |
+| `VOXEL_DATA_DIR`                 |    No    | Private save directory outside version control (`online_realm_state.json` + `.bak`; defaults to gitignored `./data`, rejects bare emails)      | `./data`                                                 |
+| `VOXEL_API_WRITE_LIMIT_PER_MIN`  |    No    | Per-IP sliding-window write rate limit for mutating API routes (default `120`)                                                                 | `120`                                                    |
+| `VOXEL_TRUST_PROXY`              |    No    | Express reverse-proxy trust setting (`loopback` default, `false`, hop count, or comma-separated trusted CIDRs)                                 | `loopback`                                               |
+| `DISABLE_HMR`                    |    No    | Set `"true"` to disable Vite HMR file watchers and WebSocket upgrade interference                                                              | `"true"`                                                 |
+| `ALLOW_PREVIEW_IFRAME`           |    No    | Set `"true"` when serving production builds inside embedded preview iframes                                                                    | `"false"`                                                |
+| `VOXEL_ECONOMY_BACKEND`          |    No    | Economy ledger storage backend: `disk` (atomic SHA-256 default) or `postgres` (ACID `SELECT ... FOR UPDATE` via `src/db/economyRepository.ts`) | `disk`                                                   |
+| `REDIS_REST_URL`                 |    No    | Optional Redis REST endpoint for multi-instance server-side session revocation (`src/server/coordinationStore.ts`)                             | `https://replace-with-redis-rest-endpoint`               |
+| `REDIS_REST_TOKEN`               |    No    | Optional Bearer token paired with `REDIS_REST_URL`                                                                                             | `replace-with-redis-rest-bearer-token`                   |
+| `DATABASE_URL`                   |    No    | Optional PostgreSQL connection URI (`src/db/index.ts`); overrides `SQL_*` fields when provided                                                 | `postgresql://postgres:password@127.0.0.1:5432/voxel_db` |
+| `SQL_HOST`                       |    No    | Cloud SQL / PostgreSQL host (`src/db/index.ts`, `src/db/drizzle.config.ts`)                                                                    | `127.0.0.1`                                              |
+| `SQL_USER`                       |    No    | PostgreSQL runtime username                                                                                                                    | `postgres`                                               |
+| `SQL_PASSWORD`                   |    No    | PostgreSQL runtime password                                                                                                                    | `replace-with-sql-password`                              |
+| `SQL_DB_NAME`                    |    No    | PostgreSQL database name                                                                                                                       | `voxel_realms_db`                                        |
+| `SQL_ADMIN_USER`                 |    No    | PostgreSQL admin user used for Drizzle Kit schema migrations (`src/db/drizzle.config.ts`)                                                      | `postgres`                                               |
+| `SQL_ADMIN_PASSWORD`             |    No    | PostgreSQL admin password used for Drizzle Kit schema migrations                                                                               | `replace-with-admin-sql-password`                        |
 
 ---
 

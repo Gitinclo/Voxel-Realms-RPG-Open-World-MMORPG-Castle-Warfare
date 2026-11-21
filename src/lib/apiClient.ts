@@ -3,18 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { LedgerResourceKey } from '../game/economyLedger';
+import type { AuthoritativeGameplayActionType, LedgerResourceKey } from '../game/economyLedger';
 
 export type AuthoritativeCommandResult<TData> =
   | { ok: true; status: number; data: TData }
   | { ok: false; status: number; code?: string; error: string };
 
 export interface CastleUpgradeCommandRequest {
-  eventId: string;
+  idempotencyKey: string;
 }
 
 export interface CastleUpgradeCommandResponse {
   ok: true;
+  backend?: 'postgres' | 'disk';
   replayed: boolean;
   eventId: string;
   previousLevel: number;
@@ -25,7 +26,7 @@ export interface CastleUpgradeCommandResponse {
 }
 
 export interface PurchaseTroopsCommandRequest {
-  eventId: string;
+  idempotencyKey: string;
   branch: 'shieldbearers' | 'shooters' | 'bombers';
   tier: number;
   quantity: number;
@@ -33,6 +34,7 @@ export interface PurchaseTroopsCommandRequest {
 
 export interface PurchaseTroopsCommandResponse {
   ok: true;
+  backend?: 'postgres' | 'disk';
   replayed: boolean;
   eventId: string;
   branch: 'shieldbearers' | 'shooters' | 'bombers';
@@ -44,7 +46,7 @@ export interface PurchaseTroopsCommandResponse {
 }
 
 export interface MarketTradeCommandRequest {
-  eventId: string;
+  idempotencyKey: string;
   fromResource: LedgerResourceKey;
   toResource: LedgerResourceKey;
   inputAmountWire: string;
@@ -52,6 +54,7 @@ export interface MarketTradeCommandRequest {
 
 export interface MarketTradeCommandResponse {
   ok: true;
+  backend?: 'postgres' | 'disk';
   replayed: boolean;
   eventId: string;
   fromResource: LedgerResourceKey;
@@ -63,17 +66,16 @@ export interface MarketTradeCommandResponse {
 }
 
 export interface ClaimActionCommandRequest {
-  eventId: string;
-  actionType:
-    | 'gather_resource_node'
-    | 'defeat_world_monster'
-    | 'daily_login_claim'
-    | 'cultivation_breakthrough';
-  targetId?: string;
+  idempotencyKey: string;
+  actionType: AuthoritativeGameplayActionType;
+  sectorId?: string;
+  entityId?: string;
+  occurredAtMs?: number;
 }
 
 export interface ClaimActionCommandResponse {
   ok: true;
+  backend?: 'postgres' | 'disk';
   replayed: boolean;
   balances: Record<LedgerResourceKey, string>;
 }

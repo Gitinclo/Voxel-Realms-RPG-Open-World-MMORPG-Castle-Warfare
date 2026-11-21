@@ -214,21 +214,26 @@ export function registerAuthRoutes(app: Express, ctx: ServerContext): void {
     });
   });
 
-  app.post('/api/auth/logout', (req, res) => {
+  app.post('/api/auth/logout', async (req, res) => {
     const session = ctx.resolveRequestSession(req);
     res.setHeader('Set-Cookie', buildClearSessionCookieHeader(isHttpsRequest(req)));
     if (session) {
+      const remainingTtlMs = Math.max(
+        60_000,
+        Date.parse(session.expiresAtIso) - Date.now() || DEFAULT_OPERATOR_SESSION_TTL_MS
+      );
+      await ctx.coordinationStore.revokeSession(session.sessionId, remainingTtlMs);
       ctx.appendAuditEntry(
         createAuditEntry({
           eventType: 'SESSION_LOGOUT',
           actorEmail: session.email,
           actorRole: session.role,
           outcome: 'allowed',
-          detail: `Signed out verified session ${session.sessionId}`,
+          detail: `Signed out and revoked verified session ${session.sessionId}`,
         })
       );
       ctx.persistStoreToDisk(ctx.store);
     }
-    res.json({ ok: true, authenticated: false, session: null });
+    res.json({ ok: true, authenticated: false, session: null, sessionRevoked: Boolean(session) });
   });
 }

@@ -77,6 +77,12 @@ export function registerPrivacyRoutes(app: Express, ctx: ServerContext): void {
       }
     }
 
+    const remainingTtlMs = Math.max(
+      60_000,
+      Date.parse(session.expiresAtIso) - Date.now() || 3_600_000
+    );
+    await ctx.coordinationStore.revokeSession(session.sessionId, remainingTtlMs);
+
     ctx.appendAuditEntry(
       createAuditEntry({
         eventType: 'SESSION_LOGOUT',
@@ -105,6 +111,7 @@ export function registerPrivacyRoutes(app: Express, ctx: ServerContext): void {
         memoryAndDisk: 'erased_and_flushed',
         postgresql: sqlStatus,
         sessionCookie: 'revoked',
+        serverSessionId: `revoked_in_${ctx.coordinationStore.backendKind}`,
         gmailOAuthTokens: 'none_stored_server_side',
         firebaseAuthAndFirestore: 'manual_or_client_sdk_deletion_required',
         securityAuditLogRetention: 'anonymized_subject_retained_for_compliance',

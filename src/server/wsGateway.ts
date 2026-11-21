@@ -176,6 +176,11 @@ export function attachSiegeWebSocketGateway(httpServer: http.Server, ctx: Server
       roster: ctx.store.moderatedPlayers,
       allowGodMode: ctx.securityConfig.allowProductionGodMode,
     });
+    const activeWsSession =
+      resolvedWsSession.authenticated &&
+      !ctx.coordinationStore.isSessionRevoked(resolvedWsSession.session.sessionId)
+        ? resolvedWsSession.session
+        : null;
 
     const peerId = `peer-${crypto.randomUUID().slice(0, 8)}`;
     const peer: ConnectedSiegePeer = {
@@ -184,7 +189,7 @@ export function attachSiegeWebSocketGateway(httpServer: http.Server, ctx: Server
       socket,
       subscribedSector: validSector,
       connectedAtIso: new Date().toISOString(),
-      session: resolvedWsSession.authenticated ? resolvedWsSession.session : null,
+      session: activeWsSession,
       rxBuffer: Buffer.alloc(0),
       msgLimiter: new SlidingWindowRateLimiter({
         maxRequests: OPERATIONAL_LIMITS.WS_MESSAGES_PER_WINDOW,
