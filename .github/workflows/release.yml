@@ -238,7 +238,7 @@ jobs:
           (cd release-assets && sha256sum VoxelRealmsRPG-*.zip VoxelRealmsRPG-*.tar.gz SBOM.cdx.json SBOM.spdx.json provenance.json release-attestation.json > SHA256SUMS.txt)
 
       - name: Attest build provenance via GitHub Artifact Attestations
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release-assets/VoxelRealmsRPG-*.zip
