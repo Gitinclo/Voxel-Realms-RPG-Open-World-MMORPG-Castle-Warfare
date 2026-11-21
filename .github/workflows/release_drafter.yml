@@ -1,6 +1,10 @@
 name: Release Notes Preview
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   preview:
     runs-on: ubuntu-latest

@@ -245,3 +245,53 @@ test('Operational runbooks and 24-gate release evidence template exist with requ
     );
   }
 });
+
+test('GitHub Actions workflows, CodeQL, Dependabot, and FUNDING enforce least-privilege permissions and current 2026 action versions', () => {
+  const workflowDir = path.join(ROOT, '.github/workflows');
+  const workflowFiles = fs.readdirSync(workflowDir).filter((f) => f.endsWith('.yml'));
+  assert.ok(
+    workflowFiles.length >= 15,
+    `Expected >= 15 workflow files, found ${workflowFiles.length}`
+  );
+
+  for (const file of workflowFiles) {
+    const content = fs.readFileSync(path.join(workflowDir, file), 'utf8');
+    assert.match(
+      content,
+      /^permissions:\s*$/m,
+      `${file} must declare explicit top-level least-privilege permissions:`
+    );
+    assert.equal(
+      /actions\/(checkout|setup-node|upload-artifact)@v4\b/.test(content),
+      false,
+      `${file} must not use deprecated Node-20-era @v4 checkout/setup-node/upload-artifact actions`
+    );
+    assert.equal(
+      /github\/codeql-action\/(init|analyze)@v3\b/.test(content),
+      false,
+      `${file} must use github/codeql-action/*@v4 rather than deprecated @v3`
+    );
+  }
+
+  const codeql = readText('.github/workflows/codeql.yml');
+  assert.match(codeql, /github\/codeql-action\/init@v4/);
+  assert.match(codeql, /github\/codeql-action\/analyze@v4/);
+  assert.match(codeql, /javascript-typescript/);
+  assert.match(codeql, /\bactions\b/);
+
+  const pagesWebgl = readText('.github/workflows/pages-webgl.yml');
+  assert.match(pagesWebgl, /enablement:\s*true/);
+
+  const dependabot = readText('.github/dependabot.yml');
+  assert.match(dependabot, /package-ecosystem:\s*['"]npm['"]/);
+  assert.match(dependabot, /package-ecosystem:\s*['"]github-actions['"]/);
+  assert.match(dependabot, /package-ecosystem:\s*['"]docker['"]/);
+
+  const funding = readText('.github/FUNDING.yml');
+  assert.match(funding, /https:\/\//);
+  assert.equal(
+    /mailto:/i.test(funding),
+    false,
+    '.github/FUNDING.yml custom links must use https://, not mailto:'
+  );
+});
