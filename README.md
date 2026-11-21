@@ -42,7 +42,7 @@ _If you are an AI coding agent or contributor working on this repository, adhere
 - **Strict Constraints:**
   - Never commit `.env` files, private keys, API keys, or Android signing keystores (`*.jks`, `*.keystore`).
   - Always use `npm` (`package-lock.json`), and run `npm run lockfile:regenerate` + `bun install --lockfile-only` whenever [`package.json`](./package.json) changes so `npm run lockfile:verify` stays green.
-  - Keep `firebase@12.19.0` (with Node `22` `@firebase/*` overrides) pinned to the `engines.node >=22.0.0` baseline until local/CI runtimes migrate to Node `24.12+` (`@types/node@26.6.6` matches the Docker `node:26-alpine` LTS base image).
+  - CI workflows and Docker images run on Node `26` LTS (`node:26-alpine`, `@types/node@26.6.6`, `firebase@13.4.0`), while `engines.node >=22.0.0` remains compatible with local Node 22 development environments.
   - Keep `tsc --noEmit` strict checks (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`), `@firebase/eslint-plugin-security-rules`, and Prettier passing across all edits (`npm run validate`).
   - Under Express `5.3.0` (`path-to-regexp` v8), always use named wildcard parameters (`/{*splat}`) rather than bare `*` in [`server.ts`](./server.ts).
 - **Source of Truth:**
@@ -60,7 +60,7 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 - **3D WebGL2 & Data Visualization:** Three.js `0.187.0` (`@types/three@0.187.0`), `three-mesh-bvh@0.9.18`, `cannon-es@0.20.0`, `simplex-noise@4.0.3`, `@tweenjs/tween.js@25.0.0`, D3.js `7.9.2` (`@types/d3@7.4.3`)
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
-- **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `12.19.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
+- **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `13.4.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
 - **Testing & Quality Tooling:** `tsx --test` (`246` tests across `46` files), Playwright `1.65.1`, 4-hour `k6`/`Artillery` soak suites (`loadtest/`), ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
 
 ## 📂 Repository Map
@@ -903,7 +903,7 @@ To solve the **"Spaghetti Code" risk** across TypeScript/WebGL, Cloud Firestore 
 
 ### Part 1A: TypeScript, Security Rules & WebGL Guardrails (`.github/workflows/build.yml` -> `quality-check`)
 
-Every push and Pull Request automatically runs six strict Web/TypeScript/Security quality gates on Node.js `22` (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`):
+Every push and Pull Request automatically runs six strict Web/TypeScript/Security quality gates on Node.js `26` LTS (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`):
 
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
@@ -1042,14 +1042,14 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **3D Graphics & Spatial Engine**: Three.js `0.187.0` (WebGL2 PBR + HDR Bloom + adaptive software fallback), `three-mesh-bvh` (`0.9.18` `MeshBVH` O(log N) raycasting), `simplex-noise` (`4.0.3` 2D/3D/4D procedural terrain/cavern synthesis), `cannon-es` (`0.20.0` 3D rigid-body physics, siege ballistics & 3-regime object collision solver [`Physics.md`](./Physics.md)), `@tweenjs/tween.js` (`25.0.0` camera & combat interpolation)
 - **Hierarchy & Data Visualization**: D3.js (`7.9.2`: `d3-hierarchy`, `d3-zoom`, `d3-selection`)
 - **Backend, Authoritative Anti-Cheat & Real-Time Networking**: Express `5.3.0` (`/{*splat}` SPA fallback, `@types/express@5.0.6`) + Node.js HTTP & RFC 6455 WebSocket (`/ws/siege`) + `dotenv@18.0.10` + Authoritative Anti-Cheat Engine (`src/game/antiCheat.ts`, `/api/online/anti-cheat`) + HMAC-SHA256 Sessions + Atomic `.bak` Persistence
-- **Cloud Database & Auth**: Cloud SQL (PostgreSQL `pg@8.23.1` + Drizzle ORM `0.45.4`), Firebase Authentication (`12.19.0`, pinned for Node `>=22.0.0`), Firebase Admin SDK (`14.5.1`), Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
+- **Cloud Database & Auth**: Cloud SQL (PostgreSQL `pg@8.23.1` + Drizzle ORM `0.45.4`), Firebase Authentication (`13.4.0`), Firebase Admin SDK (`14.5.1`), Cloud Firestore (`firestore.rules` + `firebase-blueprint.json`)
 - **Workspace & AI SDK**: Google Workspace Gmail REST v1 API (`src/lib/gmail.ts` + confirmation-gated `GmailModal.tsx`) & `@google/genai@3.6.1`
 - **Styling**: Tailwind CSS v4 (`4.3.5`, `@tailwindcss/vite@4.3.5`, `autoprefixer@10.7.0`)
 - **Language**: TypeScript `7.0.2` (Strict) & C++20 (`vcpkg.json`: `entt`, `fmt`, `glm`, `sdl2`, `bullet3`, `fastnoise2`, `recastnavigation`, `enet`, `lz4`, `gtest`)
 - **Bundler**: Vite `8.3.8` (`@vitejs/plugin-react@6.3.0` Rolldown vendor chunk splitting)
 - **Icons**: Lucide React (`1.77.0`)
 - **Audio**: Web Audio API Procedural Synthesizer
-- **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`, Node `22`), ESLint `10.15.0` (`@firebase/eslint-plugin-security-rules@0.0.2`), Prettier `3.10.1`, Playwright `1.65.1`, `clang-tidy`, `clang-format`
+- **CI/CD & Security Linting**: GitHub Actions (`build.yml`, `release.yml`, Node `26` LTS), ESLint `10.15.0` (`@firebase/eslint-plugin-security-rules@0.0.2`), Prettier `3.10.1`, Playwright `1.65.1`, `clang-tidy`, `clang-format`
 
 ---
 

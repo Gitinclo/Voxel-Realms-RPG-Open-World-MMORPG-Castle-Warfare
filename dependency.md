@@ -9,35 +9,35 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 1. Node.js & Runtime Dependencies (`package.json`)
 
-| Package                  | Locked Version | Scope   | Architectural Purpose                                                                              |
-| :----------------------- | :------------- | :------ | :------------------------------------------------------------------------------------------------- |
-| `@google/genai`          | `3.6.1`        | Runtime | Production dependency                                                                              |
-| `@tailwindcss/vite`      | `4.3.5`        | Runtime | Production dependency                                                                              |
-| `@tweenjs/tween.js`      | `25.0.0`       | Runtime | Production dependency                                                                              |
-| `@types/canvas-confetti` | `1.9.0`        | Runtime | Production dependency                                                                              |
-| `@types/d3`              | `7.4.3`        | Runtime | Production dependency                                                                              |
-| `@types/pg`              | `8.23.1`       | Runtime | Production dependency                                                                              |
-| `@types/three`           | `0.187.0`      | Runtime | Production dependency                                                                              |
-| `@vitejs/plugin-react`   | `6.3.0`        | Runtime | Production dependency                                                                              |
-| `cannon-es`              | `0.20.0`       | Runtime | Production dependency                                                                              |
-| `canvas-confetti`        | `1.9.4`        | Runtime | Production dependency                                                                              |
-| `d3`                     | `7.9.2`        | Runtime | Production dependency                                                                              |
-| `dotenv`                 | `18.0.10`      | Runtime | Production dependency                                                                              |
-| `drizzle-kit`            | `0.31.11`      | Runtime | Production dependency                                                                              |
-| `drizzle-orm`            | `0.45.4`       | Runtime | Production dependency                                                                              |
-| `express`                | `5.3.0`        | Runtime | Production dependency                                                                              |
-| `firebase`               | `12.19.0`      | Runtime | Production dependency (intentionally pinned for Node `>=22.0.0`; `13.x` requires Node `>=24.12.0`) |
-| `firebase-admin`         | `14.5.1`       | Runtime | Production dependency                                                                              |
-| `lucide-react`           | `1.77.0`       | Runtime | Production dependency                                                                              |
-| `motion`                 | `14.14.0`      | Runtime | Production dependency                                                                              |
-| `pg`                     | `8.23.1`       | Runtime | Production dependency                                                                              |
-| `react`                  | `19.3.1`       | Runtime | Production dependency                                                                              |
-| `react-dom`              | `19.3.1`       | Runtime | Production dependency                                                                              |
-| `simplex-noise`          | `4.0.3`        | Runtime | Production dependency                                                                              |
-| `three`                  | `0.187.0`      | Runtime | Production dependency                                                                              |
-| `three-mesh-bvh`         | `0.9.18`       | Runtime | Production dependency                                                                              |
-| `tsx`                    | `4.23.15`      | Runtime | Production dependency                                                                              |
-| `vite`                   | `8.3.8`        | Runtime | Production dependency                                                                              |
+| Package                  | Locked Version | Scope   | Architectural Purpose                                                                               |
+| :----------------------- | :------------- | :------ | :-------------------------------------------------------------------------------------------------- |
+| `@google/genai`          | `3.6.1`        | Runtime | Production dependency                                                                               |
+| `@tailwindcss/vite`      | `4.3.5`        | Runtime | Production dependency                                                                               |
+| `@tweenjs/tween.js`      | `25.0.0`       | Runtime | Production dependency                                                                               |
+| `@types/canvas-confetti` | `1.9.0`        | Runtime | Production dependency                                                                               |
+| `@types/d3`              | `7.4.3`        | Runtime | Production dependency                                                                               |
+| `@types/pg`              | `8.23.1`       | Runtime | Production dependency                                                                               |
+| `@types/three`           | `0.187.0`      | Runtime | Production dependency                                                                               |
+| `@vitejs/plugin-react`   | `6.3.0`        | Runtime | Production dependency                                                                               |
+| `cannon-es`              | `0.20.0`       | Runtime | Production dependency                                                                               |
+| `canvas-confetti`        | `1.9.4`        | Runtime | Production dependency                                                                               |
+| `d3`                     | `7.9.2`        | Runtime | Production dependency                                                                               |
+| `dotenv`                 | `18.0.10`      | Runtime | Production dependency                                                                               |
+| `drizzle-kit`            | `0.31.11`      | Runtime | Production dependency                                                                               |
+| `drizzle-orm`            | `0.45.4`       | Runtime | Production dependency                                                                               |
+| `express`                | `5.3.0`        | Runtime | Production dependency                                                                               |
+| `firebase`               | `13.4.0`       | Runtime | Production dependency (modular client SDK; CI & Docker run on Node `26` LTS satisfying `>=24.12.0`) |
+| `firebase-admin`         | `14.5.1`       | Runtime | Production dependency                                                                               |
+| `lucide-react`           | `1.77.0`       | Runtime | Production dependency                                                                               |
+| `motion`                 | `14.14.0`      | Runtime | Production dependency                                                                               |
+| `pg`                     | `8.23.1`       | Runtime | Production dependency                                                                               |
+| `react`                  | `19.3.1`       | Runtime | Production dependency                                                                               |
+| `react-dom`              | `19.3.1`       | Runtime | Production dependency                                                                               |
+| `simplex-noise`          | `4.0.3`        | Runtime | Production dependency                                                                               |
+| `three`                  | `0.187.0`      | Runtime | Production dependency                                                                               |
+| `three-mesh-bvh`         | `0.9.18`       | Runtime | Production dependency                                                                               |
+| `tsx`                    | `4.23.15`      | Runtime | Production dependency                                                                               |
+| `vite`                   | `8.3.8`        | Runtime | Production dependency                                                                               |
 
 ---
 
@@ -62,48 +62,16 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 3. Security & Engine Overrides (`npm audit --audit-level=high` = `0` Vulnerabilities)
 
-| Package                                  | Forced Version                  | Mechanism           | Rationale                                                                               |
-| :--------------------------------------- | :------------------------------ | :------------------ | :-------------------------------------------------------------------------------------- |
-| `@firebase/ai`                           | `2.16.0`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0` / Node `>=20`)    |
-| `@firebase/analytics`                    | `0.10.25`                       | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/analytics-compat`             | `0.2.31`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/app`                          | `0.16.2`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/app-check`                    | `0.13.1`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/app-check-compat`             | `0.4.7`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/app-compat`                   | `0.5.18`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/app-types`                    | `0.9.6`                         | Transitive Override | Locks compatible `@firebase/*` type definitions (`firebase@12.19.0`)                    |
-| `@firebase/auth`                         | `1.13.6`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/auth-compat`                  | `0.6.11`                        | Transitive Override | Locks Node 22 compatible `@firebase/*` engine (`0` `EBADENGINE` warnings)               |
-| `@firebase/component`                    | `0.7.5`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` DI container (`0` `EBADENGINE` warnings)         |
-| `@firebase/data-connect`                 | `0.7.4`                         | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/database`                     | `1.1.5`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` engine across `firebase` & `firebase-admin`      |
-| `@firebase/database-compat`              | `2.1.7`                         | Transitive Override | Locks Node 22 compatible `@firebase/*` engine across `firebase` & `firebase-admin`      |
-| `@firebase/database-types`               | `1.0.22`                        | Transitive Override | Locks compatible `@firebase/*` database type definitions                                |
-| `@firebase/eslint-plugin-security-rules` | `0.0.2`                         | Transitive Override | Locks Firestore security rules ESLint plugin version                                    |
-| `@firebase/firestore`                    | `4.17.2`                        | Transitive Override | Locks Node 22 compatible `@firebase/firestore` engine (`0` `EBADENGINE` warnings)       |
-| `@firebase/firestore-compat`             | `0.4.14`                        | Transitive Override | Locks Node 22 compatible `@firebase/firestore-compat` engine                            |
-| `@firebase/functions`                    | `0.14.0`                        | Transitive Override | Locks Node 22 compatible `@firebase/functions` engine                                   |
-| `@firebase/functions-compat`             | `0.5.0`                         | Transitive Override | Locks Node 22 compatible `@firebase/functions-compat` engine                            |
-| `@firebase/installations`                | `0.6.24`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/installations-compat`         | `0.2.24`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/logger`                       | `0.5.2`                         | Transitive Override | Locks Node 22 compatible `@firebase/logger` engine                                      |
-| `@firebase/messaging`                    | `0.13.3`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/messaging-compat`             | `0.2.30`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/performance`                  | `0.7.14`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/performance-compat`           | `0.2.27`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/remote-config`                | `0.9.2`                         | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/remote-config-compat`         | `0.2.29`                        | Transitive Override | Locks compatible `@firebase/*` subpackage version (`firebase@12.19.0`)                  |
-| `@firebase/storage`                      | `0.14.5`                        | Transitive Override | Locks Node 22 compatible `@firebase/storage` engine                                     |
-| `@firebase/storage-compat`               | `0.4.5`                         | Transitive Override | Locks Node 22 compatible `@firebase/storage-compat` engine                              |
-| `@firebase/util`                         | `1.15.3`                        | Transitive Override | Locks Node 22 compatible `@firebase/util` shared runtime                                |
-| `@grpc/grpc-js`                          | `1.14.7`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
-| `@tailwindcss/node`                      | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/node` to match `tailwindcss@4.3.5` & `@tailwindcss/vite@4.3.5`      |
-| `@tailwindcss/oxide`                     | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/oxide` Rust/WASM engine to `4.3.5`                                  |
-| `@tailwindcss/vite`                      | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/vite` plugin to `4.3.5`                                             |
-| `@tweenjs/tween.js`                      | `25.0.0`                        | Transitive Override | Deduplicates `@types/three` nested `~23.1.3` dependency onto `@tweenjs/tween.js@25.0.0` |
-| `esbuild`                                | `0.28.2`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
-| `minimatch`                              | `11.0.8`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
-| `picomatch`                              | `npm:@ryotsu/picomatch@4.0.7-a` | Transitive Override | Mitigates `GHSA-fc5q-39xc-vjpf` single-branch extglob ReDoS (`0` high vulns)            |
+| Package              | Forced Version                  | Mechanism           | Rationale                                                                               |
+| :------------------- | :------------------------------ | :------------------ | :-------------------------------------------------------------------------------------- |
+| `@grpc/grpc-js`      | `1.14.7`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
+| `@tailwindcss/node`  | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/node` to match `tailwindcss@4.3.5` & `@tailwindcss/vite@4.3.5`      |
+| `@tailwindcss/oxide` | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/oxide` Rust/WASM engine to `4.3.5`                                  |
+| `@tailwindcss/vite`  | `4.3.5`                         | Transitive Override | Locks `@tailwindcss/vite` plugin to `4.3.5`                                             |
+| `@tweenjs/tween.js`  | `25.0.0`                        | Transitive Override | Deduplicates `@types/three` nested `~23.1.3` dependency onto `@tweenjs/tween.js@25.0.0` |
+| `esbuild`            | `0.28.2`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
+| `minimatch`          | `11.0.8`                        | Transitive Override | Mitigates upstream security advisories (`0` high vulns)                                 |
+| `picomatch`          | `npm:@ryotsu/picomatch@4.0.7-a` | Transitive Override | Mitigates `GHSA-fc5q-39xc-vjpf` single-branch extglob ReDoS (`0` high vulns)            |
 
 ---
 
@@ -145,12 +113,12 @@ All 10 Android open-source libraries declared in [`android/gradle/libs.versions.
 
 ## 6. GitHub Actions & CI/CD Workflow Dependencies (`.github/workflows/*.yml`)
 
-All 15 automated workflows under `.github/workflows/` declare explicit top-level least-privilege `permissions:`, are tracked by [`.github/dependabot.yml`](./.github/dependabot.yml) (`npm`, `github-actions`, and `docker`), and are standardized on Node.js `22` with Node-24-compatible actions:
+All 15 automated workflows under `.github/workflows/` declare explicit top-level least-privilege `permissions:`, are tracked by [`.github/dependabot.yml`](./.github/dependabot.yml) (`npm`, `github-actions`, and `docker`), and are standardized on Node.js `26` LTS with Node-24-compatible actions:
 
 | GitHub Action                           | Version | Workflows Using Action                                                                                                                                                                                                                                                              | Architectural Purpose                                                                    |
 | :-------------------------------------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
 | `actions/checkout`                      | `@v7`   | All checkout workflows (`build.yml`, `cd.yml`, `ci.yml`, `codeql.yml`, `deploy-staging.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `pages-webgl.yml`, `release-gates.yml`, `release.yml`, `release_drafter.yml`, `security_audit.yml`, `staging-soak.yml`) | Checks out repository source & release tags across CI/CD jobs                            |
-| `actions/setup-node`                    | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `pages-webgl.yml`, `release-gates.yml`, `release.yml`, `security_audit.yml`, `staging-soak.yml`                                                                                     | Provisions Node.js `22` runtime with deterministic `npm` lockfile cache                  |
+| `actions/setup-node`                    | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `pages-webgl.yml`, `release-gates.yml`, `release.yml`, `security_audit.yml`, `staging-soak.yml`                                                                                     | Provisions Node.js `26` LTS runtime with deterministic `npm` lockfile cache              |
 | `actions/upload-artifact`               | `@v7`   | `build.yml`, `ci.yml`, `deploy-staging.yml`, `release-gates.yml`, `staging-soak.yml`                                                                                                                                                                                                | Uploads verified build, coverage, E2E, SBOM, rollout, and soak evidence artifacts        |
 | `github/codeql-action/init` & `analyze` | `@v4`   | `codeql.yml`                                                                                                                                                                                                                                                                        | Static security scanning for `javascript-typescript` and `actions` (`security-extended`) |
 | `actions/stale`                         | `@v11`  | `stale_issues.yml`                                                                                                                                                                                                                                                                  | Automated inactive issue/PR triage (exempting `security`, `sev-1`, `sev-2`)              |
@@ -161,6 +129,6 @@ All 15 automated workflows under `.github/workflows/` declare explicit top-level
 
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
-npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 intentionally pinned for Node >=22.0.0; 13.x requires Node >=24.12.0)
+npm outdated                   # Verify 0 outdated direct dependencies
 npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 258 tests (49 suites) & Vite build
 ```
