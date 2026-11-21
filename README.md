@@ -2,21 +2,22 @@
 
 **Last Updated & Validated:** `20/11/2026`  
 **Target Game Launch Date:** `30/03/2030` (`2030-03-30`)  
-**Status:** `Active / Verified` (Pre-Production Prototype · `v1.5.0`)
+**Canonical Maturity Status:** `Pre-Production Prototype` (`v1.5.0`)
 
-[![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./badges.md#remaining-pre-production-launch-gates-honest-status)
+[![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./docs/README.md)
 [![Launch Date: 30/03/2030](https://img.shields.io/badge/Launch_Date-30%2F03%2F2030-0ea5e9?style=flat-square)](./ROADMAP.md)
+[![OpenAPI 3.1](https://img.shields.io/badge/API-OpenAPI_3.1-10b981?style=flat-square)](./docs/openapi.yaml)
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-224_Passing_(39_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-229_Passing_(41_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
-[![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
+[![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one Node.js process with simulated regional cluster profiles inside `server.ts`, plus optional Cloud SQL PostgreSQL and Cloud Firestore persistence). It is verified locally and in GitHub Actions via `npm run validate` (`224` unit/security/DB tests across `39` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch (`30/03/2030`) or paid billing, external staging deployment, playtest validation of the core 5-step loop, cross-store PII deletion drills, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
+> **Maturity & Release Status Notice (Pre-Production / Single-Instance Prototype):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) reflects the active `main`-branch single-instance prototype (`<= 250` concurrent WebSocket peers on one modular Node.js process via `server.ts` + `src/server/*`, with simulated regional cluster profiles plus optional Cloud SQL PostgreSQL and Cloud Firestore persistence). See [`docs/README.md`](./docs/README.md) for the strict **Implemented vs. Simulated vs. Planned vs. Experimental** matrix and [`docs/openapi.yaml`](./docs/openapi.yaml) for the OpenAPI 3.1 server contract. It is verified locally and in GitHub Actions via `npm run validate` (`229` unit/security/DB/server tests across `41` test files, `109` cross-system invariants + lockfile parity), `npm run verify:ops` (`50` simultaneous WS peers across `A1/B2/C3/D4` @ `20Hz`, `.bak` recovery, fail-closed economy/auth checks), and `npm run verify:e2e` (headless Chromium E2E + modal baseline visual diffs). **Not yet horizontally sharded multi-region MMO infrastructure:** before public launch (`30/03/2030`) or paid billing, external staging deployment, Redis/Postgres authoritative state consolidation, playtest validation, and a signed `v*` release remain required (see [`badges.md`](./badges.md#remaining-pre-production-launch-gates-honest-status)).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -59,7 +60,7 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
 - **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `12.19.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
-- **Testing & Quality Tooling:** `tsx --test` (`224` tests across `39` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **Testing & Quality Tooling:** `tsx --test` (`229` tests across `41` files), Playwright `1.65.1`, ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
 
 ## 📂 Repository Map
 
@@ -69,19 +70,20 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 │   ├── contexts/     # AuthContext.tsx (Firebase Auth & in-memory Google Workspace OAuth)
 │   ├── db/           # PostgreSQL + Drizzle ORM schemas, pg.Pool & ACID economy repository
 │   ├── game/         # Pure Functional Core simulation kernels, BigInt math & unit tests
-│   ├── hooks/        # React custom hooks (useSpatialAudioCues for 3D HRTF audio triggers)
-│   ├── lib/          # Firebase/Admin clients, Firestore sync, Gmail REST client & visual diff
+│   ├── hooks/        # Feature hooks (useSpatialAudioCues, useSovereignFlightAndTeleport)
+│   ├── lib/          # Typed RPC apiClient, Firebase/Admin clients, Firestore sync, Gmail & visual diff
 │   ├── middleware/   # Express 5 Firebase ID token authentication middleware (requireAuth)
+│   ├── server/       # Modular Express 5 routes (routes/*), 20Hz WS gateway, CSP & trust-proxy policy
 │   ├── types/        # Shared TypeScript interfaces & cosmic/siege/entity contracts
 │   ├── App.tsx       # Root state container, idle modal prefetcher & Suspense router
 │   ├── index.css     # Tailwind CSS v4 global stylesheet (@import "tailwindcss")
 │   └── main.tsx      # React SPA entry point wrapped in AuthProvider
 ├── cpp/              # C++20 SIMD/SoA reference headers & CTest guardrail unit tests
-├── docs/             # Architecture Decision Records (adr/) & RFC templates (rfcs/)
+├── docs/             # Canonical docs index (README.md), OpenAPI 3.1 contract (openapi.yaml), ADRs & RFCs
 ├── e2e/baselines/    # 6 git-versioned Playwright PNG visual regression modal baselines
 ├── scripts/          # verify-readiness.ts, verify-e2e-browser.sh, compare-modal-screenshots.ts, regenerate-lockfile.mjs
-├── .github/          # 10 GitHub Actions workflows (Node 22), Dependabot, CODEOWNERS & templates
-├── server.ts         # Express 5.3.0 HTTP API, /metrics, RBAC & RFC 6455 20Hz /ws/siege server
+├── .github/          # 10 GitHub Actions workflows (Node 22 + Docker build gate), Dependabot & templates
+├── server.ts         # Thin Express 5.3.0 composition root wiring src/server/routes/* & wsGateway.ts
 ├── firestore.rules   # Default-deny Cloud Firestore security rules + Dirty Dozen test target
 ├── package.json      # Authoritative dependency versions, engines (>=22.0.0) & npm scripts
 ├── .env.example      # Required & optional environment variable template (fail-closed secrets)
@@ -102,7 +104,7 @@ cp .env.example .env
 # 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
 npm run dev
 
-# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 224 Tests + Vite Build)
+# 4. Run full static & unit validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 229 Tests + Vite Build)
 npm run validate
 
 # 5. Run live production operational readiness & headless Chromium E2E suites
@@ -122,6 +124,7 @@ npm run verify:ops && npm run verify:e2e
 | `VOXEL_ALLOW_PRODUCTION_GODMODE` |    No    | Must remain `"false"` in production unless staging support elevation is explicitly intended                                               | `"false"`                                                |
 | `VOXEL_DATA_DIR`                 |    No    | Private save directory outside version control (`online_realm_state.json` + `.bak`; defaults to gitignored `./data`, rejects bare emails) | `./data`                                                 |
 | `VOXEL_API_WRITE_LIMIT_PER_MIN`  |    No    | Per-IP sliding-window write rate limit for mutating API routes (default `120`)                                                            | `120`                                                    |
+| `VOXEL_TRUST_PROXY`              |    No    | Express reverse-proxy trust setting (`loopback` default, `false`, hop count, or comma-separated trusted CIDRs)                            | `loopback`                                               |
 | `DISABLE_HMR`                    |    No    | Set `"true"` to disable Vite HMR file watchers and WebSocket upgrade interference                                                         | `"true"`                                                 |
 | `ALLOW_PREVIEW_IFRAME`           |    No    | Set `"true"` when serving production builds inside embedded preview iframes                                                               | `"false"`                                                |
 | `DATABASE_URL`                   |    No    | Optional PostgreSQL connection URI (`src/db/index.ts`); overrides `SQL_*` fields when provided                                            | `postgresql://postgres:password@127.0.0.1:5432/voxel_db` |
@@ -670,6 +673,8 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │       ├── release_drafter.yml        # Release notes preview workflow
 │       └── stale_issues.yml           # Scheduled stale issue & PR triage automation (actions/stale@v11)
 ├── docs/
+│   ├── README.md                      # Canonical documentation index (Implemented vs Simulated vs Planned vs Experimental)
+│   ├── openapi.yaml                   # OpenAPI 3.1 HTTP/REST contract for server.ts & src/server/routes/*
 │   ├── adr/
 │   │   ├── 0001-record-architecture-decisions.md # ADR 0001: Functional Core / Imperative Shell separation
 │   │   └── TEMPLATE.md                # Standard Architecture Decision Record (ADR) template
@@ -891,7 +896,7 @@ Every push and Pull Request automatically runs six strict Web/TypeScript/Securit
 1. **The Linter (`npm run lint` & `npm run lint:rules`)**: Runs `tsc --noEmit` with `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` enabled, plus `@firebase/eslint-plugin-security-rules` against `firestore.rules`.
 2. **The Deprecation & Vulnerability Checker (`npm audit --audit-level=high`)**: Scans `package-lock.json` against known security vulnerabilities and outdated dependencies.
 3. **The Formatter (`npx prettier --check .`)**: Enforces uniform formatting via `.prettierrc` so every file in the repository looks like it was written by a single author.
-4. **The Regression & Security Test Suite (`npm test`)**: Runs all **224 unit, security, DB transaction, lockfile, visual diff, and regression tests across 39 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`).
+4. **The Regression & Security Test Suite (`npm test`)**: Runs all **229 unit, security, server policy, RPC client, DB transaction, lockfile, visual diff, and regression tests across 41 decoupled TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, `src/server/*.test.ts`, and `firestore.rules.test.ts`).
 5. **The Production Bundle Check (`npm run build`)**: Compiles code-split Vite 8 chunks into `dist/` with strict size checks.
 6. **Live Operational Readiness Verification (`npm run verify:ops`)**: Spawns an isolated production `server.ts` instance and verifies HTTP/WS load (`0` tick overruns), fail-closed RBAC + Firebase ID token checks, exploit defenses, truncated `.bak` recovery, and clean `SIGTERM` drain.
 
@@ -914,7 +919,7 @@ Tools catch syntax and formatting issues, while disciplined engineering process 
 2. **The Refactor Session (Every 3–4 Features)**:
    - Pause feature development every 3–4 features to eliminate duplicated logic, unused variables, raw pointers, or deprecated methods across modified modules, then verify via `npm run validate`.
 
-### Automated Test Suites & Live Server Verification (`224/224 Passing` across 39 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
+### Automated Test Suites & Live Server Verification (`229/229 Passing` across 41 TypeScript Test Files + Live Ops Readiness + Real Browser E2E + `CTest C++20`)
 
 - **`adminModeration.test.ts`**: Verifies Root Administration, GM, Admin, Moderator & Official Contact RBAC privileges for `creatergame31@gmail.com`, explicit `UNTRUSTED_CLIENT_PREVIEW` trust boundary metadata, root immutability protection, player sanctions (`warn`, `mute`, `temp_ban`, `restore_active`, role grants), and support ticket routing.
 - **`antiCheat.test.ts`**: Verifies authoritative multiplayer movement speed-hack & teleport rubberbanding, monotonic sequence replay rejection, resource/castle/realm delta inflation clamping, siege command cooldowns & `1T` rally caps, and automatic violation-score quarantine (`>=100` pts).
@@ -966,7 +971,7 @@ npm run lint                  # 1a. Check TypeScript for messy code & unused var
 npm run lint:rules            # 1b. Lint firestore.rules with @firebase/eslint-plugin-security-rules
 npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
-npm test                      # 4. Run all 224 TypeScript unit, economy, DB transaction, Daily Missions, HUD scale, launch schedule, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (39 test files)
+npm test                      # 4. Run all 229 TypeScript unit, server CSP/proxy, RPC client, economy, DB transaction, Daily Missions, HUD scale, launch schedule, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (41 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
 docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
 ```

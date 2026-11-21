@@ -1,0 +1,341 @@
+openapi: 3.1.0
+info:
+  title: Voxel Realms RPG Authoritative Server API
+  version: 1.5.0
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  description: >
+    HTTP/REST and WebSocket contract for the Voxel Realms RPG single-instance authoritative server
+    (`server.ts` + `src/server/routes/*` + `src/server/wsGateway.ts`).
+    Target Public Launch Date: 30/03/2030. Current Maturity: Pre-Production Prototype.
+servers:
+  - url: http://localhost:3000
+    description: Local development & preview runtime
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: voxel_session
+      description: HMAC-SHA256 signed HttpOnly session cookie issued by /api/auth/*
+    FirebaseBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase Auth ID token verified server-side via firebase-admin
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          const: false
+        code:
+          type: string
+        error:
+          type: string
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      tags: [Operations]
+      responses:
+        '200':
+          description: Server process is alive
+        '503':
+          description: Server is shutting down
+  /readyz:
+    get:
+      summary: Readiness probe (storage writable, 20Hz tick health, WS capacity)
+      tags: [Operations]
+      responses:
+        '200':
+          description: Ready to accept traffic
+        '503':
+          description: Degraded or draining
+  /metrics:
+    get:
+      summary: Prometheus text exposition metrics (0.0.4)
+      tags: [Operations]
+      responses:
+        '200':
+          description: Prometheus gauge and counter metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/ops/readiness:
+    get:
+      summary: Structured operational telemetry and capacity limits
+      tags: [Operations]
+      responses:
+        '200':
+          description: Capacity limits, 20Hz tick latency percentiles, and defense counters
+  /api/auth/session:
+    get:
+      summary: Inspect current HMAC-signed server session
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Current authentication status and session claims
+  /api/auth/player-session:
+    post:
+      summary: Issue scoped guest player HMAC session cookie (Clearance Lv.1)
+      tags: [Authentication]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commanderId:
+                  type: string
+                displayName:
+                  type: string
+      responses:
+        '200':
+          description: Scoped player session minted
+  /api/auth/firebase-exchange:
+    post:
+      summary: Exchange verified Firebase ID token for server HMAC session cookie
+      tags: [Authentication]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Verified Firebase identity bound to server session
+        '401':
+          description: Missing or invalid Firebase ID token
+  /api/auth/admin-login:
+    post:
+      summary: Authenticate privileged operator with timing-safe passkey + brute-force lockout
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, passkey]
+              properties:
+                email:
+                  type: string
+                  format: email
+                passkey:
+                  type: string
+      responses:
+        '200':
+          description: Operator session issued
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Brute-force lockout active
+  /api/auth/logout:
+    post:
+      summary: Clear server session cookie and record audit log entry
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Session cleared
+  /api/online/status:
+    get:
+      summary: Read-only realm status, active sector state, and redacted commander roster
+      tags: [Online Realm]
+      parameters:
+        - in: query
+          name: sector
+          schema:
+            type: string
+            enum: [A1, A2, A3, B1, B2, B3, C1, C2, C3]
+      responses:
+        '200':
+          description: Current sector state and replication metadata
+  /api/online/sync:
+    post:
+      summary: Synchronize authenticated commander profile snapshot (anti-tamper clamped)
+      tags: [Online Realm]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Profile synchronized with any clamped fields reported
+        '401':
+          description: Session required
+  /api/online/siege/cmd:
+    post:
+      summary: Submit authoritative troop movement or rally siege command
+      tags: [Online Realm]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Command accepted and broadcast to subscribed WebSocket sector peers
+        '400':
+          description: Invalid command payload
+        '429':
+          description: Rate limit or anti-cheat quarantine active
+  /api/online/economy/balance:
+    get:
+      summary: Retrieve SHA-256 hash-chained commander economy account and balances
+      tags: [Economy Ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Authoritative balances, troops, castleLevel, and hash-chain verification
+  /api/online/economy/events:
+    post:
+      summary: Claim server-validated gameplay reward action (alias /api/online/economy/claim-action)
+      tags: [Economy Ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Reward credited idempotently via server-authoritative payout table
+        '403':
+          description: Client payload override attempt blocked
+        '429':
+          description: Action cooldown active
+  /api/online/economy/castle-upgrade:
+    post:
+      summary: Execute idempotent server-computed castle level upgrade
+      tags: [Economy Ledger]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId]
+              properties:
+                eventId:
+                  type: string
+      responses:
+        '200':
+          description: Castle upgraded and resources debited atomically
+  /api/online/economy/purchase-troops:
+    post:
+      summary: Execute idempotent server-computed troop recruitment gated by castle level
+      tags: [Economy Ledger]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId, branch, tier, quantity]
+              properties:
+                eventId:
+                  type: string
+                branch:
+                  type: string
+                  enum: [shieldbearers, shooters, bombers]
+                tier:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Troops recruited and ledger updated
+        '403':
+          description: Tier locked by castle level or untrusted override field rejected
+  /api/online/economy/market-trade:
+    post:
+      summary: Execute idempotent server-computed commodity exchange trade with tax ledger
+      tags: [Economy Ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Trade settled with net output and tax recorded
+  /api/online/account/export:
+    get:
+      summary: Self-service Data Subject Access Request (DSAR) JSON export
+      tags: [Privacy & DSR]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Exported commander profile, economy account, support tickets, and backing store inventory
+  /api/online/account:
+    delete:
+      summary: Self-service Right to Erasure (DSR) across active backing stores with receipt
+      tags: [Privacy & DSR]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Erasure receipt with per-store status and revoked session cookie
+  /api/admin/state:
+    get:
+      summary: Fetch privileged GM moderation roster, tickets, and audit log
+      tags: [Admin & RBAC]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Admin console state
+        '403':
+          description: Insufficient RBAC clearance
+  /api/db/profile:
+    get:
+      summary: Load Firebase-authenticated commander profile from PostgreSQL (Drizzle)
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: User and commander profile
+        '503':
+          description: PostgreSQL not configured or unreachable
+    put:
+      summary: Upsert sanitized commander profile in PostgreSQL (Drizzle)
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Saved commander profile
+  /api/db/save:
+    get:
+      summary: Load latest JSON realm snapshot from PostgreSQL
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Persisted realm save snapshot
+    put:
+      summary: Persist sanitized realm snapshot (<=256 KB) to PostgreSQL
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Snapshot persisted
+  /api/db/tickets:
+    get:
+      summary: List support tickets for authenticated Firebase UID
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: User support tickets
+    post:
+      summary: Create new support ticket in PostgreSQL
+      tags: [Cloud SQL]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '201':
+          description: Support ticket created

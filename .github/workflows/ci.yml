@@ -78,3 +78,15 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  docker-build:
+    name: Production Multi-Stage Docker Build Gate
+    needs: validate-and-verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build production Node.js container image
+        run: docker build --target app-runner -t voxel-realms-rpg:ci .
+      - name: Build static Nginx edge container image
+        run: docker build --target nginx-runner -t voxel-realms-rpg-nginx:ci .

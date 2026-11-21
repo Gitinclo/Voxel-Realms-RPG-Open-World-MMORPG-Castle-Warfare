@@ -103,7 +103,8 @@ To prevent state entanglement and make complex RPG math 100% deterministic and u
 ├── firestore.rules                  # Hardened Cloud Firestore RBAC, field-type & schema validation rules
 ├── firestore.rules.test.ts          # "Dirty Dozen" static & structural security-rule audit suite
 ├── firebase-blueprint.json          # Canonical Firestore collection schema & role definitions
-├── server.ts                        # Express + RFC 6455 WS (/ws/siege), /api/admin/*, /api/online/* & /api/db/*
+├── src/server/                      # Modular Express 5 routes (routes/*), 20Hz WS gateway, CSP & proxy headers
+├── server.ts                        # Thin Express 5 composition root wiring src/server/routes/* & wsGateway.ts
 └── *.md Operational Runbooks        # discipline.md, deployment validation.md, monitoring.md, backups.md, environment hardening.md, real-world QA.md, incident response.md
 ```
 
@@ -210,7 +211,7 @@ Players cultivate four complementary paths simultaneously:
 Every commit is validated against six automated gates (see [`.github/workflows/build.yml`](./.github/workflows/build.yml)):
 
 1. **Strict TypeScript & Rules Linters (`npm run lint && npm run lint:rules`)**: `tsc --noEmit` with `strict: true`, `noUnusedLocals: true`, and `noUnusedParameters: true`, plus ESLint auditing of `firestore.rules`.
-2. **Decoupled Test Suite (`npm test`)**: **224 automated tests across 39 TypeScript test files** (`33` `src/game/*.test.ts` suites + `4` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `firestore.rules.test.ts`).
+2. **Decoupled Test Suite (`npm test`)**: **229 automated tests across 41 TypeScript test files** (`33` `src/game/*.test.ts` suites + `5` `src/lib/*.test.ts` suites + `src/db/economyRepository.test.ts` + `src/server/securityHeaders.test.ts` + `firestore.rules.test.ts`).
 3. **Code Formatting (`npm run format:check`)**: Enforced across all `.ts`, `.tsx`, `.md`, and `.json` files via Prettier.
 4. **C++20 Static Analysis & Formatting (`.clang-tidy` & `.clang-format`)**: Forbids raw owning `new`/`delete` pointers (`cppcoreguidelines-owning-memory`) in favor of `std::unique_ptr` and `std::shared_ptr`, and verifies `alignas(64)` / `alignas(128)` `SoA` cache-line alignment.
 5. **Zero External Secret Exposure**: Verified via `.gitignore` and `.env.example`.
