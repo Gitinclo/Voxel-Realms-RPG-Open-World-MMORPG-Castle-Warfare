@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
 # ==============================================================================
-# Stage 1: Build Stage (Node.js 24 Alpine)
+# Stage 1: Build Stage (Node.js 26 Alpine)
 # Installs all dependencies (including devDependencies) and compiles the Vite
 # production frontend bundle into /app/dist.
 # ==============================================================================
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -48,12 +48,12 @@ ENTRYPOINT []
 CMD ["nginx", "-c", "/etc/nginx/nginx.conf", "-g", "daemon off;"]
 
 # ==============================================================================
-# Optional Stage: Headless Browser E2E Runner (Node 24 Debian + Playwright Chromium)
+# Optional Stage: Headless Browser E2E Runner (Node 26 Debian + Playwright Chromium)
 # Build explicitly with: docker build --target e2e-runner -t voxel-e2e:ci .
 # Run with: docker run --rm voxel-e2e:ci
 # Skipped automatically by BuildKit during default production builds.
 # ==============================================================================
-FROM node:24-bookworm-slim AS e2e-runner
+FROM node:26-bookworm-slim AS e2e-runner
 
 WORKDIR /app
 
@@ -77,11 +77,11 @@ COPY --from=builder /app/dist ./dist
 CMD ["npm", "run", "verify:e2e"]
 
 # ==============================================================================
-# Stage 2 (Default): Production Runtime (Node.js 24 Alpine)
+# Stage 2 (Default): Production Runtime (Node.js 26 Alpine)
 # Serves the compiled Vite bundle (/app/dist), Express API (/api/*), and 20Hz
 # WebSocket Siege server (/ws/siege) as non-root user `node` on port 3000.
 # ==============================================================================
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 
 WORKDIR /app
 

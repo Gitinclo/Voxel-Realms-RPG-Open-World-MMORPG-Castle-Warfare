@@ -14,7 +14,7 @@
 [![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-258_Passing_(49_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
-[![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
+[![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_26_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
@@ -55,7 +55,7 @@ _If you are an AI coding agent or contributor working on this repository, adhere
 
 Exact locked versions verified against [`package.json`](./package.json), [`package-lock.json`](./package-lock.json), and [`bun.lock`](./bun.lock) as of **`20/11/2026`**:
 
-- **Runtime:** Node.js `v22.23.2` (`engines.node >=22.0.0`; Docker `node:24-alpine`; native reference guardrails in C++20 via [`CMakeLists.txt`](./CMakeLists.txt) & [`vcpkg.json`](./vcpkg.json))
+- **Runtime:** Node.js `v22.23.2` (`engines.node >=22.0.0`; Docker `node:26-alpine`; native reference guardrails in C++20 via [`CMakeLists.txt`](./CMakeLists.txt) & [`vcpkg.json`](./vcpkg.json))
 - **Frontend Framework & Language:** React `19.3.1` (`react-dom@19.3.1`, `React.lazy` + `Suspense`), TypeScript `7.0.2` (strict), Vite `8.3.8` (`@vitejs/plugin-react@6.3.0`)
 - **3D WebGL2 & Data Visualization:** Three.js `0.187.0` (`@types/three@0.187.0`), `three-mesh-bvh@0.9.18`, `cannon-es@0.20.0`, `simplex-noise@4.0.3`, `@tweenjs/tween.js@25.0.0`, D3.js `7.9.2` (`@types/d3@7.4.3`)
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
@@ -228,7 +228,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 
 - **Heraldic Alliances & 9-Sector Territory War Map (`A1`–`C3`)**: Create and customize heraldic SVG clan emblems, manage membership hierarchies, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
 - **Authoritative 20Hz (`50ms`) Multi-Sector 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) ticking all peer-subscribed sectors independently and broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
-- **Atomic Disk Persistence, Crash Recovery & Containerized Production Deployment (`src/game/serverPersistence.ts`, `Dockerfile`, `.dockerignore`, `nginx.conf`, [`DEPLOYMENT.md`](./DEPLOYMENT.md))**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Multi-stage `node:24-alpine` containerization (`Dockerfile`) excludes `devDependencies`, runs as non-root `USER node` on port `3000`, exposes `/healthz` + `/readyz` + `/api/ops/readiness`, and includes an optional `--target nginx-runner` non-root Alpine/Nginx static edge stage.
+- **Atomic Disk Persistence, Crash Recovery & Containerized Production Deployment (`src/game/serverPersistence.ts`, `Dockerfile`, `.dockerignore`, `nginx.conf`, [`DEPLOYMENT.md`](./DEPLOYMENT.md))**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Multi-stage `node:26-alpine` containerization (`Dockerfile`) excludes `devDependencies`, runs as non-root `USER node` on port `3000`, exposes `/healthz` + `/readyz` + `/api/ops/readiness`, and includes an optional `--target nginx-runner` non-root Alpine/Nginx static edge stage.
 
 ### 10. ⚖️ Server-Enforced Administration, GM, Admin & Moderator RBAC Control & Supreme Creator God Character (`creatergame31@gmail.com`)
 
@@ -844,7 +844,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 ├── .pre-commit-config.yaml            # Pre-commit secret, YAML/JSON, Prettier, tsc & Firestore rule hooks
 ├── .prettierignore                    # Excluded paths for Prettier formatting checks
 ├── .prettierrc                        # Prettier code style configuration
-├── Dockerfile                         # Multi-stage node:24-alpine build (non-root USER node) + optional nginx-runner
+├── Dockerfile                         # Multi-stage node:26-alpine build (non-root USER node) + optional nginx-runner
 ├── DEPLOYMENT.md                      # Docker build/run, fail-closed secrets & container verification guide
 ├── Justfile                           # Command runner shortcuts (just dev, just validate, just ops, just cpp-test)
 ├── ARCHITECTURE.md                    # System architecture & Functional Core / Imperative Shell guide
@@ -985,7 +985,7 @@ npm audit --audit-level=high  # 2. Check npm packages for vulnerabilities
 npx prettier --check .        # 3. Check formatting style (or run `npm run format`)
 npm test                      # 4. Run all 229 TypeScript unit, server CSP/proxy, RPC client, economy, DB transaction, Daily Missions, HUD scale, launch schedule, liquidity, Gmail MIME, EULA/Legal & Firestore rule tests (41 test files)
 clang-format --dry-run --Werror cpp/VoxelRealmsGuardrails.hpp cpp/engine_guardrail_test.cpp # 5. C++20 Format check
-docker build -t my-app:prod . # 6. Build multi-stage non-root Node 24 Alpine production image (see DEPLOYMENT.md)
+docker build -t my-app:prod . # 6. Build multi-stage non-root Node 26 Alpine production image (see DEPLOYMENT.md)
 ```
 
 ---
@@ -1086,7 +1086,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 ### Operational Runbooks, Engineering Discipline & QA Playbooks
 
 - **[Engineering Discipline & Anti-Spaghetti Constitution (`discipline.md`)](./discipline.md)** — Functional Core / Imperative Shell boundaries, Architect-First pre-flight rules, 3–4 feature refactor cadence, `BigInt` precision, Three.js WebGL2 disposal, and C++20 smart-pointer guardrails.
-- **[Containerized Deployment Guide (`DEPLOYMENT.md`)](./DEPLOYMENT.md)** — Multi-stage `node:24-alpine` Docker build (`Dockerfile`, `.dockerignore`, optional `--target nginx-runner` with `nginx.conf`), mandatory fail-closed production secrets, persistent volume mounting, and `/healthz` + `/readyz` + security header verification.
+- **[Containerized Deployment Guide (`DEPLOYMENT.md`)](./DEPLOYMENT.md)** — Multi-stage `node:26-alpine` Docker build (`Dockerfile`, `.dockerignore`, optional `--target nginx-runner` with `nginx.conf`), mandatory fail-closed production secrets, persistent volume mounting, and `/healthz` + `/readyz` + security header verification.
 - **[Deployment Validation Runbook (`deployment validation.md`)](./deployment%20validation.md)** — 4-stage pre-deploy, live ops harness (`npm run verify:ops`), Cloud SQL / Firestore rules sync, and post-deploy smoke & rollback criteria.
 - **[Observability, Telemetry & Monitoring Runbook (`monitoring.md`)](./monitoring.md)** — Live `/healthz`, `/readyz`, `/api/ops/readiness`, `/api/online/status`, and `/api/online/anti-cheat` probes, Four Golden Signals, `20Hz` (`50ms`) siege tick latency SLOs, and `securityAuditLog` events.
 - **[Backup, Persistence & Disaster Recovery Runbook (`backups.md`)](./backups.md)** — RPO/RTO matrix, `AtomicRealmPersistence` (`.tmp` → `fsync` → SHA-256 `.bak` → POSIX rename), Cloud SQL `pg_dump`/`pg_restore`, and Firestore GCS export/import drills.

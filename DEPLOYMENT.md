@@ -6,8 +6,8 @@ This guide explains how to build, run, and verify the production Docker image fo
 
 ## 1. Container Architecture Overview
 
-- **Builder Stage (`node:24-alpine AS builder`)**: Copies `package.json` and `package-lock.json` first for layer caching, installs all dependencies (`npm ci`), and compiles the Vite production frontend bundle into `/app/dist` (`npm run build`).
-- **Runtime Stage (`node:24-alpine AS runner`, default target)**:
+- **Builder Stage (`node:26-alpine AS builder`)**: Copies `package.json` and `package-lock.json` first for layer caching, installs all dependencies (`npm ci`), and compiles the Vite production frontend bundle into `/app/dist` (`npm run build`).
+- **Runtime Stage (`node:26-alpine AS runner`, default target)**:
   - Runs with `NODE_ENV=production` and `PORT=3000`.
   - Installs production dependencies only (`npm ci --omit=dev && npm cache clean --force`), excluding `devDependencies` from the final image.
   - Copies only the compiled `/app/dist` bundle and required runtime files (`server.ts`, `tsconfig.json`, `metadata.json`, `firebase-applet-config.json`, `src/`).

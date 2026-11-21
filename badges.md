@@ -15,7 +15,7 @@ Centralized badge catalog for **Voxel Realms RPG: Open World MMORPG & Castle War
 [![Automated Tests](<https://img.shields.io/badge/Automated_Tests-258_Passing_(49_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](./test_strategy.md)
 [![Source Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_Tagged_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./server.ts)
-[![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
+[![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_26_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 
 ---
@@ -58,7 +58,7 @@ All workflow badges below reflect real GitHub Actions execution status (never st
 | [![D3.js 7.9](https://img.shields.io/badge/D3.js-7.9_Data_Viz-f97316?style=flat-square&logo=d3dotjs&logoColor=white)](./package.json)                                  | Cosmological Tree & Marketplace Sparklines                | `d3@7.9.2`                                                 |
 | [![Vite 8.3](https://img.shields.io/badge/Vite-8.3-646cff?style=flat-square&logo=vite&logoColor=white)](./vite.config.ts)                                              | Bundler & Dev Server Middleware                           | `vite@8.3.8`                                               |
 | [![Tailwind CSS 4.3](https://img.shields.io/badge/Tailwind_CSS-4.3-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)](./src/index.css)                        | Utility-First Styling (`@tailwindcss/vite`)               | `tailwindcss@4.3.5`                                        |
-| [![Node.js >=22](<https://img.shields.io/badge/Node.js-%3E%3D22_(Docker_24_Alpine)-339933?style=flat-square&logo=node.js&logoColor=white>)](./Dockerfile)              | Runtime & Authoritative 20Hz WebSocket Server             | `engines.node >=22.0.0`, `node:24-alpine`                  |
+| [![Node.js >=22](<https://img.shields.io/badge/Node.js-%3E%3D22_(Docker_26_Alpine)-339933?style=flat-square&logo=node.js&logoColor=white>)](./Dockerfile)              | Runtime & Authoritative 20Hz WebSocket Server             | `engines.node >=22.0.0`, `node:26-alpine`                  |
 | [![Express 5.3](https://img.shields.io/badge/Express-5.3_%2B_RFC_6455_WS-475569?style=flat-square&logo=express&logoColor=white)](./server.ts)                          | HTTP API, HMAC Auth, `/metrics`, & `/ws/siege` Engine     | `express@5.3.0`                                            |
 | [![PostgreSQL + Drizzle](https://img.shields.io/badge/Cloud_SQL-PostgreSQL_%2B_Drizzle_0.45-336791?style=flat-square&logo=postgresql&logoColor=white)](./package.json) | Relational Persistence & Schema Migrations                | `pg@8.23.1`, `drizzle-orm@0.45.4`                          |
 | [![Firebase 12](https://img.shields.io/badge/Firebase-12.19_Auth_%2B_Firestore-ffca28?style=flat-square&logo=firebase&logoColor=0f172a)](./firestore.rules)            | Google Sign-In & Real-Time Commander Cloud Sync           | `firebase@12.19.0`, `firebase-admin@14.5.1`                |

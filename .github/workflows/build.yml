@@ -69,7 +69,7 @@ jobs:
           retention-days: 14
 
   docker-build:
-    name: Container Verification (Multi-Stage Node 24 Alpine + E2E Stage)
+    name: Container Verification (Multi-Stage Node 26 Alpine + E2E Stage)
     needs: quality-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
