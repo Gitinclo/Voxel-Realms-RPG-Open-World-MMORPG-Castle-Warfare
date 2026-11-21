@@ -33,7 +33,10 @@ Pursuant to Section 4(c) and Section 4(d) of the Apache License, Version 2.0:
      generated deterministically in-engine via mathematical synthesis (Three.js
      instanced primitives, HTML5 2D Canvas, and Web Audio API oscillators) with
      zero proprietary third-party media assets.
-   - All runtime and build dependencies declared in package.json and vcpkg.json
-     (React, Three.js, Tailwind CSS, Lucide React, Motion, EnTT, fmt, GLM, SDL2,
-     GoogleTest) are distributed under permissive open-source licenses
-     compatible with Apache-2.0.
+   - All runtime and build dependencies declared in package.json, vcpkg.json,
+     and android/gradle/libs.versions.toml (React, Three.js, Tailwind CSS,
+     Lucide React, Motion, EnTT, fmt, GLM, SDL2, GoogleTest, AppAuth-Android,
+     Apollo GraphQL Client, Coil, android-gif-drawable, AndroidSVG, jsoup,
+     PdfViewPager, Lingver, OkHttp, and Android Open Source Project components;
+     see THIRD_PARTY_NOTICES.md) are distributed under permissive open-source
+     licenses compatible with Apache-2.0.

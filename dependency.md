@@ -1,9 +1,9 @@
 # 📦 Dependency Inventory & Supply-Chain Ledger (`dependency.md`)
 
-> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `20/11/2026`)  
+> **Project:** Voxel Realms RPG: Open World MMORPG & Castle Warfare (`v1.5.0` · `21/11/2026`)  
 > **Sovereign Root Owner:** [`creatergame31@gmail.com`](mailto:creatergame31@gmail.com) · **License:** Apache-2.0 (Source) / EULA v1.5.0 (Service) · **Engine:** Node.js `>=22.0.0`
 
-This document tracks every runtime dependency, development tool, transitive security override, and native C++20 package declared in [`package.json`](./package.json) and [`vcpkg.json`](./vcpkg.json).
+This document tracks every runtime dependency, development tool, transitive security override, native C++20 package, and Android client library declared in [`package.json`](./package.json), [`vcpkg.json`](./vcpkg.json), and [`android/gradle/libs.versions.toml`](./android/gradle/libs.versions.toml).
 
 ---
 
@@ -124,23 +124,43 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ---
 
-## 5. GitHub Actions & CI/CD Workflow Dependencies (`.github/workflows/*.yml`)
+## 5. Android Client Dependencies (`android/gradle/libs.versions.toml`)
 
-All 10 automated workflows under `.github/workflows/` are tracked by [`.github/dependabot.yml`](./.github/dependabot.yml) (`package-ecosystem: "github-actions"`) and standardized on Node.js `22`:
+All 10 Android open-source libraries declared in [`android/gradle/libs.versions.toml`](./android/gradle/libs.versions.toml) and validated by `src/game/androidDependencies.test.ts` use Apache-2.0-compatible permissive licenses (`Apache-2.0` / `MIT`):
 
-| GitHub Action             | Version | Workflows Using Action                                                                                                                                     | Architectural Purpose                                                     |
-| :------------------------ | :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| `actions/checkout`        | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `release.yml`, `release_drafter.yml`, `security_audit.yml` | Checks out repository source & release tags across CI/CD jobs             |
-| `actions/setup-node`      | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `release.yml`, `security_audit.yml`                        | Provisions Node.js `22` runtime with deterministic `npm` lockfile cache   |
-| `actions/upload-artifact` | `@v7`   | `build.yml`                                                                                                                                                | Uploads verified `dist/` production bundle artifact (`14`-day retention)  |
-| `actions/stale`           | `@v11`  | `stale_issues.yml`                                                                                                                                         | Automated 60-day inactive issue/PR triage (exempting `security`, `SEV-1`) |
+| Library                         | Maven / Platform Coordinate                 | Version  | License      | Architectural Purpose                                                                                   |
+| :------------------------------ | :------------------------------------------ | :------- | :----------- | :------------------------------------------------------------------------------------------------------ |
+| **AppAuth-Android**             | `net.openid:appauth`                        | `0.11.1` | `Apache-2.0` | RFC 8252 OAuth 2.0 / OpenID Connect (PKCE) sign-in and session bootstrap on Android                     |
+| **Apollo GraphQL Client**       | `com.apollographql.apollo:apollo-runtime`   | `4.1.1`  | `MIT`        | Typed Kotlin GraphQL client and normalized cache for nested RPG inventory, profile, and clan UIs        |
+| **Coil**                        | `io.coil-kt.coil3:coil`                     | `3.0.4`  | `Apache-2.0` | Coroutine-backed Android image loading with OkHttp networking and memory/disk caching                   |
+| **android-gif-drawable**        | `pl.droidsonroids.gif:android-gif-drawable` | `1.2.29` | `MIT`        | JNI-accelerated animated GIF decoding and `Drawable` rendering for emotes, skills, and world alerts     |
+| **AndroidSVG**                  | `com.caverock:androidsvg-aar`               | `1.4`    | `Apache-2.0` | Resolution-independent SVG 1.1 vector rendering for faction crests, clan emblems, and glyphs            |
+| **jsoup: Java HTML Parser**     | `org.jsoup:jsoup`                           | `1.18.3` | `MIT`        | Safe HTML5 DOM parsing and `Safelist` sanitization for patch notes, news, and in-game mail previews     |
+| **PdfViewPager**                | `es.voghdev.pdfviewpager:library`           | `1.1.2`  | `Apache-2.0` | Paged in-app PDF viewer for offline lore codices, legal agreements, and siege strategy guides           |
+| **Lingver**                     | `com.github.YarikSOffice:lingver`           | `1.3.0`  | `Apache-2.0` | Runtime locale persistence and dynamic multi-language switching on Android                              |
+| **OkHttp**                      | `com.squareup.okhttp3:okhttp`               | `4.12.0` | `Apache-2.0` | HTTP/2, TLS 1.3 connection pooling, certificate pinning, and RFC 6455 WebSocket transport (`/ws/siege`) |
+| **Android Open Source Project** | `androidx.core:core-ktx` (`API 31–35`)      | `1.15.0` | `Apache-2.0` | Core Android OS APIs, AndroidX Jetpack libraries, Vulkan/NDK surface lifecycle, and Keystore primitives |
 
 ---
 
-## 6. Verification Commands
+## 6. GitHub Actions & CI/CD Workflow Dependencies (`.github/workflows/*.yml`)
+
+All 15 automated workflows under `.github/workflows/` declare explicit top-level least-privilege `permissions:`, are tracked by [`.github/dependabot.yml`](./.github/dependabot.yml) (`npm`, `github-actions`, and `docker`), and are standardized on Node.js `22` with Node-24-compatible actions:
+
+| GitHub Action                           | Version | Workflows Using Action                                                                                                                                                                                                                                                              | Architectural Purpose                                                                    |
+| :-------------------------------------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| `actions/checkout`                      | `@v7`   | All checkout workflows (`build.yml`, `cd.yml`, `ci.yml`, `codeql.yml`, `deploy-staging.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `pages-webgl.yml`, `release-gates.yml`, `release.yml`, `release_drafter.yml`, `security_audit.yml`, `staging-soak.yml`) | Checks out repository source & release tags across CI/CD jobs                            |
+| `actions/setup-node`                    | `@v7`   | `build.yml`, `cd.yml`, `ci.yml`, `docs_deploy.yml`, `lint_and_format.yml`, `nightly_build.yml`, `pages-webgl.yml`, `release-gates.yml`, `release.yml`, `security_audit.yml`, `staging-soak.yml`                                                                                     | Provisions Node.js `22` runtime with deterministic `npm` lockfile cache                  |
+| `actions/upload-artifact`               | `@v7`   | `build.yml`, `ci.yml`, `deploy-staging.yml`, `release-gates.yml`, `staging-soak.yml`                                                                                                                                                                                                | Uploads verified build, coverage, E2E, SBOM, rollout, and soak evidence artifacts        |
+| `github/codeql-action/init` & `analyze` | `@v4`   | `codeql.yml`                                                                                                                                                                                                                                                                        | Static security scanning for `javascript-typescript` and `actions` (`security-extended`) |
+| `actions/stale`                         | `@v11`  | `stale_issues.yml`                                                                                                                                                                                                                                                                  | Automated inactive issue/PR triage (exempting `security`, `sev-1`, `sev-2`)              |
+
+---
+
+## 7. Verification Commands
 
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
 npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 & @types/node@22.20.5 intentionally pinned for Node 22 LTS)
-npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 221 tests (38 suites) & Vite build
+npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 258 tests (49 suites) & Vite build
 ```

@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+# Voxel Realms RPG — Android Client Reference Gradle Version Catalog
+# Canonical Android companion / native client dependency manifest synchronized with:
+#   - android.md
+#   - dependency.md
+#   - THIRD_PARTY_NOTICES.md
+#   - OPEN_SOURCE_LICENSES.md
+#   - src/game/androidDependencies.ts
+
+[versions]
+# Android Open Source Project (AOSP) / AndroidX Jetpack Platform Baseline (Apache-2.0)
+androidCompileSdk = "35"
+androidMinSdk = "31"
+androidTargetSdk = "35"
+androidxCoreKtx = "1.15.0"
+
+# Authentication, Transport & GraphQL
+appauth = "0.11.1"
+apollo = "4.1.1"
+okhttp = "4.12.0"
+
+# Media, Vector, Animated & Document Rendering
+coil = "3.0.4"
+androidGifDrawable = "1.2.29"
+androidSvg = "1.4"
+pdfViewPager = "1.1.2"
+
+# Parsing & Runtime Localization
+jsoup = "1.18.3"
+lingver = "1.3.0"
+
+[libraries]
+# Android Open Source Project (AOSP / AndroidX) — Apache-2.0
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCoreKtx" }
+
+# AppAuth-Android (OpenID Connect & OAuth 2.0 PKCE) — Apache-2.0
+appauth-android = { group = "net.openid", name = "appauth", version.ref = "appauth" }
+
+# Apollo GraphQL Client (Typed Kotlin GraphQL runtime & normalized cache) — MIT
+apollo-runtime = { group = "com.apollographql.apollo", name = "apollo-runtime", version.ref = "apollo" }
+
+# Coil (Coroutine-backed Android image loader) — Apache-2.0
+coil-core = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+
+# android-gif-drawable (Native JNI GIF decoder & Drawable) — MIT
+android-gif-drawable = { group = "pl.droidsonroids.gif", name = "android-gif-drawable", version.ref = "androidGifDrawable" }
+
+# AndroidSVG (SVG 1.1 vector rendering for clan emblems & crests) — Apache-2.0
+androidsvg = { group = "com.caverock", name = "androidsvg-aar", version.ref = "androidSvg" }
+
+# jsoup: Java HTML Parser (Safe HTML parsing & allowlist sanitization) — MIT
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+
+# PdfViewPager (Paged in-app PDF viewer for codices & legal notices) — Apache-2.0
+pdfviewpager = { group = "es.voghdev.pdfviewpager", name = "library", version.ref = "pdfViewPager" }
+
+# Lingver (Runtime locale manager for Android) — Apache-2.0
+lingver = { group = "com.github.YarikSOffice", name = "lingver", version.ref = "lingver" }
+
+# OkHttp (HTTP/2, TLS 1.3 & RFC 6455 WebSocket transport) — Apache-2.0
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+
+[bundles]
+voxel-android-networking = ["appauth-android", "apollo-runtime", "okhttp"]
+voxel-android-media = ["coil-core", "coil-network-okhttp", "android-gif-drawable", "androidsvg", "pdfviewpager"]
+voxel-android-content-i18n = ["jsoup", "lingver", "androidx-core-ktx"]

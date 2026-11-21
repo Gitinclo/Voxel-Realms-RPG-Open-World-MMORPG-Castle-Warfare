@@ -31,3 +31,22 @@
   - Complies with Google Play AI & Procedural Content Disclosure ([`README.md`](./README.md#steam--platform-content-disclosure)), GDPR/CCPA/DPDP Act data deletion/export rights ([`PRIVACY.md`](./PRIVACY.md)), and EULA v1.5.0 acceptance receipts ([`EULA.md`](./EULA.md)).
 - **100 Playable Races & Root Creator God Character**:
   - Android players can select from the 10 Core Solara Starter Lineages—or unlock all **100 Playable Species / Races (`#1–#100`)** with Admin (`creatergame31@gmail.com`) permission (`src/game/species.ts`)—while Root Creator **`creatergame31@gmail.com`** commands the Maxed-Out God Character with 12-Domain All-Things Immunity and 100 Supreme Omni-Attributes (`src/game/godModeCharacter.ts`).
+
+---
+
+## 4. Android Client SDK & Open-Source Library Stack (`android/gradle/libs.versions.toml`)
+
+The reference Android companion and native client dependency catalog is declared in [`android/gradle/libs.versions.toml`](./android/gradle/libs.versions.toml) and mirrored in [`src/game/androidDependencies.ts`](./src/game/androidDependencies.ts), [`dependency.md`](./dependency.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), and [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md). All libraries use permissive `Apache-2.0` or `MIT` licenses:
+
+| Library                         | Maven / Platform Coordinate                 | Version  | License      | Role in Voxel Realms Android Client                                                                                 |
+| :------------------------------ | :------------------------------------------ | :------- | :----------- | :------------------------------------------------------------------------------------------------------------------ |
+| **AppAuth-Android**             | `net.openid:appauth`                        | `0.11.1` | `Apache-2.0` | RFC 8252 OAuth 2.0 / OpenID Connect (PKCE) sign-in and session bootstrap without embedded WebViews                  |
+| **Apollo GraphQL Client**       | `com.apollographql.apollo:apollo-runtime`   | `4.1.1`  | `MIT`        | Strongly typed Kotlin GraphQL runtime and normalized cache for nested inventory, profile, and clan UI trees         |
+| **Coil**                        | `io.coil-kt.coil3:coil`                     | `3.0.4`  | `Apache-2.0` | Coroutine-backed image loading with OkHttp transport and memory/disk caching for portraits, banners, and icons      |
+| **android-gif-drawable**        | `pl.droidsonroids.gif:android-gif-drawable` | `1.2.29` | `MIT`        | JNI-accelerated animated GIF decoding and `Drawable` rendering for emote reactions, skill previews, and boss alerts |
+| **AndroidSVG**                  | `com.caverock:androidsvg-aar`               | `1.4`    | `Apache-2.0` | Resolution-independent SVG 1.1 vector rendering for faction crests, clan emblems, and cosmological realm glyphs     |
+| **jsoup: Java HTML Parser**     | `org.jsoup:jsoup`                           | `1.18.3` | `MIT`        | HTML5 DOM parsing and strict allowlist sanitization (`Safelist`) for patch notes, news, and in-game mail previews   |
+| **PdfViewPager**                | `es.voghdev.pdfviewpager:library`           | `1.1.2`  | `Apache-2.0` | Paged in-app PDF viewer for offline lore codices, legal agreements (`EULA`/`PRIVACY`), and siege strategy guides    |
+| **Lingver**                     | `com.github.YarikSOffice:lingver`           | `1.3.0`  | `Apache-2.0` | Runtime locale persistence and dynamic multi-language switching without restarting OS language settings             |
+| **OkHttp**                      | `com.squareup.okhttp3:okhttp`               | `4.12.0` | `Apache-2.0` | HTTP/2, TLS 1.3 connection pooling, certificate pinning, and RFC 6455 WebSocket transport (`/ws/siege`)             |
+| **Android Open Source Project** | `androidx.core:core-ktx` (`API 31–35`)      | `1.15.0` | `Apache-2.0` | Core Android OS APIs, AndroidX Jetpack compat/lifecycle utilities, Vulkan/NDK surfaces, and hardware Keystore       |
