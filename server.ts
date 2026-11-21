@@ -75,8 +75,8 @@ async function startServer() {
     );
   }
 
-  const usePostgresEconomy =
-    process.env.VOXEL_ECONOMY_BACKEND === 'postgres' && isPostgresConfigured(process.env);
+  const economyBackendPref = (process.env.VOXEL_ECONOMY_BACKEND || 'auto').trim().toLowerCase();
+  const usePostgresEconomy = economyBackendPref !== 'disk' && isPostgresConfigured(process.env);
 
   const { app, httpServer, shutdown } = createVoxelServerRuntime({
     port: PORT,

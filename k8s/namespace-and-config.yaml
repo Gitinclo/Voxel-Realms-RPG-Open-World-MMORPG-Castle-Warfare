@@ -1,0 +1,43 @@
+# Voxel Realms RPG — Kubernetes Namespace, ConfigMap & Secret Template
+# Apply in staging/production via: kubectl apply -f k8s/
+# NEVER commit real secrets; populate via External Secrets Operator, GCP Secret Manager, or SealedSecrets.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voxel-realms-config
+  namespace: voxel-realms
+data:
+  NODE_ENV: 'production'
+  PORT: '3000'
+  VOXEL_ECONOMY_BACKEND: 'postgres'
+  VOXEL_ALLOW_PRODUCTION_GODMODE: 'false'
+  VOXEL_TRUST_PROXY: '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+  VOXEL_API_WRITE_LIMIT_PER_MIN: '120'
+  ALLOW_PREVIEW_IFRAME: 'false'
+  DISABLE_HMR: 'true'
+  SQL_HOST: '127.0.0.1'
+  SQL_DB_NAME: 'voxel_realms_db'
+  APP_URL: 'https://voxelrealms.example.com'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: voxel-realms-secrets
+  namespace: voxel-realms
+type: Opaque
+stringData:
+  # Replace via ExternalSecrets / GCP Secret Manager before applying to any cluster.
+  VOXEL_SESSION_SECRET: 'REPLACE_VIA_SECRET_MANAGER_MIN_32_CHARS'
+  VOXEL_ADMIN_PASSKEY: 'REPLACE_VIA_SECRET_MANAGER_MIN_12_CHARS'
+  SQL_USER: 'REPLACE_VIA_SECRET_MANAGER_APP_USER'
+  SQL_PASSWORD: 'REPLACE_VIA_SECRET_MANAGER_APP_PASSWORD'
+  REDIS_REST_URL: 'http://voxel-redis-rest.voxel-realms.svc.cluster.local:8080'
+  REDIS_REST_TOKEN: 'REPLACE_VIA_SECRET_MANAGER_REDIS_TOKEN'

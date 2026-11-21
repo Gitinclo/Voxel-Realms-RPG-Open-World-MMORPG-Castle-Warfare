@@ -1,0 +1,167 @@
+# Voxel Realms RPG — Hardened Non-Root Deployment, Cloud SQL Auth Proxy Sidecar, PDB & HPA
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voxel-realms-server
+  namespace: voxel-realms
+  labels:
+    app.kubernetes.io/name: voxel-realms-rpg
+    app.kubernetes.io/version: '1.5.0'
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-realms-rpg
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: voxel-realms-rpg
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/metrics'
+        prometheus.io/port: '3000'
+    spec:
+      serviceAccountName: voxel-realms-sa
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/gitinclo/voxel-realms-rpg:v1.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: voxel-realms-config
+            - secretRef:
+                name: voxel-realms-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            requests:
+              cpu: '500m'
+              memory: '512Mi'
+            limits:
+              cpu: '2000m'
+              memory: '1536Mi'
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp-data
+              mountPath: /app/data
+            - name: tmp-dir
+              mountPath: /tmp
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.15.2-alpine
+          args:
+            - '--structured-logs'
+            - '--port=5432'
+            - '--private-ip'
+            - '$(CLOUD_SQL_INSTANCE_CONNECTION_NAME)'
+          env:
+            - name: CLOUD_SQL_INSTANCE_CONNECTION_NAME
+              value: 'dev-ivy-6v0ns:asia-southeast1:ai-studio-416287a7'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '500m'
+              memory: '256Mi'
+      volumes:
+        - name: tmp-data
+          emptyDir:
+            sizeLimit: 256Mi
+        - name: tmp-dir
+          emptyDir:
+            sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voxel-realms-service
+  namespace: voxel-realms
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: voxel-realms-rpg
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: voxel-realms-pdb
+  namespace: voxel-realms
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: voxel-realms-rpg
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: voxel-realms-hpa
+  namespace: voxel-realms
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: voxel-realms-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75

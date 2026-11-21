@@ -1,0 +1,70 @@
+# Voxel Realms RPG — Artillery Staging Load & Soak Configuration
+# Run with:
+#   npx artillery run --target https://staging.voxelrealms.example.com loadtest/artillery-siege.yml
+config:
+  target: 'http://127.0.0.1:3000'
+  phases:
+    - name: Warmup
+      duration: 60
+      arrivalRate: 5
+    - name: Sustained Staging Load
+      duration: 600
+      arrivalRate: 25
+    - name: Siege Peak Burst
+      duration: 180
+      arrivalRate: 60
+    - name: Cooldown
+      duration: 60
+      arrivalRate: 5
+  ensure:
+    thresholds:
+      - http.response_time.p95: 100
+      - http.response_time.p99: 250
+      - http.codes.500: 0
+      - http.codes.503: 0
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  - name: 'Authoritative Player Session -> Sync -> Economy -> Export -> Logout'
+    flow:
+      - get:
+          url: '/healthz'
+          expect:
+            - statusCode: 200
+      - post:
+          url: '/api/auth/player-session'
+          json:
+            commanderId: 'artillery-{{ $randomNumber(1, 50000) }}'
+            displayName: 'Artillery Vanguard'
+          expect:
+            - statusCode: 200
+      - post:
+          url: '/api/online/sync'
+          json:
+            commanderName: 'Artillery Vanguard'
+            allianceTag: 'SOL'
+            sector: 'B2'
+          expect:
+            - statusCode: 200
+      - post:
+          url: '/api/online/economy/claim-action'
+          json:
+            idempotencyKey: 'art-gather-{{ $uuid }}'
+            actionType: 'GATHER_WOOD_NODE'
+            entityId: 'wood-node-1'
+          expect:
+            - statusCode: 200
+      - get:
+          url: '/api/online/economy/balance'
+          expect:
+            - statusCode: 200
+      - get:
+          url: '/api/online/account/export'
+          expect:
+            - statusCode: 200
+      - post:
+          url: '/api/auth/logout'
+          expect:
+            - statusCode: 200
