@@ -10,18 +10,21 @@ This index classifies repository documentation strictly into **Implemented**, **
 
 ## 1. Core Entry Points & API Contracts (Implemented)
 
-| Document                                                           | Purpose                                                                                                                  |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| [`../README.md`](../README.md)                                     | High-signal quickstart, verified tech stack, repository map, commands, and env vars                                      |
-| [`../AGENTS.md`](../AGENTS.md)                                     | OpenAPI 3.2 Agent Reference & Voxel Realms RPG stack/endpoint guardrails for coding agents                               |
-| [`./openapi.yaml`](./openapi.yaml)                                 | OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, `$self`) for `server.ts` + `src/server/routes/*`     |
-| [`./openapi.3.1.yaml`](./openapi.3.1.yaml)                         | OpenAPI 3.1.0 downlevel fallback contract (strips 3.2-only fields for legacy generators/linters)                         |
-| [`../ARCHITECTURE.md`](../ARCHITECTURE.md)                         | Modular frontend/backend architecture, functional-core domain boundaries, and 3D pipeline                                |
-| [`../SECURITY.md`](../SECURITY.md)                                 | Threat boundaries, HMAC session auth, fail-closed secrets, CSP, CSRF, and Firestore rules                                |
-| [`../DEPLOYMENT.md`](../DEPLOYMENT.md)                             | Multi-stage non-root Docker build, Nginx edge config, health/readiness/metrics probes                                    |
-| [`../CHANGELOG.md`](../CHANGELOG.md)                               | Chronological record of implemented codebase milestones                                                                  |
-| [`./PRE_LAUNCH_CHECKLIST_2030.md`](./PRE_LAUNCH_CHECKLIST_2030.md) | Live Cloud SQL verification + Kustomize/TLS/Redis, 4h soak, security audit, legal review & signed `v*` release checklist |
-| [`./release-evidence-template.md`](./release-evidence-template.md) | 24-gate pre-tag release evidence & independent approver sign-off record                                                  |
+| Document                                                                                             | Purpose                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [`../README.md`](../README.md)                                                                       | High-signal quickstart, verified tech stack, repository map, commands, and env vars                                      |
+| [`../AGENTS.md`](../AGENTS.md)                                                                       | OpenAPI 3.2 Agent Reference & 4-Layer MMORPG protocol stack guardrails for coding agents                                 |
+| [`./openapi.yaml`](./openapi.yaml)                                                                   | Layer 4: OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, `$self`) for `server.ts` + `src/server/*`   |
+| [`./openapi.3.1.yaml`](./openapi.3.1.yaml)                                                           | Layer 4 Fallback: OpenAPI 3.1.0 downlevel contract (strips 3.2-only fields for legacy generators/linters)                |
+| [`./asyncapi.yaml`](./asyncapi.yaml)                                                                 | Layer 2 (Live): AsyncAPI 3.0.0 contract for the RFC 6455 20Hz `/ws/siege` WebSocket gateway (`src/server/wsGateway.ts`)  |
+| [`../schemas/flatbuffers/voxel_siege_protocol.fbs`](../schemas/flatbuffers/voxel_siege_protocol.fbs) | Layer 1 (Binary Wire Spec): Zero-copy FlatBuffers schema mirroring `src/game/siegeNetProtocol.ts` (planned UDP/C++20)    |
+| [`../schemas/proto/voxel_realm_internal.proto`](../schemas/proto/voxel_realm_internal.proto)         | Layer 3 (Planned Multi-Shard): gRPC / `proto3` internal services (zone handoff, ledger, anti-cheat, guild locks)         |
+| [`../ARCHITECTURE.md`](../ARCHITECTURE.md)                                                           | Modular frontend/backend architecture, functional-core domain boundaries, and 3D pipeline                                |
+| [`../SECURITY.md`](../SECURITY.md)                                                                   | Threat boundaries, HMAC session auth, fail-closed secrets, CSP, CSRF, and Firestore rules                                |
+| [`../DEPLOYMENT.md`](../DEPLOYMENT.md)                                                               | Multi-stage non-root Docker build, Nginx edge config, health/readiness/metrics probes                                    |
+| [`../CHANGELOG.md`](../CHANGELOG.md)                                                                 | Chronological record of implemented codebase milestones                                                                  |
+| [`./PRE_LAUNCH_CHECKLIST_2030.md`](./PRE_LAUNCH_CHECKLIST_2030.md)                                   | Live Cloud SQL verification + Kustomize/TLS/Redis, 4h soak, security audit, legal review & signed `v*` release checklist |
+| [`./release-evidence-template.md`](./release-evidence-template.md)                                   | 24-gate pre-tag release evidence & independent approver sign-off record                                                  |
 
 ---
 

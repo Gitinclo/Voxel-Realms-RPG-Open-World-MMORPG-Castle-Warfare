@@ -1,0 +1,192 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Voxel Realms RPG — Layer 3 Internal Backend Microservices Contract (gRPC / Protobuf v3)
+// Status: Planned Multi-Shard / Horizontal Scaling Contract (Target Launch: 30/03/2030)
+//
+// Today the single-instance server (`server.ts`) executes these operations in-process with
+// PostgreSQL ACID (`SELECT ... FOR UPDATE`) and disk fallback. When scaling out across
+// multiple zone pods (GKE + Cloud SQL + Redis), these internal HTTP/2 gRPC interfaces govern:
+//   1. ZoneHandoffService        — Seamless sector-to-sector commander transfers with inventory locking
+//   2. EconomyLedgerService      — Atomic idempotent debit/credit/upgrade/troop mutations
+//   3. AntiCheatTelemetryService — Cross-shard strike aggregation & quarantine propagation
+//   4. GuildStorageLockService   — Distributed pessimistic lease locking for alliance treasuries
+
+syntax = "proto3";
+
+package voxelrealms.internal.v1;
+
+option go_package = "github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/gen/go/voxelrealms/internal/v1;internalv1";
+
+enum SectorCode {
+  SECTOR_CODE_UNSPECIFIED = 0;
+  SECTOR_CODE_A1 = 1;
+  SECTOR_CODE_A2 = 2;
+  SECTOR_CODE_A3 = 3;
+  SECTOR_CODE_B1 = 4;
+  SECTOR_CODE_B2 = 5;
+  SECTOR_CODE_B3 = 6;
+  SECTOR_CODE_C1 = 7;
+  SECTOR_CODE_C2 = 8;
+  SECTOR_CODE_C3 = 9;
+}
+
+enum LedgerDirection {
+  LEDGER_DIRECTION_UNSPECIFIED = 0;
+  LEDGER_DIRECTION_CREDIT = 1;
+  LEDGER_DIRECTION_DEBIT = 2;
+}
+
+// ============================================================================
+// 1. Zone-to-Zone Commander Handoff (Zero-Duplication Sector Transitions)
+// ============================================================================
+
+service ZoneHandoffService {
+  rpc BeginCommanderHandoff(BeginCommanderHandoffRequest) returns (BeginCommanderHandoffResponse);
+  rpc CommitCommanderHandoff(CommitCommanderHandoffRequest) returns (CommitCommanderHandoffResponse);
+  rpc AbortCommanderHandoff(AbortCommanderHandoffRequest) returns (AbortCommanderHandoffResponse);
+}
+
+message BeginCommanderHandoffRequest {
+  string handoff_id = 1;
+  string commander_id = 2;
+  string session_id = 3;
+  SectorCode source_sector = 4;
+  SectorCode destination_sector = 5;
+  uint64 expected_economy_version = 6;
+  string snapshot_sha256 = 7;
+}
+
+message BeginCommanderHandoffResponse {
+  bool accepted = 1;
+  string lease_token = 2;
+  int64 lease_expires_at_unix_ms = 3;
+  string destination_pod_endpoint = 4;
+  string rejection_reason = 5;
+}
+
+message CommitCommanderHandoffRequest {
+  string handoff_id = 1;
+  string commander_id = 2;
+  string lease_token = 3;
+  SectorCode destination_sector = 4;
+}
+
+message CommitCommanderHandoffResponse {
+  bool committed = 1;
+  uint64 new_economy_version = 2;
+  string error_code = 3;
+}
+
+message AbortCommanderHandoffRequest {
+  string handoff_id = 1;
+  string commander_id = 2;
+  string lease_token = 3;
+  string reason = 4;
+}
+
+message AbortCommanderHandoffResponse {
+  bool released = 1;
+}
+
+// ============================================================================
+// 2. Authoritative Economy Ledger Service (PostgreSQL ACID Backing)
+// ============================================================================
+
+service EconomyLedgerService {
+  rpc ExecuteMutation(ExecuteMutationRequest) returns (ExecuteMutationResponse);
+  rpc VerifyLedgerChain(VerifyLedgerChainRequest) returns (VerifyLedgerChainResponse);
+}
+
+message ExecuteMutationRequest {
+  string idempotency_key = 1;
+  string commander_id = 2;
+  string resource_key = 3;
+  LedgerDirection direction = 4;
+  string amount_wire = 5; // Unsigned decimal string (BigInt wire-safe up to 1,000T+ scale)
+  string reason = 6;
+  uint64 expected_version = 7;
+}
+
+message ExecuteMutationResponse {
+  bool ok = 1;
+  bool replayed = 2;
+  string entry_hash_sha256 = 3;
+  uint64 new_version = 4;
+  string new_balance_wire = 5;
+  string error_code = 6;
+}
+
+message VerifyLedgerChainRequest {
+  string commander_id = 1;
+}
+
+message VerifyLedgerChainResponse {
+  bool valid = 1;
+  uint32 verified_entries = 2;
+  string tip_hash_sha256 = 3;
+  string broken_at_entry_id = 4;
+}
+
+// ============================================================================
+// 3. Cross-Shard Anti-Cheat Telemetry & Quarantine Propagation
+// ============================================================================
+
+service AntiCheatTelemetryService {
+  rpc RecordViolationStrike(RecordViolationStrikeRequest) returns (RecordViolationStrikeResponse);
+  rpc CheckQuarantineStatus(CheckQuarantineStatusRequest) returns (CheckQuarantineStatusResponse);
+}
+
+message RecordViolationStrikeRequest {
+  string commander_id = 1;
+  SectorCode sector = 2;
+  string violation_code = 3;
+  string detail = 4;
+  int64 observed_at_unix_ms = 5;
+}
+
+message RecordViolationStrikeResponse {
+  uint32 active_strike_count = 1;
+  bool quarantined_now = 2;
+  uint32 retry_after_sec = 3;
+}
+
+message CheckQuarantineStatusRequest {
+  string commander_id = 1;
+}
+
+message CheckQuarantineStatusResponse {
+  bool quarantined = 1;
+  uint32 retry_after_sec = 2;
+  uint32 active_strike_count = 3;
+}
+
+// ============================================================================
+// 4. Alliance / Guild Treasury Pessimistic Locking
+// ============================================================================
+
+service GuildStorageLockService {
+  rpc AcquireTreasuryLease(AcquireTreasuryLeaseRequest) returns (AcquireTreasuryLeaseResponse);
+  rpc ReleaseTreasuryLease(ReleaseTreasuryLeaseRequest) returns (ReleaseTreasuryLeaseResponse);
+}
+
+message AcquireTreasuryLeaseRequest {
+  string alliance_tag = 1;
+  string actor_commander_id = 2;
+  string idempotency_key = 3;
+  uint32 lease_ttl_ms = 4;
+}
+
+message AcquireTreasuryLeaseResponse {
+  bool acquired = 1;
+  string fencing_token = 2;
+  int64 expires_at_unix_ms = 3;
+}
+
+message ReleaseTreasuryLeaseRequest {
+  string alliance_tag = 1;
+  string fencing_token = 2;
+}
+
+message ReleaseTreasuryLeaseResponse {
+  bool released = 1;
+}

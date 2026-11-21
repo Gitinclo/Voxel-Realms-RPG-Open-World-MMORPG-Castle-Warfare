@@ -1,0 +1,504 @@
+asyncapi: 3.0.0
+id: urn:voxelrealms:siege-websocket-gateway
+info:
+  title: Voxel Realms RPG Authoritative 20Hz Siege WebSocket API
+  version: 1.5.0
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  description: >
+    AsyncAPI 3.0.0 contract for the live RFC 6455 WebSocket 20Hz (50ms tick) multi-sector siege
+    gateway implemented in `src/server/wsGateway.ts` and `src/game/siegeNetProtocol.ts`.
+    Complements `docs/openapi.yaml` (OpenAPI 3.2.0 HTTP/REST), `schemas/flatbuffers/voxel_siege_protocol.fbs`
+    (zero-copy binary wire spec), and `schemas/proto/voxel_realm_internal.proto` (planned multi-shard gRPC).
+    Security constraints enforced on upgrade: same-origin check, `?token=` query param rejected (HTTP 400),
+    max 250 concurrent peers / 20 per IP, max 32 KiB frames, 30 msg/s rate limit, and authenticated
+    `voxel_session` cookie or Bearer token required for all C2S mutating commands.
+  tags:
+    - name: siege-realtime
+      description: 20Hz authoritative troop movement, 1T war rallies, and delta-compressed state sync.
+    - name: anti-cheat
+      description: Server-authoritative command validation, strike lockouts, and rate limiting.
+defaultContentType: application/json
+servers:
+  localDev:
+    host: localhost:3000
+    protocol: ws
+    description: Local Express 5 + RFC 6455 WebSocket gateway (`server.ts`)
+  staging:
+    host: staging.voxelrealms.example.com
+    protocol: wss
+    description: External staging cluster behind TLS Ingress (replace placeholder domain before deploy)
+  production:
+    host: voxelrealms.example.com
+    protocol: wss
+    description: Production cluster behind TLS Ingress (replace placeholder domain before launch)
+channels:
+  siegeSector:
+    address: /ws/siege
+    description: >
+      Bidirectional 20Hz siege channel subscribed to a territory sector (`?sector=A1..C3`).
+      On connect the server immediately emits `S2C_FULL_SIEGE_SNAPSHOT` (0x10) and `S2C_SECTOR_PRESENCE` (0x15),
+      then streams `S2C_DELTA_SIEGE_UPDATE` (0x11) at 20Hz with full keyframes every 100 ticks (5.0s).
+    parameters:
+      sector:
+        description: Territory grid sector to subscribe to on WebSocket upgrade (defaults to global active sector).
+        enum: [A1, A2, A3, B1, B2, B3, C1, C2, C3]
+        default: B2
+    messages:
+      c2sTroopPositionCmd:
+        $ref: '#/components/messages/C2STroopPositionCmd'
+      c2sRallyActionCmd:
+        $ref: '#/components/messages/C2SRallyActionCmd'
+      s2cFullSiegeSnapshot:
+        $ref: '#/components/messages/S2CFullSiegeSnapshot'
+      s2cDeltaSiegeUpdate:
+        $ref: '#/components/messages/S2CDeltaSiegeUpdate'
+      s2cRallyStatusSync:
+        $ref: '#/components/messages/S2CRallyStatusSync'
+      s2cMultiRegionSync:
+        $ref: '#/components/messages/S2CMultiRegionSync'
+      s2cCommandRejected:
+        $ref: '#/components/messages/S2CCommandRejected'
+      s2cSectorPresence:
+        $ref: '#/components/messages/S2CSectorPresence'
+      s2cAuthError:
+        $ref: '#/components/messages/S2CAuthError'
+      s2cRateLimit:
+        $ref: '#/components/messages/S2CRateLimit'
+operations:
+  receiveClientSiegeCommands:
+    action: receive
+    channel:
+      $ref: '#/channels/siegeSector'
+    summary: Receive authenticated C2S troop movement and 1T war rally commands
+    security:
+      - $ref: '#/components/securitySchemes/sessionCookie'
+    messages:
+      - $ref: '#/channels/siegeSector/messages/c2sTroopPositionCmd'
+      - $ref: '#/channels/siegeSector/messages/c2sRallyActionCmd'
+  sendServerSiegeFrames:
+    action: send
+    channel:
+      $ref: '#/channels/siegeSector'
+    summary: Broadcast 20Hz authoritative snapshots, delta updates, presence, and rejection frames
+    messages:
+      - $ref: '#/channels/siegeSector/messages/s2cFullSiegeSnapshot'
+      - $ref: '#/channels/siegeSector/messages/s2cDeltaSiegeUpdate'
+      - $ref: '#/channels/siegeSector/messages/s2cRallyStatusSync'
+      - $ref: '#/channels/siegeSector/messages/s2cMultiRegionSync'
+      - $ref: '#/channels/siegeSector/messages/s2cCommandRejected'
+      - $ref: '#/channels/siegeSector/messages/s2cSectorPresence'
+      - $ref: '#/channels/siegeSector/messages/s2cAuthError'
+      - $ref: '#/channels/siegeSector/messages/s2cRateLimit'
+components:
+  securitySchemes:
+    sessionCookie:
+      type: httpApiKey
+      in: cookie
+      name: voxel_session
+      description: HMAC-SHA256 signed HttpOnly session cookie issued by /api/auth/* (required for C2S mutations).
+  messages:
+    C2STroopPositionCmd:
+      name: C2S_TROOP_POSITION_CMD
+      title: Troop Position & Formation Command (Opcode 0x01)
+      summary: Authenticated commander issues troop march waypoint and tactical formation command.
+      payload:
+        type: object
+        required: [opcode, payload]
+        properties:
+          opcode:
+            type: integer
+            const: 1
+            description: SiegeNetOpcode.C2S_TROOP_POSITION_CMD (0x01)
+          sector:
+            $ref: '#/components/schemas/TerritorySectorCode'
+          payload:
+            $ref: '#/components/schemas/TroopPositionCommandPacket'
+    C2SRallyActionCmd:
+      name: C2S_RALLY_ACTION_CMD
+      title: 1T War Rally Action Command (Opcode 0x02)
+      summary: Authenticated commander initiates, joins, launches, or swaps siege weapon on a 1T War Rally.
+      payload:
+        type: object
+        required: [opcode, payload]
+        properties:
+          opcode:
+            type: integer
+            const: 2
+            description: SiegeNetOpcode.C2S_RALLY_ACTION_CMD (0x02)
+          sector:
+            $ref: '#/components/schemas/TerritorySectorCode'
+          payload:
+            $ref: '#/components/schemas/RallyActionCommandPacket'
+    S2CFullSiegeSnapshot:
+      name: S2C_FULL_SIEGE_SNAPSHOT
+      title: Full Siege Sector Keyframe Snapshot (Opcode 0x10)
+      summary: Authoritative full sector state emitted on join, mutation, and every 100 ticks (5.0s).
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 16
+                description: SiegeNetOpcode.S2C_FULL_SIEGE_SNAPSHOT (0x10)
+              payload:
+                type: object
+                required: [sectorState]
+                properties:
+                  sectorState:
+                    $ref: '#/components/schemas/AuthoritativeSiegeSectorState'
+    S2CDeltaSiegeUpdate:
+      name: S2C_DELTA_SIEGE_UPDATE
+      title: 20Hz Bitmasked Delta Siege Update (Opcode 0x11)
+      summary: 50ms authoritative tick delta containing only dirty cohort and fortification fields.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 17
+                description: SiegeNetOpcode.S2C_DELTA_SIEGE_UPDATE (0x11)
+              payload:
+                $ref: '#/components/schemas/SiegeDeltaUpdatePacket'
+    S2CRallyStatusSync:
+      name: S2C_RALLY_STATUS_SYNC
+      title: 1T Rally Assembly & March Sync (Opcode 0x12)
+      summary: Authoritative rally muster phase, committed troops, and siege weapon state.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 18
+                description: SiegeNetOpcode.S2C_RALLY_STATUS_SYNC (0x12)
+              payload:
+                $ref: '#/components/schemas/RallyStatusSyncPacket'
+    S2CMultiRegionSync:
+      name: S2C_MULTI_REGION_SYNC
+      title: Multi-Region Replication Telemetry Sync (Opcode 0x13)
+      summary: Replication telemetry envelope carrying active cluster topology and persistence status.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 19
+                description: SiegeNetOpcode.S2C_MULTI_REGION_SYNC (0x13)
+              payload:
+                type: object
+    S2CCommandRejected:
+      name: S2C_COMMAND_REJECTED
+      title: Anti-Cheat / Authority Command Rejection (Opcode 0x14)
+      summary: Server rejects an invalid or unauthorized command with strike count and rollback reason.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 20
+                description: SiegeNetOpcode.S2C_COMMAND_REJECTED (0x14)
+              payload:
+                type: object
+                required: [violation, code, error]
+                properties:
+                  violation:
+                    type: string
+                  code:
+                    type: integer
+                  strikeCount:
+                    type: integer
+                  error:
+                    type: string
+    S2CSectorPresence:
+      name: S2C_SECTOR_PRESENCE
+      title: Live Sector Peer Presence Summary (Opcode 0x15)
+      summary: Emitted whenever peers join, switch sectors, or disconnect.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/SiegeNetEnvelopeHeader'
+          - type: object
+            required: [opcode, payload]
+            properties:
+              opcode:
+                type: integer
+                const: 21
+                description: SiegeNetOpcode.S2C_SECTOR_PRESENCE (0x15)
+              payload:
+                type: object
+                required: [sector, connectedPeersInSector, authenticatedPeers]
+                properties:
+                  sector:
+                    $ref: '#/components/schemas/TerritorySectorCode'
+                  connectedPeersInSector:
+                    type: integer
+                    minimum: 0
+                  authenticatedPeers:
+                    type: integer
+                    minimum: 0
+    S2CAuthError:
+      name: S2C_AUTH_ERROR
+      title: Unauthenticated WebSocket Mutation Error
+      summary: Emitted when an unauthenticated peer attempts a C2S mutating opcode.
+      payload:
+        type: object
+        required: [opcode, code, error]
+        properties:
+          opcode:
+            type: string
+            const: S2C_AUTH_ERROR
+          code:
+            type: integer
+            const: 401
+          error:
+            type: string
+    S2CRateLimit:
+      name: S2C_RATE_LIMIT
+      title: WebSocket Per-Connection Rate Limit Warning
+      summary: Emitted when a peer exceeds 30 messages/sec; 3 consecutive violations trigger close code 1008.
+      payload:
+        type: object
+        required: [opcode, code, error]
+        properties:
+          opcode:
+            type: string
+            const: S2C_RATE_LIMIT
+          code:
+            type: integer
+            const: 429
+          error:
+            type: string
+  schemas:
+    TerritorySectorCode:
+      type: string
+      enum: [A1, A2, A3, B1, B2, B3, C1, C2, C3]
+    TroopBranch:
+      type: string
+      enum: [shieldbearer, shooter, bomber]
+    SiegeFormationType:
+      type: string
+      enum: [SHIELD_WALL, WEDGE_CHARGE, LOOSE_SKIRMISH, PHALANX_ADVANCE]
+    CohortCombatPosture:
+      type: string
+      enum: [MARCHING, ENGAGED, BESIEGING_GATE, ROUTED]
+    SiegeRallyPhase:
+      type: string
+      enum: [MUSTER_OPEN, LOCKED_MARCHING, SIEGE_CLASH, VICTORY_OCCUPIED, REPELLED]
+    SiegeWeaponAttachment:
+      type: string
+      enum: [BATTERING_RAM, TREBUCHET_BATTERY, ARCANE_BALLISTA, SOULFIRE_CANNON]
+    SiegeNetEnvelopeHeader:
+      type: object
+      required: [opcode, serverTick, ackClientSeq, sector, stateHash, payload]
+      properties:
+        opcode:
+          type: integer
+        serverTick:
+          type: integer
+          minimum: 0
+        ackClientSeq:
+          type: integer
+          minimum: 0
+        sector:
+          $ref: '#/components/schemas/TerritorySectorCode'
+        stateHash:
+          type: integer
+          description: FNV-1a 32-bit deterministic state checksum for desync detection.
+    TroopPositionCommandPacket:
+      type: object
+      required:
+        - commanderId
+        - cohortId
+        - clientSeq
+        - targetXQuantized
+        - targetZQuantized
+        - facingAngleQuantized
+        - formation
+        - primaryBranch
+      properties:
+        commanderId:
+          type: string
+        cohortId:
+          type: integer
+          minimum: 0
+          maximum: 99
+        clientSeq:
+          type: integer
+          minimum: 0
+        targetXQuantized:
+          type: integer
+          minimum: -32768
+          maximum: 32767
+        targetZQuantized:
+          type: integer
+          minimum: -32768
+          maximum: 32767
+        facingAngleQuantized:
+          type: integer
+          minimum: 0
+          maximum: 65535
+        formation:
+          $ref: '#/components/schemas/SiegeFormationType'
+        primaryBranch:
+          $ref: '#/components/schemas/TroopBranch'
+    RallyActionCommandPacket:
+      type: object
+      required:
+        - commanderId
+        - commanderName
+        - commanderRealmIndex
+        - allianceTag
+        - action
+        - sector
+        - shieldbearersWire
+        - shootersWire
+        - bombersWire
+        - troopTier
+      properties:
+        commanderId:
+          type: string
+        commanderName:
+          type: string
+        commanderRealmIndex:
+          type: integer
+          minimum: 0
+          maximum: 22
+        allianceTag:
+          type: string
+        action:
+          type: string
+          enum: [INITIATE_RALLY, JOIN_RALLY, LAUNCH_NOW, CHANGE_WEAPON]
+        sector:
+          $ref: '#/components/schemas/TerritorySectorCode'
+        shieldbearersWire:
+          type: string
+        shootersWire:
+          type: string
+        bombersWire:
+          type: string
+        troopTier:
+          type: integer
+          minimum: 1
+          maximum: 20
+        siegeWeapon:
+          $ref: '#/components/schemas/SiegeWeaponAttachment'
+    RallyStatusSyncPacket:
+      type: object
+      required:
+        - rallyId
+        - initiatorCommanderId
+        - initiatorAllianceTag
+        - targetSector
+        - phase
+        - musterDeadlineTick
+        - impactTick
+        - maxCapacityWire
+        - totalCommittedTroopsWire
+        - siegeWeapon
+        - contributors
+      properties:
+        rallyId:
+          type: string
+        initiatorCommanderId:
+          type: string
+        initiatorAllianceTag:
+          type: string
+        targetSector:
+          $ref: '#/components/schemas/TerritorySectorCode'
+        phase:
+          $ref: '#/components/schemas/SiegeRallyPhase'
+        musterDeadlineTick:
+          type: integer
+        impactTick:
+          type: integer
+        maxCapacityWire:
+          type: string
+        totalCommittedTroopsWire:
+          type: string
+        siegeWeapon:
+          $ref: '#/components/schemas/SiegeWeaponAttachment'
+        contributors:
+          type: array
+          items:
+            type: object
+    SiegeDeltaUpdatePacket:
+      type: object
+      required:
+        - baseKeyframeTick
+        - activeAttackerCmdCount
+        - activeDefenderCmdCount
+        - changedCohorts
+        - changedFortifications
+        - uncompressedBytesEstimate
+        - compressedBytesEstimate
+      properties:
+        baseKeyframeTick:
+          type: integer
+        activeAttackerCmdCount:
+          type: integer
+        activeDefenderCmdCount:
+          type: integer
+        changedCohorts:
+          type: array
+          items:
+            type: object
+        changedFortifications:
+          type: array
+          items:
+            type: object
+        uncompressedBytesEstimate:
+          type: integer
+        compressedBytesEstimate:
+          type: integer
+    AuthoritativeSiegeSectorState:
+      type: object
+      required:
+        - sector
+        - serverTick
+        - lastKeyframeTick
+        - controllingAllianceTag
+        - cohorts
+        - fortifications
+        - activeRally
+        - stateHash
+        - combatLogTail
+      properties:
+        sector:
+          $ref: '#/components/schemas/TerritorySectorCode'
+        serverTick:
+          type: integer
+        lastKeyframeTick:
+          type: integer
+        controllingAllianceTag:
+          type: string
+        cohorts:
+          type: array
+          items:
+            type: object
+        fortifications:
+          type: array
+          items:
+            type: object
+        activeRally:
+          $ref: '#/components/schemas/RallyStatusSyncPacket'
+        stateHash:
+          type: integer
+        combatLogTail:
+          type: array
+          items:
+            type: string

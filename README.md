@@ -10,14 +10,14 @@
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-250_Passing_(47_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-254_Passing_(48_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and CI/CD rollout/soak/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml) downlevel), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`250` automated tests across `47` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
+> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and CI/CD rollout/soak/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml)), [`docs/asyncapi.yaml`](./docs/asyncapi.yaml) (`3.0.0`), [`schemas/`](./schemas/), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`254` automated tests across `48` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -677,16 +677,20 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │       ├── lint_and_format.yml        # TypeScript, ESLint Rules & Prettier PR check
 │       ├── release_drafter.yml        # Release notes preview workflow
 │       └── stale_issues.yml           # Scheduled stale issue & PR triage automation (actions/stale@v11)
-├── AGENTS.md                          # OpenAPI 3.2 Agent Reference & Voxel Realms RPG stack/endpoint guardrails
+├── AGENTS.md                          # OpenAPI 3.2 Agent Reference & 4-Layer MMORPG protocol stack guardrails
 ├── docs/
 │   ├── README.md                      # Canonical documentation index (Implemented vs Simulated vs Planned vs Experimental)
-│   ├── openapi.yaml                   # OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, $self)
-│   ├── openapi.3.1.yaml               # OpenAPI 3.1.0 downlevel fallback contract for tools without 3.2.0 support
+│   ├── openapi.yaml                   # Layer 4: OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, $self)
+│   ├── openapi.3.1.yaml               # Layer 4 Fallback: OpenAPI 3.1.0 downlevel contract for tools without 3.2.0 support
+│   ├── asyncapi.yaml                  # Layer 2 (Live): AsyncAPI 3.0.0 contract for RFC 6455 20Hz /ws/siege gateway
 │   ├── adr/
 │   │   ├── 0001-record-architecture-decisions.md # ADR 0001: Functional Core / Imperative Shell separation
 │   │   └── TEMPLATE.md                # Standard Architecture Decision Record (ADR) template
 │   └── rfcs/
 │       └── TEMPLATE.md                # Standard Architect-First RFC proposal template
+├── schemas/
+│   ├── flatbuffers/voxel_siege_protocol.fbs # Layer 1 (Binary Wire Spec): Zero-copy FlatBuffers schema (planned UDP/C++20)
+│   └── proto/voxel_realm_internal.proto     # Layer 3 (Planned Multi-Shard): gRPC / proto3 internal microservice contracts
 ├── cpp/
 │   ├── VoxelRealmsGuardrails.hpp      # C++20 RAII smart-pointer & concept guardrail header
 │   └── engine_guardrail_test.cpp      # C++20 CTest static_assert & RAII verification unit test

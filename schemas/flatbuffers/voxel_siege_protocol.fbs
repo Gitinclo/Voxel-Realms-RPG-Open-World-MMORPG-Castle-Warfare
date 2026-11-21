@@ -1,0 +1,223 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Voxel Realms RPG — Layer 1 Zero-Copy Real-Time World & Combat Schema (FlatBuffers)
+// Status: Binary Wire Specification (Planned UDP / ENet / KCP / WebTransport & Native C++20 Upgrade)
+// Mirrors the exact quantized coordinates, bitmasked delta flags, and opcodes implemented in:
+//   - src/game/siegeNetProtocol.ts
+//   - cpp/VoxelRealmsGuardrails.hpp
+//
+// Codegen examples (when flatc is installed):
+//   flatc --ts  -o src/generated/flatbuffers schemas/flatbuffers/voxel_siege_protocol.fbs
+//   flatc --cpp -o cpp/generated             schemas/flatbuffers/voxel_siege_protocol.fbs
+
+namespace VoxelRealms.Siege;
+
+enum SiegeNetOpcode : ubyte {
+  C2S_TROOP_POSITION_CMD = 0x01,
+  C2S_RALLY_ACTION_CMD   = 0x02,
+  S2C_FULL_SIEGE_SNAPSHOT = 0x10,
+  S2C_DELTA_SIEGE_UPDATE  = 0x11,
+  S2C_RALLY_STATUS_SYNC   = 0x12,
+  S2C_MULTI_REGION_SYNC   = 0x13,
+  S2C_COMMAND_REJECTED    = 0x14,
+  S2C_SECTOR_PRESENCE     = 0x15
+}
+
+enum TerritorySectorCode : ubyte {
+  A1 = 0, A2 = 1, A3 = 2,
+  B1 = 3, B2 = 4, B3 = 5,
+  C1 = 6, C2 = 7, C3 = 8
+}
+
+enum TroopBranch : ubyte {
+  SHIELDBEARER = 0,
+  SHOOTER      = 1,
+  BOMBER       = 2
+}
+
+enum SiegeFormationType : ubyte {
+  SHIELD_WALL     = 0,
+  WEDGE_CHARGE    = 1,
+  LOOSE_SKIRMISH  = 2,
+  PHALANX_ADVANCE = 3
+}
+
+enum CohortCombatPosture : ubyte {
+  MARCHING       = 0,
+  ENGAGED        = 1,
+  BESIEGING_GATE = 2,
+  ROUTED         = 3
+}
+
+enum SiegeFaction : ubyte {
+  ATTACKER = 0,
+  DEFENDER = 1
+}
+
+enum SiegeRallyPhase : ubyte {
+  MUSTER_OPEN      = 0,
+  LOCKED_MARCHING  = 1,
+  SIEGE_CLASH      = 2,
+  VICTORY_OCCUPIED = 3,
+  REPELLED         = 4
+}
+
+enum SiegeRallyAction : ubyte {
+  INITIATE_RALLY = 0,
+  JOIN_RALLY     = 1,
+  LAUNCH_NOW     = 2,
+  CHANGE_WEAPON  = 3
+}
+
+enum SiegeWeaponAttachment : ubyte {
+  BATTERING_RAM     = 0,
+  TREBUCHET_BATTERY = 1,
+  ARCANE_BALLISTA   = 2,
+  SOULFIRE_CANNON   = 3
+}
+
+enum FortificationType : ubyte {
+  OUTER_GATE   = 0,
+  WALL_SEGMENT = 1,
+  ARCHER_TOWER = 2,
+  CITADEL_CORE = 3
+}
+
+enum CohortDirtyBit : ubyte (bit_flags) {
+  POSITION             = 0, // 1 << 0
+  VELOCITY             = 1, // 1 << 1
+  FACING               = 2, // 1 << 2
+  FORMATION_OR_POSTURE = 3, // 1 << 3
+  TROOP_COUNTS         = 4, // 1 << 4
+  MORALE               = 5, // 1 << 5
+  REALM_SUPPRESSION    = 6  // 1 << 6
+}
+
+// Fixed-size inline zero-copy value structs (no heap indirection on hot 20Hz loop)
+struct QuantizedVec2 {
+  x: int16; // [-32768, 32767] -> [-327.68m, +327.67m] at 0.01m precision
+  z: int16;
+}
+
+struct CohortKinematics {
+  position: QuantizedVec2;
+  target: QuantizedVec2;
+  velocity: QuantizedVec2;
+  facing_angle: uint16; // [0, 65535] -> [0, 2*pi rad)
+}
+
+table TroopPositionCommand {
+  commander_id: string (required);
+  cohort_id: uint16;
+  client_seq: uint32;
+  target: QuantizedVec2;
+  facing_angle: uint16;
+  formation: SiegeFormationType = SHIELD_WALL;
+  primary_branch: TroopBranch = SHIELDBEARER;
+}
+
+table RallyActionCommand {
+  commander_id: string (required);
+  commander_name: string (required);
+  commander_realm_index: uint8;
+  alliance_tag: string (required);
+  action: SiegeRallyAction = INITIATE_RALLY;
+  sector: TerritorySectorCode = B2;
+  shieldbearers_wire: string (required);
+  shooters_wire: string (required);
+  bombers_wire: string (required);
+  troop_tier: uint8 = 1;
+  siege_weapon: SiegeWeaponAttachment = BATTERING_RAM;
+}
+
+table CohortDelta {
+  cohort_id: uint16;
+  dirty_mask: CohortDirtyBit;
+  position: QuantizedVec2;
+  velocity: QuantizedVec2;
+  facing_angle: uint16;
+  formation: SiegeFormationType = SHIELD_WALL;
+  posture: CohortCombatPosture = MARCHING;
+  active_troop_count_wire: string;
+  wounded_troop_count_wire: string;
+  morale_pct: uint8 = 100;
+}
+
+table FortificationDelta {
+  structure_id: string (required);
+  structure_type: FortificationType = OUTER_GATE;
+  integrity_hp_wire: string (required);
+  max_integrity_hp_wire: string (required);
+  breached: bool = false;
+}
+
+table SiegeDeltaUpdate {
+  base_keyframe_tick: uint32;
+  active_attacker_cmd_count: uint16;
+  active_defender_cmd_count: uint16;
+  changed_cohorts: [CohortDelta];
+  changed_fortifications: [FortificationDelta];
+}
+
+table AuthoritativeCohort {
+  cohort_id: uint16;
+  commander_id: string (required);
+  commander_name: string (required);
+  alliance_tag: string (required);
+  faction: SiegeFaction = ATTACKER;
+  kinematics: CohortKinematics;
+  formation: SiegeFormationType = SHIELD_WALL;
+  posture: CohortCombatPosture = MARCHING;
+  primary_branch: TroopBranch = SHIELDBEARER;
+  troop_tier: uint8 = 1;
+  commander_realm_index: uint8 = 0;
+  active_troop_count_wire: string (required);
+  wounded_troop_count_wire: string (required);
+  morale_pct: uint8 = 100;
+  last_ack_client_seq: uint32 = 0;
+}
+
+table FullSiegeSnapshot {
+  sector: TerritorySectorCode = B2;
+  server_tick: uint32;
+  last_keyframe_tick: uint32;
+  controlling_alliance_tag: string (required);
+  cohorts: [AuthoritativeCohort];
+  fortifications: [FortificationDelta];
+  state_hash: uint32;
+}
+
+table CommandRejected {
+  violation: string (required);
+  status_code: uint16;
+  strike_count: uint8;
+  error: string (required);
+}
+
+table SectorPresence {
+  sector: TerritorySectorCode = B2;
+  connected_peers_in_sector: uint32;
+  authenticated_peers: uint32;
+}
+
+union SiegePayload {
+  TroopPositionCommand,
+  RallyActionCommand,
+  FullSiegeSnapshot,
+  SiegeDeltaUpdate,
+  CommandRejected,
+  SectorPresence
+}
+
+table SiegeNetPacket {
+  opcode: SiegeNetOpcode = S2C_DELTA_SIEGE_UPDATE;
+  server_tick: uint32;
+  ack_client_seq: uint32;
+  sector: TerritorySectorCode = B2;
+  state_hash: uint32; // FNV-1a 32-bit state digest
+  payload: SiegePayload;
+}
+
+root_type SiegeNetPacket;
+file_identifier "VRSG";
+file_extension "vrsg";
