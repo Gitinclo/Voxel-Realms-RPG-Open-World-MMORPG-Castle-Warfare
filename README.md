@@ -42,7 +42,7 @@ _If you are an AI coding agent or contributor working on this repository, adhere
 - **Strict Constraints:**
   - Never commit `.env` files, private keys, API keys, or Android signing keystores (`*.jks`, `*.keystore`).
   - Always use `npm` (`package-lock.json`), and run `npm run lockfile:regenerate` + `bun install --lockfile-only` whenever [`package.json`](./package.json) changes so `npm run lockfile:verify` stays green.
-  - Keep `firebase@12.19.0` (with Node `22` `@firebase/*` overrides) and `@types/node@22.20.5` pinned to the Node `22` LTS baseline until runtime and CI migrate to Node `24.12+`.
+  - Keep `firebase@12.19.0` (with Node `22` `@firebase/*` overrides) pinned to the `engines.node >=22.0.0` baseline until local/CI runtimes migrate to Node `24.12+` (`@types/node@26.6.6` matches the Docker `node:26-alpine` LTS base image).
   - Keep `tsc --noEmit` strict checks (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`), `@firebase/eslint-plugin-security-rules`, and Prettier passing across all edits (`npm run validate`).
   - Under Express `5.3.0` (`path-to-regexp` v8), always use named wildcard parameters (`/{*splat}`) rather than bare `*` in [`server.ts`](./server.ts).
 - **Source of Truth:**

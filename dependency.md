@@ -43,20 +43,20 @@ This document tracks every runtime dependency, development tool, transitive secu
 
 ## 2. Development & Build Dependencies
 
-| Package                                  | Locked Version | Scope       | Architectural Purpose                                                    |
-| :--------------------------------------- | :------------- | :---------- | :----------------------------------------------------------------------- |
-| `@firebase/eslint-plugin-security-rules` | `0.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `@types/express`                         | `5.0.6`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `@types/node`                            | `22.20.5`      | Dev / Build | Toolchain / Type checking (intentionally pinned to Node 22 LTS baseline) |
-| `@types/react`                           | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `@types/react-dom`                       | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `autoprefixer`                           | `10.7.0`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `esbuild`                                | `0.28.2`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `eslint`                                 | `10.15.0`      | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `playwright`                             | `1.65.1`       | Dev / Build | Headless Chromium E2E & modal visual diff                                |
-| `prettier`                               | `3.10.1`       | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `tailwindcss`                            | `4.3.5`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
-| `typescript`                             | `7.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                                |
+| Package                                  | Locked Version | Scope       | Architectural Purpose                                              |
+| :--------------------------------------- | :------------- | :---------- | :----------------------------------------------------------------- |
+| `@firebase/eslint-plugin-security-rules` | `0.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `@types/express`                         | `5.0.6`        | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `@types/node`                            | `26.6.6`       | Dev / Build | Toolchain / Type checking (aligned with Docker Node 26 Alpine LTS) |
+| `@types/react`                           | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `@types/react-dom`                       | `19.3.0`       | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `autoprefixer`                           | `10.7.0`       | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `esbuild`                                | `0.28.2`       | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `eslint`                                 | `10.15.0`      | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `playwright`                             | `1.65.1`       | Dev / Build | Headless Chromium E2E & modal visual diff                          |
+| `prettier`                               | `3.10.1`       | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `tailwindcss`                            | `4.3.5`        | Dev / Build | Toolchain / Type checking / Rules linting                          |
+| `typescript`                             | `7.0.2`        | Dev / Build | Toolchain / Type checking / Rules linting                          |
 
 ---
 
@@ -161,6 +161,6 @@ All 15 automated workflows under `.github/workflows/` declare explicit top-level
 
 ```bash
 npm audit --audit-level=high   # Verify 0 high/critical CVEs
-npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 & @types/node@22.20.5 intentionally pinned for Node 22 LTS)
+npm outdated                   # Inspect minor/major drift safely (firebase@12.19.0 intentionally pinned for Node >=22.0.0; 13.x requires Node >=24.12.0)
 npm run validate               # Verify lockfile:verify, tsc --noEmit, firestore.rules lint, Prettier, 258 tests (49 suites) & Vite build
 ```
