@@ -95,6 +95,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build production Node.js container image
-        run: docker build --target app-runner -t voxel-realms-rpg:ci .
+        run: docker build --target runner -t voxel-realms-rpg:ci .
       - name: Build static Nginx edge container image
         run: docker build --target nginx-runner -t voxel-realms-rpg-nginx:ci .

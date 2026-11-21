@@ -176,6 +176,26 @@ test('CI/CD rollout, 4h soak, release-gate, and signed-release workflows enforce
   assert.match(releaseYml, /attest-build-provenance/);
 
   assert.match(cdYml, /kustomize build k8s\/overlays\/staging/);
+
+  // Every `docker build --target <stage>` across .github/workflows/*.yml must exist in Dockerfile
+  const dockerfile = readText('Dockerfile');
+  const validStages = new Set(
+    Array.from(dockerfile.matchAll(/^FROM\s+\S+\s+AS\s+([A-Za-z0-9_-]+)/gm), (m) => m[1])
+  );
+  assert.ok(validStages.has('runner'), 'Dockerfile must define runner stage');
+  assert.ok(validStages.has('nginx-runner'), 'Dockerfile must define nginx-runner stage');
+
+  const workflowDir = path.join(ROOT, '.github/workflows');
+  for (const file of fs.readdirSync(workflowDir).filter((f) => f.endsWith('.yml'))) {
+    const content = fs.readFileSync(path.join(workflowDir, file), 'utf8');
+    for (const match of content.matchAll(/docker\s+build\b[^\n]*--target\s+([A-Za-z0-9_-]+)/g)) {
+      const targetStage = match[1];
+      assert.ok(
+        validStages.has(targetStage),
+        `${file} references nonexistent Dockerfile target stage "${targetStage}" (valid: ${Array.from(validStages).join(', ')})`
+      );
+    }
+  }
 });
 
 test('Operational runbooks and 24-gate release evidence template exist with required verification steps', () => {
