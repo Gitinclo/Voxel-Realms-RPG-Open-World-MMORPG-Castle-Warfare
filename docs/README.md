@@ -13,7 +13,9 @@ This index classifies repository documentation strictly into **Implemented**, **
 | Document                                                           | Purpose                                                                                                                  |
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | [`../README.md`](../README.md)                                     | High-signal quickstart, verified tech stack, repository map, commands, and env vars                                      |
-| [`./openapi.yaml`](./openapi.yaml)                                 | OpenAPI 3.1 HTTP/REST contract for `server.ts` + `src/server/routes/*`                                                   |
+| [`../AGENTS.md`](../AGENTS.md)                                     | OpenAPI 3.2 Agent Reference & Voxel Realms RPG stack/endpoint guardrails for coding agents                               |
+| [`./openapi.yaml`](./openapi.yaml)                                 | OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, `$self`) for `server.ts` + `src/server/routes/*`     |
+| [`./openapi.3.1.yaml`](./openapi.3.1.yaml)                         | OpenAPI 3.1.0 downlevel fallback contract (strips 3.2-only fields for legacy generators/linters)                         |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md)                         | Modular frontend/backend architecture, functional-core domain boundaries, and 3D pipeline                                |
 | [`../SECURITY.md`](../SECURITY.md)                                 | Threat boundaries, HMAC session auth, fail-closed secrets, CSP, CSRF, and Firestore rules                                |
 | [`../DEPLOYMENT.md`](../DEPLOYMENT.md)                             | Multi-stage non-root Docker build, Nginx edge config, health/readiness/metrics probes                                    |

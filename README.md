@@ -6,18 +6,18 @@
 
 [![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./docs/README.md)
 [![Launch Date: 30/03/2030](https://img.shields.io/badge/Launch_Date-30%2F03%2F2030-0ea5e9?style=flat-square)](./ROADMAP.md)
-[![OpenAPI 3.1](https://img.shields.io/badge/API-OpenAPI_3.1-10b981?style=flat-square)](./docs/openapi.yaml)
+[![OpenAPI 3.2.0](https://img.shields.io/badge/API-OpenAPI_3.2.0-10b981?style=flat-square)](./docs/openapi.yaml)
 [![CI](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/ci.yml)
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-246_Passing_(46_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-250_Passing_(47_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
 [![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_24_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and CI/CD rollout/soak/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`246` automated tests across `46` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
+> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and CI/CD rollout/soak/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml) downlevel), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`250` automated tests across `47` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -677,9 +677,11 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │       ├── lint_and_format.yml        # TypeScript, ESLint Rules & Prettier PR check
 │       ├── release_drafter.yml        # Release notes preview workflow
 │       └── stale_issues.yml           # Scheduled stale issue & PR triage automation (actions/stale@v11)
+├── AGENTS.md                          # OpenAPI 3.2 Agent Reference & Voxel Realms RPG stack/endpoint guardrails
 ├── docs/
 │   ├── README.md                      # Canonical documentation index (Implemented vs Simulated vs Planned vs Experimental)
-│   ├── openapi.yaml                   # OpenAPI 3.1 HTTP/REST contract for server.ts & src/server/routes/*
+│   ├── openapi.yaml                   # OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, $self)
+│   ├── openapi.3.1.yaml               # OpenAPI 3.1.0 downlevel fallback contract for tools without 3.2.0 support
 │   ├── adr/
 │   │   ├── 0001-record-architecture-decisions.md # ADR 0001: Functional Core / Imperative Shell separation
 │   │   └── TEMPLATE.md                # Standard Architecture Decision Record (ADR) template

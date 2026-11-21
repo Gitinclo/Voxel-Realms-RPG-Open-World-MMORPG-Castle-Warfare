@@ -91,31 +91,42 @@ async function startServer() {
   const distIndexPath = path.join(distPath, 'index.html');
   let viteMiddlewares: express.RequestHandler | null = null;
   let viteReadyPromise: Promise<void> | null = null;
+  let viteInitError: unknown = null;
 
   if (!securityConfig.isProduction) {
     process.env.DISABLE_HMR = process.env.DISABLE_HMR || 'true';
-    viteReadyPromise = (async () => {
-      const { createServer: createViteServer } = await import('vite');
-      const vite = await createViteServer({
-        server: {
-          middlewareMode: true,
-          hmr: false,
-          ws: false,
-          watch: null,
-        },
-        appType: 'spa',
-      });
-      viteMiddlewares = vite.middlewares;
-    })();
+
+    const ensureViteReady = (): Promise<void> => {
+      if (!viteReadyPromise) {
+        viteReadyPromise = (async () => {
+          const { createServer: createViteServer } = await import('vite');
+          const vite = await createViteServer({
+            server: {
+              middlewareMode: true,
+              hmr: false,
+              ws: false,
+              watch: null,
+            },
+            appType: 'spa',
+          });
+          viteMiddlewares = vite.middlewares;
+        })().catch((err) => {
+          viteInitError = err;
+          console.error('[Voxel Realms Dev] Failed to initialize Vite middleware:', err);
+          throw err;
+        });
+      }
+      return viteReadyPromise;
+    };
 
     app.use(async (req, res, next) => {
       if (req.path.startsWith('/api/')) {
         next();
         return;
       }
-      if (!viteMiddlewares && viteReadyPromise) {
+      if (!viteMiddlewares) {
         try {
-          await viteReadyPromise;
+          await ensureViteReady();
         } catch (err) {
           next(err);
           return;
@@ -126,6 +137,13 @@ async function startServer() {
         return;
       }
       next();
+    });
+
+    // Kick off Vite middleware initialization right after the HTTP socket is listening.
+    httpServer.once('listening', () => {
+      void ensureViteReady().catch(() => {
+        // Logged above; subsequent non-API requests surface the initialization error.
+      });
     });
   } else {
     app.use(express.static(distPath));
@@ -173,7 +191,13 @@ async function startServer() {
 
   if (viteReadyPromise) {
     await viteReadyPromise;
+    if (viteInitError) {
+      throw viteInitError;
+    }
   }
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('[Voxel Realms Server] Fatal startup error:', err);
+  process.exit(1);
+});

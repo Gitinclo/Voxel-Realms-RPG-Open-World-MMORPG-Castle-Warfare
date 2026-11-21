@@ -349,10 +349,10 @@ test('PostgreSQL ACID economy backend runs BEGIN -> SELECT FOR UPDATE -> INSERT 
   }
 });
 
-test('OpenAPI 3.1 contract parity: every path documented in docs/openapi.yaml is mounted on Express', () => {
+test('OpenAPI 3.2 contract parity: every path documented in docs/openapi.yaml is mounted on Express', () => {
   const openapiText = fs.readFileSync(path.resolve(process.cwd(), 'docs/openapi.yaml'), 'utf8');
   const documentedPaths = Array.from(openapiText.matchAll(/^ {2}(\/[^\s:]+):$/gm)).map((m) => m[1]);
-  assert.ok(documentedPaths.length >= 18, 'Expected at least 18 OpenAPI paths');
+  assert.ok(documentedPaths.length >= 30, 'Expected at least 30 OpenAPI paths');
 
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vr-openapi-test-'));
   const runtime = createVoxelServerRuntime({

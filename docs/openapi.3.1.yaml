@@ -1,0 +1,677 @@
+openapi: 3.1.0
+info:
+  title: Voxel Realms RPG Authoritative Server API (3.1.0 Downlevel Copy)
+  version: 1.5.0
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  description: >
+    OpenAPI 3.1.0 downlevel fallback copy derived from `docs/openapi.yaml` (3.2.0) for tools,
+    code generators, or API gateways that do not yet support OpenAPI 3.2.0.
+    Dropped 3.2-only features: root `$self`, Server Object `name`, hierarchical Tag Object
+    `summary`/`parent`/`kind`, Response Object `summary`, and Example Object `dataValue`/`serializedValue`.
+    Real-time bidirectional 20Hz WebSocket frames (`/ws/siege`) remain documented in `PROTOCOL_SPEC.md`.
+servers:
+  - url: http://localhost:3000
+    description: Local development & preview runtime
+  - url: https://staging.voxelrealms.example.com
+    description: External staging cluster behind TLS Ingress (replace placeholder domain before deploy)
+  - url: https://voxelrealms.example.com
+    description: Production cluster behind TLS Ingress (replace placeholder domain before launch)
+tags:
+  - name: operations
+    description: Liveness, readiness, Prometheus exposition, and capacity telemetry probes.
+  - name: auth
+    description: HMAC-SHA256 HttpOnly cookie sessions, Firebase token exchange, operator passkey login, and revocation.
+  - name: realm
+    description: Multi-sector realm snapshots, anti-tamper commander sync, and authoritative siege command intake.
+  - name: economy-ledger
+    description: Authoritative balances, idempotent ledger transactions, and validated gameplay reward claims.
+  - name: economy-progression
+    description: Server-computed castle upgrades and tier-gated T1-T20 troop recruitment.
+  - name: economy-marketplace
+    description: Server-computed commodity swaps with tax accounting.
+  - name: persistence
+    description: Firebase-authenticated commander profiles, realm save snapshots, and support tickets in PostgreSQL (Drizzle ORM).
+  - name: privacy
+    description: Self-service Data Subject Access Request (DSAR) export and Right to Erasure pipelines.
+  - name: admin-rbac
+    description: Privileged GM moderation, role management, support ticket triage, and server decrees.
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: voxel_session
+      description: HMAC-SHA256 signed HttpOnly session cookie issued by /api/auth/*
+    FirebaseBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase Auth ID token verified server-side via firebase-admin
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          const: false
+        code:
+          type: string
+        violation:
+          type: string
+        retryAfterSec:
+          type: integer
+        error:
+          type: string
+    SectorCode:
+      type: string
+      enum: [A1, A2, A3, B1, B2, B3, C1, C2, C3]
+    SessionResponse:
+      type: object
+      required: [ok, authenticated, session]
+      properties:
+        ok:
+          type: boolean
+        authenticated:
+          type: boolean
+        session:
+          type: [object, 'null']
+          description: Verified server session claims, or null when unauthenticated.
+    EconomyMutationResponse:
+      type: object
+      required: [ok, backend, replayed, balances, integrity]
+      properties:
+        ok:
+          type: boolean
+        backend:
+          type: string
+          enum: [postgres, disk]
+        replayed:
+          type: boolean
+        balances:
+          type: object
+        integrity:
+          type: object
+paths:
+  /healthz:
+    get:
+      operationId: getHealthz
+      summary: Liveness probe
+      tags: [operations]
+      responses:
+        '200':
+          description: Server process is alive
+        '503':
+          description: Server is shutting down
+  /api/health:
+    get:
+      operationId: getApiHealth
+      summary: Liveness probe (API path alias)
+      tags: [operations]
+      responses:
+        '200':
+          description: Server process is alive
+        '503':
+          description: Server is shutting down
+  /readyz:
+    get:
+      operationId: getReadyz
+      summary: Readiness probe (storage writable, 20Hz tick health, WS capacity)
+      tags: [operations]
+      responses:
+        '200':
+          description: Ready to accept traffic
+        '503':
+          description: Degraded or draining
+  /metrics:
+    get:
+      operationId: getPrometheusMetrics
+      summary: Prometheus text exposition metrics (0.0.4)
+      tags: [operations]
+      responses:
+        '200':
+          description: Prometheus gauge and counter metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/ops/readiness:
+    get:
+      operationId: getOpsReadiness
+      summary: Structured operational telemetry and capacity limits
+      tags: [operations]
+      responses:
+        '200':
+          description: Capacity limits, 20Hz tick latency percentiles, persistence backend, and defense counters
+  /api/auth/session:
+    get:
+      operationId: getAuthSession
+      summary: Inspect current HMAC-signed server session
+      tags: [auth]
+      responses:
+        '200':
+          description: Current authentication status and session claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/auth/player-session:
+    post:
+      operationId: createPlayerSession
+      summary: Issue scoped guest player HMAC session cookie (Clearance Lv.1)
+      tags: [auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commanderId:
+                  type: string
+                displayName:
+                  type: string
+            examples:
+              guestCommander:
+                summary: Scoped guest commander session request
+                value:
+                  commanderId: guest-solara-01
+                  displayName: Vanguard Scout
+      responses:
+        '200':
+          description: Scoped player session minted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+  /api/auth/firebase-exchange:
+    post:
+      operationId: exchangeFirebaseToken
+      summary: Exchange verified Firebase ID token for server HMAC session cookie
+      tags: [auth]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Verified Firebase identity bound to server session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: Missing or invalid Firebase ID token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/admin-login:
+    post:
+      operationId: loginAdminOperator
+      summary: Authenticate privileged operator with timing-safe passkey + brute-force lockout
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, passkey]
+              properties:
+                email:
+                  type: string
+                  format: email
+                passkey:
+                  type: string
+      responses:
+        '200':
+          description: Operator session issued
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Brute-force lockout active
+  /api/auth/logout:
+    post:
+      operationId: logoutSession
+      summary: Clear server session cookie, revoke session ID, and record audit log entry
+      tags: [auth]
+      responses:
+        '200':
+          description: Session cleared
+  /api/online/status:
+    get:
+      operationId: getOnlineRealmStatus
+      summary: Read-only realm status, active sector state, and redacted commander roster
+      tags: [realm]
+      parameters:
+        - in: query
+          name: sector
+          schema:
+            $ref: '#/components/schemas/SectorCode'
+          examples:
+            centralSector:
+              summary: Query Solara central sector B2
+              value: B2
+      responses:
+        '200':
+          description: Current sector state and replication metadata
+  /api/online/sync:
+    post:
+      operationId: syncCommanderProfile
+      summary: Synchronize authenticated commander profile snapshot (anti-tamper clamped)
+      tags: [realm]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Profile synchronized with any clamped fields reported
+        '401':
+          description: Session required
+  /api/online/siege/cmd:
+    post:
+      operationId: submitSiegeCommand
+      summary: Submit authoritative troop movement or rally siege command
+      tags: [realm]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Command accepted and broadcast to subscribed WebSocket sector peers
+        '400':
+          description: Invalid command payload
+        '429':
+          description: Rate limit or anti-cheat quarantine active
+  /api/online/economy/balance:
+    get:
+      operationId: getEconomyBalance
+      summary: Retrieve SHA-256 hash-chained commander economy account and balances
+      tags: [economy-ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Authoritative balances, troops, castleLevel, and hash-chain verification
+        '503':
+          description: Authoritative economy store temporarily unavailable
+  /api/online/economy/transact:
+    post:
+      operationId: executeEconomyTransaction
+      summary: Execute idempotent server-validated economy ledger transaction
+      tags: [economy-ledger]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idempotencyKey, resource, direction, amountWire, reason]
+              properties:
+                idempotencyKey:
+                  type: string
+                resource:
+                  type: string
+                direction:
+                  type: string
+                  enum: [credit, debit]
+                amountWire:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Transaction recorded atomically and returned with hash-chain integrity check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EconomyMutationResponse'
+        '403':
+          description: Anti-cheat rejected forbidden client credit or privileged reason
+        '503':
+          description: Authoritative economy store temporarily unavailable
+  /api/online/economy/events:
+    post:
+      operationId: claimGameplayEconomyEvent
+      summary: Claim server-validated gameplay reward action
+      tags: [economy-ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Reward credited idempotently via server-authoritative payout table
+        '403':
+          description: Client payload override attempt blocked
+        '429':
+          description: Action cooldown active
+  /api/online/economy/claim-action:
+    post:
+      operationId: claimGameplayEconomyActionAlias
+      summary: Claim server-validated gameplay reward action (alias for /api/online/economy/events)
+      tags: [economy-ledger]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Reward credited idempotently via server-authoritative payout table
+        '403':
+          description: Client payload override attempt blocked
+        '429':
+          description: Action cooldown active
+  /api/online/economy/castle-upgrade:
+    post:
+      operationId: upgradeCommanderCastle
+      summary: Execute idempotent server-computed castle level upgrade
+      tags: [economy-progression]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId]
+              properties:
+                eventId:
+                  type: string
+            examples:
+              upgradeCitadel:
+                summary: Idempotent citadel upgrade event
+                value:
+                  eventId: evt_castle_upgrade_0001
+      responses:
+        '200':
+          description: Castle upgraded and resources debited atomically
+        '403':
+          description: Untrusted client override field rejected
+  /api/online/economy/purchase-troops:
+    post:
+      operationId: purchaseCommanderTroops
+      summary: Execute idempotent server-computed troop recruitment gated by castle level
+      tags: [economy-progression]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eventId, branch, tier, quantity]
+              properties:
+                eventId:
+                  type: string
+                branch:
+                  type: string
+                  enum: [shieldbearers, shooters, bombers]
+                tier:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                quantity:
+                  type: integer
+                  minimum: 1
+            examples:
+              recruitT1Shieldbearers:
+                summary: Recruit T1 shieldbearers
+                value:
+                  eventId: evt_recruit_0001
+                  branch: shieldbearers
+                  tier: 1
+                  quantity: 100
+      responses:
+        '200':
+          description: Troops recruited and ledger updated
+        '403':
+          description: Tier locked by castle level or untrusted override field rejected
+  /api/online/economy/market-trade:
+    post:
+      operationId: executeCommodityMarketTrade
+      summary: Execute idempotent server-computed commodity exchange trade with tax ledger
+      tags: [economy-marketplace]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Trade settled with net output and tax recorded
+        '403':
+          description: Untrusted rate or tax override rejected
+  /api/online/account/export:
+    get:
+      operationId: exportAccountDsar
+      summary: Self-service Data Subject Access Request (DSAR) JSON export
+      tags: [privacy]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Exported commander profile, economy account, support tickets, and backing store inventory
+  /api/online/account:
+    delete:
+      operationId: eraseAccountDsr
+      summary: Self-service Right to Erasure (DSR) across active backing stores with receipt
+      tags: [privacy]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Erasure receipt with per-store status and revoked session cookie
+  /api/admin/state:
+    get:
+      operationId: getAdminConsoleState
+      summary: Fetch privileged GM moderation roster, tickets, active decrees, and audit log
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      responses:
+        '200':
+          description: Admin console state
+        '403':
+          description: Insufficient RBAC clearance
+  /api/admin/moderation:
+    post:
+      operationId: executeAdminModerationAction
+      summary: Execute RBAC-authorized player moderation or staff role grant/revocation
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetPlayerId, action]
+              properties:
+                targetPlayerId:
+                  type: string
+                action:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Roster updated and security audit log appended
+        '400':
+          description: Missing targetPlayerId or action
+        '403':
+          description: Insufficient clearance or protected account target
+  /api/admin/tickets:
+    post:
+      operationId: createRealmSupportTicket
+      summary: Submit an authenticated commander support or administration ticket
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject, message]
+              properties:
+                category:
+                  type: string
+                subject:
+                  type: string
+                message:
+                  type: string
+                priority:
+                  type: string
+                  enum: [low, normal, high, critical]
+      responses:
+        '200':
+          description: Ticket stored and audited
+        '400':
+          description: Subject or message failed validation
+  /api/admin/tickets/resolve:
+    post:
+      operationId: resolveRealmSupportTicket
+      summary: Transition support ticket status to investigating or resolved (staff permission required)
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticketId, status]
+              properties:
+                ticketId:
+                  type: string
+                status:
+                  type: string
+                  enum: [investigating, resolved]
+                resolutionNote:
+                  type: string
+      responses:
+        '200':
+          description: Ticket updated and audited
+        '400':
+          description: Invalid ticketId or status
+        '403':
+          description: Insufficient staff clearance
+  /api/admin/decree:
+    post:
+      operationId: publishAdminDecree
+      summary: Publish official server-wide realm decree (chat moderation permission required)
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  maxLength: 280
+      responses:
+        '200':
+          description: Decree stored in active server decrees and audited
+        '400':
+          description: Decree message cannot be empty
+        '403':
+          description: Insufficient staff clearance
+  /api/admin/species-rebirth:
+    post:
+      operationId: setSpeciesRebirthApproval
+      summary: Toggle global species rebirth approval flag (role management permission required)
+      tags: [admin-rbac]
+      security:
+        - SessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved]
+              properties:
+                approved:
+                  type: boolean
+      responses:
+        '200':
+          description: Global speciesSwitchGlobalApproved updated and audited
+        '403':
+          description: Insufficient staff clearance
+  /api/db/profile:
+    get:
+      operationId: getCloudSqlProfile
+      summary: Load Firebase-authenticated commander profile from PostgreSQL (Drizzle)
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: User and commander profile
+        '503':
+          description: PostgreSQL not configured or unreachable
+    put:
+      operationId: upsertCloudSqlProfile
+      summary: Upsert sanitized commander profile in PostgreSQL (Drizzle)
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Saved commander profile
+        '503':
+          description: PostgreSQL not configured or unreachable
+  /api/db/save:
+    get:
+      operationId: getCloudSqlRealmSave
+      summary: Load latest JSON realm snapshot from PostgreSQL
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Persisted realm save snapshot
+        '503':
+          description: PostgreSQL not configured or unreachable
+    put:
+      operationId: upsertCloudSqlRealmSave
+      summary: Persist sanitized realm snapshot (<=256 KB) to PostgreSQL
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: Snapshot persisted
+        '413':
+          description: Realm snapshot exceeds 256 KB limit
+        '503':
+          description: PostgreSQL not configured or unreachable
+  /api/db/tickets:
+    get:
+      operationId: listCloudSqlTickets
+      summary: List support tickets for authenticated Firebase UID
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '200':
+          description: User support tickets
+        '503':
+          description: PostgreSQL not configured or unreachable
+    post:
+      operationId: createCloudSqlTicket
+      summary: Create new support ticket in PostgreSQL
+      tags: [persistence]
+      security:
+        - FirebaseBearer: []
+      responses:
+        '201':
+          description: Support ticket created
+        '400':
+          description: Subject and message are required
+        '503':
+          description: PostgreSQL not configured or unreachable
