@@ -25,6 +25,8 @@ jobs:
     name: Build Release WebGL Bundle for GitHub Pages
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      pages_enabled: ${{ steps.pages.outcome == 'success' }}
 
     steps:
       - name: Checkout repository
@@ -41,9 +43,11 @@ jobs:
 
       - name: Configure GitHub Pages
         id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v6
         with:
           enablement: true
+          token: ${{ secrets.PAGES_ENABLEMENT_TOKEN || github.token }}
 
       - name: Build production WebGL bundle with Pages base path
         env:
@@ -55,13 +59,26 @@ jobs:
           cp dist/index.html dist/404.html
 
       - name: Upload GitHub Pages artifact
+        if: steps.pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
+      - name: Report GitHub Pages enablement instructions when not yet enabled
+        if: steps.pages.outcome != 'success'
+        run: |
+          {
+            echo "### GitHub Pages WebGL Bundle Built — Awaiting Repository Pages Enablement"
+            echo ""
+            echo "The production WebGL bundle compiled cleanly for \`/${{ github.event.repository.name }}/\`, but GitHub Pages is not yet enabled on this repository (and the default \`GITHUB_TOKEN\` cannot enable Pages for the first time)."
+            echo ""
+            echo "**One-time setup:** Open **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**, then re-run this workflow (or push to \`main\`) to publish live."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
   deploy-webgl:
     name: Deploy Playable WebGL Build to GitHub Pages
     needs: build-webgl
+    if: needs.build-webgl.outputs.pages_enabled == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

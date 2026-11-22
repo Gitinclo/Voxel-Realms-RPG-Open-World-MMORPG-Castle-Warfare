@@ -281,6 +281,8 @@ test('GitHub Actions workflows, CodeQL, Dependabot, and FUNDING enforce least-pr
 
   const pagesWebgl = readText('.github/workflows/pages-webgl.yml');
   assert.match(pagesWebgl, /enablement:\s*true/);
+  assert.match(pagesWebgl, /continue-on-error:\s*true/);
+  assert.match(pagesWebgl, /needs\.build-webgl\.outputs\.pages_enabled\s*==\s*'true'/);
 
   const dependabot = readText('.github/dependabot.yml');
   assert.match(dependabot, /package-ecosystem:\s*['"]npm['"]/);
