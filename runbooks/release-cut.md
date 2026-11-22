@@ -90,10 +90,10 @@ gh release create v1.5.0-beta.1 \
 
 ## 5. Automated Release & Browser Play Outputs (`.github/workflows/release.yml` & `pages-webgl.yml`)
 
-Pushing a signed `v*` tag triggers `release.yml` (gated by the `production-release` environment), which verifies the tag signature, runs validation + ops + E2E + Trivy container scan, enforces `< 2 GB` per artifact, and publishes via `softprops/action-gh-release@v2`:
+Pushing a signed `v*` tag triggers `release.yml` (gated by the `production-release` environment), which verifies the tag signature, runs validation + ops + E2E + Trivy container scan, enforces `< 2 GB` per artifact, and publishes via `softprops/action-gh-release@v3`:
 
 - `VoxelRealmsRPG-v1.5.0-WebGL.zip` (Offline WebGL Release package with `index.html` at root)
-- `VoxelRealmsRPG-v1.5.0-Linux.tar.gz` (Self-hosted full-stack Linux/Node 22+ server bundle)
+- `VoxelRealmsRPG-v1.5.0-Linux.tar.gz` (Self-hosted full-stack Linux/Node 24+ server bundle; Node 26 in Docker/CI)
 - `SHA256SUMS.txt`
 - `SBOM.cdx.json` (CycloneDX JSON via Syft)
 - `SBOM.spdx.json` (SPDX JSON via Syft)
