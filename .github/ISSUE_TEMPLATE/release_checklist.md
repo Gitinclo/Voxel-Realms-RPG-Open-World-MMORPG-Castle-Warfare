@@ -17,14 +17,15 @@ labels: ['release']
 
 - [ ] Confirm `package.json` has final values (`name`, `version`, `description`, `author`, `license`, `engines`)
 - [ ] Confirm dependencies are valid and install cleanly
-- [ ] Confirm Node.js version requirement (`>=20.0.0`, CI on Node 22) matches target environment
+- [ ] Confirm Node.js version requirement (`>=22.0.0`, CI & Docker on Node 26 LTS) matches target environment
 
 ## 2. 🏗️ Install & Build Validation
 
 - [ ] `npm install` passes cleanly
 - [ ] `npm run lint` passes with 0 TypeScript errors
-- [ ] `npm test` passes all 171 unit, EULA/Legal, God-Mode, security, and rule tests across all 29 test suites
+- [ ] `npm test` passes all 258 unit, EULA/Legal, God-Mode, security, protocol, infra, and rule tests across all 49 test files
 - [ ] `npm run verify:ops` passes live server load, exploit, crash-recovery & `SIGTERM` checks
+- [ ] `npm run verify:e2e` passes headless Chromium browser verification with 0 console/page errors
 - [ ] `npm run validate` & `npm run build` succeed and generate output under `dist/`
 
 ## 3. 🎮 Runtime Smoke Test (`npm run dev`)
@@ -56,5 +57,5 @@ labels: ['release']
 
 - [ ] GitHub Actions workflow (`.github/workflows/build.yml`) is green on `push` / `pull_request`
 - [ ] Production build artifact (`voxel-realms-rpg-dist`) uploads cleanly
-- [ ] Tag and push release commit (`git tag -a v1.5.0 -m "Release v1.5.0 (15/11/2026)" && git push origin v1.5.0`) to trigger `.github/workflows/release.yml`
-- [ ] Verify published GitHub Release page lists generated `tar.gz` bundle and SHA-256 checksums
+- [ ] Tag and push GPG/SSH-signed release commit (`git tag -s v1.5.0 -m "Release v1.5.0" && git push origin v1.5.0`) to trigger `.github/workflows/release.yml`
+- [ ] Verify published GitHub Release page lists WebGL `.zip`, Linux `.tar.gz`, CycloneDX/SPDX SBOMs, provenance attestation, and `SHA256SUMS.txt`

@@ -80,7 +80,7 @@
     "@tailwindcss/vite": "4.3.5",
     "@tweenjs/tween.js": "25.0.0",
     "esbuild": "0.28.2",
-    "minimatch": "11.0.8",
+    "minimatch": "11.0.9",
     "picomatch": "npm:@ryotsu/picomatch@4.0.7-a"
   }
 }

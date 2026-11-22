@@ -3,7 +3,7 @@
   "name": "voxel-realms-rpg-engine",
   "version-semver": "1.5.0",
   "description": "C++20 Android NDK & Desktop 3D Open-World MMORPG Engine Dependencies managed via vcpkg manifest mode",
-  "homepage": "https://github.com/voxel-realms-rpg/voxel-realms-rpg",
+  "homepage": "https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare",
   "license": "Apache-2.0",
   "supports": "(windows & x64) | (linux & x64) | (osx) | (android & arm64)",
   "builtin-baseline": "b1b19307e2d2ec1eefbdb7ea069de7d4bcd31f01",

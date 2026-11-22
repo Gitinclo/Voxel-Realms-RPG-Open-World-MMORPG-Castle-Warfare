@@ -18,7 +18,7 @@ const DEFAULT_ROOT = path.resolve(__dirname, '..');
  * Pure verifier: compares package.json against package-lock.json to catch
  * missing dependencies, version spec drift, missing integrity digests, or
  * stripped cross-platform optional binaries (such as linux-musl lightningcss
- * needed by node:24-alpine Docker `npm ci`).
+ * needed by node:26-alpine Docker `npm ci`).
  */
 export function verifyLockfileIntegrity(manifest, lockfile) {
   const errors = [];
@@ -102,7 +102,7 @@ export function verifyLockfileIntegrity(manifest, lockfile) {
     }
   }
 
-  // Verify cross-platform optional native binaries required for Alpine Linux (Docker node:24-alpine)
+  // Verify cross-platform optional native binaries required for Alpine Linux (Docker node:26-alpine)
   const packageKeys = Object.keys(packages);
   const lightningcssEntries = packageKeys.filter((k) => k.includes('lightningcss'));
   const hasLinuxMuslLightning = packageKeys.some((k) =>
@@ -110,7 +110,7 @@ export function verifyLockfileIntegrity(manifest, lockfile) {
   );
   if (lightningcssEntries.length > 0 && !hasLinuxMuslLightning) {
     errors.push(
-      'Lockfile is missing cross-platform optional binary "node_modules/lightningcss-linux-x64-musl" required by node:24-alpine Docker npm ci.'
+      'Lockfile is missing cross-platform optional binary "node_modules/lightningcss-linux-x64-musl" required by node:26-alpine Docker npm ci.'
     );
   }
 
