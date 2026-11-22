@@ -1,8 +1,9 @@
 # 🏰 Voxel Realms RPG: Open World MMORPG & Castle Warfare
 
-**Last Updated & Validated:** `21/11/2026`  
+**Last Updated:** `20/11/2026`  
 **Target Game Launch Date:** `30/03/2030` (`2030-03-30`)  
-**Canonical Maturity Status:** `Pre-Production Prototype` (`v1.5.0`)
+**Canonical Maturity Status:** `Pre-Production Prototype` (`v1.5.0`)  
+**Verified Core Stack:** Node.js `v22.23.2` (`engines.node >=22.0.0`, CI & Docker `node:26-alpine`) · React `19.3.1` · Three.js `0.187.0` · TypeScript `7.0.2` · Vite `8.3.8` · Tailwind CSS `4.3.5` · Express `5.3.0` · Drizzle ORM `0.45.4` · Firebase `13.4.0`
 
 [![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./docs/README.md)
 [![Launch Date: 30/03/2030](https://img.shields.io/badge/Launch_Date-30%2F03%2F2030-0ea5e9?style=flat-square)](./ROADMAP.md)
@@ -11,14 +12,14 @@
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
 [![CodeQL](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/codeql.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-258_Passing_(49_Suites)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
-[![Version](<https://img.shields.io/badge/Source_Version-1.5.0_(No_GitHub_Release_Yet)-f59e0b?style=flat-square>)](./CHANGELOG.md)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-258_Passing_(49_Files)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Version](https://img.shields.io/badge/Source_Version-v1.5.0-f59e0b?style=flat-square)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_26_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. There are currently **0 published GitHub Releases** and no pushed `v*` Git tags in this repository. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and CI/CD rollout/soak/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml)), [`docs/asyncapi.yaml`](./docs/asyncapi.yaml) (`3.0.0`), [`schemas/`](./schemas/), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`258` automated tests across `49` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
+> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and 15 CI/CD rollout/soak/CodeQL/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml)), [`docs/asyncapi.yaml`](./docs/asyncapi.yaml) (`3.0.0`), [`schemas/`](./schemas/), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`258` automated tests across `49` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -61,9 +62,10 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
 - **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `13.4.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
-- **Testing & Quality Tooling:** `tsx --test` (`246` tests across `46` files), Playwright `1.65.1`, 4-hour `k6`/`Artillery` soak suites (`loadtest/`), ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **Testing & Quality Tooling:** `tsx --test` (`258` tests across `49` files), Playwright `1.65.1`, 4-hour `k6`/`Artillery` soak suites (`loadtest/`), ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **State Management & Styling Constraints:** React 19 hooks + `AuthContext` (`src/contexts/AuthContext.tsx`) + pure deterministic `src/game/` reducers; Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`, no inline style sprawl); `BigInt` (`bigint`) required for all trillion-scale treasury/troop math.
 
-## 📂 Repository Map
+## 📂 Project Architecture Map
 
 ```text
 ├── src/
@@ -79,24 +81,27 @@ Exact locked versions verified against [`package.json`](./package.json), [`packa
 │   ├── App.tsx       # Root state container, idle modal prefetcher & Suspense router
 │   ├── index.css     # Tailwind CSS v4 global stylesheet (@import "tailwindcss")
 │   └── main.tsx      # React SPA entry point wrapped in AuthProvider
+├── android/          # Android Gradle version catalog (android/gradle/libs.versions.toml, 10 OSS libraries)
 ├── k8s/              # Kustomize base + staging/production overlays, ExternalSecret, NetworkPolicy, ServiceMonitor & PodMonitor
 ├── loadtest/         # Hardened 4-hour k6 (HTTP + long-lived 20Hz WS) & Artillery staging soak test suites (JSON + JUnit)
 ├── runbooks/         # Operational runbooks (cluster-rollout, certificate-troubleshooting, staging-soak, release-cut)
 ├── cpp/              # C++20 SIMD/SoA reference headers & CTest guardrail unit tests
-├── docs/             # Canonical docs index, OpenAPI 3.1, Pre-Launch 2030 Checklist, 24-Gate Release Evidence Template, ADRs & RFCs
+├── docs/             # Canonical docs index, OpenAPI 3.2.0 + 3.1.0, AsyncAPI 3.0.0, Pre-Launch 2030 Checklist, ADRs & RFCs
+├── schemas/          # Layer 1 FlatBuffers (voxel_siege_protocol.fbs) & Layer 3 gRPC Proto3 (voxel_realm_internal.proto)
 ├── e2e/baselines/    # 6 git-versioned Playwright PNG visual regression modal baselines
 ├── scripts/          # verify-readiness.ts, verify-e2e-browser.sh, package-release.mjs, compare-modal-screenshots.ts, regenerate-lockfile.mjs
-├── .github/          # 14 GitHub Actions workflows (CI, Build, Security, Pages WebGL, Staging Rollout, 4h Soak, Release Gates, Signed Release + SBOM/Provenance)
-├── server.ts         # Thin ~180-line Express 5.3.0 entrypoint calling createVoxelServerRuntime (src/server/createApp.ts)
+├── .github/          # 15 GitHub Actions workflows (CI, Build, Security, CodeQL, Pages WebGL, Staging Rollout, 4h Soak, Release Gates, Release) + Dependabot
+├── server.ts         # Thin Express 5.3.0 entrypoint calling createVoxelServerRuntime (src/server/createApp.ts)
 ├── firestore.rules   # Default-deny Cloud Firestore security rules + Dirty Dozen test target
-├── package.json      # Authoritative dependency versions, engines (>=22.0.0) & npm scripts
-├── .env.example      # Required & optional environment variable template (fail-closed secrets)
+├── package.json      # Authoritative dependency versions, engines (>=22.0.0) & 19 npm scripts
+├── Justfile          # Task runner recipes mirroring package.json & C++20 CTest flows
+├── .env.example      # Complete environment variable template (fail-closed secrets + runtime/DB config)
 └── README.md         # System & AI agent documentation hub (Last Updated: 20/11/2026)
 ```
 
-## ⚡ Quickstart & Commands
+## ⚡ Zero-Friction Setup & Commands
 
-All commands below have been validated on **`20/11/2026`**:
+All commands below match [`package.json`](./package.json) and [`Justfile`](./Justfile) verbatim and are validated as of **`20/11/2026`**:
 
 ```bash
 # 1. Install dependencies (Node.js >= 22.0.0)
@@ -108,18 +113,40 @@ cp .env.example .env
 # 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
 npm run dev
 
-# 4. Run full static & unit/integration validation suite (Lockfiles + Typecheck + Rules ESLint + Prettier + 240 Tests + Vite Build)
+# 4. Run full 6-stage validation gate (Lockfiles + Typecheck + Rules ESLint + Prettier + 258 Tests + Vite Build)
 npm run validate
 
 # 5. Run live production operational readiness & headless Chromium E2E suites
 npm run verify:ops && npm run verify:e2e
 ```
 
+| Script (`package.json`)       | Purpose                                                                                              |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | Starts unified Express 5 + 20Hz `/ws/siege` + Vite dev server (`tsx server.ts`) on port `3000`       |
+| `npm start`                   | Runs the server entrypoint (`tsx server.ts`) for production/container runtime                        |
+| `npm run build`               | Compiles code-split production client bundle into `dist/` (`vite build`)                             |
+| `npm run preview`             | Serves compiled `dist/` bundle locally (`vite preview`)                                              |
+| `npm run clean`               | Removes `dist/` and `server.js` build outputs                                                        |
+| `npm run lint` / `typecheck`  | Runs TypeScript strict check (`tsc --noEmit`) with unused local/parameter/fallthrough enforcement    |
+| `npm run lint:rules`          | Audits `firestore.rules` with `@firebase/eslint-plugin-security-rules`                               |
+| `npm run format:check`        | Verifies Prettier code style across the repository (`npm run format` auto-formats)                   |
+| `npm test`                    | Executes all `258` automated unit, security, DB, protocol, infra & rule tests across `49` files      |
+| `npm run test:rules`          | Runs standalone `firestore.rules.test.ts` Dirty Dozen security rule suite                            |
+| `npm run test:coverage`       | Runs `npm test` with Node `--experimental-test-coverage` output                                      |
+| `npm run lockfile:verify`     | Verifies `package-lock.json` integrity, overrides & Alpine native optional binaries                  |
+| `npm run lockfile:regenerate` | Regenerates cross-platform `package-lock.json` cleanly from `package.json`                           |
+| `npm run verify:ops`          | Isolated live production server probe (RBAC, economy ledger, 50-peer 20Hz WS, `.bak` failover)       |
+| `npm run verify:e2e`          | Real headless Chromium E2E verification + 6 modal visual regression diffs (`e2e/baselines/`)         |
+| `npm run release:package`     | Builds offline WebGL `.zip` (`< 2 GB`), player release notes & `SHA256SUMS.txt` in `release-assets`  |
+| `npm run validate`            | Full 6-stage CI gate (`lockfile:verify` → `lint` → `lint:rules` → `format:check` → `test` → `build`) |
+
 ## 🔐 Environment Variables
 
-| Variable                         | Required | Description                                                                                                                               | Example                                       |
+Complete reference synchronized with [`.env.example`](./.env.example), [`server.ts`](./server.ts), and [`vite.config.ts`](./vite.config.ts):
+
+| Variable                         | Required | Description                                                                                                                               | Dummy / Default Format                        |
 | :------------------------------- | :------: | :---------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
-| `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`)                                                                             | `3000`                                        |
+| `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`; falls back to `VOXEL_DEV_PORT` / `DEFAULT_APP_PORT`)                        | `3000`                                        |
 | `NODE_ENV`                       |    No    | Runtime mode (`development`, `production`, or `test`)                                                                                     | `development`                                 |
 | `GEMINI_API_KEY`                 |    No    | Optional Gemini API key injected in hosted environments or `.env`                                                                         | `your-gemini-api-key-here`                    |
 | `APP_URL`                        |    No    | Canonical base URL used for redirects, origin checks & self-links                                                                         | `http://localhost:3000`                       |
@@ -131,7 +158,8 @@ npm run verify:ops && npm run verify:e2e
 | `VOXEL_TRUST_PROXY`              |    No    | Express reverse-proxy trust setting (`loopback` default, `false`, hop count, or comma-separated trusted CIDRs)                            | `loopback`                                    |
 | `DISABLE_HMR`                    |    No    | Set `"true"` to disable Vite HMR file watchers and WebSocket upgrade interference                                                         | `"true"`                                      |
 | `ALLOW_PREVIEW_IFRAME`           |    No    | Set `"true"` when serving production builds inside embedded preview iframes                                                               | `"false"`                                     |
-| `VOXEL_ECONOMY_BACKEND`          |    No    | Economy ledger backend: `auto` (selects `postgres` whenever `SQL_*` vars are present, else `disk`), `postgres`, or `disk`                 | `auto`                                        |
+| `VITE_BASE_PATH`                 |    No    | Public base URL path for Vite builds (`/` default; `/<repo>/` for GitHub Pages; `./` for offline release ZIP)                             | `/`                                           |
+| `VOXEL_ECONOMY_BACKEND`          |    No    | Economy ledger backend: `auto` (selects `postgres` whenever `SQL_*` vars are present, else `disk`), `postgres`, or `disk`                 | `disk`                                        |
 | `REDIS_REST_URL`                 |    No    | Optional Redis REST endpoint for multi-instance server-side session revocation (`src/server/coordinationStore.ts`)                        | `https://replace-with-redis-rest-endpoint`    |
 | `REDIS_REST_TOKEN`               |    No    | Optional Bearer token paired with `REDIS_REST_URL`                                                                                        | `replace-with-redis-rest-bearer-token`        |
 | `SQL_HOST`                       |    No    | Cloud SQL / PostgreSQL host (`src/db/index.ts`, `src/db/drizzle.config.ts`)                                                               | `127.0.0.1`                                   |
@@ -620,7 +648,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **221 automated tests across 38 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, and `firestore.rules.test.ts`):
+Execute all **258 automated tests across 49 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, `src/server/*.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -631,7 +659,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 
 | Command                                   | Verification Scope                                                                                                                                                                                                       |
 | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `221` tests + `vite build`)                                                                            |
+| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `258` tests + `vite build`)                                                                            |
 | `npm run verify:ops`                      | Isolated live production server verification (`/healthz`, `/readyz`, Prometheus `/metrics`, God-mode isolation, authoritative economy mutations + `5%` tax, `50` live `20Hz` WS peers, `.bak` failover, `SIGTERM` drain) |
 | `npm run verify:e2e`                      | Real headless Chromium E2E checks (3D WebGL canvas, reload persistence, mobile `390×844` layout, fail-closed auth `401`, authoritative economy + WS + 6 key modal visual regression baselines in `e2e/baselines/`)       |
 | `npm run lockfile:verify`                 | Verifies `package.json`, `package-lock.json`, and `bun.lock` dependency parity                                                                                                                                           |
@@ -639,6 +667,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 | `npm run lint` / `npm run lint:rules`     | Strict TypeScript (`tsc --noEmit`) & Firestore security rules (`@firebase/eslint-plugin-security-rules`)                                                                                                                 |
 | `npm run format:check` / `npm run format` | Checks or applies uniform Prettier formatting across the entire repository                                                                                                                                               |
 | `npm run build` / `npm run preview`       | Compiles code-split production bundle into `dist/` and previews locally                                                                                                                                                  |
+| `npm run release:package`                 | Packages offline WebGL `.zip` (`< 2 GB`), player release notes & `SHA256SUMS.txt`                                                                                                                                        |
 
 ---
 
@@ -667,18 +696,25 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   ├── ISSUE_TEMPLATE.md              # Unified issue / bug / feature / moderation template
 │   ├── PULL_REQUEST_TEMPLATE/         # hotfix.md, breaking_change.md, architecture_change.md, lore_addition.md
 │   ├── PULL_REQUEST_TEMPLATE.md       # Pull Request validation & guardrail checklist
-│   └── workflows/                     # 10 GitHub Actions pipelines (checkout@v7, setup-node@v7, upload-artifact@v7, stale@v11)
-│       ├── build.yml                  # GitHub Actions CI (Web/TS + Rules ESLint + Live Ops + C++20)
-│       ├── release.yml                # Tag-triggered v*.*.* checksummed GitHub Release pipeline
-│       ├── ci.yml                     # Fast PR npm run validate workflow
-│       ├── cd.yml                     # Manual / staging verification gate
+│   └── workflows/                     # 15 GitHub Actions pipelines (checkout@v7, setup-node@v7, upload-artifact@v7, codeql@v4, stale@v11)
+│       ├── build.yml                  # GitHub Actions CI (Web/TS + Rules ESLint + Live Ops + Docker + C++20)
+│       ├── cd.yml                     # Manual staging candidate & Kustomize overlay validation gate
+│       ├── ci.yml                     # PR/push validation, audit, coverage, live ops, E2E & Docker build gate
+│       ├── codeql.yml                 # CodeQL static code scanning (JavaScript/TypeScript & GitHub Actions)
+│       ├── deploy-staging.yml         # GKE Kustomize rollout, Workload Identity auth & TLS evidence gate
 │       ├── docs_deploy.yml            # Markdown Prettier formatting & README relative link check
-│       ├── nightly_build.yml          # Daily validation + audit + verify:ops workflow
-│       ├── security_audit.yml         # Weekly supply-chain audit + Firestore rules verification
 │       ├── lint_and_format.yml        # TypeScript, ESLint Rules & Prettier PR check
+│       ├── nightly_build.yml          # Daily validation + audit + verify:ops workflow
+│       ├── pages-webgl.yml            # GitHub Pages playable WebGL build & conditional deployment
+│       ├── release-gates.yml          # Pre-tag 24-gate evidence, Kustomize, SBOM, Trivy & E2E verification
+│       ├── release.yml                # Tag & workflow_dispatch WebGL/Server/SBOM/Provenance GitHub Release pipeline
 │       ├── release_drafter.yml        # Release notes preview workflow
+│       ├── security_audit.yml         # Weekly supply-chain audit + Firestore rules verification
+│       ├── staging-soak.yml           # 4-hour external staging k6 (HTTP + 20Hz WS) & Artillery soak gate
 │       └── stale_issues.yml           # Scheduled stale issue & PR triage automation (actions/stale@v11)
 ├── AGENTS.md                          # OpenAPI 3.2 Agent Reference & 4-Layer MMORPG protocol stack guardrails
+├── android/
+│   └── gradle/libs.versions.toml      # Android Gradle version catalog (10 open-source companion libraries)
 ├── docs/
 │   ├── README.md                      # Canonical documentation index (Implemented vs Simulated vs Planned vs Experimental)
 │   ├── openapi.yaml                   # Layer 4: OpenAPI 3.2.0 HTTP/REST contract (34 operations, hierarchical tags, $self)
@@ -699,7 +735,8 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   └── baselines/                     # 6 git-versioned Playwright modal visual regression PNG baselines
 ├── scripts/
 │   ├── compare-modal-screenshots.ts   # Fail-closed PNG visual diff comparator against e2e/baselines/
-│   ├── regenerate-lockfile.mjs        # Deterministic lockfile sync utility
+│   ├── package-release.mjs            # Offline WebGL Release .zip (< 2 GB) & player release notes packager
+│   ├── regenerate-lockfile.mjs        # Deterministic cross-platform lockfile sync & verification utility
 │   ├── verify-e2e-browser.sh          # Real headless Chromium E2E & visual baseline test runner
 │   └── verify-readiness.ts            # Live production server load, economy, exploit, crash-recovery & SIGTERM suite
 ├── src/
@@ -1003,7 +1040,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)          | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                    | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)                  | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 221 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 258 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -1025,7 +1062,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 221 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 38 TypeScript test files (`109` cross-system invariants)
+- [x] `npm test` passes all 258 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, protocol, infra, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 49 TypeScript test files (`109` cross-system invariants)
 - [x] `npm run validate`, `npm run verify:ops`, and `npm run verify:e2e` pass cleanly against isolated production servers and headless Chromium (`6` modal baselines)
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] Multi-stage non-root `Dockerfile`, `.dockerignore`, `nginx.conf`, and `DEPLOYMENT.md` are up to date
