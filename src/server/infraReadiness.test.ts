@@ -167,10 +167,17 @@ test('CI/CD rollout, 4h soak, release-gate, and signed-release workflows enforce
   assert.match(releaseYml, /attestations:\s*write/);
   assert.match(releaseYml, /id-token:\s*write/);
   assert.match(releaseYml, /environment:\s*production-release/);
+  assert.match(releaseYml, /workflow_dispatch:/);
   assert.match(releaseYml, /BEGIN \(PGP\|SSH\) SIGNATURE/);
+  assert.match(releaseYml, /REQUIRE_SIGNED_TAGS/);
   assert.match(releaseYml, /npm run release:package/);
-  assert.match(releaseYml, /VoxelRealmsRPG-\$\{\{ github\.ref_name \}\}-WebGL\.zip/);
+  assert.match(
+    releaseYml,
+    /VoxelRealmsRPG-\$\{\{ (?:github\.ref_name|steps\.tag_meta\.outputs\.tag) \}\}-WebGL\.zip/
+  );
   assert.match(releaseYml, /softprops\/action-gh-release@v(?:[2-9]|[1-9]\d+)/);
+  assert.match(releaseYml, /overwrite_files:\s*true/);
+  assert.match(releaseYml, /upload-release-assets:\s*false/);
   assert.match(releaseYml, /RELEASE_NOTES_PLAYER\.md/);
   assert.match(releaseYml, /SBOM\.cdx\.json/);
   assert.match(releaseYml, /SBOM\.spdx\.json/);

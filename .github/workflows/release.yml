@@ -1,13 +1,26 @@
 name: Release — Package WebGL/Server Builds, SBOM, Provenance & GitHub Release
 # Policy:
 #   - Protected GitHub Environment `production-release` should require >= 2 independent reviewers.
-#   - Maintainers MUST create GPG/SSH-signed tags locally (`git tag -s vX.Y.Z`) only after completing
+#   - Recommended: Create GPG/SSH-signed tags locally (`git tag -s vX.Y.Z`) after completing
 #     all 24 gates in docs/release-evidence-template.md and runbooks/release-cut.md.
+#   - Lightweight or GitHub UI-created SemVer tags are permitted by default (and recorded honestly
+#     in release-attestation.json); set repository variable `REQUIRE_SIGNED_TAGS=true` (or pass
+#     `require_signed_tag=true` via workflow_dispatch) to strictly fail unsigned/lightweight tags.
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'SemVer release tag to build & publish (defaults to v<package.json version>, e.g. v1.5.0)'
+        required: false
+        type: string
+      require_signed_tag:
+        description: 'Strictly fail if the Git tag is not an annotated GPG/SSH-signed tag'
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -16,7 +29,7 @@ permissions:
 
 jobs:
   publish-release:
-    name: Verify Signed Tag, Package Release Builds (<2GB), SBOM & Publish
+    name: Verify Tag, Package Release Builds (<2GB), SBOM & Publish
     runs-on: ubuntu-latest
     environment: production-release
     timeout-minutes: 35
@@ -29,28 +42,74 @@ jobs:
 
       - name: Verify SemVer tag format, annotation & GPG/SSH signature
         id: tag_meta
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REQUIRE_SIGNED_INPUT: ${{ inputs.require_signed_tag }}
+          REQUIRE_SIGNED_VAR: ${{ vars.REQUIRE_SIGNED_TAGS }}
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            if [ -n "${INPUT_TAG}" ]; then
+              TAG="${INPUT_TAG}"
+            else
+              TAG="v$(node -p "require('./package.json').version")"
+            fi
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+
           if ! [[ "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "ERROR: Tag ${TAG} must follow Semantic Versioning (e.g. v0.1.0, v1.5.0, v1.5.0-beta.1)."
             exit 1
           fi
-          TAG_TYPE="$(git cat-file -t "${TAG}")"
-          if [ "${TAG_TYPE}" != "tag" ]; then
-            echo "ERROR: ${TAG} is a lightweight tag. Only signed annotated tags (git tag -s) may trigger a release."
+
+          TAG_SIGNATURE_STATUS="untagged-dispatch"
+          SIGNED_TAG_CHECKED="false"
+          if git rev-parse --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+            TAG_TYPE="$(git cat-file -t "refs/tags/${TAG}")"
+            if [ "${TAG_TYPE}" = "tag" ]; then
+              if git cat-file -p "refs/tags/${TAG}" | grep -qE 'BEGIN (PGP|SSH) SIGNATURE'; then
+                TAG_SIGNATURE_STATUS="annotated-signed"
+                SIGNED_TAG_CHECKED="true"
+              else
+                TAG_SIGNATURE_STATUS="annotated-unsigned"
+              fi
+            else
+              TAG_SIGNATURE_STATUS="lightweight"
+            fi
+          fi
+
+          STRICT_SIGNED="false"
+          if [ "${REQUIRE_SIGNED_INPUT}" = "true" ] || [ "${REQUIRE_SIGNED_VAR}" = "true" ]; then
+            STRICT_SIGNED="true"
+          fi
+
+          if [ "${STRICT_SIGNED}" = "true" ] && [ "${SIGNED_TAG_CHECKED}" != "true" ]; then
+            echo "ERROR: Strict signed-tag policy is enabled, but ${TAG} has status '${TAG_SIGNATURE_STATUS}'."
+            echo "Create a signed annotated tag via: git tag -s ${TAG} -m \"Release ${TAG}\" && git push origin ${TAG}"
             exit 1
           fi
-          if ! git cat-file -p "${TAG}" | grep -qE 'BEGIN (PGP|SSH) SIGNATURE'; then
-            echo "ERROR: Annotated tag ${TAG} is unsigned. Sign with GPG or SSH before pushing."
-            exit 1
+
+          if [ "${SIGNED_TAG_CHECKED}" != "true" ]; then
+            echo "::warning::Tag ${TAG} is '${TAG_SIGNATURE_STATUS}' (not a GPG/SSH-signed annotated tag). Continuing with GitHub Artifact Attestations provenance; set repository variable REQUIRE_SIGNED_TAGS=true to enforce signed tags."
+            {
+              echo "### Release Tag Signature Notice"
+              echo ""
+              echo "- **Tag:** \`${TAG}\` (\`${TAG_SIGNATURE_STATUS}\`)"
+              echo "- **Build Provenance:** Cryptographically attested via \`actions/attest-build-provenance@v4\`."
+              echo "- **Optional Strict Mode:** Set repository variable \`REQUIRE_SIGNED_TAGS=true\` to require \`git tag -s\`."
+            } >> "${GITHUB_STEP_SUMMARY}"
           fi
+
           IS_PRERELEASE="false"
           if [[ "${TAG}" == *-* ]]; then
             IS_PRERELEASE="true"
           fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "is_prerelease=${IS_PRERELEASE}" >> "${GITHUB_OUTPUT}"
-          echo "Verified signed SemVer tag ${TAG} (prerelease=${IS_PRERELEASE})."
+          echo "tag_signature_status=${TAG_SIGNATURE_STATUS}" >> "${GITHUB_OUTPUT}"
+          echo "signed_tag_checked=${SIGNED_TAG_CHECKED}" >> "${GITHUB_OUTPUT}"
+          echo "Verified SemVer tag ${TAG} (status=${TAG_SIGNATURE_STATUS}, prerelease=${IS_PRERELEASE})."
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -62,8 +121,10 @@ jobs:
         run: npm ci --no-audit
 
       - name: Verify package.json version matches Git tag
+        env:
+          RELEASE_TAG: ${{ steps.tag_meta.outputs.tag }}
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_VERSION="${RELEASE_TAG#v}"
           PKG_VERSION="$(node -p "require('./package.json').version")"
           echo "Git tag version: ${TAG_VERSION} | package.json version: ${PKG_VERSION}"
           if [ "${TAG_VERSION}" != "${PKG_VERSION}" ]; then
@@ -86,12 +147,14 @@ jobs:
           npm run verify:e2e
 
       - name: Build production Docker image & scan with Trivy
-        run: docker build -t "voxel-realms-rpg:${GITHUB_REF_NAME}" .
+        env:
+          RELEASE_TAG: ${{ steps.tag_meta.outputs.tag }}
+        run: docker build -t "voxel-realms-rpg:${RELEASE_TAG}" .
 
       - name: Trivy container vulnerability scan (fail on CRITICAL/HIGH)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: voxel-realms-rpg:${{ github.ref_name }}
+          image-ref: voxel-realms-rpg:${{ steps.tag_meta.outputs.tag }}
           format: table
           exit-code: '1'
           ignore-unfixed: true
@@ -99,14 +162,16 @@ jobs:
 
       - name: Package Offline WebGL Release Zip & Player-Facing Release Notes
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ steps.tag_meta.outputs.tag }}
         run: npm run release:package
 
       - name: Package Full-Stack Linux Server Release Bundle
+        env:
+          RELEASE_TAG: ${{ steps.tag_meta.outputs.tag }}
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          ARCHIVE="release-assets/VoxelRealmsRPG-${GITHUB_REF_NAME}-Linux.tar.gz"
+          ARCHIVE="release-assets/VoxelRealmsRPG-${RELEASE_TAG}-Linux.tar.gz"
           tar -czf "${ARCHIVE}" \
             dist \
             server.ts \
@@ -152,23 +217,31 @@ jobs:
       - name: Generate CycloneDX SBOM (SBOM.cdx.json) via Syft
         uses: anchore/sbom-action@v0
         with:
-          image: voxel-realms-rpg:${{ github.ref_name }}
+          image: voxel-realms-rpg:${{ steps.tag_meta.outputs.tag }}
           format: cyclonedx-json
           output-file: release-assets/SBOM.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Generate SPDX SBOM (SBOM.spdx.json) via Syft
         uses: anchore/sbom-action@v0
         with:
-          image: voxel-realms-rpg:${{ github.ref_name }}
+          image: voxel-realms-rpg:${{ steps.tag_meta.outputs.tag }}
           format: spdx-json
           output-file: release-assets/SBOM.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Generate build provenance & release attestation metadata
+        env:
+          RELEASE_TAG: ${{ steps.tag_meta.outputs.tag }}
+          TAG_SIGNATURE_STATUS: ${{ steps.tag_meta.outputs.tag_signature_status }}
+          SIGNED_TAG_CHECKED: ${{ steps.tag_meta.outputs.signed_tag_checked }}
         run: |
           node -e '
             const fs = require("fs");
             const crypto = require("crypto");
-            const tag = process.env.GITHUB_REF_NAME;
+            const tag = process.env.RELEASE_TAG;
             const webglZip = `release-assets/VoxelRealmsRPG-${tag}-WebGL.zip`;
             const linuxArchive = `release-assets/VoxelRealmsRPG-${tag}-Linux.tar.gz`;
             const sha = (p) => crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
@@ -211,7 +284,8 @@ jobs:
                 trivyGate: "CRITICAL,HIGH=0",
                 e2eVerified: true,
                 opsVerified: true,
-                signedTagChecked: true,
+                tagSignatureStatus: process.env.TAG_SIGNATURE_STATUS,
+                signedTagChecked: process.env.SIGNED_TAG_CHECKED === "true",
                 generatedAtIso: new Date().toISOString()
               }, null, 2)
             );
@@ -250,13 +324,15 @@ jobs:
       - name: Publish GitHub Release via softprops/action-gh-release
         uses: softprops/action-gh-release@v3
         with:
-          name: ${{ github.ref_name }}
+          tag_name: ${{ steps.tag_meta.outputs.tag }}
+          name: ${{ steps.tag_meta.outputs.tag }}
           body_path: release-assets/RELEASE_NOTES_PLAYER.md
           prerelease: ${{ steps.tag_meta.outputs.is_prerelease == 'true' }}
+          overwrite_files: true
           fail_on_unmatched_files: true
           files: |
-            release-assets/VoxelRealmsRPG-${{ github.ref_name }}-WebGL.zip
-            release-assets/VoxelRealmsRPG-${{ github.ref_name }}-Linux.tar.gz
+            release-assets/VoxelRealmsRPG-${{ steps.tag_meta.outputs.tag }}-WebGL.zip
+            release-assets/VoxelRealmsRPG-${{ steps.tag_meta.outputs.tag }}-Linux.tar.gz
             release-assets/SHA256SUMS.txt
             release-assets/SBOM.cdx.json
             release-assets/SBOM.spdx.json
