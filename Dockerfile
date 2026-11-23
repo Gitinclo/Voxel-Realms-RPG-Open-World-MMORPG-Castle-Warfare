@@ -24,7 +24,7 @@ RUN npm run build
 # Build explicitly with: docker build --target nginx-runner -t voxel-web:prod .
 # Skipped automatically by BuildKit during default full-stack builds.
 # ==============================================================================
-FROM nginx:1.29-alpine AS nginx-runner
+FROM nginx:1.31-alpine AS nginx-runner
 
 ENV NODE_ENV=production \
     PORT=8080
