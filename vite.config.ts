@@ -16,23 +16,49 @@ export default defineConfig(() => {
       chunkSizeWarningLimit: 750,
       rolldownOptions: {
         output: {
-          manualChunks(id) {
-            if (!id.includes('node_modules')) return undefined;
-            if (id.includes('node_modules/three/')) return 'vendor-three';
-            if (id.includes('node_modules/firebase/') || id.includes('node_modules/@firebase/')) {
-              return 'vendor-firebase';
-            }
-            if (id.includes('node_modules/d3') || id.includes('node_modules/internmap')) {
-              return 'vendor-d3';
-            }
-            if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
-              return 'vendor-motion';
-            }
-            if (id.includes('node_modules/lucide-react')) return 'vendor-icons';
-            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-              return 'vendor-react';
-            }
-            return undefined;
+          codeSplitting: {
+            groups: [
+              {
+                name: 'vendor-three-core',
+                test: /node_modules\/three\/build\/three\.core/,
+                priority: 40,
+              },
+              {
+                name: 'vendor-three',
+                test: /node_modules\/three\//,
+                priority: 35,
+              },
+              {
+                name: 'vendor-physics',
+                test: /node_modules\/(cannon-es|three-mesh-bvh|simplex-noise|@tweenjs|canvas-confetti)\//,
+                priority: 30,
+              },
+              {
+                name: 'vendor-firebase',
+                test: /node_modules\/(firebase|@firebase)\//,
+                priority: 25,
+              },
+              {
+                name: 'vendor-d3',
+                test: /node_modules\/(d3|internmap)/,
+                priority: 20,
+              },
+              {
+                name: 'vendor-motion',
+                test: /node_modules\/(motion|framer-motion)/,
+                priority: 20,
+              },
+              {
+                name: 'vendor-icons',
+                test: /node_modules\/lucide-react/,
+                priority: 20,
+              },
+              {
+                name: 'vendor-react',
+                test: /node_modules\/(react|react-dom|scheduler)\//,
+                priority: 20,
+              },
+            ],
           },
         },
       },

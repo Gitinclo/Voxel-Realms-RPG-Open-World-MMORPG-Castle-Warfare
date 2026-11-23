@@ -5,6 +5,14 @@
   "description": "3D Open-World Voxel MMORPG, Castle Warfare Strategy, Single-Instance 20Hz WebSocket Siege Server & Anti-Cheat Authority (Simulated Regional Topology + Cloud SQL/Firestore), Four-Path Immortal Cultivation, 6-Tier Cosmic Hierarchy (COSMIC_LIMITS: 1 White Page -> 100 Overvoids -> Infinity Realities), D3 Cosmological Tree, Auto-Populating Open-World Lore Codex, 12 Dynastic Annals & 10^100-Word Akashic Stream built with React 19, Three.js 0.187, three-mesh-bvh, cannon-es, simplex-noise, D3.js, TypeScript, and C++20 SIMD guardrails (20/11/2026).",
   "author": "Voxel Realms RPG Team <creatergame31@gmail.com>",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare.git"
+  },
+  "homepage": "https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare#readme",
+  "bugs": {
+    "url": "https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/issues"
+  },
   "engines": {
     "node": ">=22.0.0"
   },
@@ -48,7 +56,7 @@
     "express": "5.3.0",
     "firebase": "13.4.0",
     "firebase-admin": "14.5.1",
-    "lucide-react": "1.77.0",
+    "lucide-react": "1.78.0",
     "motion": "14.14.0",
     "pg": "8.23.1",
     "react": "19.3.1",

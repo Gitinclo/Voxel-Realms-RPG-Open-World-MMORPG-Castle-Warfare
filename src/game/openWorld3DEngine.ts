@@ -1552,3 +1552,224 @@ export function evaluateWorldMapStreamingProgress(params: {
     statusLabel,
   };
 }
+
+export const DEFAULT_VOXEL_CHUNK_SIZE_METERS = 256;
+
+export interface ParsedStreamedChunkKey {
+  rawKey: string;
+  chunkX: number;
+  chunkZ: number;
+  canonicalKey: string;
+  source: 'coordinate' | 'frontier_sector';
+  direction?: 'north' | 'south' | 'east' | 'west';
+}
+
+export type VoxelChunkCacheSource = 'none' | 'coordinate' | 'frontier_sector' | 'both';
+
+export interface VoxelChunkDebugCell {
+  key: string;
+  chunkX: number;
+  chunkZ: number;
+  worldMinX: number;
+  worldMaxX: number;
+  worldMinZ: number;
+  worldMaxZ: number;
+  isCached: boolean;
+  isCurrentPlayerChunk: boolean;
+  isTargetFrontierChunk: boolean;
+  cachedSource: VoxelChunkCacheSource;
+  matchedKeys: string[];
+  chebyshevDistance: number;
+  lodLabel: 'LOD0' | 'LOD1' | 'LOD2' | 'HLOD';
+}
+
+export interface VoxelChunkDebugGridSnapshot {
+  chunkSizeMeters: number;
+  gridRadius: number;
+  gridDimension: number;
+  playerChunkX: number;
+  playerChunkZ: number;
+  playerLocalX: number;
+  playerLocalZ: number;
+  playerLocalPercentX: number;
+  playerLocalPercentZ: number;
+  totalCachedKeyCount: number;
+  cachedCoordinateCount: number;
+  visibleCachedCount: number;
+  totalVisibleCells: number;
+  cacheHitPercent: number;
+  cells: VoxelChunkDebugCell[];
+  rawKeys: string[];
+}
+
+const COORD_CHUNK_KEY_REGEX = /^\s*(-?\d+)\s*,\s*(-?\d+)\s*$/;
+const FRONTIER_SECTOR_KEY_REGEX = /^\s*sector_(north|south|east|west)_(-?\d+)_(-?\d+)\s*$/i;
+
+/**
+ * Parses either a canonical `"cx,cz"` coordinate key or a frontier sector key
+ * (`"sector_<dir>_<cx>_<cz>"`) stored inside `streamedChunkKeysRef`.
+ */
+export function parseStreamedChunkKey(rawKey: string): ParsedStreamedChunkKey | null {
+  if (typeof rawKey !== 'string') return null;
+
+  const coordMatch = COORD_CHUNK_KEY_REGEX.exec(rawKey);
+  if (coordMatch) {
+    const chunkX = Number.parseInt(coordMatch[1], 10);
+    const chunkZ = Number.parseInt(coordMatch[2], 10);
+    return {
+      rawKey,
+      chunkX,
+      chunkZ,
+      canonicalKey: OpenWorldChunkStreamingManager.makeChunkKey(chunkX, chunkZ),
+      source: 'coordinate',
+    };
+  }
+
+  const sectorMatch = FRONTIER_SECTOR_KEY_REGEX.exec(rawKey);
+  if (sectorMatch) {
+    const direction = sectorMatch[1].toLowerCase() as 'north' | 'south' | 'east' | 'west';
+    const chunkX = Number.parseInt(sectorMatch[2], 10);
+    const chunkZ = Number.parseInt(sectorMatch[3], 10);
+    return {
+      rawKey,
+      chunkX,
+      chunkZ,
+      canonicalKey: OpenWorldChunkStreamingManager.makeChunkKey(chunkX, chunkZ),
+      source: 'frontier_sector',
+      direction,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Builds a deterministic 2D grid snapshot of the 256m × 256m voxel chunk space centered on the
+ * player's active chunk, mapping every entry cached in `streamedChunkKeysRef` to its sector cell.
+ */
+export function buildVoxelChunkDebugGridSnapshot(params: {
+  streamedChunkKeys: Iterable<string>;
+  playerWorldX: number;
+  playerWorldZ: number;
+  chunkSizeMeters?: number;
+  gridRadius?: number;
+  targetChunkKey?: string | null;
+}): VoxelChunkDebugGridSnapshot {
+  const chunkSizeMeters =
+    Number.isFinite(params.chunkSizeMeters) && (params.chunkSizeMeters ?? 0) > 0
+      ? Math.floor(params.chunkSizeMeters!)
+      : DEFAULT_VOXEL_CHUNK_SIZE_METERS;
+  const gridRadius =
+    Number.isFinite(params.gridRadius) && (params.gridRadius ?? 0) >= 1
+      ? Math.min(4, Math.floor(params.gridRadius!))
+      : 2;
+  const safeX = Number.isFinite(params.playerWorldX) ? params.playerWorldX : 0;
+  const safeZ = Number.isFinite(params.playerWorldZ) ? params.playerWorldZ : 0;
+
+  const playerChunkX = Math.floor(safeX / chunkSizeMeters);
+  const playerChunkZ = Math.floor(safeZ / chunkSizeMeters);
+  const playerLocalX = Number((safeX - playerChunkX * chunkSizeMeters).toFixed(1));
+  const playerLocalZ = Number((safeZ - playerChunkZ * chunkSizeMeters).toFixed(1));
+  const playerLocalPercentX = Math.max(
+    4,
+    Math.min(96, Number(((playerLocalX / chunkSizeMeters) * 100).toFixed(1)))
+  );
+  const playerLocalPercentZ = Math.max(
+    4,
+    Math.min(96, Number(((playerLocalZ / chunkSizeMeters) * 100).toFixed(1)))
+  );
+
+  const uniqueRawKeys = Array.from(new Set(params.streamedChunkKeys)).sort();
+  const parsedByCanonical = new Map<
+    string,
+    { hasCoord: boolean; hasSector: boolean; keys: string[] }
+  >();
+
+  for (const rawKey of uniqueRawKeys) {
+    const parsed = parseStreamedChunkKey(rawKey);
+    if (!parsed) continue;
+    const existing = parsedByCanonical.get(parsed.canonicalKey) ?? {
+      hasCoord: false,
+      hasSector: false,
+      keys: [],
+    };
+    if (parsed.source === 'coordinate') existing.hasCoord = true;
+    else existing.hasSector = true;
+    existing.keys.push(rawKey);
+    parsedByCanonical.set(parsed.canonicalKey, existing);
+  }
+
+  const parsedTarget = params.targetChunkKey ? parseStreamedChunkKey(params.targetChunkKey) : null;
+  const targetCanonicalKey = parsedTarget?.canonicalKey ?? null;
+
+  const gridDimension = gridRadius * 2 + 1;
+  const cells: VoxelChunkDebugCell[] = [];
+  let visibleCachedCount = 0;
+
+  for (let dz = -gridRadius; dz <= gridRadius; dz++) {
+    for (let dx = -gridRadius; dx <= gridRadius; dx++) {
+      const chunkX = playerChunkX + dx;
+      const chunkZ = playerChunkZ + dz;
+      const key = OpenWorldChunkStreamingManager.makeChunkKey(chunkX, chunkZ);
+      const cacheRecord = parsedByCanonical.get(key);
+      const isCached = Boolean(cacheRecord);
+      if (isCached) visibleCachedCount += 1;
+
+      let cachedSource: VoxelChunkCacheSource = 'none';
+      if (cacheRecord) {
+        if (cacheRecord.hasCoord && cacheRecord.hasSector) cachedSource = 'both';
+        else if (cacheRecord.hasSector) cachedSource = 'frontier_sector';
+        else cachedSource = 'coordinate';
+      }
+
+      const chebyshevDistance = Math.max(Math.abs(dx), Math.abs(dz));
+      const lodLabel: VoxelChunkDebugCell['lodLabel'] =
+        chebyshevDistance === 0
+          ? 'LOD0'
+          : chebyshevDistance === 1
+            ? 'LOD1'
+            : chebyshevDistance === 2
+              ? 'LOD2'
+              : 'HLOD';
+
+      cells.push({
+        key,
+        chunkX,
+        chunkZ,
+        worldMinX: chunkX * chunkSizeMeters,
+        worldMaxX: (chunkX + 1) * chunkSizeMeters,
+        worldMinZ: chunkZ * chunkSizeMeters,
+        worldMaxZ: (chunkZ + 1) * chunkSizeMeters,
+        isCached,
+        isCurrentPlayerChunk: dx === 0 && dz === 0,
+        isTargetFrontierChunk: targetCanonicalKey === key,
+        cachedSource,
+        matchedKeys: cacheRecord ? [...cacheRecord.keys] : [],
+        chebyshevDistance,
+        lodLabel,
+      });
+    }
+  }
+
+  const totalVisibleCells = gridDimension * gridDimension;
+  const cacheHitPercent = Math.round((visibleCachedCount / totalVisibleCells) * 100);
+
+  return {
+    chunkSizeMeters,
+    gridRadius,
+    gridDimension,
+    playerChunkX,
+    playerChunkZ,
+    playerLocalX,
+    playerLocalZ,
+    playerLocalPercentX,
+    playerLocalPercentZ,
+    totalCachedKeyCount: uniqueRawKeys.length,
+    cachedCoordinateCount: parsedByCanonical.size,
+    visibleCachedCount,
+    totalVisibleCells,
+    cacheHitPercent,
+    cells,
+    rawKeys: uniqueRawKeys,
+  };
+}

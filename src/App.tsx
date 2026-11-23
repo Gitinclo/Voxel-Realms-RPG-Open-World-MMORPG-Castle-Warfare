@@ -168,6 +168,7 @@ const CosmologicalAdminModal = lazy(MODAL_LOADERS.cosmological_admin);
 const GmailModal = lazy(MODAL_LOADERS.gmail);
 const EulaModal = lazy(MODAL_LOADERS.eula);
 const MarketplaceModal = lazy(MODAL_LOADERS.marketplace);
+import { ChunkGridDebugOverlay } from './components/ChunkGridDebugOverlay';
 import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
 import {
   DEFAULT_EXPECTED_WORLD_CHUNKS,
@@ -353,6 +354,7 @@ export default function App() {
   const [fetchedBoundaryKeys, setFetchedBoundaryKeys] = useState<string[]>([]);
   const [streamedChunkCount, setStreamedChunkCount] = useState<number>(9);
   const [isStreamingWorldChunks, setIsStreamingWorldChunks] = useState<boolean>(false);
+  const [showChunkDebugOverlay, setShowChunkDebugOverlay] = useState<boolean>(false);
   const streamedChunkKeysRef = useRef<Set<string>>(
     new Set(['-1,-1', '0,-1', '1,-1', '-1,0', '0,0', '1,0', '-1,1', '0,1', '1,1'])
   );
@@ -2520,7 +2522,7 @@ export default function App() {
           data-testid="world-chunk-progress-container"
           className="fixed bottom-[76px] sm:bottom-[86px] left-1/2 -translate-x-1/2 z-30 w-[184px] sm:w-72 pointer-events-none"
         >
-          <div className="pointer-events-auto rounded-xl bg-slate-950/88 backdrop-blur-md border border-slate-700/80 shadow-xl px-2.5 sm:px-3 py-1.5 space-y-1">
+          <div className="pointer-events-auto rounded-xl bg-slate-950/92 border border-slate-700/80 shadow-xl px-2.5 sm:px-3 py-1.5 space-y-1">
             <div className="flex items-center justify-between gap-2 text-[10px] sm:text-[11px] font-mono">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span
@@ -2592,6 +2594,20 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Toggleable Admin 256×256 Voxel Chunk Grid Debug Overlay (streamedChunkKeysRef) */}
+      {gameState === 'playing' && activeModal === 'none' && showChunkDebugOverlay && (
+        <ChunkGridDebugOverlay
+          variant="overlay"
+          streamedChunkKeys={Array.from(streamedChunkKeysRef.current)}
+          streamedChunkCount={streamedChunkCount}
+          playerWorldX={hudPlayerCoords.x}
+          playerWorldZ={hudPlayerCoords.z}
+          targetChunkKey={currentBoundaryStatus.targetChunkKey}
+          isNearChunkEdge={currentBoundaryStatus.isNearChunkEdge}
+          onClose={() => setShowChunkDebugOverlay(false)}
+        />
       )}
 
       {/* Modals */}
@@ -2886,6 +2902,14 @@ export default function App() {
             onTeleportToWaypoint={handleTeleportToWaypoint}
             onTeleportToCoordinates={handleTeleportToCoordinates}
             onForwardBlink={() => handleForwardBlink()}
+            showChunkDebugOverlay={showChunkDebugOverlay}
+            onToggleChunkDebugOverlay={() => setShowChunkDebugOverlay((prev) => !prev)}
+            streamedChunkKeys={Array.from(streamedChunkKeysRef.current)}
+            streamedChunkCount={streamedChunkCount}
+            playerWorldX={hudPlayerCoords.x}
+            playerWorldZ={hudPlayerCoords.z}
+            targetChunkKey={currentBoundaryStatus.targetChunkKey}
+            isNearChunkEdge={currentBoundaryStatus.isNearChunkEdge}
             onClose={() => setActiveModal('none')}
           />
         )}

@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
   DEFAULT_EXPECTED_WORLD_CHUNKS,
+  DEFAULT_VOXEL_CHUNK_SIZE_METERS,
   HIGH_END_PC_MAC_CONTINENTAL_EXPANSION_TABLE,
   INTERNATIONAL_MMORPG_BENCHMARK_TABLE,
   INTERNATIONAL_MMORPG_PILLARS,
@@ -16,12 +17,14 @@ import {
   OpenWorldSimplexGenerator,
   ServerMeshSpatialGridAuthority,
   buildSceneBVHTrees,
+  buildVoxelChunkDebugGridSnapshot,
   computeCameraRelativeGpuTransform64,
   disposeSceneBVHTrees,
   enableOpenWorldMeshBVH,
   evaluateChunkBoundaryProximity,
   evaluateInternationalMmorpgStandardCompliance,
   evaluateWorldMapStreamingProgress,
+  parseStreamedChunkKey,
   rebaseFloatingOriginCoord,
   resolvePlayerCitadelCollisionCannon,
   resolveThreeDimensionalObjectCollision,
@@ -423,4 +426,101 @@ test('10. evaluateWorldMapStreamingProgress computes bounded percentages, status
   assert.equal(guarded.streamedChunkCount, 0);
   assert.equal(guarded.totalExpectedChunks, DEFAULT_EXPECTED_WORLD_CHUNKS);
   assert.equal(guarded.progressPercent, 0);
+});
+
+test('11. parseStreamedChunkKey parses canonical coordinates and directional frontier sector keys', () => {
+  const coord = parseStreamedChunkKey('-1,2');
+  assert.deepEqual(coord, {
+    rawKey: '-1,2',
+    chunkX: -1,
+    chunkZ: 2,
+    canonicalKey: '-1,2',
+    source: 'coordinate',
+  });
+
+  const frontier = parseStreamedChunkKey('sector_north_0_-2');
+  assert.deepEqual(frontier, {
+    rawKey: 'sector_north_0_-2',
+    chunkX: 0,
+    chunkZ: -2,
+    canonicalKey: '0,-2',
+    source: 'frontier_sector',
+    direction: 'north',
+  });
+
+  assert.equal(parseStreamedChunkKey('invalid_key'), null);
+  assert.equal(parseStreamedChunkKey(''), null);
+});
+
+test('12. buildVoxelChunkDebugGridSnapshot maps 256x256 cached sectors, player sub-chunk position, and frontier targets', () => {
+  assert.equal(DEFAULT_VOXEL_CHUNK_SIZE_METERS, 256);
+
+  const initialCache = new Set([
+    '-1,-1',
+    '0,-1',
+    '1,-1',
+    '-1,0',
+    '0,0',
+    '1,0',
+    '-1,1',
+    '0,1',
+    '1,1',
+    'sector_north_0_-2',
+  ]);
+
+  const snapshot = buildVoxelChunkDebugGridSnapshot({
+    streamedChunkKeys: initialCache,
+    playerWorldX: 64,
+    playerWorldZ: 128,
+    gridRadius: 2,
+    targetChunkKey: 'sector_east_2_0',
+  });
+
+  assert.equal(snapshot.chunkSizeMeters, 256);
+  assert.equal(snapshot.gridDimension, 5);
+  assert.equal(snapshot.totalVisibleCells, 25);
+  assert.equal(snapshot.playerChunkX, 0);
+  assert.equal(snapshot.playerChunkZ, 0);
+  assert.equal(snapshot.playerLocalX, 64);
+  assert.equal(snapshot.playerLocalZ, 128);
+  assert.equal(snapshot.playerLocalPercentX, 25);
+  assert.equal(snapshot.playerLocalPercentZ, 50);
+  assert.equal(snapshot.totalCachedKeyCount, 10);
+  assert.equal(snapshot.cachedCoordinateCount, 10);
+  assert.equal(snapshot.visibleCachedCount, 10);
+  assert.equal(snapshot.cacheHitPercent, 40);
+
+  const originCell = snapshot.cells.find((c) => c.key === '0,0');
+  assert.ok(originCell);
+  assert.equal(originCell.isCurrentPlayerChunk, true);
+  assert.equal(originCell.isCached, true);
+  assert.equal(originCell.cachedSource, 'coordinate');
+  assert.equal(originCell.lodLabel, 'LOD0');
+  assert.equal(originCell.worldMinX, 0);
+  assert.equal(originCell.worldMaxX, 256);
+
+  const northFrontierCell = snapshot.cells.find((c) => c.key === '0,-2');
+  assert.ok(northFrontierCell);
+  assert.equal(northFrontierCell.isCached, true);
+  assert.equal(northFrontierCell.cachedSource, 'frontier_sector');
+  assert.deepEqual(northFrontierCell.matchedKeys, ['sector_north_0_-2']);
+  assert.equal(northFrontierCell.lodLabel, 'LOD2');
+
+  const eastTargetCell = snapshot.cells.find((c) => c.key === '2,0');
+  assert.ok(eastTargetCell);
+  assert.equal(eastTargetCell.isCached, false);
+  assert.equal(eastTargetCell.isTargetFrontierChunk, true);
+
+  // Verify 7x7 expansion (radius 3) includes HLOD ring
+  const wideSnapshot = buildVoxelChunkDebugGridSnapshot({
+    streamedChunkKeys: initialCache,
+    playerWorldX: 64,
+    playerWorldZ: 128,
+    gridRadius: 3,
+  });
+  assert.equal(wideSnapshot.gridDimension, 7);
+  assert.equal(wideSnapshot.totalVisibleCells, 49);
+  const cornerCell = wideSnapshot.cells.find((c) => c.key === '-3,-3');
+  assert.ok(cornerCell);
+  assert.equal(cornerCell.lodLabel, 'HLOD');
 });

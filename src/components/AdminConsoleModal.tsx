@@ -26,7 +26,10 @@ import {
   Lock,
   LogOut,
   KeyRound,
+  Grid3X3,
+  Eye,
 } from 'lucide-react';
+import { ChunkGridDebugOverlay } from './ChunkGridDebugOverlay';
 import { CharacterAppearance, CharacterSpeciesId, GameResources, TroopType } from '../types/game';
 import { WeatherType } from '../game/weather';
 import { sound } from '../game/audio';
@@ -115,6 +118,14 @@ interface AdminConsoleModalProps {
   onTeleportToWaypoint?: (waypointId: GodTeleportWaypointId) => void;
   onTeleportToCoordinates?: (x: number, y: number, z: number) => void;
   onForwardBlink?: () => void;
+  showChunkDebugOverlay?: boolean;
+  onToggleChunkDebugOverlay?: () => void;
+  streamedChunkKeys?: readonly string[];
+  streamedChunkCount?: number;
+  playerWorldX?: number;
+  playerWorldZ?: number;
+  targetChunkKey?: string | null;
+  isNearChunkEdge?: boolean;
   initialTab?: 'cheats' | 'troops' | 'world' | 'moderation' | 'contact' | 'logs';
   onClose: () => void;
 }
@@ -158,6 +169,14 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onTeleportToWaypoint,
   onTeleportToCoordinates,
   onForwardBlink,
+  showChunkDebugOverlay = false,
+  onToggleChunkDebugOverlay,
+  streamedChunkKeys = [],
+  streamedChunkCount,
+  playerWorldX = 0,
+  playerWorldZ = 18,
+  targetChunkKey = null,
+  isNearChunkEdge = false,
   initialTab = 'cheats',
   onClose,
 }) => {
@@ -701,7 +720,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/88 animate-in fade-in duration-200">
       <div
         data-testid="admin-console-modal"
         className="relative w-full max-w-5xl bg-slate-900 border-2 border-red-500/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
@@ -738,6 +757,30 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {onToggleChunkDebugOverlay && (
+              <button
+                type="button"
+                data-testid="admin-header-chunk-grid-toggle"
+                aria-pressed={showChunkDebugOverlay}
+                onClick={() => {
+                  const next = !showChunkDebugOverlay;
+                  onToggleChunkDebugOverlay();
+                  sound.playButton();
+                  addLog(
+                    `DEBUG OVERLAY: 256×256 Voxel Chunk Grid Overlay ${next ? 'ENABLED' : 'DISABLED'} (${streamedChunkKeys.length} keys cached in streamedChunkKeysRef).`
+                  );
+                }}
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
+                  showChunkDebugOverlay
+                    ? 'bg-cyan-500/25 border-cyan-400 text-cyan-200 hover:bg-cyan-500/35'
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-300'
+                }`}
+                title="Toggle 256×256 Voxel Chunk Grid Debug Overlay (streamedChunkKeysRef)"
+              >
+                <Grid3X3 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Chunk Grid: {showChunkDebugOverlay ? 'ON' : 'OFF'}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCopyAdminEmail}
@@ -1847,6 +1890,80 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
 
           {activeTab === 'world' && (
             <div className="space-y-4">
+              {/* 256×256 Voxel Chunk Grid Debug Overlay Control & Live Inspector */}
+              {onToggleChunkDebugOverlay && (
+                <div
+                  data-testid="admin-chunk-grid-debug-card"
+                  className="p-4 rounded-xl bg-slate-800/70 border border-cyan-500/40 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Grid3X3 className="w-4 h-4 text-cyan-400 shrink-0" aria-hidden="true" />
+                        <span>256×256 Voxel Chunk Grid Debug Overlay</span>
+                      </h3>
+                      <p className="text-xs text-slate-300 font-mono tabular-nums">
+                        Visualizes sectors cached in{' '}
+                        <code className="text-cyan-300">streamedChunkKeysRef</code> · Cached Keys:{' '}
+                        <strong className="text-emerald-300">{streamedChunkKeys.length}</strong> ·
+                        Active Chunk: C({Math.floor(playerWorldX / 256)},
+                        {Math.floor(playerWorldZ / 256)})
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {showChunkDebugOverlay && (
+                        <button
+                          type="button"
+                          data-testid="view-chunk-overlay-in-world-btn"
+                          onClick={() => {
+                            sound.playButton();
+                            onClose();
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 border border-cyan-500/45 text-cyan-200 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>View Over 3D World</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={showChunkDebugOverlay}
+                        data-testid="toggle-chunk-debug-overlay-btn"
+                        onClick={() => {
+                          const next = !showChunkDebugOverlay;
+                          onToggleChunkDebugOverlay();
+                          sound.playButton();
+                          addLog(
+                            `DEBUG OVERLAY: 256×256 Voxel Chunk Grid Overlay ${next ? 'ENABLED' : 'DISABLED'} (${streamedChunkKeys.length} keys cached in streamedChunkKeysRef).`
+                          );
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                          showChunkDebugOverlay
+                            ? 'bg-cyan-500 text-slate-950 border-cyan-300 hover:bg-cyan-400'
+                            : 'bg-slate-900 text-slate-200 border-slate-600 hover:bg-slate-700'
+                        }`}
+                      >
+                        <span>{showChunkDebugOverlay ? 'Overlay Active' : 'Enable Overlay'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {showChunkDebugOverlay && (
+                    <ChunkGridDebugOverlay
+                      variant="embedded"
+                      streamedChunkKeys={streamedChunkKeys}
+                      streamedChunkCount={streamedChunkCount}
+                      playerWorldX={playerWorldX}
+                      playerWorldZ={playerWorldZ}
+                      targetChunkKey={targetChunkKey}
+                      isNearChunkEdge={isNearChunkEdge}
+                    />
+                  )}
+                </div>
+              )}
+
               {/* Time Freeze & Time Scale */}
               <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-3">
                 <div className="flex items-center justify-between">

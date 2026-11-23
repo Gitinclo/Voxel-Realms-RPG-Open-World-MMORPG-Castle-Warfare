@@ -24,7 +24,7 @@ From the project root directory (alongside `package.json` and `Dockerfile`):
 docker build -t my-app:prod .
 ```
 
-Optional static-only Nginx edge build (non-root `nginx:1.29-alpine` on port `8080`, using `nginx.conf`):
+Optional static-only Nginx edge build (non-root `nginx:1.31-alpine` on port `8080`, using `nginx.conf`):
 
 ```bash
 docker build --target nginx-runner -t my-app:nginx .
