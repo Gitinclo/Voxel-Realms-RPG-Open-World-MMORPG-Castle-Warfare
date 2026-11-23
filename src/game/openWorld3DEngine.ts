@@ -1484,3 +1484,71 @@ export function evaluateChunkBoundaryProximity(params: {
       : 'Sector Stable — Active Chunk Streamed',
   };
 }
+
+/**
+ * Expected regional open-world chunk grid size (5×5 = 25 chunks of 256m × 256m = 1.28km × 1.28km),
+ * matching `OpenWorldChunkStreamingManager`'s full `activeRadiusChunks = 2` streaming grid.
+ */
+export const DEFAULT_EXPECTED_WORLD_CHUNKS = 25;
+
+export interface WorldMapStreamingProgress {
+  streamedChunkCount: number;
+  totalExpectedChunks: number;
+  clampedStreamedChunks: number;
+  remainingChunks: number;
+  progressPercent: number;
+  isComplete: boolean;
+  isExpandedBeyondRegion: boolean;
+  expandedExtraChunks: number;
+  statusLabel: string;
+}
+
+/**
+ * Pure evaluator calculating open-world chunk streaming progress against the total expected map
+ * size so HUD loading bars remain deterministic, bounded, and informative during traversal.
+ */
+export function evaluateWorldMapStreamingProgress(params: {
+  streamedChunkCount: number;
+  totalExpectedChunks?: number;
+  isNearChunkEdge?: boolean;
+  isStreamingActive?: boolean;
+}): WorldMapStreamingProgress {
+  const safeTotal =
+    Number.isFinite(params.totalExpectedChunks) && (params.totalExpectedChunks ?? 0) > 0
+      ? Math.floor(params.totalExpectedChunks!)
+      : DEFAULT_EXPECTED_WORLD_CHUNKS;
+  const safeStreamed =
+    Number.isFinite(params.streamedChunkCount) && params.streamedChunkCount > 0
+      ? Math.floor(params.streamedChunkCount)
+      : 0;
+
+  const clampedStreamedChunks = Math.min(safeStreamed, safeTotal);
+  const remainingChunks = Math.max(0, safeTotal - safeStreamed);
+  const progressPercent = Math.round((clampedStreamedChunks / safeTotal) * 100);
+  const isComplete = safeStreamed >= safeTotal;
+  const isExpandedBeyondRegion = safeStreamed > safeTotal;
+  const expandedExtraChunks = Math.max(0, safeStreamed - safeTotal);
+
+  let statusLabel = 'World Map';
+  if (params.isStreamingActive) {
+    statusLabel = 'Streaming Sector...';
+  } else if (isExpandedBeyondRegion) {
+    statusLabel = 'Continental Expansion';
+  } else if (isComplete) {
+    statusLabel = 'Region Loaded';
+  } else if (params.isNearChunkEdge) {
+    statusLabel = 'Frontier Ready';
+  }
+
+  return {
+    streamedChunkCount: safeStreamed,
+    totalExpectedChunks: safeTotal,
+    clampedStreamedChunks,
+    remainingChunks,
+    progressPercent,
+    isComplete,
+    isExpandedBeyondRegion,
+    expandedExtraChunks,
+    statusLabel,
+  };
+}

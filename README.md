@@ -3,7 +3,7 @@
 **Last Updated:** `20/11/2026`  
 **Target Game Launch Date:** `30/03/2030` (`2030-03-30`)  
 **Canonical Maturity Status:** `Pre-Production Prototype` (`v1.5.0`)  
-**Verified Core Stack:** Node.js `v22.23.2` (`engines.node >=22.0.0`, CI & Docker `node:26-alpine`) · React `19.3.1` · Three.js `0.187.0` · TypeScript `7.0.2` · Vite `8.3.8` · Tailwind CSS `4.3.5` · Express `5.3.0` · Drizzle ORM `0.45.4` · Firebase `13.4.0`
+**Verified Core Stack:** Node.js `v22.23.2` (`engines.node >=22.0.0`, CI & Docker `node:26-alpine`) · npm `10.9.8` · Bun `1.4.4` (`bun.lock`) · React `19.3.1` · Three.js `0.187.0` · TypeScript `7.0.2` · Vite `8.3.8` · Tailwind CSS `4.3.5` · Express `5.3.0` · Drizzle ORM `0.45.4` · Firebase `13.4.0`
 
 [![Maturity: Pre-Production / Prototype](https://img.shields.io/badge/Maturity-Pre--Production_%2F_Prototype-f59e0b?style=flat-square)](./docs/README.md)
 [![Launch Date: 30/03/2030](https://img.shields.io/badge/Launch_Date-30%2F03%2F2030-0ea5e9?style=flat-square)](./ROADMAP.md)
@@ -12,14 +12,14 @@
 [![Build & Docker](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/build.yml)
 [![Security Audit](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/security_audit.yml)
 [![CodeQL](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/codeql.yml/badge.svg)](https://github.com/Gitinclo/Voxel-Realms-RPG-Open-World-MMORPG-Castle-Warfare/actions/workflows/codeql.yml)
-[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-258_Passing_(49_Files)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#testing-coverage--anti-spaghetti-guardrails)
+[![Unit & Security Tests](<https://img.shields.io/badge/Automated_Tests-264_Passing_(50_Files)-38bdf8?style=flat-square&logo=node.js&logoColor=white>)](#running-unit-security--integration-tests)
 [![Version](https://img.shields.io/badge/Source_Version-v1.5.0-f59e0b?style=flat-square)](./CHANGELOG.md)
 [![Observability: Prometheus /metrics](https://img.shields.io/badge/Observability-Prometheus_%2Fmetrics-e6522c?style=flat-square&logo=prometheus&logoColor=white)](./src/server/routes/healthRoutes.ts)
 [![Docker Multi-Stage](https://img.shields.io/badge/Docker-Node_26_Alpine_%2B_Nginx_Target-2496ed?style=flat-square&logo=docker&logoColor=white)](./DEPLOYMENT.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-8b5cf6?style=flat-square)](./LICENSE.md)
 [![Built With AI-Assisted Tooling](https://img.shields.io/badge/Built_with_%F0%9F%A4%96-AI--Assisted_Engineering_%26_Procedural_WebGL-ec4899?style=flat-square)](#steam--platform-content-disclosure)
 
-> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and 15 CI/CD rollout/soak/CodeQL/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml)), [`docs/asyncapi.yaml`](./docs/asyncapi.yaml) (`3.0.0`), [`schemas/`](./schemas/), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`258` automated tests across `49` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
+> **Maturity & Release Status Notice (Pre-Production / Prototype with Managed Cloud SQL):** Target public game launch date is **`30/03/2030`**. Version `1.5.0` (`package.json`) runs on a modular Node.js server (`server.ts` + `src/server/*`) backed by a provisioned **Cloud SQL PostgreSQL** database (`ai-studio-416287a7`, `asia-southeast1`) with all 7 Drizzle ORM tables migrated & verified live, plus Cloud Firestore sync, Kustomize staging/production manifests (`k8s/`), 4-hour `k6`/`Artillery` soak suites (`loadtest/`), operational runbooks (`runbooks/`), and 15 CI/CD rollout/soak/CodeQL/release-gate/GitHub Pages WebGL workflows (`.github/workflows/`). See [`AGENTS.md`](./AGENTS.md), [`docs/README.md`](./docs/README.md), [`docs/openapi.yaml`](./docs/openapi.yaml) (`3.2.0` + [`docs/openapi.3.1.yaml`](./docs/openapi.3.1.yaml)), [`docs/asyncapi.yaml`](./docs/asyncapi.yaml) (`3.0.0`), [`schemas/`](./schemas/), [`docs/PRE_LAUNCH_CHECKLIST_2030.md`](./docs/PRE_LAUNCH_CHECKLIST_2030.md), and [`docs/release-evidence-template.md`](./docs/release-evidence-template.md) for the strict **Implemented vs. Simulated vs. Planned** status and 24-gate sign-off criteria (`264` automated tests across `50` files, `npm run verify:ops`, `npm run verify:e2e`, `npm run release:package`).
 
 ## 🎯 Near-Term Scope, Measurable Targets & Beta Exit Criteria
 
@@ -52,18 +52,18 @@ _If you are an AI coding agent or contributor working on this repository, adhere
   - **HTTP API, RBAC & 20Hz `/ws/siege` WebSocket Server:** [`server.ts`](./server.ts), [`src/middleware/auth.ts`](./src/middleware/auth.ts), [`src/game/serverAuth.ts`](./src/game/serverAuth.ts), [`src/game/serverHardening.ts`](./src/game/serverHardening.ts)
   - **EULA & Legal Compliance Matrices:** [`src/game/eula.ts`](./src/game/eula.ts), [`EULA.md`](./EULA.md), [`LEGAL.md`](./LEGAL.md)
 
-## 🛠 Verified Tech Stack
+## 🛠 Verified Tech Stack & Agent Coding Constraints
 
 Exact locked versions verified against [`package.json`](./package.json), [`package-lock.json`](./package-lock.json), and [`bun.lock`](./bun.lock) as of **`20/11/2026`**:
 
-- **Runtime:** Node.js `v22.23.2` (`engines.node >=22.0.0`; Docker `node:26-alpine`; native reference guardrails in C++20 via [`CMakeLists.txt`](./CMakeLists.txt) & [`vcpkg.json`](./vcpkg.json))
+- **Runtime & Package Managers:** Node.js `v22.23.2` (`engines.node >=22.0.0`; Docker `node:26-alpine`), npm `10.9.8` (`package-lock.json`), Bun `1.4.4` (`bun.lock`), plus native reference guardrails in C++20 via [`CMakeLists.txt`](./CMakeLists.txt) & [`vcpkg.json`](./vcpkg.json)
 - **Frontend Framework & Language:** React `19.3.1` (`react-dom@19.3.1`, `React.lazy` + `Suspense`), TypeScript `7.0.2` (strict), Vite `8.3.8` (`@vitejs/plugin-react@6.3.0`)
 - **3D WebGL2 & Data Visualization:** Three.js `0.187.0` (`@types/three@0.187.0`), `three-mesh-bvh@0.9.18`, `cannon-es@0.20.0`, `simplex-noise@4.0.3`, `@tweenjs/tween.js@25.0.0`, D3.js `7.9.2` (`@types/d3@7.4.3`)
 - **Styling & UI Icons/Motion:** Tailwind CSS `4.3.5` (`@tailwindcss/vite@4.3.5`), `autoprefixer@10.7.0`, `lucide-react@1.77.0`, `motion@14.14.0`, `canvas-confetti@1.9.4`
 - **Backend & Real-Time Networking:** Express `5.3.0` (`@types/express@5.0.6`), Node HTTP + RFC 6455 WebSocket (`/ws/siege` 20Hz tick loop), `dotenv@18.0.10`, `tsx@4.23.15`
 - **Database, Auth & AI SDK:** PostgreSQL (`pg@8.23.1`) + Drizzle ORM `0.45.4` (`drizzle-kit@0.31.11`), Firebase `13.4.0`, Firebase Admin `14.5.1`, `@google/genai@3.6.1`
-- **Testing & Quality Tooling:** `tsx --test` (`258` tests across `49` files), Playwright `1.65.1`, 4-hour `k6`/`Artillery` soak suites (`loadtest/`), ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
-- **State Management & Styling Constraints:** React 19 hooks + `AuthContext` (`src/contexts/AuthContext.tsx`) + pure deterministic `src/game/` reducers; Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`, no inline style sprawl); `BigInt` (`bigint`) required for all trillion-scale treasury/troop math.
+- **Testing & Quality Tooling:** `tsx --test` (`264` tests across `50` files), Playwright `1.65.1`, 4-hour `k6`/`Artillery` soak suites (`loadtest/`), ESLint `10.15.0` + `@firebase/eslint-plugin-security-rules@0.0.2`, Prettier `3.10.1`
+- **State Management & Styling Constraints:** React 19 hooks + `AuthContext` (`src/contexts/AuthContext.tsx`) + pure deterministic `src/game/` reducers; Tailwind CSS v4 (`@import "tailwindcss";` in `src/index.css`, no inline style sprawl); `BigInt` (`bigint`) required for all trillion-scale treasury/troop math; do not manually edit generated outputs (`dist/`, `package-lock.json` outside `npm run lockfile:regenerate`, `e2e/baselines/` outside visual baseline updates).
 
 ## 📂 Project Architecture Map
 
@@ -113,7 +113,7 @@ cp .env.example .env
 # 3. Start full-stack Express 5 + 20Hz WebSocket + Vite development server on port 3000
 npm run dev
 
-# 4. Run full 6-stage validation gate (Lockfiles + Typecheck + Rules ESLint + Prettier + 258 Tests + Vite Build)
+# 4. Run full 6-stage validation gate (Lockfiles + Typecheck + Rules ESLint + Prettier + 264 Tests + Vite Build)
 npm run validate
 
 # 5. Run live production operational readiness & headless Chromium E2E suites
@@ -130,7 +130,7 @@ npm run verify:ops && npm run verify:e2e
 | `npm run lint` / `typecheck`  | Runs TypeScript strict check (`tsc --noEmit`) with unused local/parameter/fallthrough enforcement    |
 | `npm run lint:rules`          | Audits `firestore.rules` with `@firebase/eslint-plugin-security-rules`                               |
 | `npm run format:check`        | Verifies Prettier code style across the repository (`npm run format` auto-formats)                   |
-| `npm test`                    | Executes all `258` automated unit, security, DB, protocol, infra & rule tests across `49` files      |
+| `npm test`                    | Executes all `264` automated unit, security, DB, protocol, infra & rule tests across `50` files      |
 | `npm run test:rules`          | Runs standalone `firestore.rules.test.ts` Dirty Dozen security rule suite                            |
 | `npm run test:coverage`       | Runs `npm test` with Node `--experimental-test-coverage` output                                      |
 | `npm run lockfile:verify`     | Verifies `package-lock.json` integrity, overrides & Alpine native optional binaries                  |
@@ -142,11 +142,13 @@ npm run verify:ops && npm run verify:e2e
 
 ## 🔐 Environment Variables
 
-Complete reference synchronized with [`.env.example`](./.env.example), [`server.ts`](./server.ts), and [`vite.config.ts`](./vite.config.ts):
+Complete reference synchronized with [`.env.example`](./.env.example), [`server.ts`](./server.ts), [`vite.config.ts`](./vite.config.ts), and [`scripts/`](./scripts):
 
-| Variable                         | Required | Description                                                                                                                               | Dummy / Default Format                        |
+| Variable                         | Required | Description                                                                                                                               | Example / Dummy Format                        |
 | :------------------------------- | :------: | :---------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
 | `PORT`                           |    No    | HTTP + WebSocket listen port (`server.ts` defaults to `3000`; falls back to `VOXEL_DEV_PORT` / `DEFAULT_APP_PORT`)                        | `3000`                                        |
+| `VOXEL_DEV_PORT`                 |    No    | Optional dev-mode fallback port when `PORT` is unset (`server.ts`)                                                                        | `3000`                                        |
+| `DEFAULT_APP_PORT`               |    No    | Optional secondary fallback port when `PORT` and `VOXEL_DEV_PORT` are unset (`server.ts`)                                                 | `3000`                                        |
 | `NODE_ENV`                       |    No    | Runtime mode (`development`, `production`, or `test`)                                                                                     | `development`                                 |
 | `GEMINI_API_KEY`                 |    No    | Optional Gemini API key injected in hosted environments or `.env`                                                                         | `your-gemini-api-key-here`                    |
 | `APP_URL`                        |    No    | Canonical base URL used for redirects, origin checks & self-links                                                                         | `http://localhost:3000`                       |
@@ -168,6 +170,8 @@ Complete reference synchronized with [`.env.example`](./.env.example), [`server.
 | `SQL_DB_NAME`                    |    No    | PostgreSQL database name                                                                                                                  | `voxel_realms_db`                             |
 | `SQL_ADMIN_USER`                 |    No    | PostgreSQL admin user used for Drizzle Kit schema migrations (`src/db/drizzle.config.ts`)                                                 | `postgres`                                    |
 | `SQL_ADMIN_PASSWORD`             |    No    | PostgreSQL admin password used for Drizzle Kit schema migrations                                                                          | `replace-with-admin-sql-password`             |
+| `RELEASE_TAG`                    |    No    | Optional SemVer tag override for offline release packaging (`scripts/package-release.mjs`)                                                | `v1.5.0`                                      |
+| `E2E_UPDATE_BASELINES`           |    No    | Local-only flag (`"1"`) to refresh Playwright modal PNG baselines when `CI !== "true"` (`scripts/compare-modal-screenshots.ts`)           | `"0"`                                         |
 
 ---
 
@@ -254,7 +258,7 @@ Designed for both desktop (WASD + mouse drag) and mobile/Android (virtual touch 
 
 ### 9. 🛡️ Clan Alliances, 9-Sector Territory Wars & Single-Instance 20Hz WebSocket Siege Server (`server.ts`, `src/game/siegeNetProtocol.ts`)
 
-- **Heraldic Alliances & 9-Sector Territory War Map (`A1`–`C3`)**: Create and customize heraldic SVG clan emblems, manage membership hierarchies, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
+- **Heraldic Alliances, Clan Diplomacy (`ClanDiplomacyTab.tsx`, `src/game/clanDiplomacy.ts`) & 9-Sector Territory War Map (`A1`–`C3`)**: Create and customize heraldic SVG clan emblems, manage membership hierarchies, negotiate Sovereign Alliances (`max 3`), Non-Aggression Pacts (`NAP`, `max 5`), Peace Treaties, and treaty-breach-aware War Declarations inside `ClanModal`, battle across the 9-sector (`A1`–`C3`) Territory War Map, strike the 600M HP Void Leviathan Co-op Boss, and compete on global multi-trillion power rankings.
 - **Authoritative 20Hz (`50ms`) Multi-Sector 50v50 WebSocket Siege Engine (`/ws/siege` & `src/game/siegeNetProtocol.ts`)**: Full-stack Express + RFC 6455 WebSocket upgrade server (`server.ts`) ticking all peer-subscribed sectors independently and broadcasting 20Hz bitmasked delta-compressed state updates (`CohortDirtyBit` / `S2C_DELTA_SIEGE_UPDATE` `0x11`) and periodic full snapshots (`S2C_FULL_SIEGE_SNAPSHOT` `0x10`), handling real-time `C2S_TROOP_POSITION_CMD` (`0x01`) formation directives (`SHIELD_WALL`, `PHALANX_ADVANCE`, `WEDGE_CHARGE`, `LOOSE_SKIRMISH`) and `C2S_RALLY_ACTION_CMD` (`0x02`) `1T` (`1,000,000,000,000`) War Rallies with `int16` spatial quantization (`0.01m` precision), lossless `BigInt` wire serialization up to `1,000T`, 128-frame Client-Side Prediction (CSP) ring buffer reconciliation (`ClientPredictionRingBuffer`), and 32-bit FNV-1a state hashing (`computeSectorStateHash`).
 - **Atomic Disk Persistence, Crash Recovery & Containerized Production Deployment (`src/game/serverPersistence.ts`, `Dockerfile`, `.dockerignore`, `nginx.conf`, [`DEPLOYMENT.md`](./DEPLOYMENT.md))**: Saves use write-temp → `fsyncSync` → `.bak` promotion → atomic POSIX rename inside a SHA-256 checksum envelope (`schemaVersion: 2`) with automatic failover recovery from `.bak` on truncated/corrupted primary files and `SIGTERM`/`SIGINT` graceful shutdown draining. Multi-stage `node:26-alpine` containerization (`Dockerfile`) excludes `devDependencies`, runs as non-root `USER node` on port `3000`, exposes `/healthz` + `/readyz` + `/api/ops/readiness`, and includes an optional `--target nginx-runner` non-root Alpine/Nginx static edge stage.
 
@@ -648,7 +652,7 @@ Open [http://localhost:3000](http://localhost:3000) (or [http://localhost:3000/?
 
 ### Running Unit, Security & Integration Tests
 
-Execute all **258 automated tests across 49 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, `src/server/*.test.ts`, and `firestore.rules.test.ts`):
+Execute all **264 automated tests across 50 TypeScript test files** (`src/game/*.test.ts`, `src/lib/*.test.ts`, `src/db/*.test.ts`, `src/server/*.test.ts`, and `firestore.rules.test.ts`):
 
 ```bash
 npm test
@@ -659,7 +663,7 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 
 | Command                                   | Verification Scope                                                                                                                                                                                                       |
 | :---------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `258` tests + `vite build`)                                                                            |
+| `npm run validate`                        | Full 6-stage quality gate (`lockfile:verify` + `tsc --noEmit` + `eslint firestore.rules` + `prettier --check .` + `264` tests + `vite build`)                                                                            |
 | `npm run verify:ops`                      | Isolated live production server verification (`/healthz`, `/readyz`, Prometheus `/metrics`, God-mode isolation, authoritative economy mutations + `5%` tax, `50` live `20Hz` WS peers, `.bak` failover, `SIGTERM` drain) |
 | `npm run verify:e2e`                      | Real headless Chromium E2E checks (3D WebGL canvas, reload persistence, mobile `390×844` layout, fail-closed auth `401`, authoritative economy + WS + 6 key modal visual regression baselines in `e2e/baselines/`)       |
 | `npm run lockfile:verify`                 | Verifies `package.json`, `package-lock.json`, and `bun.lock` dependency parity                                                                                                                                           |
@@ -744,8 +748,9 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── AdminConsoleModal.tsx      # GM cheats, T20 spawner, RBAC, Species & Omniverse hub
 │   │   ├── CastleModal.tsx            # Citadel Lv 0-100 upgrade & 10-Era progression UI
 │   │   ├── CharacterCreationModal.tsx # 100-Species selector, Tier filters, 3D turntable & Admin permission gate
+│   │   ├── ClanDiplomacyTab.tsx       # Clan Diplomacy tab (Alliances, NAPs, Peace Treaties, War Declarations & Chronicle)
 │   │   ├── ClanEmblemView.tsx         # Heraldic SVG clan banner & insignia renderer
-│   │   ├── ClanModal.tsx              # Clan vault (with bulk confirmation gate), roster, chat, buffs & co-op boss
+│   │   ├── ClanModal.tsx              # Clan hall, roster, vault, wars, diplomacy, chat, tech & honor store modal
 │   │   ├── ClanTerritoryMap.tsx       # Interactive 9-sector (A1-C3) clan war map
 │   │   ├── CosmologicalAdminModal.tsx # D3-based interactive 6-tier cosmological tree visualizer
 │   │   ├── CppArchitectureModal.tsx   # C++20 engine blueprint, Guardrails & SIMD viewer
@@ -772,16 +777,19 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   └── WorldBossRallyModal.tsx    # 1T troop world boss rally coordination
 │   ├── contexts/
 │   │   └── AuthContext.tsx            # Firebase Auth + in-memory Google Workspace OAuth token state
-│   ├── db/                            # Cloud SQL PostgreSQL + Drizzle ORM Persistence Layer
+│   ├── db/                            # Cloud SQL PostgreSQL + Drizzle ORM Persistence Layer (2 Test Suites)
 │   │   ├── drizzle.config.ts          # Drizzle Kit schema & migration config
 │   │   ├── economyRepository.ts       # PostgreSQL ACID FOR UPDATE economy ledger & idempotency repository
 │   │   ├── economyRepository.test.ts  # Transactional locking, idempotency & optimistic concurrency unit tests
 │   │   ├── index.ts                   # Lazy singleton pg.Pool (SQL_* env) & Drizzle client
-│   │   ├── schema.ts                  # PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets)
+│   │   ├── migrationCheck.test.ts     # Schema & Drizzle table migration verification tests
+│   │   ├── schema.ts                  # 7 PostgreSQL tables (users, commander_profiles, realm_saves, support_tickets, economy_*)
 │   │   └── users.ts                   # Server-side parameterized queries & bounds sanitization
-│   ├── game/                          # Pure Decoupled Game Engine & 33 Unit Test Suites
+│   ├── game/                          # Pure Decoupled Game Engine & 36 Unit Test Suites
 │   │   ├── adminModeration.ts         # Root RBAC (creatergame31@gmail.com), moderation & tickets
 │   │   ├── adminModeration.test.ts    # Admin, GM, Moderator & contact unit tests
+│   │   ├── androidDependencies.ts     # Android Gradle version catalog (10 OSS libs) consistency engine
+│   │   ├── androidDependencies.test.ts # Android libs.versions.toml & license audit tests
 │   │   ├── antiCheat.ts               # Authoritative multiplayer anti-cheat & movement/economy/siege auditor
 │   │   ├── antiCheat.test.ts          # Speed-hack, teleport, economy inflation, sequence replay & quarantine tests
 │   │   ├── architectOptimization.ts   # 17/11/2026 Software & Hardware Architect optimization engine
@@ -789,6 +797,8 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── audio.ts                   # Procedural Web Audio API sound FX synthesizer
 │   │   ├── avatarCloneShadow.ts       # MMORPG Avatar, Clone (Tactical/Combat/Cosmetic) & Shadow (Mimic/Echo/Boss) engine
 │   │   ├── avatarCloneShadow.test.ts  # 4-row Comparison Matrix, Shadow Swap & 50-player Raid 200-entity delta tests
+│   │   ├── clanDiplomacy.ts           # Clan Alliances, NAPs, Peace Treaties, War Declarations & treaty-breach logic
+│   │   ├── clanDiplomacy.test.ts      # Clan diplomacy role authority, treaty caps & war-breach unit tests
 │   │   ├── clanMath.ts                # Clan buffs, vault rations & outpost assault math
 │   │   ├── clanMath.test.ts           # Clan math unit tests
 │   │   ├── cosmologicalTreeD3.ts      # Pure D3 hierarchy layout & radial/horizontal projection engine
@@ -827,6 +837,8 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── openWorld3DEngine.test.ts  # 3D BVH, Simplex fBm terrain, Cannon-es artillery/collision & Tween unit tests
 │   │   ├── proceduralWorld.ts         # Voxel PBR terrain, castle, NPC, monster, species & aura meshes
 │   │   ├── proceduralWorld.test.ts    # 3D scene-graph, aura & engine telemetry regression tests
+│   │   ├── releasePackaging.ts        # Offline WebGL release asset sizing, checksum & notes generator
+│   │   ├── releasePackaging.test.ts   # Release archive sizing & manifest verification unit tests
 │   │   ├── serverAuth.ts              # Server-only HMAC-SHA256 session auth, fail-closed RBAC & anti-tamper engine
 │   │   ├── serverAuth.test.ts         # HMAC token signing, 401/403 RBAC & sync sanitization unit tests
 │   │   ├── serverHardening.ts         # Rate limiters, brute-force lockout, CSRF, __proto__ & WS frame limits
@@ -850,8 +862,13 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   ├── worldAI.ts                 # A* pathfinding, Lv 1-1000 monsters & NPC state machines
 │   │   └── worldAI.test.ts            # World AI & pathfinding unit tests
 │   ├── hooks/                         # Custom React Lifecycle & Simulation Hooks
+│   │   ├── useDailySystems.ts         # Daily login & daily mission progression hook
+│   │   ├── useLoreAndEula.ts          # Lore codex auto-population & EULA acceptance hook
+│   │   ├── useSovereignFlightAndTeleport.ts # Sovereign flight altitude & quick teleport state hook
 │   │   └── useSpatialAudioCues.ts     # Hook triggering HRTF spatial cues on world boss spawns & nearby full nodes
-│   ├── lib/                           # Firebase, Firestore, Auth, Lockfile, Visual Diff & Gmail Clients
+│   ├── lib/                           # API, Firebase, Firestore, Auth, Lockfile, Visual Diff & Gmail Clients (5 Test Suites)
+│   │   ├── apiClient.ts               # Typed authoritative economy & online realm HTTP client
+│   │   ├── apiClient.test.ts          # API client idempotency & error handling unit tests
 │   │   ├── authUtils.ts               # Auth URL & identity sanitization helpers
 │   │   ├── authUtils.test.ts          # Auth utility unit tests
 │   │   ├── firebase-admin.ts          # Firebase Admin ID token verifier for Express /api/db/*
@@ -864,9 +881,17 @@ npm run test:rules    # Run Firestore security rule & Dirty Dozen adversarial te
 │   │   └── visualDiff.test.ts         # Visual diff threshold & image dimension mismatch unit tests
 │   ├── middleware/
 │   │   └── auth.ts                    # Express requireAuth Bearer Firebase ID token middleware
+│   ├── server/                        # Modular Express 5 Runtime, Routes, 20Hz WS Gateway & 6 Integration/Contract Suites
+│   │   ├── createApp.ts               # Express 5.3.0 app factory, security headers, rate limits & route mounting
+│   │   ├── coordinationStore.ts       # In-memory & Redis REST session revocation / coordination adapter
+│   │   ├── economyService.ts          # Unified disk / PostgreSQL authoritative economy coordinator
+│   │   ├── routes/                    # healthRoutes, authRoutes, onlineRoutes, economyRoutes, dbRoutes, privacyRoutes, adminRoutes
+│   │   ├── securityHeaders.ts         # CSP, HSTS, COOP & proxy-trust security policy builders
+│   │   ├── wsGateway.ts               # RFC 6455 20Hz multi-sector /ws/siege WebSocket upgrade gateway
+│   │   └── *.test.ts                  # coordinationStore, infraReadiness, openapiContract, protocolStackContract, securityHeaders, serverIntegration
 │   ├── types/                         # TypeScript definitions & domain models
 │   │   ├── cultivation.ts             # Four-Path cultivation realms, manuals, karma & tribulation contracts
-│   │   └── game.ts                    # BigInt castle, troop, hero, clan, siege & cosmic omniverse types
+│   │   └── game.ts                    # BigInt castle, troop, hero, clan, diplomacy, siege & cosmic omniverse types
 │   ├── App.tsx                        # Root application state container & Suspense modal router
 │   ├── index.css                      # Tailwind CSS v4 styling
 │   └── main.tsx                       # Application entry point wrapped in AuthProvider
@@ -1040,7 +1065,7 @@ If you are publishing or distributing **Voxel Realms RPG** on **Steam (Steamwork
 | **3D Models & Voxel World**  | 100% deterministic procedural geometry (`Three.js` instanced meshes & math primitives in `src/game/proceduralWorld.ts`)          | **No** (Zero external model assets)          |
 | **Textures & Materials**     | 100% runtime mathematical 2D canvas synthesis (Albedo, Masonry, Bark, Water Normal/Bump maps)                                    | **No**                                       |
 | **Audio & Sound Effects**    | 100% procedural Web Audio API waveform synthesis (`OscillatorNode` & `BiquadFilterNode` in `src/game/audio.ts`)                  | **No**                                       |
-| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 258 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
+| **Source Code & Game Logic** | Developed with AI-assisted coding workflows; verified by strict TypeScript (`tsc --noEmit`) and 264 automated unit/DB/rule tests | **No** (100% deterministic local simulation) |
 
 ### 2. Steamworks AI Disclosure Form Guide
 
@@ -1062,7 +1087,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 - [x] `npm run lint` (`tsc --noEmit`) and `npm run lint:rules` (`eslint firestore.rules`) pass with zero errors
 - [x] `npm audit --audit-level=high` reports 0 high/critical vulnerabilities
 - [x] `npx prettier --check .` verifies 100% consistent code formatting across all files
-- [x] `npm test` passes all 258 unit, Daily Mission, HUD scale, economy, DB transaction, liquidity, protocol, infra, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 49 TypeScript test files (`109` cross-system invariants)
+- [x] `npm test` passes all 264 unit, Clan Diplomacy, Daily Mission, HUD scale, economy, DB transaction, liquidity, protocol, infra, security, EULA/Legal, visual diff, lockfile, and Firestore rule tests across 50 TypeScript test files (`109` cross-system invariants)
 - [x] `npm run validate`, `npm run verify:ops`, and `npm run verify:e2e` pass cleanly against isolated production servers and headless Chromium (`6` modal baselines)
 - [x] `npm run build` succeeds with code-split chunks under `dist/`
 - [x] Multi-stage non-root `Dockerfile`, `.dockerignore`, `nginx.conf`, and `DEPLOYMENT.md` are up to date
@@ -1135,7 +1160,7 @@ Before tagging or publishing a release, confirm all release gates pass:
 
 - **[Pull Request Templates (`.github/PULL_REQUEST_TEMPLATE.md` & `.github/PULL_REQUEST_TEMPLATE/`)](./.github/PULL_REQUEST_TEMPLATE.md)** — Default PR checklist plus specialized [`hotfix.md`](./.github/PULL_REQUEST_TEMPLATE/hotfix.md), [`breaking_change.md`](./.github/PULL_REQUEST_TEMPLATE/breaking_change.md), [`architecture_change.md`](./.github/PULL_REQUEST_TEMPLATE/architecture_change.md), and [`lore_addition.md`](./.github/PULL_REQUEST_TEMPLATE/lore_addition.md).
 - **[Issue & Discussion Templates (`.github/ISSUE_TEMPLATE/` & `.github/DISCUSSION_TEMPLATE/`)](./.github/ISSUE_TEMPLATE.md)** — Config redirect ([`config.yml`](./.github/ISSUE_TEMPLATE/config.yml)), [`bug_report.md`](./.github/ISSUE_TEMPLATE/bug_report.md), [`feature_request.md`](./.github/ISSUE_TEMPLATE/feature_request.md), [`release_checklist.md`](./.github/ISSUE_TEMPLATE/release_checklist.md), [`security_vulnerability.md`](./.github/ISSUE_TEMPLATE/security_vulnerability.md), [`performance_regression.md`](./.github/ISSUE_TEMPLATE/performance_regression.md), [`incident_report.md`](./.github/ISSUE_TEMPLATE/incident_report.md), [`lore_inconsistency.md`](./.github/ISSUE_TEMPLATE/lore_inconsistency.md), [`balance_feedback.md`](./.github/ISSUE_TEMPLATE/balance_feedback.md), [`tech_debt.md`](./.github/ISSUE_TEMPLATE/tech_debt.md), [`documentation_gap.md`](./.github/ISSUE_TEMPLATE/documentation_gap.md), and Discussions (`announcements.yml`, `ideas.yml`, `q-and-a.yml`).
-- **[GitHub Configs & Workflows (`.github/workflows/`)](./.github/workflows/build.yml)** — [`CODEOWNERS`](./.github/CODEOWNERS), [`CODE_OF_CONDUCT_ENFORCEMENT.md`](./.github/CODE_OF_CONDUCT_ENFORCEMENT.md), [`FUNDING.yml`](./.github/FUNDING.yml), [`dependabot.yml`](./.github/dependabot.yml), [`.github/release.yml`](./.github/release.yml), and all 10 standardized workflows (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `actions/stale@v11`): [`build.yml`](./.github/workflows/build.yml), [`release.yml`](./.github/workflows/release.yml), [`ci.yml`](./.github/workflows/ci.yml), [`cd.yml`](./.github/workflows/cd.yml), [`docs_deploy.yml`](./.github/workflows/docs_deploy.yml), [`nightly_build.yml`](./.github/workflows/nightly_build.yml), [`security_audit.yml`](./.github/workflows/security_audit.yml), [`lint_and_format.yml`](./.github/workflows/lint_and_format.yml), [`release_drafter.yml`](./.github/workflows/release_drafter.yml), and [`stale_issues.yml`](./.github/workflows/stale_issues.yml).
+- **[GitHub Configs & Workflows (`.github/workflows/`)](./.github/workflows/build.yml)** — [`CODEOWNERS`](./.github/CODEOWNERS), [`CODE_OF_CONDUCT_ENFORCEMENT.md`](./.github/CODE_OF_CONDUCT_ENFORCEMENT.md), [`FUNDING.yml`](./.github/FUNDING.yml), [`dependabot.yml`](./.github/dependabot.yml), [`.github/release.yml`](./.github/release.yml), and all 15 standardized workflows (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`, `github/codeql-action@v4`, `actions/stale@v11`): [`build.yml`](./.github/workflows/build.yml), [`cd.yml`](./.github/workflows/cd.yml), [`ci.yml`](./.github/workflows/ci.yml), [`codeql.yml`](./.github/workflows/codeql.yml), [`deploy-staging.yml`](./.github/workflows/deploy-staging.yml), [`docs_deploy.yml`](./.github/workflows/docs_deploy.yml), [`lint_and_format.yml`](./.github/workflows/lint_and_format.yml), [`nightly_build.yml`](./.github/workflows/nightly_build.yml), [`pages-webgl.yml`](./.github/workflows/pages-webgl.yml), [`release-gates.yml`](./.github/workflows/release-gates.yml), [`release.yml`](./.github/workflows/release.yml), [`release_drafter.yml`](./.github/workflows/release_drafter.yml), [`security_audit.yml`](./.github/workflows/security_audit.yml), [`staging-soak.yml`](./.github/workflows/staging-soak.yml), and [`stale_issues.yml`](./.github/workflows/stale_issues.yml).
 
 ### Extended Engineering, SRE, QA, Security, Cultivation & Legal Suite
 
@@ -1148,22 +1173,16 @@ Before tagging or publishing a release, confirm all release gates pass:
 - **Legal, Compliance & Trust (`17` Docs)**: [`ACCEPTABLE_USE_POLICY.md`](./ACCEPTABLE_USE_POLICY.md), [`COOKIE_POLICY.md`](./COOKIE_POLICY.md), [`DATA_PROCESSING_AGREEMENT.md`](./DATA_PROCESSING_AGREEMENT.md), [`GDPR_COMPLIANCE.md`](./GDPR_COMPLIANCE.md), [`CCPA_COMPLIANCE.md`](./CCPA_COMPLIANCE.md), [`EXPORT_COMPLIANCE.md`](./EXPORT_COMPLIANCE.md), [`PATENTS.md`](./PATENTS.md), [`TRADEMARKS.md`](./TRADEMARKS.md), [`COPYRIGHT.md`](./COPYRIGHT.md), [`DMCA_POLICY.md`](./DMCA_POLICY.md), [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md), [`OPEN_SOURCE_LICENSES.md`](./OPEN_SOURCE_LICENSES.md), [`SUBPROCESSORS.md`](./SUBPROCESSORS.md), [`WAIVER.md`](./WAIVER.md), [`ETHICS.md`](./ETHICS.md), [`AI_USAGE_POLICY.md`](./AI_USAGE_POLICY.md), [`CONTENT_MODERATION_POLICY.md`](./CONTENT_MODERATION_POLICY.md).
 - **Platform Engineering, Console, Mobile & Spatial VR Targets (`9` Docs)**: [`Windows.md`](./Windows.md), [`PC.md`](./PC.md), [`playstation.md`](./playstation.md), [`xbox.md`](./xbox.md), [`mac.md`](./mac.md), [`linux.md`](./linux.md), [`iOS.md`](./iOS.md), [`android.md`](./android.md), [`Virtual Reality.md`](./Virtual%20Reality.md).
 
-#### Complete Repository Markdown Inventory (`227` Verified `.md` Files)
+#### Complete Repository Markdown Inventory (`236` Verified `.md` Files)
 
-| Documentation Domain                                          | File Count | Verification Gate                                                                                                       |
-| :------------------------------------------------------------ | :--------: | :---------------------------------------------------------------------------------------------------------------------- |
-| **Primary Hub, Badges, Legal, History & Support Guides**      |    `17`    | `README.md`, `badges.md`, `LEGAL.md`, `EULA.md`, `LORE.md`, `Four-Path Cultivation.md`, `CHANGELOG.md`, etc.            |
-| **Operational Runbooks, Container Deploy, Discipline & QA**   |    `8`     | `DEPLOYMENT.md`, `discipline.md`, `deployment validation.md`, `monitoring.md`, `backups.md`, `real-world QA.md`         |
-| **GitHub Issue, PR & Code of Conduct Templates (`.github/`)** |    `17`    | `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE/*`, `CODE_OF_CONDUCT_ENFORCEMENT.md`                         |
-| **Core Repository, Onboarding & Governance**                  |    `25`    | `VISION.md` – `MEETING_NOTES.md`, `.LOCAL_DEVELOPMENT.md`, `CLI_REFERENCE.md`, `DOC_CONVENTIONS.md`                     |
-| **Architecture, Simulation, Physics, Tooling, ADRs & RFCs**   |    `34`    | `3D-open-world-mmorgp-game-international-standard.md`, `Physics.md`, `dependency.md`, `SYSTEM_DESIGN.md` – `docs/adr/*` |
-| **SRE, DevOps & Operational Discipline**                      |    `26`    | `runbooks.md` – `cost_optimization.md`                                                                                  |
-| **Quality Assurance & Verification**                          |    `15`    | `test_strategy.md` – `determinism_validation.md`, `invariants.md` (`109` invariants)                                    |
-| **Security, Threat Modeling & Cryptography**                  |    `19`    | `THREAT_MODEL.md` – `INCIDENT_FORENSICS.md`, `security_spec.md`                                                         |
-| **Cultivation, Worldbuilding, Economy & Game Systems**        |    `40`    | `COSMOLOGY.md` – `BALANCE_PHILOSOPHY.md`, `in-game- economy -marketplace.md`                                            |
-| **Legal, Compliance & Trust**                                 |    `17`    | `ACCEPTABLE_USE_POLICY.md` – `CONTENT_MODERATION_POLICY.md`                                                             |
-| **Platform Engineering, Console, Mobile & Spatial VR**        |    `9`     | `Windows.md`, `PC.md`, `playstation.md`, `xbox.md`, `mac.md`, `linux.md`, `iOS.md`, `android.md`, `Virtual Reality.md`  |
-| **Total Tracked Markdown Files in Repository**                | **`227`**  | **100% Indexed in `README.md` · Verified by `.github/workflows/docs_deploy.yml` & Prettier**                            |
+| Directory / Scope                      | File Count | Verification Gate                                                                                          |
+| :------------------------------------- | :--------: | :--------------------------------------------------------------------------------------------------------- |
+| **Root Documentation Suite**           |   `208`    | `README.md`, `AGENTS.md`, `LEGAL.md`, `EULA.md`, `LORE.md`, `DEPLOYMENT.md`, `SECURITY.md`, specs & guides |
+| **GitHub Templates (`.github/`)**      |    `17`    | `.github/ISSUE_TEMPLATE/*`, `.github/PULL_REQUEST_TEMPLATE/*`, `CODE_OF_CONDUCT_ENFORCEMENT.md`            |
+| **Canonical Docs (`docs/`)**           |    `6`     | `docs/README.md`, `docs/PRE_LAUNCH_CHECKLIST_2030.md`, `docs/release-evidence-template.md`, ADRs & RFCs    |
+| **Operational Runbooks (`runbooks/`)** |    `4`     | `cluster-rollout.md`, `certificate-troubleshooting.md`, `staging-soak.md`, `release-cut.md`                |
+| **Kubernetes Docs (`k8s/`)**           |    `1`     | `k8s/README.md`                                                                                            |
+| **Total Verified Markdown Files**      | **`236`**  | **Verified programmatically on disk · Checked by `.github/workflows/docs_deploy.yml` & Prettier**          |
 
 ---
 

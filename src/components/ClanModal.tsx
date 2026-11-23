@@ -27,6 +27,7 @@ import {
   ArrowDown,
   UserX,
   Info,
+  Handshake,
 } from 'lucide-react';
 import {
   Clan,
@@ -35,6 +36,9 @@ import {
   ClanEmblem,
   ClanBuff,
   ClanChatMessage,
+  ClanDiplomacyState,
+  ClanLeaderboardEntry,
+  ClanTreatyProposalType,
   GameResources,
   ResourceType,
 } from '../types/game';
@@ -50,14 +54,18 @@ import {
   evaluateBulkVaultDonation,
   validateBulkVaultDonationConfirmation,
 } from '../game/clanMath';
+import { DiplomacyMutationResult } from '../game/clanDiplomacy';
 import { INITIAL_CLAN_BUFFS } from '../game/initialData';
 import { sound } from '../game/audio';
 import { ClanEmblemView } from './ClanEmblemView';
 import { ClanTerritoryMap } from './ClanTerritoryMap';
+import { ClanDiplomacyTab } from './ClanDiplomacyTab';
 
 interface ClanModalProps {
   clan: Clan;
   members: ClanMember[];
+  worldClans: ClanLeaderboardEntry[];
+  diplomacy: ClanDiplomacyState;
   resources: GameResources;
   clanCoins: bigint;
   playerPower: bigint;
@@ -81,10 +89,33 @@ interface ClanModalProps {
   onDemoteMember: (memberId: string) => void;
   onKickMember: (memberId: string) => void;
   onWithdrawVaultRations: () => void;
+  onSendDiplomaticProposal: (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+    proposalType: ClanTreatyProposalType;
+    message?: string;
+    durationDays?: number;
+  }) => DiplomacyMutationResult;
+  onRespondDiplomaticProposal: (params: {
+    proposalId: string;
+    decision: 'accept' | 'decline' | 'cancel';
+  }) => DiplomacyMutationResult;
+  onDeclareClanWar: (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+    reason?: string;
+  }) => DiplomacyMutationResult;
+  onDissolveDiplomaticPact: (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+  }) => DiplomacyMutationResult;
   onClose: () => void;
 }
 
-type TabType = 'hall' | 'roles' | 'vault' | 'war' | 'chat' | 'tech' | 'store';
+type TabType = 'hall' | 'roles' | 'vault' | 'war' | 'diplomacy' | 'chat' | 'tech' | 'store';
 
 const COLOR_PALETTE = [
   '#dc2626', // Crimson Red
@@ -129,6 +160,8 @@ const BORDER_STYLES: ClanEmblem['borderStyle'][] = [
 export const ClanModal: React.FC<ClanModalProps> = ({
   clan,
   members,
+  worldClans,
+  diplomacy,
   resources,
   clanCoins,
   playerPower,
@@ -146,6 +179,10 @@ export const ClanModal: React.FC<ClanModalProps> = ({
   onDemoteMember,
   onKickMember,
   onWithdrawVaultRations,
+  onSendDiplomaticProposal,
+  onRespondDiplomaticProposal,
+  onDeclareClanWar,
+  onDissolveDiplomaticPact,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('hall');
@@ -176,7 +213,11 @@ export const ClanModal: React.FC<ClanModalProps> = ({
   // Player's member object in clan (default to Aiden Skyrender)
   const currentMember = members.find((m) => m.id === 'cm_player') || members[0];
   const playerRole: ClanRole = currentMember ? currentMember.role : 'Leader';
+  const playerName: string = currentMember ? currentMember.name : clan.leader;
   const playerPermissions = getRolePermissions(playerRole);
+  const incomingDiplomaticCount = diplomacy.proposals.filter(
+    (p) => p.direction === 'incoming'
+  ).length;
 
   // Sync draft emblem when clan changes
   useEffect(() => {
@@ -405,15 +446,21 @@ export const ClanModal: React.FC<ClanModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-800 bg-slate-950/70 px-4 sm:px-6 gap-1 sm:gap-2 pt-2 overflow-x-auto scrollbar-none">
+        <div className="shrink-0 flex border-b border-slate-800 bg-slate-950/70 px-3 sm:px-5 gap-1 pt-2 overflow-x-auto scrollbar-none">
           {[
-            { id: 'hall', label: 'Clan Hall', icon: Shield },
-            { id: 'roles', label: `Legion (${members.length})`, icon: Users },
-            { id: 'vault', label: 'Treasury & Buffs', icon: Gift },
-            { id: 'war', label: 'Wars & Rift Raid', icon: Swords },
-            { id: 'chat', label: 'Allied Dispatch', icon: MessageSquare },
-            { id: 'tech', label: 'Alliance Tech', icon: Sparkles },
-            { id: 'store', label: 'Honor Store', icon: ShoppingBag },
+            { id: 'hall', label: 'Clan Hall', icon: Shield, badge: 0 },
+            { id: 'roles', label: `Legion (${members.length})`, icon: Users, badge: 0 },
+            { id: 'vault', label: 'Treasury & Buffs', icon: Gift, badge: 0 },
+            { id: 'war', label: 'Wars & Rift Raid', icon: Swords, badge: 0 },
+            {
+              id: 'diplomacy',
+              label: 'Diplomacy',
+              icon: Handshake,
+              badge: incomingDiplomaticCount,
+            },
+            { id: 'chat', label: 'Allied Dispatch', icon: MessageSquare, badge: 0 },
+            { id: 'tech', label: 'Alliance Tech', icon: Sparkles, badge: 0 },
+            { id: 'store', label: 'Honor Store', icon: ShoppingBag, badge: 0 },
           ].map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -426,14 +473,22 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                   setActiveTab(tab.id as TabType);
                   sound.playSwing();
                 }}
-                className={`px-3 sm:px-4 py-2.5 text-xs font-bold rounded-t-xl flex items-center gap-1.5 border-t-2 shrink-0 transition-all cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-2.5 text-[11px] sm:text-xs font-bold rounded-t-xl flex items-center gap-1.5 border-t-2 shrink-0 whitespace-nowrap transition-all cursor-pointer ${
                   active
                     ? 'bg-slate-900 border-blue-400 text-blue-200 shadow-inner'
                     : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 shrink-0" />
                 {tab.label}
+                {tab.badge > 0 && (
+                  <span
+                    data-testid={`clan-tab-badge-${tab.id}`}
+                    className="ml-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/25 border border-amber-400/50 text-amber-200 text-[10px] font-mono leading-none"
+                  >
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1523,6 +1578,21 @@ export const ClanModal: React.FC<ClanModalProps> = ({
                 })}
               </div>
             </div>
+          )}
+
+          {/* TAB 8: DIPLOMACY (ALLIANCES, NAP & WAR DECLARATIONS) */}
+          {activeTab === 'diplomacy' && (
+            <ClanDiplomacyTab
+              playerClan={clan}
+              worldClans={worldClans}
+              diplomacy={diplomacy}
+              playerRole={playerRole}
+              playerName={playerName}
+              onSendProposal={onSendDiplomaticProposal}
+              onRespondProposal={onRespondDiplomaticProposal}
+              onDeclareWar={onDeclareClanWar}
+              onDissolvePact={onDissolveDiplomaticPact}
+            />
           )}
         </div>
 

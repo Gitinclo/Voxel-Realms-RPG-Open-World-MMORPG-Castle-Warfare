@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
+  DEFAULT_EXPECTED_WORLD_CHUNKS,
   HIGH_END_PC_MAC_CONTINENTAL_EXPANSION_TABLE,
   INTERNATIONAL_MMORPG_BENCHMARK_TABLE,
   INTERNATIONAL_MMORPG_PILLARS,
@@ -20,6 +21,7 @@ import {
   enableOpenWorldMeshBVH,
   evaluateChunkBoundaryProximity,
   evaluateInternationalMmorpgStandardCompliance,
+  evaluateWorldMapStreamingProgress,
   rebaseFloatingOriginCoord,
   resolvePlayerCitadelCollisionCannon,
   resolveThreeDimensionalObjectCollision,
@@ -372,4 +374,53 @@ test('9. evaluateChunkBoundaryProximity triggers visual warning, screen-shake, a
   assert.equal(nearOuterEast.approachingDirection, 'East');
   assert.equal(nearOuterEast.targetChunkKey, '1,0');
   assert.ok(nearOuterEast.shakeIntensity > 0.25);
+});
+
+test('10. evaluateWorldMapStreamingProgress computes bounded percentages, status labels, and expansion overflow', () => {
+  assert.equal(DEFAULT_EXPECTED_WORLD_CHUNKS, 25);
+
+  const initial = evaluateWorldMapStreamingProgress({ streamedChunkCount: 9 });
+  assert.equal(initial.clampedStreamedChunks, 9);
+  assert.equal(initial.totalExpectedChunks, 25);
+  assert.equal(initial.remainingChunks, 16);
+  assert.equal(initial.progressPercent, 36);
+  assert.equal(initial.isComplete, false);
+  assert.equal(initial.statusLabel, 'World Map');
+
+  const nearEdge = evaluateWorldMapStreamingProgress({
+    streamedChunkCount: 12,
+    isNearChunkEdge: true,
+  });
+  assert.equal(nearEdge.progressPercent, 48);
+  assert.equal(nearEdge.statusLabel, 'Frontier Ready');
+
+  const activeStreaming = evaluateWorldMapStreamingProgress({
+    streamedChunkCount: 15,
+    isNearChunkEdge: true,
+    isStreamingActive: true,
+  });
+  assert.equal(activeStreaming.progressPercent, 60);
+  assert.equal(activeStreaming.statusLabel, 'Streaming Sector...');
+
+  const complete = evaluateWorldMapStreamingProgress({ streamedChunkCount: 25 });
+  assert.equal(complete.progressPercent, 100);
+  assert.equal(complete.remainingChunks, 0);
+  assert.equal(complete.isComplete, true);
+  assert.equal(complete.isExpandedBeyondRegion, false);
+  assert.equal(complete.statusLabel, 'Region Loaded');
+
+  const expanded = evaluateWorldMapStreamingProgress({ streamedChunkCount: 31 });
+  assert.equal(expanded.progressPercent, 100);
+  assert.equal(expanded.clampedStreamedChunks, 25);
+  assert.equal(expanded.isExpandedBeyondRegion, true);
+  assert.equal(expanded.expandedExtraChunks, 6);
+  assert.equal(expanded.statusLabel, 'Continental Expansion');
+
+  const guarded = evaluateWorldMapStreamingProgress({
+    streamedChunkCount: -5,
+    totalExpectedChunks: Number.NaN,
+  });
+  assert.equal(guarded.streamedChunkCount, 0);
+  assert.equal(guarded.totalExpectedChunks, DEFAULT_EXPECTED_WORLD_CHUNKS);
+  assert.equal(guarded.progressPercent, 0);
 });

@@ -384,6 +384,60 @@ export interface ClanLeaderboardEntry {
   isPlayerClan?: boolean;
 }
 
+export type ClanDiplomaticStance = 'allied' | 'nap' | 'neutral' | 'war';
+
+export type ClanTreatyProposalType = 'alliance' | 'nap' | 'peace';
+
+export interface ClanDiplomaticRelation {
+  clanId: string;
+  stance: ClanDiplomaticStance;
+  sinceTimestamp: number;
+  treatyExpiresAt?: number;
+  trustScore: number; // 0..100
+  pactTerms?: string;
+}
+
+export interface ClanDiplomaticProposal {
+  id: string;
+  targetClanId: string;
+  targetClanName: string;
+  targetClanTag: string;
+  direction: 'incoming' | 'outgoing';
+  proposalType: ClanTreatyProposalType;
+  proposedBy: string;
+  message: string;
+  createdAt: number;
+  durationDays?: number;
+}
+
+export type ClanDiplomaticLogAction =
+  | 'alliance_formed'
+  | 'alliance_broken'
+  | 'nap_signed'
+  | 'nap_broken'
+  | 'war_declared'
+  | 'peace_signed'
+  | 'proposal_sent'
+  | 'proposal_declined'
+  | 'proposal_cancelled';
+
+export interface ClanDiplomaticLogEntry {
+  id: string;
+  timestamp: number;
+  targetClanId: string;
+  targetClanName: string;
+  targetClanTag: string;
+  action: ClanDiplomaticLogAction;
+  actorName: string;
+  summary: string;
+}
+
+export interface ClanDiplomacyState {
+  relations: ClanDiplomaticRelation[];
+  proposals: ClanDiplomaticProposal[];
+  history: ClanDiplomaticLogEntry[];
+}
+
 export interface Clan {
   id: string;
   name: string;

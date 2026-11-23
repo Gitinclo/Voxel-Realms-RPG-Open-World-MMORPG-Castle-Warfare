@@ -23,11 +23,11 @@ build:
 format:
     npm run format
 
-# Run full 6-stage validation gate (lockfile:verify + tsc + firestore eslint + prettier + 258 tests + vite build)
+# Run full 6-stage validation gate (lockfile:verify + tsc + firestore eslint + prettier + 264 tests + vite build)
 validate:
     npm run validate
 
-# Run all 258 TypeScript & Firestore security rule tests (49 test files)
+# Run all 264 TypeScript & Firestore security rule tests (50 test files)
 test:
     npm test
 

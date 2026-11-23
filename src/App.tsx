@@ -15,7 +15,9 @@ import {
   ClanEmblem,
   ClanBuff,
   ClanChatMessage,
+  ClanDiplomacyState,
   ClanLeaderboardEntry,
+  ClanTreatyProposalType,
   GameResources,
   Hero,
   LeaderboardEntry,
@@ -51,6 +53,13 @@ import {
   MAX_CASTLE_LEVEL,
 } from './game/math';
 import { calculateOutpostAssault } from './game/clanMath';
+import {
+  buildInitialDiplomacyState,
+  declareClanWar,
+  dissolveDiplomaticPact,
+  respondToDiplomaticProposal,
+  sendDiplomaticProposal,
+} from './game/clanDiplomacy';
 import { applyTroopPromotion } from './game/troopTraining';
 import { applySkinToHero, HERO_SKIN_CATALOG, HeroSkinId } from './game/heroSkins';
 import { sound } from './game/audio';
@@ -160,7 +169,11 @@ const GmailModal = lazy(MODAL_LOADERS.gmail);
 const EulaModal = lazy(MODAL_LOADERS.eula);
 const MarketplaceModal = lazy(MODAL_LOADERS.marketplace);
 import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
-import { evaluateChunkBoundaryProximity } from './game/openWorld3DEngine';
+import {
+  DEFAULT_EXPECTED_WORLD_CHUNKS,
+  evaluateChunkBoundaryProximity,
+  evaluateWorldMapStreamingProgress,
+} from './game/openWorld3DEngine';
 import { calculateVeteranScrollBonuses } from './game/dailyLogin';
 import { applyVipDiscountToCosts, checkVipFeatureAccess } from './game/vipSubscription';
 import { tickWorldAI, generateRadiantQuestForNPC } from './game/worldAI';
@@ -320,6 +333,12 @@ export default function App() {
   const [clanChat, setClanChat] = useState<ClanChatMessage[]>(INITIAL_CLAN_CHAT);
   const [clanLeaderboard, setClanLeaderboard] =
     useState<ClanLeaderboardEntry[]>(INITIAL_CLAN_LEADERBOARD);
+  const [clanDiplomacy, setClanDiplomacy] = useState<ClanDiplomacyState>(() =>
+    buildInitialDiplomacyState(
+      INITIAL_CLAN_LEADERBOARD,
+      INITIAL_CLAN.activeWar?.opponentClan.id ?? 'clan_chronos'
+    )
+  );
   const [monsters, setMonsters] = useState<MonsterTarget[]>(INITIAL_MONSTERS);
   const [resourceNodes, setResourceNodes] = useState<ResourceNode[]>(INITIAL_RESOURCE_NODES);
   const [npcs, setNpcs] = useState<NPC[]>(INITIAL_NPCS);
@@ -333,6 +352,11 @@ export default function App() {
   });
   const [fetchedBoundaryKeys, setFetchedBoundaryKeys] = useState<string[]>([]);
   const [streamedChunkCount, setStreamedChunkCount] = useState<number>(9);
+  const [isStreamingWorldChunks, setIsStreamingWorldChunks] = useState<boolean>(false);
+  const streamedChunkKeysRef = useRef<Set<string>>(
+    new Set(['-1,-1', '0,-1', '1,-1', '-1,0', '0,0', '1,0', '-1,1', '0,1', '1,1'])
+  );
+  const chunkStreamTimerRef = useRef<number | null>(null);
   const [aiLogs, setAiLogs] = useState<WorldAIEventLog[]>([
     {
       id: 'ai_init_1',
@@ -1234,6 +1258,110 @@ export default function App() {
     setToastMessage('🎁 Claimed Lord Daily Rations: +100K Wood, +80K Steel, +120K Grain, +200 💎!');
   };
 
+  // Clan Diplomacy Handlers (Alliances, NAPs, War Declarations & Peace Treaties)
+  const getCurrentClanActor = () => {
+    const member = clanMembers.find((m) => m.id === 'cm_player') || clanMembers[0];
+    return {
+      actorName: member ? member.name : clan.leader,
+      actorRole: (member ? member.role : 'Leader') as ClanRole,
+    };
+  };
+
+  const handleSendDiplomaticProposal = (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+    proposalType: ClanTreatyProposalType;
+    message?: string;
+    durationDays?: number;
+  }) => {
+    const { actorName, actorRole } = getCurrentClanActor();
+    const res = sendDiplomaticProposal(clanDiplomacy, {
+      ...params,
+      actorName,
+      actorRole,
+    });
+    if (res.ok) {
+      setClanDiplomacy(res.nextState);
+      if (res.systemNotice) {
+        handleSendClanChat(res.systemNotice, true, res.chatTag || 'DIPLOMACY');
+        setToastMessage(`📜 ${res.systemNotice}`);
+      }
+    } else if (res.error) {
+      setToastMessage(`⚠️ ${res.error}`);
+    }
+    return res;
+  };
+
+  const handleRespondDiplomaticProposal = (params: {
+    proposalId: string;
+    decision: 'accept' | 'decline' | 'cancel';
+  }) => {
+    const { actorName, actorRole } = getCurrentClanActor();
+    const res = respondToDiplomaticProposal(clanDiplomacy, {
+      ...params,
+      actorName,
+      actorRole,
+    });
+    if (res.ok) {
+      setClanDiplomacy(res.nextState);
+      if (res.systemNotice) {
+        handleSendClanChat(res.systemNotice, true, res.chatTag || 'DIPLOMACY');
+        setToastMessage(`🤝 ${res.systemNotice}`);
+      }
+    } else if (res.error) {
+      setToastMessage(`⚠️ ${res.error}`);
+    }
+    return res;
+  };
+
+  const handleDeclareClanWar = (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+    reason?: string;
+  }) => {
+    const { actorName, actorRole } = getCurrentClanActor();
+    const res = declareClanWar(clanDiplomacy, {
+      ...params,
+      actorName,
+      actorRole,
+    });
+    if (res.ok) {
+      setClanDiplomacy(res.nextState);
+      if (res.systemNotice) {
+        handleSendClanChat(res.systemNotice, true, res.chatTag || 'WAR DECLARED');
+        setToastMessage(res.systemNotice);
+      }
+    } else if (res.error) {
+      setToastMessage(`⚠️ ${res.error}`);
+    }
+    return res;
+  };
+
+  const handleDissolveDiplomaticPact = (params: {
+    targetClanId: string;
+    targetClanName: string;
+    targetClanTag: string;
+  }) => {
+    const { actorName, actorRole } = getCurrentClanActor();
+    const res = dissolveDiplomaticPact(clanDiplomacy, {
+      ...params,
+      actorName,
+      actorRole,
+    });
+    if (res.ok) {
+      setClanDiplomacy(res.nextState);
+      if (res.systemNotice) {
+        handleSendClanChat(res.systemNotice, true, res.chatTag || 'DIPLOMACY');
+        setToastMessage(`📜 ${res.systemNotice}`);
+      }
+    } else if (res.error) {
+      setToastMessage(`⚠️ ${res.error}`);
+    }
+    return res;
+  };
+
   // Four-Path Cultivation System Actions
   const handleMeditateQi = (path: CultivationPath, burst: bigint) => {
     const meta = CULTIVATION_PATH_META[path];
@@ -1862,10 +1990,38 @@ export default function App() {
     fetchedBoundaryKeys,
   });
 
+  const worldMapStreamingProgress = evaluateWorldMapStreamingProgress({
+    streamedChunkCount,
+    totalExpectedChunks: DEFAULT_EXPECTED_WORLD_CHUNKS,
+    isNearChunkEdge: currentBoundaryStatus.isNearChunkEdge,
+    isStreamingActive: isStreamingWorldChunks,
+  });
+
+  const triggerChunkStreamingPulse = useCallback(() => {
+    setIsStreamingWorldChunks(true);
+    if (chunkStreamTimerRef.current !== null) {
+      window.clearTimeout(chunkStreamTimerRef.current);
+    }
+    chunkStreamTimerRef.current = window.setTimeout(() => {
+      setIsStreamingWorldChunks(false);
+      chunkStreamTimerRef.current = null;
+    }, 700);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (chunkStreamTimerRef.current !== null) {
+        window.clearTimeout(chunkStreamTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleFetchNewAreaData = () => {
     const targetKey = currentBoundaryStatus.targetChunkKey;
     setFetchedBoundaryKeys((prev) => (prev.includes(targetKey) ? prev : [...prev, targetKey]));
+    streamedChunkKeysRef.current.add(targetKey);
     setStreamedChunkCount((prev) => prev + 3);
+    triggerChunkStreamingPulse();
     setToastMessage(
       `🗺️ Streamed New World Chunk Sector [${targetKey}] (${currentBoundaryStatus.approachingDirection} Frontier Stabilized)!`
     );
@@ -2150,6 +2306,12 @@ export default function App() {
             }
             return prev;
           });
+          const enteredChunkKey = `${Math.floor(x / 256)},${Math.floor(z / 256)}`;
+          if (!streamedChunkKeysRef.current.has(enteredChunkKey)) {
+            streamedChunkKeysRef.current.add(enteredChunkKey);
+            setStreamedChunkCount((prev) => prev + 1);
+            triggerChunkStreamingPulse();
+          }
           const dx = x - lastCodexEvalPosRef.current.x;
           const dz = z - lastCodexEvalPosRef.current.z;
           if (dx * dx + dz * dz >= 4) {
@@ -2352,6 +2514,86 @@ export default function App() {
         />
       )}
 
+      {/* Open-World Chunk Streaming Loading Progress Bar */}
+      {gameState === 'playing' && activeModal === 'none' && (
+        <div
+          data-testid="world-chunk-progress-container"
+          className="fixed bottom-[76px] sm:bottom-[86px] left-1/2 -translate-x-1/2 z-30 w-[184px] sm:w-72 pointer-events-none"
+        >
+          <div className="pointer-events-auto rounded-xl bg-slate-950/88 backdrop-blur-md border border-slate-700/80 shadow-xl px-2.5 sm:px-3 py-1.5 space-y-1">
+            <div className="flex items-center justify-between gap-2 text-[10px] sm:text-[11px] font-mono">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  aria-hidden="true"
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    isStreamingWorldChunks
+                      ? 'bg-amber-400 animate-pulse'
+                      : worldMapStreamingProgress.isComplete
+                        ? 'bg-emerald-400'
+                        : currentBoundaryStatus.isNearChunkEdge
+                          ? 'bg-amber-400'
+                          : 'bg-sky-400'
+                  }`}
+                />
+                <span
+                  data-testid="world-chunk-progress-label"
+                  className="text-slate-200 font-semibold truncate"
+                >
+                  {worldMapStreamingProgress.statusLabel}
+                </span>
+                <span className="text-slate-500 hidden sm:inline shrink-0">
+                  C({currentBoundaryStatus.chunkX},{currentBoundaryStatus.chunkZ})
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span data-testid="world-chunk-progress-count" className="text-slate-300">
+                  {worldMapStreamingProgress.clampedStreamedChunks}/
+                  {worldMapStreamingProgress.totalExpectedChunks}
+                  {worldMapStreamingProgress.isExpandedBeyondRegion
+                    ? ` (+${worldMapStreamingProgress.expandedExtraChunks})`
+                    : ''}
+                </span>
+                <span
+                  data-testid="world-chunk-progress-percent"
+                  className={`font-bold ${
+                    worldMapStreamingProgress.isComplete
+                      ? 'text-emerald-300'
+                      : isStreamingWorldChunks || currentBoundaryStatus.isNearChunkEdge
+                        ? 'text-amber-300'
+                        : 'text-sky-300'
+                  }`}
+                >
+                  {worldMapStreamingProgress.progressPercent}%
+                </span>
+              </div>
+            </div>
+
+            <div
+              role="progressbar"
+              data-testid="world-chunk-progress-bar"
+              aria-label="Open-world map chunk streaming progress"
+              aria-valuemin={0}
+              aria-valuemax={worldMapStreamingProgress.totalExpectedChunks}
+              aria-valuenow={worldMapStreamingProgress.clampedStreamedChunks}
+              aria-valuetext={`${worldMapStreamingProgress.clampedStreamedChunks} of ${worldMapStreamingProgress.totalExpectedChunks} chunks streamed (${worldMapStreamingProgress.progressPercent}%)`}
+              className="h-1.5 w-full rounded-full bg-slate-800/95 border border-slate-700/60 overflow-hidden"
+            >
+              <div
+                data-testid="world-chunk-progress-fill"
+                className={`h-full rounded-full transition-all duration-300 ${
+                  worldMapStreamingProgress.isComplete
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-300'
+                    : isStreamingWorldChunks || currentBoundaryStatus.isNearChunkEdge
+                      ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300'
+                      : 'bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400'
+                }`}
+                style={{ width: `${worldMapStreamingProgress.progressPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       <Suspense fallback={null}>
         {activeModal === 'castle' && (
@@ -2453,6 +2695,8 @@ export default function App() {
           <ClanModal
             clan={clan}
             members={clanMembers}
+            worldClans={clanLeaderboard}
+            diplomacy={clanDiplomacy}
             resources={resources}
             clanCoins={clanCoins}
             playerPower={playerPower}
@@ -2470,6 +2714,10 @@ export default function App() {
             onDemoteMember={handleDemoteMember}
             onKickMember={handleKickMember}
             onWithdrawVaultRations={handleWithdrawVaultRations}
+            onSendDiplomaticProposal={handleSendDiplomaticProposal}
+            onRespondDiplomaticProposal={handleRespondDiplomaticProposal}
+            onDeclareClanWar={handleDeclareClanWar}
+            onDissolveDiplomaticPact={handleDissolveDiplomaticPact}
             onClose={() => setActiveModal('none')}
           />
         )}
