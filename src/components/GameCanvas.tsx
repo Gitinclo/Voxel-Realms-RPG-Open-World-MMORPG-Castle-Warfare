@@ -163,6 +163,19 @@ interface GameCanvasProps {
   onShiftClickTeleport?: (x: number, y: number, z: number) => void;
   fetchedBoundaryKeys?: readonly string[];
   onCameraYawChange?: (yawRad: number) => void;
+  isPaused?: boolean;
+  canSprint?: boolean;
+  onSprintChange?: (isSprinting: boolean) => void;
+  onCombatHotkey?: (action: 'strike' | 'power' | 'heal' | 'dash' | 'domain') => void;
+  onTogglePause?: () => void;
+  combatVfxCommand?: {
+    seq: number;
+    kind: 'strike' | 'power' | 'heal' | 'dash' | 'domain';
+    colorHex: number;
+    shakeIntensity: number;
+  } | null;
+  domainVisual?: { active: boolean; radiusMeters: number };
+  zoneFogTintHex?: number;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({
@@ -196,6 +209,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onShiftClickTeleport,
   fetchedBoundaryKeys = [],
   onCameraYawChange,
+  isPaused = false,
+  canSprint = true,
+  onSprintChange,
+  onCombatHotkey,
+  onTogglePause,
+  combatVfxCommand = null,
+  domainVisual = { active: false, radiusMeters: 12 },
+  zoneFogTintHex,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -231,6 +252,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onShiftClickTeleport,
     fetchedBoundaryKeys,
     onCameraYawChange,
+    isPaused,
+    canSprint,
+    onSprintChange,
+    onCombatHotkey,
+    onTogglePause,
+    combatVfxCommand,
+    domainVisual,
+    zoneFogTintHex,
   });
 
   useEffect(() => {
@@ -265,6 +294,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       onShiftClickTeleport,
       fetchedBoundaryKeys,
       onCameraYawChange,
+      isPaused,
+      canSprint,
+      onSprintChange,
+      onCombatHotkey,
+      onTogglePause,
+      combatVfxCommand,
+      domainVisual,
+      zoneFogTintHex,
     };
   }, [
     castleLevel,
@@ -297,6 +334,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     onShiftClickTeleport,
     fetchedBoundaryKeys,
     onCameraYawChange,
+    isPaused,
+    canSprint,
+    onSprintChange,
+    onCombatHotkey,
+    onTogglePause,
+    combatVfxCommand,
+    domainVisual,
+    zoneFogTintHex,
   ]);
 
   useEffect(() => {
@@ -645,9 +690,110 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     playerMesh.position.set(0, initialY, 18);
     scene.add(playerMesh);
 
+    // Zero-GC 600-Cap Pooled Combat Particle Ring Buffer (sparks, frost, embers, dash, domain)
+    const MAX_COMBAT_PARTICLES = 600;
+    const combatPartPos = new Float32Array(MAX_COMBAT_PARTICLES * 3);
+    const combatPartCol = new Float32Array(MAX_COMBAT_PARTICLES * 3);
+    const combatPartVel = new Float32Array(MAX_COMBAT_PARTICLES * 3);
+    const combatPartLife = new Float32Array(MAX_COMBAT_PARTICLES);
+    const combatPartMaxLife = new Float32Array(MAX_COMBAT_PARTICLES);
+    for (let i = 0; i < MAX_COMBAT_PARTICLES; i++) {
+      combatPartPos[i * 3 + 1] = -999;
+    }
+    const combatPartGeo = new THREE.BufferGeometry();
+    combatPartGeo.setAttribute('position', new THREE.BufferAttribute(combatPartPos, 3));
+    combatPartGeo.setAttribute('color', new THREE.BufferAttribute(combatPartCol, 3));
+    const combatPartMat = new THREE.PointsMaterial({
+      size: 0.42,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const combatParticles = new THREE.Points(combatPartGeo, combatPartMat);
+    combatParticles.frustumCulled = false;
+    scene.add(combatParticles);
+    let combatParticleCursor = 0;
+    const scratchBurstColor = new THREE.Color();
+    const zoneFogColor = new THREE.Color();
+
+    const spawnCombatBurst = (
+      ox: number,
+      oy: number,
+      oz: number,
+      count: number,
+      colorHex: number,
+      speed: number,
+      spreadY: number
+    ) => {
+      scratchBurstColor.setHex(colorHex);
+      for (let n = 0; n < count; n++) {
+        const idx = combatParticleCursor;
+        combatParticleCursor = (combatParticleCursor + 1) % MAX_COMBAT_PARTICLES;
+        const i3 = idx * 3;
+        const angle = (n / Math.max(1, count)) * Math.PI * 2 + Math.random() * 0.5;
+        const rad = 0.4 + Math.random() * 1.1;
+        combatPartPos[i3] = ox + Math.cos(angle) * rad;
+        combatPartPos[i3 + 1] = oy + 0.6 + Math.random() * spreadY;
+        combatPartPos[i3 + 2] = oz + Math.sin(angle) * rad;
+
+        const spd = speed * (0.45 + Math.random() * 0.8);
+        combatPartVel[i3] = Math.cos(angle) * spd;
+        combatPartVel[i3 + 1] = 2.2 + Math.random() * (speed * 0.65);
+        combatPartVel[i3 + 2] = Math.sin(angle) * spd;
+
+        combatPartCol[i3] = scratchBurstColor.r;
+        combatPartCol[i3 + 1] = scratchBurstColor.g;
+        combatPartCol[i3 + 2] = scratchBurstColor.b;
+
+        const life = 0.42 + Math.random() * 0.45;
+        combatPartLife[idx] = life;
+        combatPartMaxLife[idx] = life;
+      }
+      combatPartGeo.attributes.position.needsUpdate = true;
+      combatPartGeo.attributes.color.needsUpdate = true;
+    };
+
+    // 3D Ascendant Domain Expanding Aura Ring & Arcane Torus
+    const domainAuraGroup = new THREE.Group();
+    domainAuraGroup.name = 'AscendantDomainAura';
+    const domainDiscGeo = new THREE.RingGeometry(0.78, 1.0, 48);
+    const domainDiscMat = new THREE.MeshBasicMaterial({
+      color: 0xa855f7,
+      transparent: true,
+      opacity: 0.48,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const domainDiscMesh = new THREE.Mesh(domainDiscGeo, domainDiscMat);
+    domainDiscMesh.rotation.x = -Math.PI / 2;
+    domainAuraGroup.add(domainDiscMesh);
+
+    const domainTorusGeo = new THREE.TorusGeometry(0.95, 0.035, 10, 48);
+    const domainTorusMat = new THREE.MeshBasicMaterial({
+      color: 0xe879f9,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+    });
+    const domainTorusMesh = new THREE.Mesh(domainTorusGeo, domainTorusMat);
+    domainTorusMesh.rotation.x = Math.PI / 2;
+    domainTorusMesh.position.y = 0.25;
+    domainAuraGroup.add(domainTorusMesh);
+    domainAuraGroup.visible = false;
+    scene.add(domainAuraGroup);
+
     // Player position and movement physics
     const playerPos = new THREE.Vector3(0, initialY, 18);
     const keysPressed: Record<string, boolean> = {};
+    const clearAllKeys = () => {
+      for (const k of Object.keys(keysPressed)) {
+        keysPressed[k] = false;
+      }
+      isDragging = false;
+    };
 
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -660,42 +806,78 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (isInputFocused) return;
 
       const lower = e.key.toLowerCase();
+      if (lower === 'escape' && !e.repeat) {
+        clearAllKeys();
+        propsRef.current.onTogglePause?.();
+        return;
+      }
+      if (propsRef.current.isPaused) return;
+
       if (lower === 'f' && !e.repeat) {
         propsRef.current.onToggleFlight?.();
       }
       if (lower === 't' && !e.repeat) {
         propsRef.current.onForwardBlink?.(playerMesh.rotation.y);
       }
+      if (!e.repeat) {
+        if (lower === 'z') propsRef.current.onCombatHotkey?.('strike');
+        else if (lower === 'x') propsRef.current.onCombatHotkey?.('power');
+        else if (lower === 'c') propsRef.current.onCombatHotkey?.('heal');
+        else if (lower === 'control') propsRef.current.onCombatHotkey?.('dash');
+        else if (lower === 'g') propsRef.current.onCombatHotkey?.('domain');
+      }
       keysPressed[lower] = true;
     };
     const onKeyUp = (e: KeyboardEvent) => {
       keysPressed[e.key.toLowerCase()] = false;
     };
+    const onWindowBlur = () => {
+      clearAllKeys();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) clearAllKeys();
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onWindowBlur);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
-    // Mouse drag for camera orbit
+    // Mouse drag for camera yaw + pitch orbit & scroll-wheel zoom
     let isDragging = false;
     let prevMouseX = 0;
+    let prevMouseY = 0;
     let cameraOrbitAngle = 0;
+    let cameraPitchAngle = 0.37; // radians (~21 deg horizon elevation)
+    let targetZoomDist = 17.5;
+    let currentZoomDist = 17.5;
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
       prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
     };
     const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+      if (!isDragging || propsRef.current.isPaused) return;
       const dx = e.clientX - prevMouseX;
+      const dy = e.clientY - prevMouseY;
       prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
       cameraOrbitAngle -= dx * 0.006;
+      cameraPitchAngle = Math.max(0.18, Math.min(0.92, cameraPitchAngle + dy * 0.0045));
       propsRef.current.onCameraYawChange?.(cameraOrbitAngle);
     };
     const onMouseUp = () => {
       isDragging = false;
     };
+    const onWheel = (e: WheelEvent) => {
+      if (propsRef.current.isPaused) return;
+      e.preventDefault();
+      targetZoomDist = Math.max(9.0, Math.min(34.0, targetZoomDist + e.deltaY * 0.012));
+    };
 
     const dom = renderer.domElement;
     dom.addEventListener('mousedown', onMouseDown);
+    dom.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
@@ -802,12 +984,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     let lastPipelineSignature = '';
     let lastHandledTeleportSeq = 0;
+    let lastHandledCombatVfxSeq = 0;
     let teleportFlashTimer = 0;
+    let cameraTrauma = 0;
+    let hitstopTimer = 0;
+    let lastSprintReported = false;
+    let domainVisualScale = 1;
 
     const tick = () => {
       const now = performance.now();
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      const rawDt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
+
+      // Pause freezes simulation smoothly while keeping rendered frame live
+      if (propsRef.current.isPaused) {
+        if (
+          !isSoftwareGl &&
+          composer &&
+          getPostProcessProfile(propsRef.current.graphicsQuality || 'ultra').enableComposer
+        ) {
+          composer.render();
+        } else {
+          renderer.render(scene, camera);
+        }
+        if (isSoftwareGl) {
+          afterDraw(tick);
+        } else {
+          animId = requestAnimationFrame(tick);
+        }
+        return;
+      }
+
+      if (hitstopTimer > 0) {
+        hitstopTimer = Math.max(0, hitstopTimer - rawDt);
+      }
+      const dt = hitstopTimer > 0 ? rawDt * 0.15 : rawDt;
 
       const quality = propsRef.current.graphicsQuality || 'ultra';
       const platform = propsRef.current.targetPlatform || 'pc_console';
@@ -929,6 +1140,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       bgColor.setHex(sunY < 0 ? 0x090d16 : weatherCfg.skyColorHex);
       if (scene.fog) {
         scene.fog.color.setHex(skyParams.fogHex);
+        if (typeof propsRef.current.zoneFogTintHex === 'number') {
+          zoneFogColor.setHex(propsRef.current.zoneFogTintHex);
+          scene.fog.color.lerp(zoneFogColor, 0.24);
+        }
         (scene.fog as THREE.FogExp2).density = lightingStrategy.enableVolumetricFog
           ? skyParams.fogDensity
           : skyParams.fogDensity * 0.45;
@@ -1103,6 +1318,88 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         propsRef.current.onFlightAltitudeChange?.(Number(kinematics.nextTargetAltitude.toFixed(1)));
       }
 
+      // Process queued Action Combat VFX bursts, dash lunge, camera trauma & hitstop
+      const vfxCmd = propsRef.current.combatVfxCommand;
+      if (vfxCmd && vfxCmd.seq !== lastHandledCombatVfxSeq) {
+        lastHandledCombatVfxSeq = vfxCmd.seq;
+        cameraTrauma = Math.min(1.0, cameraTrauma + vfxCmd.shakeIntensity);
+        if (vfxCmd.kind === 'strike') {
+          spawnCombatBurst(
+            playerPos.x,
+            playerPos.y + 1.0,
+            playerPos.z,
+            26,
+            vfxCmd.colorHex,
+            8.5,
+            1.0
+          );
+          hitstopTimer = 0.032;
+        } else if (vfxCmd.kind === 'power') {
+          spawnCombatBurst(
+            playerPos.x,
+            playerPos.y + 1.1,
+            playerPos.z,
+            64,
+            vfxCmd.colorHex,
+            13.5,
+            1.4
+          );
+          hitstopTimer = 0.045;
+        } else if (vfxCmd.kind === 'heal') {
+          spawnCombatBurst(
+            playerPos.x,
+            playerPos.y + 0.5,
+            playerPos.z,
+            36,
+            vfxCmd.colorHex,
+            4.2,
+            2.2
+          );
+        } else if (vfxCmd.kind === 'dash') {
+          spawnCombatBurst(
+            playerPos.x,
+            playerPos.y + 0.7,
+            playerPos.z,
+            34,
+            vfxCmd.colorHex,
+            7.5,
+            0.8
+          );
+          const dashStep = 4.2;
+          playerPos.x += Math.sin(playerMesh.rotation.y) * dashStep;
+          playerPos.z += Math.cos(playerMesh.rotation.y) * dashStep;
+          propsRef.current.onPlayerPositionChange?.(playerPos.x, playerPos.z);
+        } else if (vfxCmd.kind === 'domain') {
+          spawnCombatBurst(
+            playerPos.x,
+            playerPos.y + 1.2,
+            playerPos.z,
+            110,
+            vfxCmd.colorHex,
+            18.0,
+            2.0
+          );
+          hitstopTimer = 0.055;
+        }
+      }
+
+      // Ground sprint (Shift while grounded & moving with stamina available)
+      const isAirborneFlight = Boolean(propsRef.current.isFlying && activeFlightPerm.allowed);
+      const isTryingGroundSprint =
+        !isAirborneFlight &&
+        Boolean(keysPressed['shift']) &&
+        (moveX !== 0 || moveZ !== 0) &&
+        Boolean(propsRef.current.canSprint);
+      if (isTryingGroundSprint !== lastSprintReported) {
+        lastSprintReported = isTryingGroundSprint;
+        propsRef.current.onSprintChange?.(isTryingGroundSprint);
+      }
+      if (isTryingGroundSprint) {
+        const sprintBoost = 0.45;
+        playerPos.x += kinematics.worldMoveX * sprintBoost;
+        playerPos.z += kinematics.worldMoveZ * sprintBoost;
+      }
+
       // Only enforce ground Citadel keep wall collision when below Citadel Wall Bypass Altitude
       if (!kinematics.bypassesCitadelWalls) {
         const resolvedKeepCollision = resolvePlayerCitadelCollisionCannon({
@@ -1122,6 +1419,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         if (propsRef.current.onPlayerPositionChange) {
           propsRef.current.onPlayerPositionChange(playerPos.x, playerPos.z);
         }
+      }
+
+      // Update pooled combat particles (zero allocations)
+      let hasAliveCombatPart = false;
+      for (let i = 0; i < MAX_COMBAT_PARTICLES; i++) {
+        if (combatPartLife[i] > 0) {
+          hasAliveCombatPart = true;
+          combatPartLife[i] -= dt;
+          const i3 = i * 3;
+          if (combatPartLife[i] <= 0) {
+            combatPartPos[i3 + 1] = -999;
+          } else {
+            combatPartPos[i3] += combatPartVel[i3] * dt;
+            combatPartPos[i3 + 1] += combatPartVel[i3 + 1] * dt;
+            combatPartPos[i3 + 2] += combatPartVel[i3 + 2] * dt;
+            combatPartVel[i3 + 1] -= 9.5 * dt;
+          }
+        }
+      }
+      if (hasAliveCombatPart) {
+        combatPartGeo.attributes.position.needsUpdate = true;
+      }
+
+      // Update 3D Ascendant Domain Expanding Aura Ring
+      const domVis = propsRef.current.domainVisual;
+      if (domVis?.active) {
+        domainAuraGroup.visible = true;
+        const targetRadius = Math.max(4, Math.min(28, domVis.radiusMeters * 0.65));
+        domainVisualScale += (targetRadius - domainVisualScale) * Math.min(1, dt * 6);
+        domainAuraGroup.position.set(playerPos.x, playerPos.y + 0.16, playerPos.z);
+        domainAuraGroup.scale.set(domainVisualScale, 1, domainVisualScale);
+        domainAuraGroup.rotation.y += dt * 1.35;
+      } else {
+        domainAuraGroup.visible = false;
+        domainVisualScale = 1;
       }
 
       const hoverBob = kinematics.isAirborne
@@ -1219,11 +1551,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         divineHalos.rotation.z += dt * 1.4;
       }
 
-      // 3. Smooth Damped Third-Person Horizon-Framing Camera (Genshin Impact / GTA V Vista + Aerial Flight Tracking)
-      const camDist = kinematics.isAirborne ? 19.5 : 17.5;
-      const camHeight = 6.8;
-      const targetCamX = playerPos.x + Math.sin(cameraOrbitAngle) * camDist;
-      const targetCamZ = playerPos.z + Math.cos(cameraOrbitAngle) * camDist;
+      // 3. Smooth Damped Third-Person Camera with Scroll Zoom, Pitch Orbit & Trauma Shake
+      const baseZoom = kinematics.isAirborne ? Math.max(targetZoomDist, 19.5) : targetZoomDist;
+      currentZoomDist += (baseZoom - currentZoomDist) * (1 - Math.exp(-8 * dt));
+      const horizDist = currentZoomDist * Math.cos(cameraPitchAngle);
+      const camHeight = Math.max(3.2, currentZoomDist * Math.sin(cameraPitchAngle) + 1.2);
+      const targetCamX = playerPos.x + Math.sin(cameraOrbitAngle) * horizDist;
+      const targetCamZ = playerPos.z + Math.cos(cameraOrbitAngle) * horizDist;
       const targetCamY = playerPos.y + camHeight;
 
       const boundaryShake = evaluateChunkBoundaryProximity({
@@ -1233,15 +1567,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         timeSeconds: now * 0.001,
       });
 
+      cameraTrauma = Math.max(0, cameraTrauma - dt * 2.4);
+      const shakePower = cameraTrauma * cameraTrauma * 0.65;
+      const traumaX = shakePower > 0.001 ? Math.sin(now * 0.065) * shakePower : 0;
+      const traumaY = shakePower > 0.001 ? Math.cos(now * 0.083) * shakePower : 0;
+
       camera.position.x +=
-        (targetCamX - camera.position.x) * (1 - Math.exp(-6 * dt)) + boundaryShake.shakeOffsetX;
+        (targetCamX - camera.position.x) * (1 - Math.exp(-6 * dt)) +
+        boundaryShake.shakeOffsetX +
+        traumaX;
       camera.position.y +=
-        (targetCamY - camera.position.y) * (1 - Math.exp(-6 * dt)) + boundaryShake.shakeOffsetY;
+        (targetCamY - camera.position.y) * (1 - Math.exp(-6 * dt)) +
+        boundaryShake.shakeOffsetY +
+        traumaY;
       camera.position.z += (targetCamZ - camera.position.z) * (1 - Math.exp(-6 * dt));
 
       const lookAheadX = playerPos.x - Math.sin(cameraOrbitAngle) * 8;
       const lookAheadZ = playerPos.z - Math.cos(cameraOrbitAngle) * 8;
-      camera.lookAt(lookAheadX, playerPos.y + 4.8, lookAheadZ);
+      camera.lookAt(lookAheadX, playerPos.y + 4.4, lookAheadZ);
 
       // 4. Animate World Elements (Castle spire & rings, Resource nodes, Monsters & NPCs)
       const spire = castleMesh.getObjectByName('CastleSpire');
@@ -1355,12 +1698,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onWindowBlur);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       dom.removeEventListener('mousedown', onMouseDown);
+      dom.removeEventListener('wheel', onWheel);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       dom.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('resize', onResize);
       resizeObserver?.disconnect();
+      combatPartGeo.dispose();
+      combatPartMat.dispose();
+      domainDiscGeo.dispose();
+      domainDiscMat.dispose();
+      domainTorusGeo.dispose();
+      domainTorusMat.dispose();
       if (composer) {
         composer.dispose();
       }

@@ -36,6 +36,7 @@ import {
   AlertTriangle,
   DownloadCloud,
   ClipboardList,
+  Pause,
 } from 'lucide-react';
 import { CharacterAppearance, GameResources, ResourceNode } from '../types/game';
 import { WeatherType, WEATHER_CONFIGS } from '../game/weather';
@@ -118,6 +119,9 @@ interface GameHUDProps {
   isMarketplaceOpen?: boolean;
   onToggleMarketplace?: () => void;
   onOpenMarketplace?: () => void;
+  activeZoneName?: string;
+  activeZoneSafe?: boolean;
+  onOpenPause?: () => void;
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -191,6 +195,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   isMarketplaceOpen = false,
   onToggleMarketplace,
   onOpenMarketplace,
+  activeZoneName = 'Solara Citadel',
+  activeZoneSafe = true,
+  onOpenPause,
 }) => {
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
   const [isInventoryDrawerOpen, setIsInventoryDrawerOpen] = useState(false);
@@ -748,14 +755,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           className="pointer-events-auto relative flex items-center justify-between sm:justify-end gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-2xl bg-slate-950/92 border border-slate-800 shadow-xl w-full sm:w-auto max-w-full self-start lg:self-auto"
           data-testid="hud-merged-status-bar"
         >
-          {/* Compact Zone Label */}
+          {/* Compact Dynamic Zone Label */}
           <div
-            className={`flex items-center gap-1 pr-1.5 border-r border-slate-800 ${hc.statusZoneText} font-cinzel text-emerald-300 whitespace-nowrap min-w-0`}
+            className={`flex items-center gap-1 pr-1.5 border-r border-slate-800 ${hc.statusZoneText} font-cinzel ${
+              activeZoneSafe ? 'text-emerald-300' : 'text-amber-200'
+            } whitespace-nowrap min-w-0`}
           >
-            <span className="hidden sm:inline">Solara</span>
-            <span>Citadel</span>
+            <span className="truncate max-w-[92px] sm:max-w-[140px]">{activeZoneName}</span>
             <span className="text-slate-500">·</span>
-            <span className="text-amber-400 font-mono text-[10px]">Safe</span>
+            <span
+              className={`font-mono text-[10px] ${activeZoneSafe ? 'text-amber-400' : 'text-rose-400'}`}
+            >
+              {activeZoneSafe ? 'Safe' : 'Wild'}
+            </span>
           </div>
 
           {/* Weather Indicator */}
@@ -808,6 +820,23 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               <Volume2 className={`${hc.statusIcon} text-emerald-400`} />
             )}
           </button>
+
+          {/* Pause & Ascendant Arsenal Button */}
+          {onOpenPause && (
+            <button
+              type="button"
+              data-testid="hud-pause-btn"
+              aria-label="Pause Realm and Open Ascendant Arsenal"
+              onClick={() => {
+                sound.playSwing();
+                onOpenPause();
+              }}
+              className={`${hc.statusIconButton} rounded-lg bg-slate-900/90 border border-purple-500/45 hover:bg-purple-950/70 text-purple-200 cursor-pointer shrink-0`}
+              title="Pause Realm, Switch Class, Gold Provisions & Causality v2 [Esc]"
+            >
+              <Pause className={hc.statusIcon} />
+            </button>
+          )}
 
           {/* Collapsible Technical Metrics & Engine Settings Toggle */}
           <button

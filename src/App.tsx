@@ -169,6 +169,29 @@ const GmailModal = lazy(MODAL_LOADERS.gmail);
 const EulaModal = lazy(MODAL_LOADERS.eula);
 const MarketplaceModal = lazy(MODAL_LOADERS.marketplace);
 import { ChunkGridDebugOverlay } from './components/ChunkGridDebugOverlay';
+import { ActionCombatOverlay, ActionCombatTrigger } from './components/ActionCombatOverlay';
+import { PauseMenuModal } from './components/PauseMenuModal';
+import {
+  ACTION_CLASSES,
+  ActionClassId,
+  ActionCombatState,
+  FieldProvisionId,
+  computeCombatHit,
+  computeNonDestructiveWaveTopUp,
+  createInitialActionCombatState,
+  detectWorldZone,
+  getDomainSpec,
+  purchaseFieldProvision,
+  recordMonsterDefeat,
+  stepStaminaAndTimers,
+  switchActionClass,
+  triggerDash,
+} from './game/actionCombat';
+import {
+  CausalityEngineState,
+  createInitialCausalityState,
+  evaluateCausalityTick,
+} from './game/worldCausalityEngine';
 import type { BulkExchangeOffer, CurioMarketItem } from './components/MarketplaceModal';
 import {
   DEFAULT_EXPECTED_WORLD_CHUNKS,
@@ -266,7 +289,7 @@ export default function App() {
   const [isSyncingAccount, setIsSyncingAccount] = useState<boolean>(false);
 
   // Query param check for ?autostart=1
-  const [gameState, setGameState] = useState<'title' | 'playing'>(() => {
+  const [gameState, setGameState] = useState<'title' | 'playing' | 'paused'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('autostart') === '1') {
@@ -358,6 +381,30 @@ export default function App() {
   const streamedChunkKeysRef = useRef<Set<string>>(
     new Set(['-1,-1', '0,-1', '1,-1', '-1,0', '0,0', '1,0', '-1,1', '0,1', '1,1'])
   );
+
+  // Real-Time Action Combat, Ascendant Domain & Causality Engine v2 state
+  const [actionCombat, setActionCombat] = useState<ActionCombatState>(() =>
+    createInitialActionCombatState('knight')
+  );
+  const [causalityState, setCausalityState] = useState<CausalityEngineState>(() =>
+    createInitialCausalityState()
+  );
+  const [combatVfxCommand, setCombatVfxCommand] = useState<{
+    seq: number;
+    kind: ActionCombatTrigger;
+    colorHex: number;
+    shakeIntensity: number;
+  } | null>(null);
+  const combatVfxSeqRef = useRef<number>(0);
+  const isSprintingRef = useRef<boolean>(false);
+  const waveSeedRef = useRef<number>(1);
+  const monstersRef = useRef<MonsterTarget[]>(monsters);
+  monstersRef.current = monsters;
+  const actionCombatRef = useRef<ActionCombatState>(actionCombat);
+  actionCombatRef.current = actionCombat;
+  const causalityStateRef = useRef<CausalityEngineState>(causalityState);
+  causalityStateRef.current = causalityState;
+  const timeOfDayRef = useRef<number>(10.5);
   const chunkStreamTimerRef = useRef<number | null>(null);
   const [aiLogs, setAiLogs] = useState<WorldAIEventLog[]>([
     {
@@ -646,17 +693,318 @@ export default function App() {
     }
   }, [gameState]);
 
-  // Day & Night Simulation Clock (with Time Freeze from admin_console.cpp)
+  // Day & Night Simulation Clock (with Time Freeze from admin_console.cpp & Pause freeze)
   useEffect(() => {
     const timer = setInterval(() => {
-      if (isTimeFrozen) return;
+      if (isTimeFrozen || gameState === 'paused') return;
       setTimeOfDayHours((prev) => {
         const next = (prev + 0.05 * timeSpeedMultiplier) % 24;
+        timeOfDayRef.current = next;
         return next;
       });
     }, 100);
     return () => clearInterval(timer);
-  }, [timeSpeedMultiplier, isTimeFrozen]);
+  }, [timeSpeedMultiplier, isTimeFrozen, gameState]);
+
+  const activeWorldZone = detectWorldZone(hudPlayerCoords.x, hudPlayerCoords.z);
+  const activeDomainSpec = getDomainSpec(actionCombat.domainLevel);
+
+  const emitCombatVfx = useCallback(
+    (kind: ActionCombatTrigger, colorHex: number, shakeIntensity: number) => {
+      combatVfxSeqRef.current += 1;
+      setCombatVfxCommand({
+        seq: combatVfxSeqRef.current,
+        kind,
+        colorHex,
+        shakeIntensity,
+      });
+    },
+    []
+  );
+
+  // 4Hz Action Combat Timers, Ascendant Domain Pulse & Causality Engine v2 Tick
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const tickInterval = window.setInterval(() => {
+      const dtSec = 0.25;
+      const px = playerWorldPosRef.current.x;
+      const pz = playerWorldPosRef.current.z;
+      const zone = detectWorldZone(px, pz);
+      const prevCombat = actionCombatRef.current;
+
+      let nextCombat = stepStaminaAndTimers(
+        prevCombat,
+        dtSec,
+        isSprintingRef.current && prevCombat.stamina > 1,
+        zone.safe
+      );
+
+      // Active Ascendant Domain AoE Soul Devour Pulse
+      const liveMonsters = monstersRef.current;
+      let domainKills = 0;
+      if (prevCombat.domainActiveSec > 0 && liveMonsters.length > 0) {
+        const spec = getDomainSpec(prevCombat.domainLevel);
+        const pulseDmg = BigInt(Math.max(12, Math.round(spec.tickDps * dtSec)));
+        let hitAny = false;
+        const updatedMonsters: MonsterTarget[] = [];
+        for (const m of liveMonsters) {
+          const dist = Math.hypot(m.x - px, m.z - pz);
+          if (dist <= spec.radiusMeters && m.hp > 0n) {
+            hitAny = true;
+            const hpRatio = m.maxHp > 0n ? Number(m.hp) / Number(m.maxHp) : 1;
+            const executeNow = spec.executesLowHp && !m.isWorldBoss && hpRatio < 0.2;
+            const remaining = executeNow ? 0n : m.hp > pulseDmg ? m.hp - pulseDmg : 0n;
+            if (remaining <= 0n) {
+              domainKills += 1;
+            } else {
+              updatedMonsters.push({ ...m, hp: remaining });
+            }
+          } else {
+            updatedMonsters.push(m);
+          }
+        }
+        if (hitAny) {
+          setMonsters(updatedMonsters);
+          nextCombat = {
+            ...nextCombat,
+            hp: Math.min(nextCombat.maxHp, nextCombat.hp + 6),
+          };
+        }
+      }
+
+      if (domainKills > 0) {
+        for (let k = 0; k < domainKills; k++) {
+          const res = recordMonsterDefeat(nextCombat, 85, 55);
+          nextCombat = res.nextState;
+        }
+      }
+
+      // Compute nearest boss distance & HP ratio for Causality Engine v2
+      let nearestBossDistance = Infinity;
+      let nearestBossHpRatio = 1;
+      for (const m of monstersRef.current) {
+        if (m.tier === 'boss' || m.tier === 'world_titan' || m.isWorldBoss) {
+          const d = Math.hypot(m.x - px, m.z - pz);
+          if (d < nearestBossDistance) {
+            nearestBossDistance = d;
+            nearestBossHpRatio = m.maxHp > 0n ? Number(m.hp) / Number(m.maxHp) : 1;
+          }
+        }
+      }
+
+      const hour = timeOfDayRef.current % 24;
+      const isNight = hour < 6 || hour >= 18;
+      const causalityRes = evaluateCausalityTick({
+        state: causalityStateRef.current,
+        context: {
+          hpRatio: nextCombat.maxHp > 0 ? nextCombat.hp / nextCombat.maxHp : 1,
+          playerLevel: nextCombat.playerLevel,
+          totalKills: nextCombat.totalKills,
+          killStreak: nextCombat.killStreak,
+          domainLevel: nextCombat.domainLevel,
+          domainCooldownSeconds: nextCombat.domainCooldownSec,
+          nearestBossDistance,
+          nearestBossHpRatio,
+          aliveEnemies: monstersRef.current.filter((m) => m.hp > 0n).length,
+          isNight,
+          inSafeZone: zone.safe,
+        },
+        dtSeconds: dtSec,
+        nowMs: Date.now(),
+      });
+
+      if (causalityRes.triggered.length > 0) {
+        let goldBonus = 0;
+        let maxHpBonus = 0;
+        let shouldTopUpWave = false;
+        for (const ev of causalityRes.triggered) {
+          goldBonus += ev.rewardGold;
+          maxHpBonus += ev.rewardMaxHpBonus;
+          if (ev.actionType === 'wave_clear_bounty' || ev.actionType === 'boss_reinforcements') {
+            shouldTopUpWave = true;
+          }
+        }
+        if (goldBonus > 0 || maxHpBonus > 0) {
+          nextCombat = {
+            ...nextCombat,
+            gold: nextCombat.gold + goldBonus,
+            bonusMaxHp: nextCombat.bonusMaxHp + maxHpBonus,
+            maxHp: nextCombat.maxHp + maxHpBonus,
+            hp: nextCombat.hp + maxHpBonus,
+          };
+        }
+        if (shouldTopUpWave) {
+          waveSeedRef.current += 1;
+          setMonsters((curr) =>
+            computeNonDestructiveWaveTopUp({
+              existingMonsters: curr,
+              minWaveCount: Math.max(4, curr.length + 2),
+              playerX: px,
+              playerZ: pz,
+              playerLevel: nextCombat.playerLevel,
+              waveSeed: waveSeedRef.current,
+            })
+          );
+        }
+        setToastMessage(`⚡ ${causalityRes.triggered[0].message}`);
+      }
+
+      setCausalityState(causalityRes.nextState);
+      setActionCombat(nextCombat);
+    }, 250);
+
+    return () => window.clearInterval(tickInterval);
+  }, [gameState]);
+
+  const handleActionCombatTrigger = useCallback(
+    (action: ActionCombatTrigger) => {
+      if (gameState !== 'playing') return;
+      const curr = actionCombatRef.current;
+      const cls = ACTION_CLASSES[curr.classId];
+      const px = playerWorldPosRef.current.x;
+      const pz = playerWorldPosRef.current.z;
+
+      if (action === 'dash') {
+        const dashRes = triggerDash(curr);
+        if (!dashRes.triggered) {
+          setToastMessage(`💨 ${dashRes.reason ?? 'Dash unavailable'}`);
+          return;
+        }
+        sound.playSwing();
+        emitCombatVfx('dash', 0x38bdf8, 0.22);
+        setActionCombat(dashRes.nextState);
+        setToastMessage('💨 Phantom Dash! (0.45s i-frames · -20 Stamina)');
+        return;
+      }
+
+      if (action === 'heal') {
+        if (curr.healCooldownSec > 0) return;
+        const usePotion = curr.potions > 0;
+        const healAmount = Math.round(curr.maxHp * (usePotion ? 0.5 : 0.35));
+        sound.playUpgradeFanfare();
+        emitCombatVfx('heal', 0x34d399, 0.12);
+        setActionCombat({
+          ...curr,
+          hp: Math.min(curr.maxHp, curr.hp + healAmount),
+          potions: usePotion ? curr.potions - 1 : curr.potions,
+          healCooldownSec: 8.0,
+        });
+        setToastMessage(
+          usePotion
+            ? `💚 Crimson Elixir restored +${healAmount} HP (${curr.potions - 1} left)`
+            : `💚 Vitality Heal restored +${healAmount} HP!`
+        );
+        return;
+      }
+
+      if (action === 'domain') {
+        if (curr.domainCooldownSec > 0) return;
+        const spec = getDomainSpec(curr.domainLevel);
+        sound.playUpgradeFanfare();
+        emitCombatVfx('domain', 0xa855f7, 0.85);
+        setActionCombat({
+          ...curr,
+          domainActiveSec: spec.durationSeconds,
+          domainCooldownSec: spec.cooldownSeconds,
+        });
+        setToastMessage(
+          `🌌 Ascendant Domain Lv.${spec.level} UNLEASHED! (${spec.radiusMeters}m · ${spec.tickDps} DPS)`
+        );
+        return;
+      }
+
+      // Strike [Z] or Class Power [X]
+      if (action === 'strike' && curr.strikeCooldownSec > 0) return;
+      if (action === 'power' && curr.powerCooldownSec > 0) return;
+
+      const isPower = action === 'power';
+      const range = isPower ? cls.powerSkillRadius + 6 : 16;
+      const skillMult = isPower ? cls.powerSkillMultiplier : 1.0;
+      const hitRes = computeCombatHit(curr, skillMult, Math.random());
+      let updatedCombat: ActionCombatState = {
+        ...hitRes.nextState,
+        strikeCooldownSec: isPower ? curr.strikeCooldownSec : 0.45,
+        powerCooldownSec: isPower ? cls.powerSkillCooldownSec : curr.powerCooldownSec,
+      };
+
+      const vfxHex = isPower ? parseInt(cls.accentHex.replace('#', ''), 16) : 0xfbbf24;
+      sound.playSwing();
+      emitCombatVfx(action, vfxHex, isPower ? 0.55 : hitRes.isCrit ? 0.42 : 0.2);
+
+      const dmgBig = BigInt(hitRes.damage);
+      let hitsLanded = 0;
+      let defeatedNames: string[] = [];
+      const nextMonsters: MonsterTarget[] = [];
+
+      for (const m of monstersRef.current) {
+        const dist = Math.hypot(m.x - px, m.z - pz);
+        const canHit = dist <= range && m.hp > 0n && (isPower || hitsLanded === 0);
+        if (canHit) {
+          hitsLanded += 1;
+          const rem = m.hp > dmgBig ? m.hp - dmgBig : 0n;
+          if (rem <= 0n) {
+            defeatedNames.push(m.name);
+            const defeatRes = recordMonsterDefeat(
+              updatedCombat,
+              m.tier === 'boss' || m.tier === 'world_titan' ? 350 : 95,
+              m.tier === 'boss' || m.tier === 'world_titan' ? 240 : 70
+            );
+            updatedCombat = defeatRes.nextState;
+          } else {
+            nextMonsters.push({ ...m, hp: rem });
+          }
+        } else {
+          nextMonsters.push(m);
+        }
+      }
+
+      if (hitsLanded > 0) {
+        setMonsters(nextMonsters);
+      }
+      setActionCombat(updatedCombat);
+
+      if (defeatedNames.length > 0) {
+        const streakSuffix = updatedCombat.lastStreakCallout
+          ? ` · ${updatedCombat.lastStreakCallout}`
+          : '';
+        setToastMessage(
+          `⚔️ Defeated ${defeatedNames[0]}${defeatedNames.length > 1 ? ` +${defeatedNames.length - 1}` : ''}! (${updatedCombat.comboCount}x Combo${streakSuffix})`
+        );
+      } else if (hitsLanded > 0) {
+        setToastMessage(
+          `${isPower ? `${cls.icon} ${cls.powerSkillName}` : '⚔️ Strike'} landed for ${hitRes.damage}${hitRes.isCrit ? ' CRIT (4x)!' : ''} (${updatedCombat.comboCount}x Combo)`
+        );
+      } else {
+        setToastMessage(
+          isPower
+            ? `${cls.icon} ${cls.powerSkillName} unleashed! (${cls.powerSkillRadius}m AoE)`
+            : `⚔️ ${cls.name} Slash (${updatedCombat.comboCount}x Combo)`
+        );
+      }
+    },
+    [emitCombatVfx, gameState]
+  );
+
+  const handleTogglePause = useCallback(() => {
+    if (gameState === 'title') return;
+    if (activeModal !== 'none') {
+      setActiveModal('none');
+      return;
+    }
+    setGameState((prev) => (prev === 'paused' ? 'playing' : 'paused'));
+  }, [activeModal, gameState]);
+
+  const handleSwitchActionClass = useCallback((nextClassId: ActionClassId) => {
+    setActionCombat((prev) => switchActionClass(prev, nextClassId));
+    const spec = ACTION_CLASSES[nextClassId];
+    setToastMessage(`${spec.icon} Class switched to ${spec.name} (${spec.powerSkillName})!`);
+  }, []);
+
+  const handlePurchaseFieldProvision = useCallback((itemId: FieldProvisionId) => {
+    const res = purchaseFieldProvision(actionCombatRef.current, itemId);
+    setActionCombat(res.nextState);
+    setToastMessage(res.ok ? `🎒 ${res.message}` : `⚠️ ${res.message}`);
+  }, []);
 
   // Dynamic Weather Periodic Cycle (Periodically shifts environment state and status effects)
   useEffect(() => {
@@ -2363,6 +2711,19 @@ export default function App() {
         onCameraYawChange={(yawRad) => {
           cameraYawRef.current = yawRad;
         }}
+        isPaused={gameState === 'paused'}
+        canSprint={actionCombat.stamina > 2}
+        onSprintChange={(sprinting) => {
+          isSprintingRef.current = sprinting;
+        }}
+        onCombatHotkey={handleActionCombatTrigger}
+        onTogglePause={handleTogglePause}
+        combatVfxCommand={combatVfxCommand}
+        domainVisual={{
+          active: actionCombat.domainActiveSec > 0,
+          radiusMeters: activeDomainSpec.radiusMeters,
+        }}
+        zoneFogTintHex={activeWorldZone.fogTintHex}
       />
 
       {/* Floating Notification Toast */}
@@ -2513,6 +2874,35 @@ export default function App() {
           onOpenMarketplace={() =>
             setActiveModal((prev) => (prev === 'marketplace' ? 'none' : 'marketplace'))
           }
+          activeZoneName={activeWorldZone.name}
+          activeZoneSafe={activeWorldZone.safe}
+          onOpenPause={() => setGameState('paused')}
+        />
+      )}
+
+      {/* Real-Time Action Combat Strip & Low-HP / Domain Screen Vignette */}
+      {gameState === 'playing' && activeModal === 'none' && (
+        <ActionCombatOverlay
+          combatState={actionCombat}
+          zone={activeWorldZone}
+          onTriggerAction={handleActionCombatTrigger}
+          onOpenPause={() => setGameState('paused')}
+        />
+      )}
+
+      {/* Pause & Ascendant Arsenal Modal [Esc] */}
+      {gameState === 'paused' && (
+        <PauseMenuModal
+          combatState={actionCombat}
+          causalityState={causalityState}
+          zone={activeWorldZone}
+          onResume={() => setGameState('playing')}
+          onReturnToTitle={() => {
+            setActiveModal('none');
+            setGameState('title');
+          }}
+          onSelectClass={handleSwitchActionClass}
+          onPurchaseProvision={handlePurchaseFieldProvision}
         />
       )}
 

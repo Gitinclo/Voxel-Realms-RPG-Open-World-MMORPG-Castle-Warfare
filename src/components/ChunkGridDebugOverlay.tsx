@@ -74,7 +74,7 @@ export const ChunkGridDebugOverlay: React.FC<ChunkGridDebugOverlayProps> = ({
       data-testid={`${variant}-chunk-grid-matrix`}
       role="grid"
       aria-label={`256 by 256 meter voxel chunk cache grid (${snapshot.gridDimension} by ${snapshot.gridDimension} sectors)`}
-      className={`grid ${isOverlay ? 'gap-0.5 sm:gap-1' : 'gap-1'}`}
+      className={`grid ${isOverlay ? (gridRadius === 3 ? 'gap-0.5' : 'gap-0.5 sm:gap-1') : 'gap-1'}`}
       style={{
         gridTemplateColumns: `repeat(${snapshot.gridDimension}, minmax(0, 1fr))`,
       }}
@@ -93,7 +93,7 @@ export const ChunkGridDebugOverlay: React.FC<ChunkGridDebugOverlayProps> = ({
 
         const cellHeightClass = isOverlay
           ? gridRadius === 3
-            ? 'h-[18px] sm:h-[19px]'
+            ? 'h-[17px]'
             : 'h-[22px] sm:h-[24px]'
           : gridRadius === 3
             ? 'h-8'
